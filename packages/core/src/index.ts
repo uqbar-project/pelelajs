@@ -42,6 +42,22 @@ type StyleBinding = {
   propertyName: string;
 };
 
+function assertViewModelProperty(
+  viewModel: any,
+  propertyName: string,
+  kind: string,
+  element: Element,
+): void {
+  if (!(propertyName in viewModel)) {
+    const snippet = element.outerHTML.replace(/\s+/g, " ").trim().slice(0, 100);
+
+    throw new Error(
+      `[pelela] Unknown property "${propertyName}" used in ${kind} on: ${snippet}. ` +
+      `Make sure your view model "${viewModel.constructor.name}" defines it.`,
+    );
+  }
+}
+
 function setupBindings(root: HTMLElement, viewModel: any): () => void {
   const valueBindings: ValueBinding[] = [];
   const visibleBindings: VisibleBinding[] = [];
@@ -54,6 +70,8 @@ function setupBindings(root: HTMLElement, viewModel: any): () => void {
   for (const element of valueElements) {
     const propertyName = element.getAttribute("bind-value");
     if (!propertyName) continue;
+
+    assertViewModelProperty(viewModel, propertyName, "bind-value", element);
 
     const isInput =
       element instanceof HTMLInputElement ||
@@ -85,6 +103,8 @@ function setupBindings(root: HTMLElement, viewModel: any): () => void {
     const propertyName = element.getAttribute("bind-visible");
     if (!propertyName) continue;
 
+    assertViewModelProperty(viewModel, propertyName, "bind-visible", element);
+
     visibleBindings.push({
       element,
       propertyName,
@@ -99,6 +119,8 @@ function setupBindings(root: HTMLElement, viewModel: any): () => void {
     const propertyName = element.getAttribute("bind-class");
     if (!propertyName) continue;
 
+    assertViewModelProperty(viewModel, propertyName, "bind-class", element);
+
     classBindings.push({
       element,
       propertyName,
@@ -112,6 +134,8 @@ function setupBindings(root: HTMLElement, viewModel: any): () => void {
   for (const element of styleElements) {
     const propertyName = element.getAttribute("bind-style");
     if (!propertyName) continue;
+
+    assertViewModelProperty(viewModel, propertyName, "bind-style", element);
 
     styleBindings.push({
       element,
