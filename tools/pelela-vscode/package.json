@@ -1,0 +1,34 @@
+{
+  "name": "pelela-vscode",
+  "version": "0.0.1",
+  "displayName": "Pelela Templates",
+  "description": "Soporte básico para archivos .pelela (syntax highlighting y snippets).",
+  "publisher": "uqbar-projects",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "pelela",
+        "aliases": ["Pelela Template", "pelela"],
+        "extensions": [".pelela"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "pelela",
+        "scopeName": "text.html.pelela",
+        "path": "./syntaxes/pelela.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "pelela",
+        "path": "./snippets/pelela.json"
+      }
+    ]
+  }
+}

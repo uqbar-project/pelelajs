@@ -1,0 +1,122 @@
+{
+  "scopeName": "text.html.pelela",
+  "name": "Pelela Template",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#pelela-tag" },
+    { "include": "#tag" },
+    { "include": "#entities" },
+    { "include": "#text" }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.block.pelela",
+          "begin": "<!--",
+          "end": "-->"
+        }
+      ]
+    },
+    "pelela-tag": {
+      "patterns": [
+        {
+          "name": "meta.tag.pelela",
+          "begin": "<\\s*(pelela)\\b",
+          "beginCaptures": {
+            "1": { "name": "entity.name.tag.pelela" }
+          },
+          "end": ">",
+          "patterns": [
+            { "include": "#attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.pelela",
+          "begin": "<\\/\\s*(pelela)\\b",
+          "beginCaptures": {
+            "1": { "name": "entity.name.tag.pelela" }
+          },
+          "end": ">"
+        }
+      ]
+    },
+    "tag": {
+      "patterns": [
+        {
+          "name": "meta.tag.pelela",
+          "begin": "<(?!\\/)([A-Za-z][A-Za-z0-9\\-]*)",
+          "beginCaptures": {
+            "1": { "name": "entity.name.tag.pelela.html" }
+          },
+          "end": ">",
+          "patterns": [
+            { "include": "#attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.pelela",
+          "begin": "<\\/([A-Za-z][A-Za-z0-9\\-]*)",
+          "beginCaptures": {
+            "1": { "name": "entity.name.tag.pelela.html" }
+          },
+          "end": ">"
+        }
+      ]
+    },
+    "attributes": {
+      "patterns": [
+        {
+          "name": "entity.other.attribute-name.pelela.binding",
+          "match": "\\b(bind-[A-Za-z0-9_\\-]+)\\b"
+        },
+        {
+          "name": "entity.other.attribute-name.pelela.viewmodel",
+          "match": "\\b(view-model)\\b"
+        },
+        {
+          "name": "entity.other.attribute-name.pelela",
+          "match": "\\b([A-Za-z_][A-Za-z0-9_\\-:]*)"
+        },
+        {
+          "name": "string.quoted.double.pelela",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.pelela",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.pelela",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.pelela",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "entities": {
+      "patterns": [
+        {
+          "name": "constant.character.entity.pelela",
+          "match": "&[A-Za-z0-9]+;"
+        }
+      ]
+    },
+    "text": {
+      "patterns": [
+        {
+          "name": "text.pelela",
+          "match": "[^<&]+"
+        }
+      ]
+    }
+  }
+}

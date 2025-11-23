@@ -1,0 +1,31 @@
+{
+  "Pelela root": {
+    "prefix": "pelela",
+    "body": [
+      "<pelela view-model=\"$1\">",
+      "  $0",
+      "</pelela>"
+    ],
+    "description": "Crea la raíz de un template Pelela"
+  },
+  "bind-value": {
+    "prefix": "bindv",
+    "body": ["bind-value=\"$1\""],
+    "description": "Atributo bind-value para binding de valor"
+  },
+  "bind-visible": {
+    "prefix": "bindvis",
+    "body": ["bind-visible=\"$1\""],
+    "description": "Atributo bind-visible para visibilidad condicional"
+  },
+  "bind-class": {
+    "prefix": "bindc",
+    "body": ["bind-class=\"$1\""],
+    "description": "Atributo bind-class para clases dinámicas"
+  },
+  "bind-style": {
+    "prefix": "binds",
+    "body": ["bind-style=\"$1\""],
+    "description": "Atributo bind-style para estilos dinámicos"
+  }
+}
