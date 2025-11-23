@@ -4,4 +4,8 @@ export class Conversor {
   get kilometers(): number {
     return this.millas * 1.609344;
   }
+
+  get hasResult(): boolean {
+    return this.millas > 0;
+  }
 }

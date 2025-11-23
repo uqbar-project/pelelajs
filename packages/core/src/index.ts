@@ -19,18 +19,26 @@ function createReactiveViewModel<T extends object>(
   return new Proxy(target, handler);
 }
 
-type ElementBinding = {
+type ValueBinding = {
   element: HTMLElement;
   propertyName: string;
   isInput: boolean;
 };
 
+type VisibleBinding = {
+  element: HTMLElement;
+  propertyName: string;
+  originalDisplay: string;
+};
+
 function setupBindings(root: HTMLElement, viewModel: any): () => void {
-  const nodes: ElementBinding[] = [];
+  const valueBindings: ValueBinding[] = [];
+  const visibleBindings: VisibleBinding[] = [];
 
-  const elements = root.querySelectorAll<HTMLElement>("[bind-value]");
+  // --- bind-value ---
+  const valueElements = root.querySelectorAll<HTMLElement>("[bind-value]");
 
-  for (const element of elements) {
+  for (const element of valueElements) {
     const propertyName = element.getAttribute("bind-value");
     if (!propertyName) continue;
 
@@ -38,7 +46,7 @@ function setupBindings(root: HTMLElement, viewModel: any): () => void {
       element instanceof HTMLInputElement ||
       element instanceof HTMLTextAreaElement;
 
-    nodes.push({ element, propertyName, isInput });
+    valueBindings.push({ element, propertyName, isInput });
 
     if (isInput) {
       element.addEventListener("input", (event) => {
@@ -57,8 +65,23 @@ function setupBindings(root: HTMLElement, viewModel: any): () => void {
     }
   }
 
+  // --- bind-visible ---
+  const visibleElements = root.querySelectorAll<HTMLElement>("[bind-visible]");
+
+  for (const element of visibleElements) {
+    const propertyName = element.getAttribute("bind-visible");
+    if (!propertyName) continue;
+
+    visibleBindings.push({
+      element,
+      propertyName,
+      originalDisplay: element.style.display || "",
+    });
+  }
+
   const render = () => {
-    for (const binding of nodes) {
+    // value bindings
+    for (const binding of valueBindings) {
       const value = (viewModel as any)[binding.propertyName];
 
       if (binding.isInput) {
@@ -71,6 +94,16 @@ function setupBindings(root: HTMLElement, viewModel: any): () => void {
         binding.element.textContent =
           value === undefined || value === null ? "" : String(value);
       }
+    }
+
+    // visible bindings
+    for (const binding of visibleBindings) {
+      const value = (viewModel as any)[binding.propertyName];
+      const shouldShow = Boolean(value);
+
+      binding.element.style.display = shouldShow
+        ? binding.originalDisplay
+        : "none";
     }
   };
 
