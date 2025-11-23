@@ -17,8 +17,10 @@ importers:
       pelelajs: workspace:*
       typescript: ^5.9.3
       vite: ^7.2.4
+      vite-plugin-pelelajs: workspace:*
     dependencies:
       pelelajs: link:../../packages/core
+      vite-plugin-pelelajs: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript: 5.9.3
       vite: 7.2.4
@@ -32,6 +34,18 @@ importers:
       tsup: 8.5.1_typescript@5.9.3
       typescript: 5.9.3
       vitest: 4.0.13
+
+  packages/vite-plugin-pelelajs:
+    specifiers:
+      '@types/node': ^24.10.1
+      tsup: ^8.5.1
+      typescript: ^5.9.3
+      vite: ^7.2.4
+    devDependencies:
+      '@types/node': 24.10.1
+      tsup: 8.5.1_typescript@5.9.3
+      typescript: 5.9.3
+      vite: 7.2.4_@types+node@24.10.1
 
 packages:
 
@@ -721,6 +735,12 @@ packages:
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
     dev: true
 
+  /@types/node/24.10.1:
+    resolution: {integrity: sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==}
+    dependencies:
+      undici-types: 7.16.0
+    dev: true
+
   /@vitest/expect/4.0.13:
     resolution: {integrity: sha512-zYtcnNIBm6yS7Gpr7nFTmq8ncowlMdOJkWLqYvhr/zweY6tFbDkDi8BPPOeHxEtK1rSI69H7Fd4+1sqvEGli6w==}
     dependencies:
@@ -1248,6 +1268,10 @@ packages:
     resolution: {integrity: sha512-9a4/uxlTWJ4+a5i0ooc1rU7C7YOw3wT+UGqdeNNHWnOF9qcMBgLRS+4IYUqbczewFx4mLEig6gawh7X6mFlEkA==}
     dev: true
 
+  /undici-types/7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+    dev: true
+
   /vite/7.2.4:
     resolution: {integrity: sha512-NL8jTlbo0Tn4dUEXEsUg8KeyG/Lkmc4Fnzb8JXN/Ykm9G4HNImjtABMJgkQoVjOBN/j2WAwDTRytdqJbZsah7w==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1288,6 +1312,57 @@ packages:
       yaml:
         optional: true
     dependencies:
+      esbuild: 0.25.12
+      fdir: 6.5.0_picomatch@4.0.3
+      picomatch: 4.0.3
+      postcss: 8.5.6
+      rollup: 4.53.3
+      tinyglobby: 0.2.15
+    optionalDependencies:
+      fsevents: 2.3.3
+    dev: true
+
+  /vite/7.2.4_@types+node@24.10.1:
+    resolution: {integrity: sha512-NL8jTlbo0Tn4dUEXEsUg8KeyG/Lkmc4Fnzb8JXN/Ykm9G4HNImjtABMJgkQoVjOBN/j2WAwDTRytdqJbZsah7w==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^20.19.0 || >=22.12.0
+      jiti: '>=1.21.0'
+      less: ^4.0.0
+      lightningcss: ^1.21.0
+      sass: ^1.70.0
+      sass-embedded: ^1.70.0
+      stylus: '>=0.54.8'
+      sugarss: ^5.0.0
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+    dependencies:
+      '@types/node': 24.10.1
       esbuild: 0.25.12
       fdir: 6.5.0_picomatch@4.0.3
       picomatch: 4.0.3

@@ -1,8 +1,3 @@
-<div id="app"></div>
-
-<script type="module" src="/src/main.ts"></script>
-<!-- <h1>Conversor millas a kilómetros (Pelela)</h1>
-
 <pelela view-model="Conversor">
   <label>
     Millas:
@@ -14,5 +9,3 @@
     <span bind-value="kilometers" bind-class="kilometersClass"></span>
   </p>
 </pelela>
-
-<script type="module" src="/src/main.ts"></script> -->

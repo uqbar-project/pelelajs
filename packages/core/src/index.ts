@@ -31,9 +31,22 @@ type VisibleBinding = {
   originalDisplay: string;
 };
 
+type ClassBinding = {
+  element: HTMLElement;
+  propertyName: string;
+  staticClassName: string;
+};
+
+type StyleBinding = {
+  element: HTMLElement;
+  propertyName: string;
+};
+
 function setupBindings(root: HTMLElement, viewModel: any): () => void {
   const valueBindings: ValueBinding[] = [];
   const visibleBindings: VisibleBinding[] = [];
+  const classBindings: ClassBinding[] = [];
+  const styleBindings: StyleBinding[] = [];
 
   // --- bind-value ---
   const valueElements = root.querySelectorAll<HTMLElement>("[bind-value]");
@@ -79,6 +92,33 @@ function setupBindings(root: HTMLElement, viewModel: any): () => void {
     });
   }
 
+  // --- bind-class ---
+  const classElements = root.querySelectorAll<HTMLElement>("[bind-class]");
+
+  for (const element of classElements) {
+    const propertyName = element.getAttribute("bind-class");
+    if (!propertyName) continue;
+
+    classBindings.push({
+      element,
+      propertyName,
+      staticClassName: element.className,
+    });
+  }
+
+  // --- bind-style ---
+  const styleElements = root.querySelectorAll<HTMLElement>("[bind-style]");
+
+  for (const element of styleElements) {
+    const propertyName = element.getAttribute("bind-style");
+    if (!propertyName) continue;
+
+    styleBindings.push({
+      element,
+      propertyName,
+    });
+  }
+
   const render = () => {
     // value bindings
     for (const binding of valueBindings) {
@@ -105,6 +145,50 @@ function setupBindings(root: HTMLElement, viewModel: any): () => void {
         ? binding.originalDisplay
         : "none";
     }
+
+    // class bindings
+    for (const binding of classBindings) {
+      const value = (viewModel as any)[binding.propertyName];
+
+      const staticClasses = binding.staticClassName.trim();
+      let dynamicClasses = "";
+
+      if (typeof value === "string") {
+        dynamicClasses = value;
+      } else if (Array.isArray(value)) {
+        dynamicClasses = value.filter(Boolean).join(" ");
+      } else if (value && typeof value === "object") {
+        dynamicClasses = Object.entries(value)
+          .filter(([, enabled]) => Boolean(enabled))
+          .map(([name]) => name)
+          .join(" ");
+      }
+
+      const classes = [staticClasses, dynamicClasses].filter(Boolean).join(" ");
+      binding.element.className = classes;
+    }
+
+    // style bindings
+    for (const binding of styleBindings) {
+      const value = (viewModel as any)[binding.propertyName];
+
+      if (!value || typeof value !== "object") {
+        binding.element.removeAttribute("style");
+        continue;
+      }
+
+      const styleObj = value as Record<string, string | number>;
+      const elStyle = binding.element.style;
+
+      elStyle.cssText = "";
+
+      for (const [key, v] of Object.entries(styleObj)) {
+        if (v === undefined || v === null) continue;
+        const cssValue = String(v);
+        // key tipo camelCase: backgroundColor, fontWeight, etc.
+        (elStyle as any)[key as any] = cssValue;
+      }
+    }
   };
 
   render();
@@ -123,13 +207,21 @@ export function defineViewModel(
 
 export type PelelaOptions = {
   document?: Document;
+  root?: ParentNode;
 };
 
 export function bootstrap(options: PelelaOptions = {}): void {
+  // const doc = options.document ?? window.document;
+
+  // const roots = Array.from(
+  //   doc.querySelectorAll<HTMLElement>("pelela[view-model]"),
+  // );
+
   const doc = options.document ?? window.document;
+  const searchRoot: ParentNode = options.root ?? doc;
 
   const roots = Array.from(
-    doc.querySelectorAll<HTMLElement>("pelela[view-model]"),
+    searchRoot.querySelectorAll<HTMLElement>("pelela[view-model]"),
   );
 
   if (roots.length === 0) {
@@ -164,4 +256,12 @@ export function bootstrap(options: PelelaOptions = {}): void {
       reactiveInstance,
     );
   }
+}
+
+export function mountTemplate(
+  container: HTMLElement,
+  templateHtml: string,
+): void {
+  container.innerHTML = templateHtml;
+  bootstrap({ root: container });
 }

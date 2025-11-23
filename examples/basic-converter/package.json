@@ -12,7 +12,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "pelelajs": "workspace:*"
+    "pelelajs": "workspace:*",
+    "vite-plugin-pelelajs": "workspace:*"
   },
   "devDependencies": {
     "vite": "^7.2.4",

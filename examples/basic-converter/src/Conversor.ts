@@ -8,4 +8,18 @@ export class Conversor {
   get hasResult(): boolean {
     return this.millas > 0;
   }
+
+  get kilometersClass(): string {
+    const km = this.kilometers;
+
+    if (km > 100) {
+      return "km-high";
+    }
+
+    if (km > 0) {
+      return "km-low";
+    }
+
+    return "";
+  }
 }
