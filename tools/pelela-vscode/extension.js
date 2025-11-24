@@ -213,6 +213,120 @@ function activate(context) {
   );
 
   context.subscriptions.push(provider);
+
+  const definitionProvider = vscode.languages.registerDefinitionProvider(
+    { language: "pelela", scheme: "file" },
+    {
+      provideDefinition(document, position, token) {
+        const line = document.lineAt(position.line);
+        const lineText = line.text;
+        
+        const viewModelMatch = /view-model=["']([^"']+)["']/g.exec(lineText);
+        if (viewModelMatch && position.character >= lineText.indexOf(viewModelMatch[1]) && 
+            position.character <= lineText.indexOf(viewModelMatch[1]) + viewModelMatch[1].length) {
+          const className = viewModelMatch[1];
+          const tsFile = findViewModelFile(document.uri);
+          if (tsFile) {
+            const location = findClassDefinition(tsFile, className);
+            if (location) return location;
+          }
+        }
+
+        const bindMatch = /bind-[a-zA-Z0-9_-]+=["']([^"']+)["']/g;
+        let match;
+        while ((match = bindMatch.exec(lineText)) !== null) {
+          const propertyName = match[1];
+          const startPos = match.index + match[0].indexOf(propertyName);
+          const endPos = startPos + propertyName.length;
+          
+          if (position.character >= startPos && position.character <= endPos) {
+            const tsFile = findViewModelFile(document.uri);
+            if (tsFile) {
+              const location = findPropertyDefinition(tsFile, propertyName);
+              if (location) return location;
+            }
+          }
+        }
+
+        const clickMatch = /click=["']([^"']+)["']/g;
+        while ((match = clickMatch.exec(lineText)) !== null) {
+          const methodName = match[1];
+          const startPos = match.index + match[0].indexOf(methodName);
+          const endPos = startPos + methodName.length;
+          
+          if (position.character >= startPos && position.character <= endPos) {
+            const tsFile = findViewModelFile(document.uri);
+            if (tsFile) {
+              const location = findMethodDefinition(tsFile, methodName);
+              if (location) return location;
+            }
+          }
+        }
+
+        return null;
+      }
+    }
+  );
+
+  context.subscriptions.push(definitionProvider);
+}
+
+function findClassDefinition(tsFilePath, className) {
+  const text = fs.readFileSync(tsFilePath, "utf-8");
+  const lines = text.split("\n");
+  
+  const classRegex = new RegExp(`^\\s*(?:export\\s+)?class\\s+${className}\\b`, "m");
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (classRegex.test(lines[i])) {
+      const character = lines[i].indexOf(className);
+      return new vscode.Location(
+        vscode.Uri.file(tsFilePath),
+        new vscode.Position(i, character)
+      );
+    }
+  }
+  
+  return null;
+}
+
+function findPropertyDefinition(tsFilePath, propertyName) {
+  const text = fs.readFileSync(tsFilePath, "utf-8");
+  const lines = text.split("\n");
+  
+  const propRegex = new RegExp(`^\\s*(?:public\\s+|private\\s+|protected\\s+)?${propertyName}\\s*[=:]`, "m");
+  const getterRegex = new RegExp(`^\\s*(?:public\\s+|private\\s+|protected\\s+)?get\\s+${propertyName}\\s*\\(`, "m");
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (propRegex.test(lines[i]) || getterRegex.test(lines[i])) {
+      const character = lines[i].indexOf(propertyName);
+      return new vscode.Location(
+        vscode.Uri.file(tsFilePath),
+        new vscode.Position(i, character)
+      );
+    }
+  }
+  
+  return null;
+}
+
+function findMethodDefinition(tsFilePath, methodName) {
+  const text = fs.readFileSync(tsFilePath, "utf-8");
+  const lines = text.split("\n");
+  
+  const methodRegex = new RegExp(`^\\s*(?:public\\s+|private\\s+|protected\\s+)?${methodName}\\s*\\(`, "m");
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (methodRegex.test(lines[i])) {
+      const character = lines[i].indexOf(methodName);
+      return new vscode.Location(
+        vscode.Uri.file(tsFilePath),
+        new vscode.Position(i, character)
+      );
+    }
+  }
+  
+  return null;
 }
 
 function deactivate() { }
