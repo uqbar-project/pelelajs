@@ -157,10 +157,10 @@
               "name": "meta.attribute-value.pelela"
             },
             "4": {
-              "name": "variable.other.readwrite.pelela"
+              "name": "support.type.pelela"
             },
             "5": {
-              "name": "variable.other.readwrite.pelela"
+              "name": "support.type.pelela"
             }
           }
         },
@@ -178,10 +178,10 @@
               "name": "meta.attribute-value.pelela"
             },
             "4": {
-              "name": "variable.other.readwrite.pelela"
+              "name": "variable.language.pelela"
             },
             "5": {
-              "name": "variable.other.readwrite.pelela"
+              "name": "variable.language.pelela"
             }
           }
         },
@@ -199,10 +199,10 @@
               "name": "meta.attribute-value.pelela"
             },
             "4": {
-              "name": "entity.name.function.pelela"
+              "name": "support.function.pelela"
             },
             "5": {
-              "name": "entity.name.function.pelela"
+              "name": "support.function.pelela"
             }
           }
         }
@@ -239,3 +239,4 @@
     }
   }
 }
+
