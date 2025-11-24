@@ -6,10 +6,12 @@
     <input type="text" bind-value="millas" />
   </label>
 
+  <button click="convertir">Convertir</button>
+
   <p bind-visible="hasResult">
     Kilómetros:
     <span 
-      bind-value="kilometers" 
-      bind-class="kilometersClass" />
+      bind-value="kilometros" 
+      bind-class="claseKilometros" />
   </p>
 </pelela>

@@ -1,15 +1,16 @@
 export class Conversor {
   millas: number = 0;
+  kilometros: number | undefined = undefined;
 
-  get kilometers(): number {
-    return this.millas * 1.609344;
+  convertir() {
+    this.kilometros = this.millas * 1.609344;
   }
 
   get hasResult(): boolean {
-    return this.millas > 0;
+    return this.kilometros != undefined;
   }
 
-  get kilometersClass(): string {
-    return this.kilometers > 100 ? 'big' : 'small'
+  get claseKilometros(): string {
+    return (this.kilometros ?? 0) > 100 ? 'big' : 'small'
   }
 }
