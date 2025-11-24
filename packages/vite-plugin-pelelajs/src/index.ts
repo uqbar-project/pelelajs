@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import type { Plugin } from "vite";
+import path from "node:path";
 
 function escapeTemplate(html: string): string {
   return html.replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
@@ -14,6 +15,14 @@ export function pelelajsPlugin(): Plugin {
       if (!id.endsWith(".pelela")) return null;
 
       const code = fs.readFileSync(id, "utf-8");
+
+      const cssFile = id.replace(/\.pelela$/, ".css");
+      let cssImport = "";
+
+      if (fs.existsSync(cssFile)) {
+        const cssBase = path.basename(cssFile);
+        cssImport = `import "./${cssBase}";\n`;
+      }
 
       const openTags = code.match(/<pelela\b[^>]*>/g) || [];
       const closeTags = code.match(/<\/pelela>/g) || [];
@@ -59,7 +68,7 @@ export function pelelajsPlugin(): Plugin {
       const escaped = escapeTemplate(code);
 
       const js = `
-export const viewModelName = ${JSON.stringify(viewModelName)};
+${cssImport}export const viewModelName = ${JSON.stringify(viewModelName)};
 const template = \`${escaped}\`;
 export default template;
 `;
