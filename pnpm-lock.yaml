@@ -25,6 +25,19 @@ importers:
       typescript: 5.9.3
       vite: 7.2.4
 
+  examples/hello-world:
+    specifiers:
+      pelelajs: workspace:*
+      typescript: ^5.9.3
+      vite: ^7.2.4
+      vite-plugin-pelelajs: workspace:*
+    dependencies:
+      pelelajs: link:../../packages/core
+      vite-plugin-pelelajs: link:../../packages/vite-plugin-pelelajs
+    devDependencies:
+      typescript: 5.9.3
+      vite: 7.2.4
+
   packages/core:
     specifiers:
       tsup: ^8.5.1

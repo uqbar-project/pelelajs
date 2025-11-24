@@ -1,0 +1,48 @@
+pelela {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  align-items: center;
+  justify-content: center;
+}
+
+h1 {
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+p[bind-value] {
+  font-size: 2rem;
+  font-weight: 600;
+  width: 80px;
+  text-align: center;
+}
+
+button {
+  padding: 0.6rem 1.2rem;
+  margin: 0 0.5rem;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+
+button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}

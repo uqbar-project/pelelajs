@@ -1,0 +1,15 @@
+:root {
+  --bg: #f8f9fa;
+  --text: #222;
+  --primary: #0d6efd;
+  --primary-hover: #0b5ed7;
+  --radius: 8px;
+  --transition: 0.2s ease;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
