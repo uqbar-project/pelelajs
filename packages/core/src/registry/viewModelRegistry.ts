@@ -20,3 +20,6 @@ export function hasViewModel(name: string): boolean {
   return viewModelRegistry.has(name);
 }
 
+export function clearRegistry(): void {
+  viewModelRegistry.clear();
+}
