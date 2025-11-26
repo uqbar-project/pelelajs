@@ -13,10 +13,10 @@
     "body": ["bind-value=\"$1\""],
     "description": "Atributo bind-value para binding de valor"
   },
-  "bind-visible": {
-    "prefix": "bindvis",
-    "body": ["bind-visible=\"$1\""],
-    "description": "Atributo bind-visible para visibilidad condicional"
+  "if": {
+    "prefix": "if",
+    "body": ["if=\"$1\""],
+    "description": "Atributo if para renderizado condicional"
   },
   "bind-class": {
     "prefix": "bindc",

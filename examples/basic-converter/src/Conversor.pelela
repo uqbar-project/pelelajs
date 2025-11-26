@@ -8,7 +8,7 @@
 
   <button click="convertir">Convertir</button>
 
-  <p bind-visible="hasResult">
+  <p if="hasResult">
     Kilómetros:
     <span 
       bind-value="kilometros" 

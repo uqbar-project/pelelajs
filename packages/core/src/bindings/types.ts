@@ -4,7 +4,7 @@ export type ValueBinding = {
   isInput: boolean;
 };
 
-export type VisibleBinding = {
+export type IfBinding = {
   element: HTMLElement;
   propertyName: string;
   originalDisplay: string;
@@ -23,7 +23,7 @@ export type StyleBinding = {
 
 export type BindingsCollection = {
   valueBindings: ValueBinding[];
-  visibleBindings: VisibleBinding[];
+  ifBindings: IfBinding[];
   classBindings: ClassBinding[];
   styleBindings: StyleBinding[];
 };

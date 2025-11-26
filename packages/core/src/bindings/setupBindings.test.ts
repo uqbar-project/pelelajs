@@ -12,7 +12,7 @@ describe("setupBindings", () => {
   it("should setup all binding types", () => {
     container.innerHTML = `
       <span bind-value="message"></span>
-      <div bind-visible="show"></div>
+      <div if="show"></div>
       <div bind-class="classes"></div>
       <div bind-style="styles"></div>
       <button click="handleClick">Click</button>
@@ -44,7 +44,7 @@ describe("setupBindings", () => {
   it("should return render function that updates all bindings", () => {
     container.innerHTML = `
       <span bind-value="count"></span>
-      <div bind-visible="show"></div>
+      <div if="show"></div>
     `;
 
     const viewModel = {
@@ -129,7 +129,7 @@ describe("setupBindings", () => {
     container.innerHTML = `
       <div>
         <input bind-value="name" />
-        <div bind-visible="showMessage">
+        <div if="showMessage">
           <span bind-value="message" bind-class="messageClass" bind-style="messageStyle"></span>
         </div>
         <button click="submit">Submit</button>

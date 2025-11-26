@@ -205,6 +205,27 @@
               "name": "support.function.pelela"
             }
           }
+        },
+        {
+          "name": "meta.attribute.pelela.if",
+          "match": "\\b(if)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
+          "captures": {
+            "1": {
+              "name": "entity.other.attribute-name.pelela.if"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "3": {
+              "name": "meta.attribute-value.pelela"
+            },
+            "4": {
+              "name": "variable.language.pelela"
+            },
+            "5": {
+              "name": "variable.language.pelela"
+            }
+          }
         }
       ]
     },

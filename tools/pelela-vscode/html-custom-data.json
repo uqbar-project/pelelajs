@@ -24,8 +24,8 @@
       "valueSet": "v"
     },
     {
-      "name": "bind-visible",
-      "description": "Pelela: Binds the visibility to a ViewModel property",
+      "name": "if",
+      "description": "Pelela: Conditional rendering based on a ViewModel property",
       "valueSet": "v"
     },
     {

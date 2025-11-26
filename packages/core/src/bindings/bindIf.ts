@@ -1,18 +1,18 @@
-import type { VisibleBinding } from "./types";
+import type { IfBinding } from "./types";
 import { assertViewModelProperty } from "../validation/assertViewModelProperty";
 
-export function setupVisibleBindings(
+export function setupIfBindings(
   root: HTMLElement,
   viewModel: any,
-): VisibleBinding[] {
-  const bindings: VisibleBinding[] = [];
-  const elements = root.querySelectorAll<HTMLElement>("[bind-visible]");
+): IfBinding[] {
+  const bindings: IfBinding[] = [];
+  const elements = root.querySelectorAll<HTMLElement>("[if]");
 
   for (const element of elements) {
-    const propertyName = element.getAttribute("bind-visible");
+    const propertyName = element.getAttribute("if");
     if (!propertyName) continue;
 
-    assertViewModelProperty(viewModel, propertyName, "bind-visible", element);
+    assertViewModelProperty(viewModel, propertyName, "if", element);
 
     bindings.push({
       element,
@@ -24,8 +24,8 @@ export function setupVisibleBindings(
   return bindings;
 }
 
-export function renderVisibleBindings(
-  bindings: VisibleBinding[],
+export function renderIfBindings(
+  bindings: IfBinding[],
   viewModel: any,
 ): void {
   for (const binding of bindings) {
@@ -37,4 +37,5 @@ export function renderVisibleBindings(
       : "none";
   }
 }
+
 

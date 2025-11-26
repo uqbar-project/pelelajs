@@ -131,7 +131,7 @@ function activate(context) {
           const attrNames = [
             "view-model",
             "bind-value",
-            "bind-visible",
+            "if",
             "bind-class",
             "bind-style",
             "click",
@@ -155,6 +155,12 @@ function activate(context) {
               );
               item.detail = "Pelela: ejecuta un método del view model al hacer click";
               item.sortText = "!0_" + name;
+            } else if (name === "if") {
+              item.insertText = new vscode.SnippetString(
+                'if="${1:condicion}"',
+              );
+              item.detail = "Pelela: renderizado condicional";
+              item.sortText = "!0_" + name;
             } else if (name.startsWith("bind-")) {
               item.insertText = new vscode.SnippetString(
                 `${name}="\${1:propiedad}"`,
@@ -170,13 +176,13 @@ function activate(context) {
         if (
           isInsideAttributeValue &&
           attributeName &&
-          (attributeName.startsWith("bind-") || attributeName === "click")
+          (attributeName.startsWith("bind-") || attributeName === "click" || attributeName === "if")
         ) {
           const tsFile = findViewModelFile(document.uri);
           if (tsFile) {
             const { properties, methods } = extractViewModelMembers(tsFile);
 
-            if (attributeName.startsWith("bind-")) {
+            if (attributeName.startsWith("bind-") || attributeName === "if") {
               for (const name of properties) {
                 const item = new vscode.CompletionItem(
                   name,
@@ -232,7 +238,7 @@ function activate(context) {
           }
         }
 
-        const bindMatch = /bind-[a-zA-Z0-9_-]+=["']([^"']+)["']/g;
+        const bindMatch = /(?:bind-[a-zA-Z0-9_-]+|if)=["']([^"']+)["']/g;
         let match;
         while ((match = bindMatch.exec(lineText)) !== null) {
           const propertyName = match[1];

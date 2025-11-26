@@ -1,7 +1,7 @@
-import "./style.css";
+import "./styles.css";
 import { defineViewModel, mountTemplate } from "pelelajs";
-import { Conversor } from "./Conversor";
-import template from "./Conversor.pelela";
+import { Conversor } from "./src/Conversor";
+import template from "./src/Conversor.pelela";
 
 defineViewModel("Conversor", Conversor);
 

@@ -31,7 +31,7 @@ describe("assertViewModelProperty", () => {
     const element = document.createElement("div");
 
     expect(() => {
-      assertViewModelProperty(viewModel, "missing", "bind-visible", element);
+      assertViewModelProperty(viewModel, "missing", "if", element);
     }).toThrow("TestViewModel");
   });
 
