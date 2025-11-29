@@ -7,9 +7,11 @@ A didactic framework for building simple web UI applications
 
 ### Installation
 
+⚠️ **This project requires pnpm** (uses the `workspace:*` protocol which npm doesn't support)
+
 ```bash
 nvm use
-pnpm install
+pnpm install --frozen-lockfile
 pnpm run install:vscode
 ```
 
