@@ -1,15 +1,19 @@
+import { PropertyValidationError, type BindingKind } from "../errors/index";
+
 export function assertViewModelProperty<T extends object>(
   viewModel: T,
   propertyName: string,
-  kind: string,
+  kind: BindingKind,
   element: Element,
 ): void {
   if (!(propertyName in viewModel)) {
     const snippet = element.outerHTML.replace(/\s+/g, " ").trim().slice(0, 100);
 
-    throw new Error(
-      `[pelela] Unknown property "${propertyName}" used in ${kind} on: ${snippet}. ` +
-      `Make sure your view model "${viewModel.constructor.name}" defines it.`,
+    throw new PropertyValidationError(
+      propertyName,
+      kind,
+      viewModel.constructor.name,
+      snippet,
     );
   }
 }

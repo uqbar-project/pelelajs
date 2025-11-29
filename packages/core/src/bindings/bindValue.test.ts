@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { setupValueBindings, renderValueBindings } from "./bindValue";
 import type { ViewModel } from "./types";
+import { PropertyValidationError } from "../errors/index";
 
 describe("bindValue", () => {
   let container: HTMLElement;
@@ -96,7 +97,7 @@ describe("bindValue", () => {
 
       expect(() => {
         setupValueBindings(container, viewModel);
-      }).toThrow("Unknown property");
+      }).toThrow(PropertyValidationError);
     });
   });
 
