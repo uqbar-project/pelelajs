@@ -9,7 +9,8 @@
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
-    "install:vscode": "node scripts/install-pelela-vscode.cjs"
+    "install:vscode": "node scripts/install-pelela-vscode.cjs",
+    "audit": "pnpm audit --audit-level moderate"
   },
   "keywords": [],
   "author": "",
