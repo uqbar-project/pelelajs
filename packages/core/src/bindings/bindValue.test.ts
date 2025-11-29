@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { setupValueBindings, renderValueBindings } from "./bindValue";
+import type { ViewModel } from "./types";
 
 describe("bindValue", () => {
   let container: HTMLElement;
@@ -126,7 +127,7 @@ describe("bindValue", () => {
 
     it("should handle null and undefined values", () => {
       container.innerHTML = '<span bind-value="text"></span>';
-      const viewModel: any = { text: "initial" };
+      const viewModel: ViewModel<{ text: unknown }> = { text: "initial" };
       const bindings = setupValueBindings(container, viewModel);
 
       viewModel.text = null;

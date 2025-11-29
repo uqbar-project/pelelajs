@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { setupIfBindings, renderIfBindings } from "./bindIf";
+import type { ViewModel } from "./types";
 
 describe("bindIf", () => {
   let container: HTMLElement;
@@ -89,7 +90,7 @@ describe("bindIf", () => {
 
     it("should treat falsy values as false", () => {
       container.innerHTML = '<div if="value"></div>';
-      const viewModel: any = { value: 0 };
+      const viewModel: ViewModel<{ value: unknown }> = { value: 0 };
       const bindings = setupIfBindings(container, viewModel);
 
       renderIfBindings(bindings, viewModel);
@@ -106,7 +107,7 @@ describe("bindIf", () => {
 
     it("should treat truthy values as true", () => {
       container.innerHTML = '<div if="value"></div>';
-      const viewModel: any = { value: 1 };
+      const viewModel: ViewModel<{ value: unknown }> = { value: 1 };
       const bindings = setupIfBindings(container, viewModel);
 
       renderIfBindings(bindings, viewModel);

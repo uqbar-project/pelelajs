@@ -1,3 +1,7 @@
+export type ViewModel<T extends object = object> = T & {
+  [key: string]: unknown;
+};
+
 export type ValueBinding = {
   element: HTMLElement;
   propertyName: string;

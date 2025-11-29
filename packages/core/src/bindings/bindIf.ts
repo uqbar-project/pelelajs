@@ -1,9 +1,9 @@
-import type { IfBinding } from "./types";
+import type { IfBinding, ViewModel } from "./types";
 import { assertViewModelProperty } from "../validation/assertViewModelProperty";
 
-export function setupIfBindings(
+export function setupIfBindings<T extends object>(
   root: HTMLElement,
-  viewModel: any,
+  viewModel: ViewModel<T>,
 ): IfBinding[] {
   const bindings: IfBinding[] = [];
   const elements = root.querySelectorAll<HTMLElement>("[if]");
@@ -24,12 +24,12 @@ export function setupIfBindings(
   return bindings;
 }
 
-export function renderIfBindings(
+export function renderIfBindings<T extends object>(
   bindings: IfBinding[],
-  viewModel: any,
+  viewModel: ViewModel<T>,
 ): void {
   for (const binding of bindings) {
-    const value = (viewModel as any)[binding.propertyName];
+    const value = viewModel[binding.propertyName];
     const shouldShow = Boolean(value);
 
     binding.element.style.display = shouldShow

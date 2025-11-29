@@ -1,11 +1,14 @@
-import type { BindingsCollection } from "./types";
+import type { BindingsCollection, ViewModel } from "./types";
 import { setupValueBindings, renderValueBindings } from "./bindValue";
 import { setupIfBindings, renderIfBindings } from "./bindIf";
 import { setupClassBindings, renderClassBindings } from "./bindClass";
 import { setupStyleBindings, renderStyleBindings } from "./bindStyle";
 import { setupClickBindings } from "./bindClick";
 
-export function setupBindings(root: HTMLElement, viewModel: any): () => void {
+export function setupBindings<T extends object>(
+  root: HTMLElement,
+  viewModel: ViewModel<T>,
+): () => void {
   const bindings: BindingsCollection = {
     valueBindings: setupValueBindings(root, viewModel),
     ifBindings: setupIfBindings(root, viewModel),

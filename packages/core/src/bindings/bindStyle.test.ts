@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { setupStyleBindings, renderStyleBindings } from "./bindStyle";
+import type { ViewModel } from "./types";
 
 describe("bindStyle", () => {
   let container: HTMLElement;
@@ -105,7 +106,7 @@ describe("bindStyle", () => {
 
     it("should clear styles when value is not an object", () => {
       container.innerHTML = '<div bind-style="styles" style="color: red;"></div>';
-      const viewModel: any = { styles: null };
+      const viewModel: ViewModel<{ styles: unknown }> = { styles: null };
       const bindings = setupStyleBindings(container, viewModel);
 
       renderStyleBindings(bindings, viewModel);
@@ -116,7 +117,7 @@ describe("bindStyle", () => {
 
     it("should update styles when object changes", () => {
       container.innerHTML = '<div bind-style="styles"></div>';
-      const viewModel: any = {
+      const viewModel: ViewModel<{ styles: unknown }> = {
         styles: {
           color: "red",
         },
@@ -138,7 +139,7 @@ describe("bindStyle", () => {
 
     it("should replace all styles on each render", () => {
       container.innerHTML = '<div bind-style="styles"></div>';
-      const viewModel: any = {
+      const viewModel: ViewModel<{ styles: unknown }> = {
         styles: {
           color: "red",
           fontSize: "16px",

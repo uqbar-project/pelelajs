@@ -1,9 +1,9 @@
-import type { StyleBinding } from "./types";
+import type { StyleBinding, ViewModel } from "./types";
 import { assertViewModelProperty } from "../validation/assertViewModelProperty";
 
-export function setupStyleBindings(
+export function setupStyleBindings<T extends object>(
   root: HTMLElement,
-  viewModel: any,
+  viewModel: ViewModel<T>,
 ): StyleBinding[] {
   const bindings: StyleBinding[] = [];
   const elements = root.querySelectorAll<HTMLElement>("[bind-style]");
@@ -23,12 +23,12 @@ export function setupStyleBindings(
   return bindings;
 }
 
-export function renderStyleBindings(
+export function renderStyleBindings<T extends object>(
   bindings: StyleBinding[],
-  viewModel: any,
+  viewModel: ViewModel<T>,
 ): void {
   for (const binding of bindings) {
-    const value = (viewModel as any)[binding.propertyName];
+    const value = viewModel[binding.propertyName];
 
     if (!value || typeof value !== "object") {
       binding.element.removeAttribute("style");

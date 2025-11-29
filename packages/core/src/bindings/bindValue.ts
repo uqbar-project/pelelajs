@@ -1,9 +1,9 @@
-import type { ValueBinding } from "./types";
+import type { ValueBinding, ViewModel } from "./types";
 import { assertViewModelProperty } from "../validation/assertViewModelProperty";
 
-export function setupValueBindings(
+export function setupValueBindings<T extends object>(
   root: HTMLElement,
-  viewModel: any,
+  viewModel: ViewModel<T>,
 ): ValueBinding[] {
   const bindings: ValueBinding[] = [];
   const elements = root.querySelectorAll<HTMLElement>("[bind-value]");
@@ -23,15 +23,15 @@ export function setupValueBindings(
     if (isInput) {
       element.addEventListener("input", (event) => {
         const target = event.target as HTMLInputElement | HTMLTextAreaElement;
-        const currentValue = (viewModel as any)[propertyName];
+        const currentValue = viewModel[propertyName];
 
         if (typeof currentValue === "number") {
           const numeric = Number(target.value.replace(",", "."));
-          (viewModel as any)[propertyName] = Number.isNaN(numeric)
+          viewModel[propertyName] = Number.isNaN(numeric)
             ? 0
             : numeric;
         } else {
-          (viewModel as any)[propertyName] = target.value;
+          viewModel[propertyName] = target.value;
         }
       });
     }
@@ -40,12 +40,12 @@ export function setupValueBindings(
   return bindings;
 }
 
-export function renderValueBindings(
+export function renderValueBindings<T extends object>(
   bindings: ValueBinding[],
-  viewModel: any,
+  viewModel: ViewModel<T>,
 ): void {
   for (const binding of bindings) {
-    const value = (viewModel as any)[binding.propertyName];
+    const value = viewModel[binding.propertyName];
 
     if (binding.isInput) {
       const input = binding.element as HTMLInputElement | HTMLTextAreaElement;

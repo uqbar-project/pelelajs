@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { setupClassBindings, renderClassBindings } from "./bindClass";
+import type { ViewModel } from "./types";
 
 describe("bindClass", () => {
   let container: HTMLElement;
@@ -160,7 +161,7 @@ describe("bindClass", () => {
 
     it("should handle invalid values", () => {
       container.innerHTML = '<div class="static" bind-class="classes"></div>';
-      const viewModel: any = { classes: null };
+      const viewModel: ViewModel<{ classes: unknown }> = { classes: null };
       const bindings = setupClassBindings(container, viewModel);
 
       renderClassBindings(bindings, viewModel);

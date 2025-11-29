@@ -1,4 +1,9 @@
-export function setupClickBindings(root: HTMLElement, viewModel: any): void {
+import type { ViewModel } from "./types";
+
+export function setupClickBindings<T extends object>(
+  root: HTMLElement,
+  viewModel: ViewModel<T>,
+): void {
   const elements = root.querySelectorAll<HTMLElement>("[click]");
 
   for (const element of elements) {
@@ -6,7 +11,7 @@ export function setupClickBindings(root: HTMLElement, viewModel: any): void {
     if (!handlerName) continue;
 
     element.addEventListener("click", (event) => {
-      const handler = (viewModel as any)[handlerName];
+      const handler = viewModel[handlerName];
 
       if (typeof handler !== "function") {
         throw new Error(

@@ -1,5 +1,5 @@
-export function assertViewModelProperty(
-  viewModel: any,
+export function assertViewModelProperty<T extends object>(
+  viewModel: T,
   propertyName: string,
   kind: string,
   element: Element,
