@@ -6,6 +6,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "preinstall": "node scripts/preinstall.js",
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
@@ -17,7 +18,13 @@
   "license": "ISC",
   "engines": {
     "node": ">=22.0.0",
-    "pnpm": ">=9.0.0"
+    "pnpm": "^10.0.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "ˆ10.0.0"
+    }
   },
   "devDependencies": {
     "tsup": "8.5.1",
