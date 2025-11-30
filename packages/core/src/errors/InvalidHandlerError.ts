@@ -8,10 +8,10 @@ export class InvalidHandlerError extends PelelaError {
     public readonly viewModelName: string,
     public readonly eventType?: EventType,
   ) {
-    const eventInfo = eventType ? `${eventType}="..."` : "un event handler";
+    const eventInfo = eventType ? `${eventType}="..."` : "an event handler";
     super(
-      `[pelela] Handler "${handlerName}" definido en ${eventInfo} no es una función ` +
-        `del view model "${viewModelName}".`,
+      `[pelela] Handler "${handlerName}" defined in ${eventInfo} is not a function ` +
+        `of view model "${viewModelName}".`,
     );
   }
 }
