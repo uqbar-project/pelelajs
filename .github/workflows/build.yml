@@ -30,10 +30,24 @@ jobs:
         run: pnpm -r --if-present run lint
 
       - name: Run tests with coverage
-        run: pnpm run test -- --coverage
+        run: pnpm test:coverage
+
+      - name: Verify coverage files exist
+        if: always()
+        run: |
+          echo "=== Checking for coverage files ==="
+          if [ -f "./coverage/lcov.info" ]; then
+            echo "✓ Workspace consolidated coverage exists"
+            ls -lh ./coverage/lcov.info
+          else
+            echo "✗ Workspace coverage NOT found"
+          fi
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: pelelajs-coverage
           fail_ci_if_error: false
