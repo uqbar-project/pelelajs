@@ -6,19 +6,31 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "preinstall": "node scripts/preinstall.js",
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
+    "install:vscode": "node scripts/install-pelela-vscode.cjs",
+    "audit": "pnpm audit --audit-level moderate",
     "ci:local": "pnpm install && pnpm run lint && pnpm run test -- --coverage",
-    "ci:act": "act -j build",
-    "install:vscode": "node scripts/install-pelela-vscode.cjs"
+    "ci:act": "act -j build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": "^10.0.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "ˆ10.0.0"
+    }
+  },
   "devDependencies": {
-    "tsup": "^8.5.1",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.13"
+    "tsup": "8.5.1",
+    "typescript": "5.9.3",
+    "vitest": "4.0.13"
   }
 }
