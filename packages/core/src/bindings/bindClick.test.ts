@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { setupClickBindings } from "./bindClick";
+import { InvalidHandlerError } from "../errors/index";
 
 describe("bindClick", () => {
   let container: HTMLElement;
@@ -88,9 +89,9 @@ describe("bindClick", () => {
       expect(() => {
         const handler = (viewModel as any)["notAFunction"];
         if (typeof handler !== "function") {
-          throw new Error("Not a function");
+          throw new InvalidHandlerError("notAFunction", "TestViewModel", "click");
         }
-      }).toThrow();
+      }).toThrow(InvalidHandlerError);
     });
 
     it("should validate that handler exists", () => {
@@ -107,9 +108,9 @@ describe("bindClick", () => {
       expect(() => {
         const handler = (viewModel as any)["missing"];
         if (typeof handler !== "function") {
-          throw new Error("Not a function");
+          throw new InvalidHandlerError("missing", "TestViewModel", "click");
         }
-      }).toThrow();
+      }).toThrow(InvalidHandlerError);
     });
 
     it("should allow handler to modify viewModel", () => {

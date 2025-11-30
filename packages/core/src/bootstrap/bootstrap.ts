@@ -2,6 +2,7 @@ import type { PelelaOptions } from "../types";
 import { getViewModel } from "../registry/viewModelRegistry";
 import { createReactiveViewModel } from "../reactivity/reactiveProxy";
 import { setupBindings } from "../bindings/setupBindings";
+import { RegistrationError } from "../errors/index";
 
 export function bootstrap(options: PelelaOptions = {}): void {
   const doc = options.document ?? window.document;
@@ -21,9 +22,7 @@ export function bootstrap(options: PelelaOptions = {}): void {
 
     const ctor = getViewModel(name);
     if (!ctor) {
-      throw new Error(
-        `[pelela] View model "${name}" is not registered. Did you call defineViewModel?`,
-      );
+      throw new RegistrationError(name, "missing");
     }
 
     const instance = new ctor();
