@@ -37,12 +37,6 @@ export class App {
   newUserName: string = "";
   newUserEmail: string = "";
 
-  objeto = {
-    clave1: "valor1",
-    clave2: "valor2",
-    clave3: "valor3",
-  }
-
   addUser() {
     if (!this.newUserName || !this.newUserEmail) return;
 
