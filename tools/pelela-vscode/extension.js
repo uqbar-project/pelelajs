@@ -2,6 +2,8 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 
+console.info("PelelaVSCode extension activated");
+
 function getCurrentAttributeName(lineText, positionCharacter) {
   const textUpToCursor = lineText.slice(0, positionCharacter);
   const match = /(\b[\w-]+)\s*=\s*"[^"]*$/.exec(textUpToCursor);
