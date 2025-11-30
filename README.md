@@ -46,10 +46,31 @@ pnpm test
 ### Run tests with coverage
 
 ```bash
-pnpm test -- --coverage
+pnpm test:coverage
 ```
 
-Coverage report will be generated in `packages/core/coverage/`.
+Coverage report will be generated in `coverage/lcov.info` (consolidated for all packages).
+
+### Adding tests to a new package
+
+To include a new package in the test suite and coverage report:
+
+1. Create `packages/nuevo-package/vitest.config.ts`:
+   ```typescript
+   import { defineProject } from "vitest/config";
+
+   export default defineProject({
+     test: {
+       name: "nuevo-package",
+       environment: "node", // or "jsdom" if you need DOM APIs
+       globals: true,
+     },
+   });
+   ```
+
+2. Write tests in `packages/nuevo-package/**/*.test.ts`
+
+The workspace will automatically detect the new package and include it when running `pnpm test:coverage`.
 
 ### Test CI workflows locally
 
