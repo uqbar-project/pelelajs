@@ -2,17 +2,17 @@
 
 A didactic framework for building simple web UI applications
 
-### Installation
+## Installation
 
 ⚠️ **This project requires pnpm** (uses the `workspace:*` protocol which npm doesn't support)
 
-#### Install pnpm
+### Install pnpm
 
 ```bash
 npm install -g pnpm
 ```
 
-#### Setup the project
+### Setup the project
 
 ```bash
 nvm use
@@ -22,7 +22,7 @@ pnpm run install:vscode
 
 Restart VSCode or reload window and you'll be able to test pelela examples in your VSCode.
 
-### Managing Dependencies
+## Managing Dependencies
 
 Use pnpm commands to add, remove, or update dependencies:
 
