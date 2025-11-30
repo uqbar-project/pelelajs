@@ -30,9 +30,12 @@ export function bootstrap(options: PelelaOptions = {}): void {
 
     let render: () => void = () => {};
 
-    const reactiveInstance = createReactiveViewModel(instance as object, () => {
-      render();
-    });
+    const reactiveInstance = createReactiveViewModel(
+      instance as Record<string, unknown>,
+      () => {
+        render();
+      },
+    );
 
     (root as any).__pelelaViewModel = reactiveInstance;
 

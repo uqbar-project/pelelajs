@@ -16,22 +16,28 @@ export function setupValueBindings<T extends object>(
 
     const isInput =
       element instanceof HTMLInputElement ||
-      element instanceof HTMLTextAreaElement;
+      element instanceof HTMLTextAreaElement ||
+      element instanceof HTMLSelectElement;
 
     bindings.push({ element, propertyName, isInput });
 
     if (isInput) {
       element.addEventListener("input", (event) => {
-        const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+        const target = event.target as
+          | HTMLInputElement
+          | HTMLTextAreaElement
+          | HTMLSelectElement;
         const currentValue = viewModel[propertyName];
 
         if (typeof currentValue === "number") {
           const numeric = Number(target.value.replace(",", "."));
-          viewModel[propertyName] = Number.isNaN(numeric)
-            ? 0
-            : numeric;
+          Reflect.set(
+            viewModel,
+            propertyName,
+            Number.isNaN(numeric) ? 0 : numeric,
+          );
         } else {
-          viewModel[propertyName] = target.value;
+          Reflect.set(viewModel, propertyName, target.value);
         }
       });
     }
@@ -47,8 +53,22 @@ export function renderValueBindings<T extends object>(
   for (const binding of bindings) {
     const value = viewModel[binding.propertyName];
 
+    console.log(
+      "[pelela] renderValueBinding:",
+      binding.element.tagName,
+      "property:",
+      binding.propertyName,
+      "value:",
+      value,
+      "isInput:",
+      binding.isInput,
+    );
+
     if (binding.isInput) {
-      const input = binding.element as HTMLInputElement | HTMLTextAreaElement;
+      const input = binding.element as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | HTMLSelectElement;
       const newValue = value ?? "";
       if (input.value !== String(newValue)) {
         input.value = String(newValue);
@@ -56,6 +76,12 @@ export function renderValueBindings<T extends object>(
     } else {
       binding.element.textContent =
         value === undefined || value === null ? "" : String(value);
+      console.log(
+        "[pelela] set textContent:",
+        binding.element.tagName,
+        "to:",
+        binding.element.textContent,
+      );
     }
   }
 }

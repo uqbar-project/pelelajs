@@ -42,6 +42,11 @@
       "name": "click",
       "description": "Pelela: Binds click event to a ViewModel method",
       "valueSet": "v"
+    },
+    {
+      "name": "for-each",
+      "description": "Pelela: Iterates over a collection from the ViewModel (syntax: item of collection)",
+      "valueSet": "v"
     }
   ]
 }
