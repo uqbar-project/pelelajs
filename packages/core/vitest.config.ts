@@ -4,7 +4,6 @@ export default defineProject({
   test: {
     name: "core",
     environment: "jsdom",
-    globals: true,
   },
 });
 
