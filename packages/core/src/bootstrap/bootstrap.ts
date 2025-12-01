@@ -33,7 +33,8 @@ export function bootstrap(options: PelelaOptions = {}): void {
 
     const reactiveInstance = createReactiveViewModel(instance as ViewModel<object>, () => {
       render();
-    });
+      },
+    );
 
     (root as any).__pelelaViewModel = reactiveInstance;
 
