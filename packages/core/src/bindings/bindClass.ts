@@ -7,7 +7,7 @@ function setupSingleClassBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): ClassBinding | null {
   const propertyName = element.getAttribute("bind-class");
-  if (!propertyName) return null;
+  if (!propertyName || !propertyName.trim()) return null;
 
   assertViewModelProperty(viewModel, propertyName, "bind-class", element);
 

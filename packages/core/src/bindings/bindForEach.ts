@@ -202,7 +202,7 @@ function setupSingleForEachBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): ForEachBinding | null {
   const expression = element.getAttribute("for-each");
-  if (!expression) return null;
+  if (!expression || !expression.trim()) return null;
 
   const parsed = parseForEachExpression(expression);
   if (!parsed) {
@@ -234,10 +234,17 @@ function setupSingleForEachBinding<T extends object>(
     element.parentNode?.nodeName,
   );
 
+  if (!element.parentNode) {
+    console.error(
+      `[pelela] for-each: Cannot setup binding, element has no parent node`,
+    );
+    return null;
+  }
+
   const placeholder = document.createComment(
     `for-each: ${itemName} of ${collectionName}`,
   );
-  element.parentNode?.insertBefore(placeholder, element);
+  element.parentNode.insertBefore(placeholder, element);
   element.remove();
 
   return {
@@ -367,6 +374,9 @@ function renderSingleForEachBinding<T extends object>(
   const collection = viewModel[binding.collectionName];
 
   if (!Array.isArray(collection)) {
+    console.warn(
+      `[pelela] for-each render: Property "${binding.collectionName}" is not an array, skipping render`,
+    );
     return;
   }
 

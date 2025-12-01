@@ -98,6 +98,24 @@ describe("bindValue", () => {
         setupValueBindings(container, viewModel);
       }).toThrow("Unknown property");
     });
+
+    it("should ignore elements with empty bind-value", () => {
+      container.innerHTML = '<span bind-value=""></span>';
+      const viewModel = { prop: "value" };
+
+      const bindings = setupValueBindings(container, viewModel);
+
+      expect(bindings).toHaveLength(0);
+    });
+
+    it("should ignore elements with whitespace-only bind-value", () => {
+      container.innerHTML = '<span bind-value="   "></span>';
+      const viewModel = { prop: "value" };
+
+      const bindings = setupValueBindings(container, viewModel);
+
+      expect(bindings).toHaveLength(0);
+    });
   });
 
   describe("renderValueBindings", () => {

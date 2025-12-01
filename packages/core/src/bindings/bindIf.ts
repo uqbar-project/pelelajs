@@ -7,7 +7,7 @@ function setupSingleIfBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): IfBinding | null {
   const propertyName = element.getAttribute("if");
-  if (!propertyName) return null;
+  if (!propertyName || !propertyName.trim()) return null;
 
   assertViewModelProperty(viewModel, propertyName, "if", element);
 

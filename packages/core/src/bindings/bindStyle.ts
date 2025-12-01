@@ -7,7 +7,7 @@ function setupSingleStyleBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): StyleBinding | null {
   const propertyName = element.getAttribute("bind-style");
-  if (!propertyName) return null;
+  if (!propertyName || !propertyName.trim()) return null;
 
   assertViewModelProperty(viewModel, propertyName, "bind-style", element);
 

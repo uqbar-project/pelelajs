@@ -5,7 +5,7 @@ function setupSingleClickBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   const handlerName = element.getAttribute("click");
-  if (!handlerName) return;
+  if (!handlerName || !handlerName.trim()) return;
 
   element.addEventListener("click", (event) => {
     const handler = viewModel[handlerName];

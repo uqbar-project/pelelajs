@@ -86,6 +86,39 @@ describe("bindForEach", () => {
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
+
+    it("should ignore elements with empty for-each", () => {
+      container.innerHTML = '<div for-each=""></div>';
+      const viewModel = { items: [] };
+
+      const bindings = setupForEachBindings(container, viewModel);
+
+      expect(bindings).toHaveLength(0);
+    });
+
+    it("should ignore elements with whitespace-only for-each", () => {
+      container.innerHTML = '<div for-each="   "></div>';
+      const viewModel = { items: [] };
+
+      const bindings = setupForEachBindings(container, viewModel);
+
+      expect(bindings).toHaveLength(0);
+    });
+
+    it("should handle element without parent node", () => {
+      const element = document.createElement("div");
+      element.setAttribute("for-each", "item of items");
+
+      const tempContainer = document.createElement("div");
+      tempContainer.appendChild(element);
+
+      const viewModel = { items: [] };
+
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      setupForEachBindings(tempContainer, viewModel);
+
+      consoleSpy.mockRestore();
+    });
   });
 
   describe("renderForEachBindings", () => {
