@@ -55,13 +55,13 @@ Coverage report will be generated in `coverage/lcov.info` (consolidated for all 
 
 To include a new package in the test suite and coverage report:
 
-1. Create `packages/nuevo-package/vitest.config.ts`:
+1. Create `packages/new-package/vitest.config.ts`:
    ```typescript
    import { defineProject } from "vitest/config";
 
    export default defineProject({
      test: {
-       name: "nuevo-package",
+       name: "new-package",
        environment: "node", // or "jsdom" if you need DOM APIs
        globals: true,
      },
