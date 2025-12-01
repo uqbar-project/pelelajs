@@ -10,7 +10,7 @@
 
   <h3>Opciones del select activas:</h3>
   <div class="options-container">
-    <!-- Se pueden usar fore-each, if y bind-* en el mismo tag  -->
+    <!-- Se pueden usar for-each, if y bind-* en el mismo tag  -->
     <span for-each="tipo of tiposApuesta" 
           if="tipo.active" 
           bind-value="tipo.descripcion"></span>
