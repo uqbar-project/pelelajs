@@ -68,7 +68,7 @@ To include a new package in the test suite and coverage report:
    });
    ```
 
-2. Write tests in `packages/nuevo-package/**/*.test.ts`
+2. Write tests in `packages/new-package/**/*.test.ts`
 
 The workspace will automatically detect the new package and include it when running `pnpm test:coverage`.
 
