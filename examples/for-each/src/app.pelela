@@ -8,6 +8,9 @@
 
   <p>Valor seleccionado: <span bind-value="tipoApuesta"></span></p>
 
+  <input bind-value="prueba.nombre">
+  <span bind-value="prueba.nombre" style="color: white;"></span>
+
   <h3>Opciones del select activas:</h3>
   <div class="options-container">
     <!-- Se pueden usar for-each, if y bind-* en el mismo tag  -->
@@ -48,5 +51,19 @@
     <input type="text" bind-value="newUserEmail" />
   </label>
   <button click="addUser">Add User</button>
+
+  <h3>Dirección</h3>
+  <input type="text" bind-value="prueba.direccion.calle.nombre" />
+  <span bind-value="prueba.direccion.calle.nombre" style="color: white;"></span>
+
+  <h3>Buscar usuario por ID</h3>
+  <input bind-value="userSearch" placeholder="Buscar por nombre o email"/>
+  <button click="searchUser">Buscar</button>
+  <span style="color: white;" bind-value="userSearched">
+  
+
+  <!-- <p>El primer usuario de la lista es <span bind-value="users[0].name"></span></p> -->
+
+
   
 </pelela>

@@ -36,6 +36,19 @@ export class App {
   tipoApuesta: string = this.tiposApuesta[0].descripcion;
   newUserName: string = "";
   newUserEmail: string = "";
+  userSearch: string = "";
+  userSearched: string = "";
+
+  prueba: object = {
+    nombre: "Nicolas",
+    edad: 30,
+    direccion: {
+      calle: {
+        nombre: "Calle Falsa",
+        numero: 123,
+      }
+    }
+  }
 
   addUser() {
     if (!this.newUserName || !this.newUserEmail) return;
@@ -52,5 +65,12 @@ export class App {
 
     this.newUserName = "";
     this.newUserEmail = "";
+  }
+
+  searchUser() {
+    const foundUser = this.users.find((user) =>
+      user.id.toString() === this.userSearch
+    );
+    this.userSearched = foundUser ? `Found: ${foundUser.name} (${foundUser.email})` : "No user found";
   }
 }
