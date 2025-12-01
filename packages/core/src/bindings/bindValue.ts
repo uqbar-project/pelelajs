@@ -1,5 +1,6 @@
 import type { ValueBinding, ViewModel } from "./types";
 import { assertViewModelProperty } from "../validation/assertViewModelProperty";
+import { getNestedProperty, setNestedProperty } from "./nestedProperties";
 
 function setupSingleValueBinding<T extends object>(
   element: HTMLElement,
@@ -21,17 +22,17 @@ function setupSingleValueBinding<T extends object>(
         | HTMLInputElement
         | HTMLTextAreaElement
         | HTMLSelectElement;
-      const currentValue = viewModel[propertyName];
+      const currentValue = getNestedProperty(viewModel, propertyName);
 
       if (typeof currentValue === "number") {
         const numeric = Number(target.value.replace(",", "."));
-        Reflect.set(
+        setNestedProperty(
           viewModel,
           propertyName,
           Number.isNaN(numeric) ? 0 : numeric,
         );
       } else {
-        Reflect.set(viewModel, propertyName, target.value);
+        setNestedProperty(viewModel, propertyName, target.value);
       }
     });
   }
@@ -60,7 +61,7 @@ function renderSingleValueBinding<T extends object>(
   binding: ValueBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = viewModel[binding.propertyName];
+  const value = getNestedProperty(viewModel, binding.propertyName);
 
   console.log(
     "[pelela] renderValueBinding:",

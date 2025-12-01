@@ -8,53 +8,119 @@ const ARRAY_MUTATION_METHODS = [
   "reverse",
 ] as const;
 
-function wrapArrayMethods<T>(array: T[], onChange: () => void): T[] {
-  const wrappedArray = array;
+const proxyCache = new WeakMap<object, any>();
+const rawObjectCache = new WeakMap<object, any>();
 
-  for (const method of ARRAY_MUTATION_METHODS) {
-    const original = Array.prototype[method] as any;
-    Object.defineProperty(wrappedArray, method, {
-      value: function (this: T[], ...args: any[]) {
-        const result = original.apply(this, args);
-        onChange();
-        return result;
-      },
-      writable: true,
-      configurable: true,
-    });
+function isObject(value: unknown): value is object {
+  return value !== null && typeof value === "object";
+}
+
+function makeReactive(
+  target: any,
+  onChange: () => void,
+  visited = new WeakSet<object>(),
+): any {
+  if (!isObject(target)) {
+    return target;
   }
 
-  return wrappedArray;
+  if (proxyCache.has(target)) {
+    return proxyCache.get(target);
+  }
+
+  if (visited.has(target)) {
+    return target;
+  }
+
+  visited.add(target);
+
+  const isArray = Array.isArray(target);
+
+  const handler: ProxyHandler<any> = {
+    get(obj, prop) {
+      if (prop === "$raw") {
+        return obj;
+      }
+
+      if (prop === "$set") {
+        return (target: any, key: PropertyKey, value: any) => {
+          const reactive = makeReactive(value, onChange, new WeakSet());
+          target[key] = reactive;
+          onChange();
+        };
+      }
+
+      if (prop === "$delete") {
+        return (target: any, key: PropertyKey) => {
+          delete target[key];
+          onChange();
+        };
+      }
+
+      const value = Reflect.get(obj, prop);
+
+      if (isArray && ARRAY_MUTATION_METHODS.includes(prop as any)) {
+        return function (this: any, ...args: any[]) {
+          const reactiveArgs = args.map((arg) => 
+            isObject(arg) ? makeReactive(arg, onChange, new WeakSet()) : arg
+          );
+          const result = Array.prototype[prop as any].apply(this, reactiveArgs);
+          onChange();
+          return result;
+        };
+      }
+
+      if (isObject(value)) {
+        const newVisited = new WeakSet<object>();
+        newVisited.add(target);
+        return makeReactive(value, onChange, newVisited);
+      }
+
+      return value;
+    },
+
+    set(obj, prop, value) {
+      const oldValue = obj[prop];
+
+      if (oldValue === value) {
+        return true;
+      }
+
+      const reactiveValue = isObject(value)
+        ? makeReactive(value, onChange, new WeakSet())
+        : value;
+
+      const result = Reflect.set(obj, prop, reactiveValue);
+
+      if (result) {
+        onChange();
+      }
+
+      return result;
+    },
+
+    deleteProperty(obj, prop) {
+      const hadProperty = prop in obj;
+      const result = Reflect.deleteProperty(obj, prop);
+
+      if (result && hadProperty) {
+        onChange();
+      }
+
+      return result;
+    },
+  };
+
+  const proxy = new Proxy(target, handler);
+  proxyCache.set(target, proxy);
+  rawObjectCache.set(proxy, target);
+
+  return proxy;
 }
 
 export function createReactiveViewModel<T extends object>(
   target: T,
   onChange: () => void,
 ): T {
-  const handler: ProxyHandler<T> = {
-    get(obj, prop) {
-      const value = Reflect.get(obj, prop);
-      if (Array.isArray(value) && !value.hasOwnProperty("push")) {
-        return wrapArrayMethods(value, onChange);
-      }
-      return value;
-    },
-    set(obj, prop, value) {
-      if (Array.isArray(value)) {
-        value = wrapArrayMethods(value, onChange);
-      }
-      const result = Reflect.set(obj, prop, value);
-      onChange();
-      return result;
-    },
-  };
-
-  for (const key in target) {
-    if (Array.isArray(target[key])) {
-      (target[key] as any) = wrapArrayMethods(target[key] as any, onChange);
-    }
-  }
-
-  return new Proxy(target, handler);
+  return makeReactive(target, onChange);
 }
-

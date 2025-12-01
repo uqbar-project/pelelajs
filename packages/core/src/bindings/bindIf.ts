@@ -1,5 +1,6 @@
 import type { IfBinding, ViewModel } from "./types";
 import { assertViewModelProperty } from "../validation/assertViewModelProperty";
+import { getNestedProperty } from "./nestedProperties";
 
 function setupSingleIfBinding<T extends object>(
   element: HTMLElement,
@@ -38,7 +39,7 @@ function renderSingleIfBinding<T extends object>(
   binding: IfBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = viewModel[binding.propertyName];
+  const value = getNestedProperty(viewModel, binding.propertyName);
   const shouldShow = Boolean(value);
 
   binding.element.style.display = shouldShow

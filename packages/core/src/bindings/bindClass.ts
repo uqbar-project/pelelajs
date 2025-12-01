@@ -1,5 +1,6 @@
 import type { ClassBinding, ViewModel } from "./types";
 import { assertViewModelProperty } from "../validation/assertViewModelProperty";
+import { getNestedProperty } from "./nestedProperties";
 
 function setupSingleClassBinding<T extends object>(
   element: HTMLElement,
@@ -38,7 +39,7 @@ function renderSingleClassBinding<T extends object>(
   binding: ClassBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = viewModel[binding.propertyName];
+  const value = getNestedProperty(viewModel, binding.propertyName);
 
   const staticClasses = binding.staticClassName.trim();
   let dynamicClasses = "";

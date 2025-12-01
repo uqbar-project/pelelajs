@@ -3,6 +3,12 @@ import { assertViewModelProperty } from "./assertViewModelProperty";
 
 class TestViewModel {
   existingProperty = "value";
+  user = {
+    name: "John",
+    profile: {
+      bio: "Hello",
+    },
+  };
 }
 
 describe("assertViewModelProperty", () => {
@@ -89,5 +95,41 @@ describe("assertViewModelProperty", () => {
     expect(() => {
       assertViewModelProperty(viewModel, "childProp", "bind-value", element);
     }).not.toThrow();
+  });
+
+  it("should support nested properties with dot notation", () => {
+    const viewModel = new TestViewModel();
+    const element = document.createElement("div");
+
+    expect(() => {
+      assertViewModelProperty(viewModel, "user.name", "bind-value", element);
+    }).not.toThrow();
+  });
+
+  it("should support deeply nested properties", () => {
+    const viewModel = new TestViewModel();
+    const element = document.createElement("div");
+
+    expect(() => {
+      assertViewModelProperty(viewModel, "user.profile.bio", "bind-value", element);
+    }).not.toThrow();
+  });
+
+  it("should throw error if nested property path is invalid", () => {
+    const viewModel = new TestViewModel();
+    const element = document.createElement("div");
+
+    expect(() => {
+      assertViewModelProperty(viewModel, "user.missing", "bind-value", element);
+    }).toThrow('[pelela] Unknown property "user.missing"');
+  });
+
+  it("should throw error if intermediate property is null", () => {
+    const viewModel = { user: null as any };
+    const element = document.createElement("div");
+
+    expect(() => {
+      assertViewModelProperty(viewModel, "user.name", "bind-value", element);
+    }).toThrow('[pelela] Unknown property "user.name"');
   });
 });

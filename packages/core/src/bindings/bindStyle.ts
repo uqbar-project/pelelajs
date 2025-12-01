@@ -1,5 +1,6 @@
 import type { StyleBinding, ViewModel } from "./types";
 import { assertViewModelProperty } from "../validation/assertViewModelProperty";
+import { getNestedProperty } from "./nestedProperties";
 
 function setupSingleStyleBinding<T extends object>(
   element: HTMLElement,
@@ -37,7 +38,7 @@ function renderSingleStyleBinding<T extends object>(
   binding: StyleBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = viewModel[binding.propertyName];
+  const value = getNestedProperty(viewModel, binding.propertyName);
 
   if (!value || typeof value !== "object") {
     binding.element.removeAttribute("style");
