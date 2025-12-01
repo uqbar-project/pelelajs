@@ -68,23 +68,18 @@ describe("bindForEach", () => {
       container.innerHTML = '<div for-each="invalid"></div>';
       const viewModel = { invalid: [] };
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const bindings = setupForEachBindings(container, viewModel);
-
-      expect(bindings).toHaveLength(0);
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      expect(() => {
+        setupForEachBindings(container, viewModel);
+      }).toThrow("Invalid for-each expression");
     });
 
     it("should handle non-array collection", () => {
       container.innerHTML = '<div for-each="item of notArray"></div>';
       const viewModel = { notArray: "string" };
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      setupForEachBindings(container, viewModel);
-
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      expect(() => {
+        setupForEachBindings(container, viewModel);
+      }).toThrow("must be an array");
     });
 
     it("should ignore elements with empty for-each", () => {

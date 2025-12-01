@@ -206,10 +206,9 @@ function setupSingleForEachBinding<T extends object>(
 
   const parsed = parseForEachExpression(expression);
   if (!parsed) {
-    console.error(
+    throw new Error(
       `[pelela] Invalid for-each expression: "${expression}". Expected format: "item of collection"`,
     );
-    return null;
   }
 
   const { itemName, collectionName } = parsed;
@@ -218,10 +217,9 @@ function setupSingleForEachBinding<T extends object>(
 
   const collection = viewModel[collectionName];
   if (!Array.isArray(collection)) {
-    console.error(
+    throw new Error(
       `[pelela] Property "${collectionName}" must be an array for for-each binding`,
     );
-    return null;
   }
 
   const template = element.cloneNode(true) as HTMLElement;
@@ -235,10 +233,9 @@ function setupSingleForEachBinding<T extends object>(
   );
 
   if (!element.parentNode) {
-    console.error(
+    throw new Error(
       `[pelela] for-each: Cannot setup binding, element has no parent node`,
     );
-    return null;
   }
 
   const placeholder = document.createComment(
