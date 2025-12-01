@@ -1,4 +1,12 @@
-import type { BindingsCollection, ViewModel } from "./types";
+import type { 
+  BindingsCollection, 
+  ViewModel,
+  ValueBinding,
+  IfBinding,
+  ClassBinding,
+  StyleBinding,
+  ForEachBinding,
+} from "./types";
 import { setupValueBindings, renderValueBindings } from "./bindValue";
 import { setupIfBindings, renderIfBindings } from "./bindIf";
 import { setupClassBindings, renderClassBindings } from "./bindClass";
@@ -6,6 +14,66 @@ import { setupStyleBindings, renderStyleBindings } from "./bindStyle";
 import { setupClickBindings } from "./bindClick";
 import { setupForEachBindings, renderForEachBindings } from "./bindForEach";
 import { DependencyTracker } from "./dependencyTracker";
+
+type AnyBinding = ForEachBinding | ValueBinding | IfBinding | ClassBinding | StyleBinding;
+
+function registerAllBindingDependencies(
+  bindings: BindingsCollection,
+  tracker: DependencyTracker
+): void {
+  const bindingConfigurations: Array<{
+    list: AnyBinding[];
+    getPath: (binding: AnyBinding) => string;
+  }> = [
+    { 
+      list: bindings.forEachBindings, 
+      getPath: (binding) => (binding as ForEachBinding).collectionName 
+    },
+    { 
+      list: bindings.valueBindings, 
+      getPath: (binding) => (binding as ValueBinding).propertyName 
+    },
+    { 
+      list: bindings.ifBindings, 
+      getPath: (binding) => (binding as IfBinding).propertyName 
+    },
+    { 
+      list: bindings.classBindings, 
+      getPath: (binding) => (binding as ClassBinding).propertyName 
+    },
+    { 
+      list: bindings.styleBindings, 
+      getPath: (binding) => (binding as StyleBinding).propertyName 
+    },
+  ];
+
+  for (const config of bindingConfigurations) {
+    for (const binding of config.list) {
+      tracker.registerDependency(binding, config.getPath(binding));
+    }
+  }
+}
+
+function executeRenderPipeline<T extends object>(
+  targetBindings: BindingsCollection,
+  viewModel: ViewModel<T>
+): void {
+  if (targetBindings.forEachBindings.length > 0) {
+    renderForEachBindings(targetBindings.forEachBindings, viewModel);
+  }
+  if (targetBindings.valueBindings.length > 0) {
+    renderValueBindings(targetBindings.valueBindings, viewModel);
+  }
+  if (targetBindings.ifBindings.length > 0) {
+    renderIfBindings(targetBindings.ifBindings, viewModel);
+  }
+  if (targetBindings.classBindings.length > 0) {
+    renderClassBindings(targetBindings.classBindings, viewModel);
+  }
+  if (targetBindings.styleBindings.length > 0) {
+    renderStyleBindings(targetBindings.styleBindings, viewModel);
+  }
+}
 
 export function setupBindings<T extends object>(
   root: HTMLElement,
@@ -22,53 +90,14 @@ export function setupBindings<T extends object>(
   setupClickBindings(root, viewModel);
 
   const tracker = new DependencyTracker();
-
-  for (const binding of bindings.forEachBindings) {
-    tracker.registerDependency(binding, binding.collectionName);
-  }
-
-  for (const binding of bindings.valueBindings) {
-    tracker.registerDependency(binding, binding.propertyName);
-  }
-
-  for (const binding of bindings.ifBindings) {
-    tracker.registerDependency(binding, binding.propertyName);
-  }
-
-  for (const binding of bindings.classBindings) {
-    tracker.registerDependency(binding, binding.propertyName);
-  }
-
-  for (const binding of bindings.styleBindings) {
-    tracker.registerDependency(binding, binding.propertyName);
-  }
+  registerAllBindingDependencies(bindings, tracker);
 
   const render = (changedPath?: string) => {
-    if (!changedPath) {
-      renderForEachBindings(bindings.forEachBindings, viewModel);
-      renderValueBindings(bindings.valueBindings, viewModel);
-      renderIfBindings(bindings.ifBindings, viewModel);
-      renderClassBindings(bindings.classBindings, viewModel);
-      renderStyleBindings(bindings.styleBindings, viewModel);
-    } else {
-      const affected = tracker.getDependentBindings(changedPath, bindings);
-      
-      if (affected.forEachBindings.length > 0) {
-        renderForEachBindings(affected.forEachBindings, viewModel);
-      }
-      if (affected.valueBindings.length > 0) {
-        renderValueBindings(affected.valueBindings, viewModel);
-      }
-      if (affected.ifBindings.length > 0) {
-        renderIfBindings(affected.ifBindings, viewModel);
-      }
-      if (affected.classBindings.length > 0) {
-        renderClassBindings(affected.classBindings, viewModel);
-      }
-      if (affected.styleBindings.length > 0) {
-        renderStyleBindings(affected.styleBindings, viewModel);
-      }
-    }
+    const targetBindings = changedPath 
+      ? tracker.getDependentBindings(changedPath, bindings)
+      : bindings;
+
+    executeRenderPipeline(targetBindings, viewModel);
   };
 
   render();
