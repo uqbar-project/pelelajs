@@ -1,6 +1,22 @@
 import type { IfBinding, ViewModel } from "./types";
 import { assertViewModelProperty } from "../validation/assertViewModelProperty";
 
+function setupSingleIfBinding<T extends object>(
+  element: HTMLElement,
+  viewModel: ViewModel<T>,
+): IfBinding | null {
+  const propertyName = element.getAttribute("if");
+  if (!propertyName) return null;
+
+  assertViewModelProperty(viewModel, propertyName, "if", element);
+
+  return {
+    element,
+    propertyName,
+    originalDisplay: element.style.display || "",
+  };
+}
+
 export function setupIfBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
@@ -9,19 +25,25 @@ export function setupIfBindings<T extends object>(
   const elements = root.querySelectorAll<HTMLElement>("[if]");
 
   for (const element of elements) {
-    const propertyName = element.getAttribute("if");
-    if (!propertyName) continue;
-
-    assertViewModelProperty(viewModel, propertyName, "if", element);
-
-    bindings.push({
-      element,
-      propertyName,
-      originalDisplay: element.style.display || "",
-    });
+    const binding = setupSingleIfBinding(element, viewModel);
+    if (binding) {
+      bindings.push(binding);
+    }
   }
 
   return bindings;
+}
+
+function renderSingleIfBinding<T extends object>(
+  binding: IfBinding,
+  viewModel: ViewModel<T>,
+): void {
+  const value = viewModel[binding.propertyName];
+  const shouldShow = Boolean(value);
+
+  binding.element.style.display = shouldShow
+    ? binding.originalDisplay
+    : "none";
 }
 
 export function renderIfBindings<T extends object>(
@@ -29,12 +51,7 @@ export function renderIfBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   for (const binding of bindings) {
-    const value = viewModel[binding.propertyName];
-    const shouldShow = Boolean(value);
-
-    binding.element.style.display = shouldShow
-      ? binding.originalDisplay
-      : "none";
+    renderSingleIfBinding(binding, viewModel);
   }
 }
 

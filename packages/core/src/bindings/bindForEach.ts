@@ -197,6 +197,59 @@ function mapElementPath(
   return target;
 }
 
+function setupSingleForEachBinding<T extends object>(
+  element: HTMLElement,
+  viewModel: ViewModel<T>,
+): ForEachBinding | null {
+  const expression = element.getAttribute("for-each");
+  if (!expression) return null;
+
+  const parsed = parseForEachExpression(expression);
+  if (!parsed) {
+    console.error(
+      `[pelela] Invalid for-each expression: "${expression}". Expected format: "item of collection"`,
+    );
+    return null;
+  }
+
+  const { itemName, collectionName } = parsed;
+
+  assertViewModelProperty(viewModel, collectionName, "for-each", element);
+
+  const collection = viewModel[collectionName];
+  if (!Array.isArray(collection)) {
+    console.error(
+      `[pelela] Property "${collectionName}" must be an array for for-each binding`,
+    );
+    return null;
+  }
+
+  const template = element.cloneNode(true) as HTMLElement;
+  template.removeAttribute("for-each");
+
+  console.log(
+    `[pelela] for-each setup: ${itemName} of ${collectionName}, element:`,
+    element.tagName,
+    "parent:",
+    element.parentNode?.nodeName,
+  );
+
+  const placeholder = document.createComment(
+    `for-each: ${itemName} of ${collectionName}`,
+  );
+  element.parentNode?.insertBefore(placeholder, element);
+  element.remove();
+
+  return {
+    collectionName,
+    itemName,
+    template,
+    placeholder,
+    renderedElements: [],
+    previousLength: 0,
+  };
+}
+
 export function setupForEachBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
@@ -205,56 +258,134 @@ export function setupForEachBindings<T extends object>(
   const elements = root.querySelectorAll<HTMLElement>("[for-each]");
 
   for (const element of elements) {
-    const expression = element.getAttribute("for-each");
-    if (!expression) continue;
-
-    const parsed = parseForEachExpression(expression);
-    if (!parsed) {
-      console.error(
-        `[pelela] Invalid for-each expression: "${expression}". Expected format: "item of collection"`,
-      );
-      continue;
+    const binding = setupSingleForEachBinding(element, viewModel);
+    if (binding) {
+      bindings.push(binding);
     }
-
-    const { itemName, collectionName } = parsed;
-
-    assertViewModelProperty(viewModel, collectionName, "for-each", element);
-
-    const collection = viewModel[collectionName];
-    if (!Array.isArray(collection)) {
-      console.error(
-        `[pelela] Property "${collectionName}" must be an array for for-each binding`,
-      );
-      continue;
-    }
-
-    const template = element.cloneNode(true) as HTMLElement;
-    template.removeAttribute("for-each");
-
-    console.log(
-      `[pelela] for-each setup: ${itemName} of ${collectionName}, element:`,
-      element.tagName,
-      "parent:",
-      element.parentNode?.nodeName,
-    );
-
-    const placeholder = document.createComment(
-      `for-each: ${itemName} of ${collectionName}`,
-    );
-    element.parentNode?.insertBefore(placeholder, element);
-    element.remove();
-
-    bindings.push({
-      collectionName,
-      itemName,
-      template,
-      placeholder,
-      renderedElements: [],
-      previousLength: 0,
-    });
   }
 
   return bindings;
+}
+
+function createNewElement<T extends object>(
+  binding: ForEachBinding,
+  viewModel: ViewModel<T>,
+  item: any,
+  index: number,
+): void {
+  const element = binding.template.cloneNode(true) as HTMLElement;
+
+  console.log(
+    `[pelela] for-each creating element #${index}:`,
+    element.tagName,
+    "template:",
+    binding.template.outerHTML,
+  );
+
+  const itemRef = { current: item };
+  const extendedViewModel = createExtendedViewModel(
+    viewModel,
+    binding.itemName,
+    itemRef,
+  );
+
+  const render = setupBindingsForElement(element, extendedViewModel);
+
+  binding.renderedElements.push({
+    element,
+    viewModel: extendedViewModel,
+    itemRef,
+    render,
+  });
+
+  const lastElement =
+    binding.renderedElements[binding.renderedElements.length - 2]
+      ?.element || binding.placeholder;
+
+  console.log(
+    `[pelela] for-each inserting:`,
+    element.tagName,
+    "after:",
+    lastElement.nodeName,
+    "parent:",
+    lastElement.parentNode?.nodeName,
+  );
+
+  if (lastElement.parentNode) {
+    lastElement.parentNode.insertBefore(element, lastElement.nextSibling);
+    console.log(
+      `[pelela] for-each inserted successfully, element in DOM:`,
+      element.parentNode?.nodeName,
+    );
+    render();
+    console.log(`[pelela] for-each render called for element #${index}`);
+  } else {
+    console.warn(
+      "[pelela] for-each: Could not insert element, parent node not found",
+    );
+  }
+}
+
+function addNewElements<T extends object>(
+  binding: ForEachBinding,
+  viewModel: ViewModel<T>,
+  collection: any[],
+  previousLength: number,
+): void {
+  for (let i = previousLength; i < collection.length; i++) {
+    createNewElement(binding, viewModel, collection[i], i);
+  }
+}
+
+function removeExtraElements(
+  binding: ForEachBinding,
+  currentLength: number,
+): void {
+  const toRemove = binding.renderedElements.splice(currentLength);
+  for (const { element } of toRemove) {
+    element.remove();
+  }
+}
+
+function updateExistingElements(
+  binding: ForEachBinding,
+  collection: any[],
+): void {
+  for (let i = 0; i < binding.renderedElements.length; i++) {
+    const item = collection[i];
+    const rendered = binding.renderedElements[i];
+
+    rendered.itemRef.current = item;
+    rendered.render();
+  }
+}
+
+function renderSingleForEachBinding<T extends object>(
+  binding: ForEachBinding,
+  viewModel: ViewModel<T>,
+): void {
+  const collection = viewModel[binding.collectionName];
+
+  if (!Array.isArray(collection)) {
+    return;
+  }
+
+  const currentLength = collection.length;
+  const previousLength = binding.previousLength;
+
+  console.log(
+    `[pelela] for-each render: ${binding.itemName} of ${binding.collectionName}, items: ${currentLength}, prev: ${previousLength}`,
+  );
+
+  if (currentLength > previousLength) {
+    addNewElements(binding, viewModel, collection, previousLength);
+  } else if (currentLength < previousLength) {
+    removeExtraElements(binding, currentLength);
+  }
+
+  updateExistingElements(binding, collection);
+
+  binding.previousLength = currentLength;
 }
 
 export function renderForEachBindings<T extends object>(
@@ -262,90 +393,7 @@ export function renderForEachBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   for (const binding of bindings) {
-    const collection = viewModel[binding.collectionName];
-
-    if (!Array.isArray(collection)) {
-      continue;
-    }
-
-    const currentLength = collection.length;
-    const previousLength = binding.previousLength;
-
-    console.log(
-      `[pelela] for-each render: ${binding.itemName} of ${binding.collectionName}, items: ${currentLength}, prev: ${previousLength}`,
-    );
-
-    if (currentLength > previousLength) {
-      for (let i = previousLength; i < currentLength; i++) {
-        const item = collection[i];
-        const element = binding.template.cloneNode(true) as HTMLElement;
-
-        console.log(
-          `[pelela] for-each creating element #${i}:`,
-          element.tagName,
-          "template:",
-          binding.template.outerHTML,
-        );
-
-        const itemRef = { current: item };
-        const extendedViewModel = createExtendedViewModel(
-          viewModel,
-          binding.itemName,
-          itemRef,
-        );
-
-        const render = setupBindingsForElement(element, extendedViewModel);
-
-        binding.renderedElements.push({
-          element,
-          viewModel: extendedViewModel,
-          itemRef,
-          render,
-        });
-
-        const lastElement =
-          binding.renderedElements[binding.renderedElements.length - 2]
-            ?.element || binding.placeholder;
-
-        console.log(
-          `[pelela] for-each inserting:`,
-          element.tagName,
-          "after:",
-          lastElement.nodeName,
-          "parent:",
-          lastElement.parentNode?.nodeName,
-        );
-
-        if (lastElement.parentNode) {
-          lastElement.parentNode.insertBefore(element, lastElement.nextSibling);
-          console.log(
-            `[pelela] for-each inserted successfully, element in DOM:`,
-            element.parentNode?.nodeName,
-          );
-          render();
-          console.log(`[pelela] for-each render called for element #${i}`);
-        } else {
-          console.warn(
-            "[pelela] for-each: Could not insert element, parent node not found",
-          );
-        }
-      }
-    } else if (currentLength < previousLength) {
-      const toRemove = binding.renderedElements.splice(currentLength);
-      for (const { element } of toRemove) {
-        element.remove();
-      }
-    }
-
-    for (let i = 0; i < binding.renderedElements.length; i++) {
-      const item = collection[i];
-      const rendered = binding.renderedElements[i];
-
-      rendered.itemRef.current = item;
-      rendered.render();
-    }
-
-    binding.previousLength = currentLength;
+    renderSingleForEachBinding(binding, viewModel);
   }
 }
 
