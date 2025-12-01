@@ -292,7 +292,8 @@ function activate(context) {
                     );
                   }
                   
-                  const location = findPropertyDefinition(tsFile, part);
+                  const propertyPath = parts.slice(0, i + 1);
+                  const location = findNestedPropertyDefinition(tsFile, propertyPath);
                   if (location) return location;
                   break;
                 }
@@ -376,6 +377,80 @@ function findPropertyDefinition(tsFilePath, propertyName) {
         vscode.Uri.file(tsFilePath),
         new vscode.Position(i, character)
       );
+    }
+  }
+  
+  return null;
+}
+
+function findNestedPropertyDefinition(tsFilePath, propertyPath) {
+  if (propertyPath.length === 1) {
+    return findPropertyDefinition(tsFilePath, propertyPath[0]);
+  }
+
+  const text = fs.readFileSync(tsFilePath, "utf-8");
+  const lines = text.split("\n");
+  
+  const rootProperty = propertyPath[0];
+  const rootPropRegex = new RegExp(`^\\s*(?:public\\s+|private\\s+|protected\\s+)?${rootProperty}\\??\\s*[=:]`, "m");
+  
+  let rootLineIndex = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (rootPropRegex.test(lines[i])) {
+      rootLineIndex = i;
+      break;
+    }
+  }
+  
+  if (rootLineIndex === -1) {
+    return null;
+  }
+
+  let currentLineIndex = rootLineIndex;
+  let braceDepth = 0;
+  let inObjectLiteral = false;
+  
+  for (let pathIndex = 1; pathIndex < propertyPath.length; pathIndex++) {
+    const targetProperty = propertyPath[pathIndex];
+    let found = false;
+    
+    for (let i = currentLineIndex; i < lines.length; i++) {
+      const line = lines[i];
+      
+      if (!inObjectLiteral) {
+        if (line.includes('{')) {
+          inObjectLiteral = true;
+          braceDepth = (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
+          continue;
+        }
+      } else {
+        braceDepth += (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
+        
+        if (braceDepth === 0) {
+          break;
+        }
+        
+        const nestedPropRegex = new RegExp(`^\\s*${targetProperty}\\s*[=:]`);
+        if (nestedPropRegex.test(line)) {
+          if (pathIndex === propertyPath.length - 1) {
+            const character = line.indexOf(targetProperty);
+            return new vscode.Location(
+              vscode.Uri.file(tsFilePath),
+              new vscode.Position(i, character)
+            );
+          } else {
+            currentLineIndex = i;
+            inObjectLiteral = false;
+            braceDepth = 0;
+            found = true;
+            break;
+          }
+        }
+      }
+    }
+    
+    if (!found && pathIndex < propertyPath.length - 1) {
+      return null;
     }
   }
   
