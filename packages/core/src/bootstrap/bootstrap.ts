@@ -29,12 +29,12 @@ export function bootstrap(options: PelelaOptions = {}): void {
 
     const instance = new ctor();
 
-    let render: () => void = () => {};
+    let render: (changedPath?: string) => void = () => {};
 
     const reactiveInstance = createReactiveViewModel(
       instance as Record<string, unknown>,
-      () => {
-        render();
+      (changedPath: string) => {
+        render(changedPath);
       },
     );
 
