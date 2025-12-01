@@ -224,6 +224,39 @@ describe("DependencyTracker", () => {
       expect(affectedByName.valueBindings).toContain(binding);
       expect(affectedByEmail.valueBindings).toContain(binding);
     });
+
+    it("should NOT match unrelated nested properties with same root", () => {
+      const tracker = new DependencyTracker();
+      
+      const binding1 = { element: document.createElement("div"), propertyName: "prueba.nombre", isInput: false };
+      const binding2 = { element: document.createElement("span"), propertyName: "prueba.direccion.calle.nombre", isInput: false };
+      
+      tracker.registerDependency(binding1, "prueba.nombre");
+      tracker.registerDependency(binding2, "prueba.direccion.calle.nombre");
+      
+      const bindings: BindingsCollection = {
+        valueBindings: [binding1, binding2],
+        ifBindings: [],
+        classBindings: [],
+        styleBindings: [],
+        forEachBindings: [],
+      };
+      
+      // Cambio en prueba.nombre → solo debe afectar binding1
+      const affectedByNombre = tracker.getDependentBindings("prueba.nombre", bindings);
+      expect(affectedByNombre.valueBindings).toContain(binding1);
+      expect(affectedByNombre.valueBindings).not.toContain(binding2);
+      
+      // Cambio en prueba.direccion.calle.nombre → solo debe afectar binding2
+      const affectedByCalleNombre = tracker.getDependentBindings("prueba.direccion.calle.nombre", bindings);
+      expect(affectedByCalleNombre.valueBindings).not.toContain(binding1);
+      expect(affectedByCalleNombre.valueBindings).toContain(binding2);
+      
+      // Cambio en prueba → debe afectar ambos (el padre cambió)
+      const affectedByPrueba = tracker.getDependentBindings("prueba", bindings);
+      expect(affectedByPrueba.valueBindings).toContain(binding1);
+      expect(affectedByPrueba.valueBindings).toContain(binding2);
+    });
   });
 });
 
