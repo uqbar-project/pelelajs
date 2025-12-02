@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { registerViewModel, getViewModel, hasViewModel } from "./viewModelRegistry";
+import { registerViewModel, getViewModel, hasViewModel, clearRegistry } from "./viewModelRegistry";
 
 class TestViewModel {
   value = 0;
@@ -10,6 +10,10 @@ class AnotherViewModel {
 }
 
 describe("viewModelRegistry", () => {
+  beforeEach(() => {
+    clearRegistry();
+  });
+
   describe("registerViewModel", () => {
     it("should register a new view model", () => {
       registerViewModel("Test", TestViewModel);
