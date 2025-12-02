@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { bootstrap } from "./bootstrap";
 import { registerViewModel, clearRegistry } from "../registry/viewModelRegistry";
+import type { PelelaElement } from "../types";
 
 class TestViewModel {
   message = "Hello";
@@ -41,7 +42,7 @@ describe("bootstrap", () => {
     registerViewModel("TestVM", TestViewModel);
     bootstrap();
 
-    const pelela = document.querySelector("pelela")! as any;
+    const pelela = document.querySelector("pelela")! as PelelaElement<TestViewModel>;
     const viewModel = pelela.__pelelaViewModel;
 
     expect(viewModel).toBeDefined();
@@ -58,7 +59,7 @@ describe("bootstrap", () => {
     registerViewModel("TestVM", TestViewModel);
     bootstrap();
 
-    const pelela = document.querySelector("pelela")! as any;
+    const pelela = document.querySelector("pelela")! as PelelaElement<TestViewModel>;
     const viewModel = pelela.__pelelaViewModel;
     const span = document.querySelector("span")!;
 
