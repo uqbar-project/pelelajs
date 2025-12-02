@@ -1,0 +1,22 @@
+coverage:
+  status:
+    project:
+      default:
+        # Allow coverage to drop by up to 5% before failing (permisive for early development)
+        threshold: 5%
+        # Only fail if the coverage change is significant enough
+        informational: false
+    patch:
+      default:
+        # Allow patches with coverage as low as 30%
+        target: 30%
+        threshold: 10%
+        informational: false
+
+# Don't require a minimum number of changed files
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
