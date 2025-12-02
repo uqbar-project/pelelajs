@@ -11,7 +11,7 @@ const REGISTRATION_ERROR_MESSAGES: Record<
     `[pelela] View model "${name}" is not registered. Did you call defineViewModel?`
 }
 
-export class RegistrationError extends PelelaError {
+export class ViewModelRegistrationError extends PelelaError {
   constructor(
     public readonly viewModelName: string,
     public readonly type: RegistrationType,

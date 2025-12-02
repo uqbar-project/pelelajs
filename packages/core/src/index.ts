@@ -5,7 +5,7 @@ export { registerViewModel as defineViewModel } from "./registry/viewModelRegist
 export {
   PelelaError,
   PropertyValidationError,
-  RegistrationError,
+  ViewModelRegistrationError,
   InvalidHandlerError,
 } from "./errors/index";
 export type { BindingKind, RegistrationType, EventType } from "./errors/index";

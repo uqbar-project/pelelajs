@@ -2,7 +2,7 @@ import type { PelelaOptions } from "../types";
 import { getViewModel } from "../registry/viewModelRegistry";
 import { createReactiveViewModel } from "../reactivity/reactiveProxy";
 import { setupBindings } from "../bindings/setupBindings";
-import { RegistrationError } from "../errors/index";
+import { ViewModelRegistrationError } from "../errors/index";
 import { ViewModel } from "../bindings/types";
 
 export function bootstrap(options: PelelaOptions = {}): void {
@@ -23,7 +23,7 @@ export function bootstrap(options: PelelaOptions = {}): void {
 
     const ctor = getViewModel(name);
     if (!ctor) {
-      throw new RegistrationError(name, "missing");
+      throw new ViewModelRegistrationError(name, "missing");
     }
 
     const instance = new ctor();

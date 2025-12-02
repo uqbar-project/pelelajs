@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { bootstrap } from "./bootstrap";
 import { registerViewModel, clearRegistry } from "../registry/viewModelRegistry";
-import { RegistrationError } from "../errors/index";
+import { ViewModelRegistrationError } from "../errors/index";
 
 class TestViewModel {
   message = "Hello";
@@ -95,7 +95,7 @@ describe("bootstrap", () => {
 
     expect(() => {
       bootstrap();
-    }).toThrow(RegistrationError);
+    }).toThrow(ViewModelRegistrationError);
   });
 
   it("should show warning if no pelela elements found", () => {

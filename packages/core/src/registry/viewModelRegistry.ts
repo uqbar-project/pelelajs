@@ -1,5 +1,5 @@
 import type { ViewModelConstructor } from "../types";
-import { RegistrationError } from "../errors/index";
+import { ViewModelRegistrationError } from "../errors/index";
 
 const viewModelRegistry = new Map<string, ViewModelConstructor>();
 
@@ -8,7 +8,7 @@ export function registerViewModel(
   ctor: ViewModelConstructor,
 ): void {
   if (viewModelRegistry.has(name)) {
-    throw new RegistrationError(name, "duplicate");
+    throw new ViewModelRegistrationError(name, "duplicate");
   }
   viewModelRegistry.set(name, ctor);
 }
