@@ -1,12 +1,16 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { setupClickBindings } from "./bindClick";
+import { testHelpers } from "../test/helpers";
 
 describe("bindClick", () => {
   let container: HTMLElement;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    container = testHelpers.createTestContainer();
+  });
+
+  afterEach(() => {
+    testHelpers.cleanupTestContainer(container);
   });
 
   describe("setupClickBindings", () => {

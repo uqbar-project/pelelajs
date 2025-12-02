@@ -1,13 +1,17 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { setupValueBindings, renderValueBindings } from "./bindValue";
 import type { ViewModel } from "./types";
+import { testHelpers } from "../test/helpers";
 
 describe("bindValue", () => {
   let container: HTMLElement;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    container = testHelpers.createTestContainer();
+  });
+
+  afterEach(() => {
+    testHelpers.cleanupTestContainer(container);
   });
 
   describe("setupValueBindings", () => {
