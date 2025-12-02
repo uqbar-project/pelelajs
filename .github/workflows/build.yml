@@ -14,8 +14,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -28,6 +26,9 @@ jobs:
 
       - name: Run linter
         run: pnpm -r --if-present run lint
+
+      - name: Build packages
+        run: pnpm run build
 
       - name: Run tests with coverage
         run: pnpm test:coverage

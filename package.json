@@ -15,7 +15,7 @@
     "lint": "pnpm -r run lint",
     "install:vscode": "node scripts/install-pelela-vscode.cjs",
     "audit": "pnpm audit --audit-level moderate",
-    "ci:local": "pnpm install && pnpm run lint && pnpm run test:coverage",
+    "ci:local": "pnpm install && pnpm run lint && pnpm run build && pnpm run test:coverage",
     "ci:act": "act -j build"
   },
   "keywords": [],
@@ -31,6 +31,7 @@
       "version": "^10.0.0"
     }
   },
+  "packageManager": "pnpm@10.24.0",
   "devDependencies": {
     "@vitest/coverage-v8": "4.0.14",
     "jsdom": "27.2.0",
