@@ -12,10 +12,7 @@ const REGISTRATION_ERROR_MESSAGES: Record<
 }
 
 export class ViewModelRegistrationError extends PelelaError {
-  constructor(
-    public readonly viewModelName: string,
-    public readonly type: RegistrationType,
-  ) {
-    super(REGISTRATION_ERROR_MESSAGES[type](viewModelName));
+  constructor(public readonly viewModelName: string, public readonly type: RegistrationType, options?: ErrorOptions) {
+    super(REGISTRATION_ERROR_MESSAGES[type](viewModelName), options)
   }
 }
