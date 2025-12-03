@@ -126,9 +126,15 @@ function makeReactive(
   return proxy;
 }
 
+export type ReactiveViewModel<T extends object> = T & {
+  $raw: T;
+  $set: (target: any, key: PropertyKey, value: any) => void;
+  $delete: (target: any, key: PropertyKey) => void;
+};
+
 export function createReactiveViewModel<T extends object>(
   target: T,
   onChange: (changedPath: string) => void,
-): T {
+): ReactiveViewModel<T> {
   return makeReactive(target, onChange);
 }
