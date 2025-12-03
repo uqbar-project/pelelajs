@@ -144,6 +144,43 @@
     "pelela-attributes": {
       "patterns": [
         {
+          "name": "meta.attribute.pelela.foreach",
+          "begin": "\\b(for-each)\\s*(=)\\s*([\"'])",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.other.attribute-name.pelela.foreach"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "3": {
+              "name": "punctuation.definition.string.begin.html"
+            }
+          },
+          "end": "([\"'])",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.string.end.html"
+            }
+          },
+          "patterns": [
+            {
+              "match": "\\b(\\w+)\\s+(of)\\s+(\\w+)\\b",
+              "captures": {
+                "1": {
+                  "name": "variable.other.loop.pelela"
+                },
+                "2": {
+                  "name": "keyword.operator.pelela"
+                },
+                "3": {
+                  "name": "variable.other.collection.pelela"
+                }
+              }
+            }
+          ]
+        },
+        {
           "name": "meta.attribute.pelela.viewmodel",
           "match": "\\b(view-model)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
           "captures": {

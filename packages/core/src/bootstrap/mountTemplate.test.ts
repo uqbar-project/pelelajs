@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { mountTemplate } from "./mountTemplate";
 import { registerViewModel, clearRegistry } from "../registry/viewModelRegistry";
+import type { PelelaElement } from "../types";
 
 class TestViewModel {
   message = "Hello from template";
@@ -54,7 +55,7 @@ describe("mountTemplate", () => {
     registerViewModel("TestVM", TestViewModel);
     mountTemplate(container, template);
 
-    const pelela = container.querySelector("pelela")! as any;
+    const pelela = container.querySelector("pelela")! as PelelaElement<TestViewModel>;
     const viewModel = pelela.__pelelaViewModel;
     const span = container.querySelector("span")!;
 
@@ -130,7 +131,7 @@ describe("mountTemplate", () => {
     registerViewModel("TestVM", TestViewModel);
     mountTemplate(container, template);
 
-    const pelela = container.querySelector("pelela")! as any;
+    const pelela = container.querySelector("pelela")! as PelelaElement<TestViewModel>;
     const viewModel = pelela.__pelelaViewModel;
 
     expect(viewModel).toBeDefined();

@@ -1,12 +1,16 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { setupBindings } from "./setupBindings";
+import { testHelpers } from "../test/helpers";
 
 describe("setupBindings", () => {
   let container: HTMLElement;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    container = testHelpers.createTestContainer();
+  });
+
+  afterEach(() => {
+    testHelpers.cleanupTestContainer(container);
   });
 
   it("should setup all binding types", () => {

@@ -1,0 +1,69 @@
+<pelela view-model="App">
+  <h1>Ejemplos for-each</h1>
+
+  <h2>Select</h2>
+  <select bind-value="tipoApuesta">
+    <option for-each="tipo of tiposApuesta" bind-value="tipo.descripcion"></option>
+  </select>
+
+  <p>Valor seleccionado: <span bind-value="tipoApuesta"></span></p>
+
+  <input bind-value="prueba.nombre">
+  <span bind-value="prueba.nombre" style="color: white;"></span>
+
+  <h3>Opciones del select activas:</h3>
+  <div class="options-container">
+    <!-- Se pueden usar for-each, if y bind-* en el mismo tag  -->
+    <span for-each="tipo of tiposApuesta" 
+          if="tipo.active" 
+          bind-value="tipo.descripcion"></span>
+  </div>
+
+  <h2>Lista de Ítems</h2>
+  
+  <ul>
+    <div for-each="item of items">
+      <li if="item.visible">
+        <span bind-value="item.text"></span>
+      </li>
+    </div>
+  </ul>
+
+  <h2>Usuarios</h2>
+
+  <table>
+    <tbody>
+      <tr for-each="user of users">
+        <td bind-value="user.id"/>
+        <td bind-value="user.name"/>
+        <td bind-value="user.email"/>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>Add user: </p>
+  <label>
+    Name:
+    <input type="text" bind-value="newUserName" />
+  </label>
+  <label>
+    Email:
+    <input type="text" bind-value="newUserEmail" />
+  </label>
+  <button click="addUser">Add User</button>
+
+  <h3>Dirección</h3>
+  <input type="text" bind-value="prueba.direccion.calle.nombre" />
+  <span bind-value="prueba.direccion.calle.nombre" style="color: white;"></span>
+
+  <h3>Buscar usuario por ID</h3>
+  <input bind-value="userSearch" placeholder="Buscar por nombre o email"/>
+  <button click="searchUser">Buscar</button>
+  <span style="color: white;" bind-value="userSearched">
+  
+
+  <!-- <p>El primer usuario de la lista es <span bind-value="users[0].name"></span></p> -->
+
+
+  
+</pelela>

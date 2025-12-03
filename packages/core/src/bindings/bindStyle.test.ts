@@ -1,14 +1,18 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { setupStyleBindings, renderStyleBindings } from "./bindStyle";
 import type { ViewModel } from "./types";
 import { PropertyValidationError } from "../errors/index";
+import { testHelpers } from "../test/helpers";
 
 describe("bindStyle", () => {
   let container: HTMLElement;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    container = testHelpers.createTestContainer();
+  });
+
+  afterEach(() => {
+    testHelpers.cleanupTestContainer(container);
   });
 
   describe("setupStyleBindings", () => {

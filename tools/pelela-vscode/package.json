@@ -1,9 +1,9 @@
 {
   "name": "pelela-vscode",
   "version": "0.0.1",
+  "publisher": "uqbar",
   "displayName": "Pelela Templates",
   "description": "Soporte básico para archivos .pelela (syntax highlighting y snippets).",
-  "publisher": "uqbar-projects",
   "engines": {
     "vscode": "^1.90.0"
   },

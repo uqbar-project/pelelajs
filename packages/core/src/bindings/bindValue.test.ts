@@ -1,14 +1,18 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { setupValueBindings, renderValueBindings } from "./bindValue";
 import type { ViewModel } from "./types";
 import { PropertyValidationError } from "../errors/index";
+import { testHelpers } from "../test/helpers";
 
 describe("bindValue", () => {
   let container: HTMLElement;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    container = testHelpers.createTestContainer();
+  });
+
+  afterEach(() => {
+    testHelpers.cleanupTestContainer(container);
   });
 
   describe("setupValueBindings", () => {
@@ -98,6 +102,24 @@ describe("bindValue", () => {
       expect(() => {
         setupValueBindings(container, viewModel);
       }).toThrow(PropertyValidationError);
+    });
+
+    it("should ignore elements with empty bind-value", () => {
+      container.innerHTML = '<span bind-value=""></span>';
+      const viewModel = { prop: "value" };
+
+      const bindings = setupValueBindings(container, viewModel);
+
+      expect(bindings).toHaveLength(0);
+    });
+
+    it("should ignore elements with whitespace-only bind-value", () => {
+      container.innerHTML = '<span bind-value="   "></span>';
+      const viewModel = { prop: "value" };
+
+      const bindings = setupValueBindings(container, viewModel);
+
+      expect(bindings).toHaveLength(0);
     });
   });
 

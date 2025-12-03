@@ -1,13 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { setupClickBindings } from "./bindClick";
 import { InvalidHandlerError } from "../errors/index";
+import { testHelpers } from "../test/helpers";
 
 describe("bindClick", () => {
   let container: HTMLElement;
 
   beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    container = testHelpers.createTestContainer();
+  });
+
+  afterEach(() => {
+    testHelpers.cleanupTestContainer(container);
   });
 
   describe("setupClickBindings", () => {
@@ -73,44 +77,6 @@ describe("bindClick", () => {
 
       expect(handler1).toHaveBeenCalledTimes(1);
       expect(handler2).toHaveBeenCalledTimes(1);
-    });
-
-    it("should validate that handler is a function", () => {
-      container.innerHTML = '<button click="notAFunction">Click me</button>';
-      const viewModel = { notAFunction: "string" };
-
-      setupClickBindings(container, viewModel);
-
-      const button = container.querySelector("button")!;
-      button.addEventListener("click", (e) => {
-        e.stopPropagation();
-      });
-
-      expect(() => {
-        const handler = (viewModel as any)["notAFunction"];
-        if (typeof handler !== "function") {
-          throw new InvalidHandlerError("notAFunction", "TestViewModel", "click");
-        }
-      }).toThrow(InvalidHandlerError);
-    });
-
-    it("should validate that handler exists", () => {
-      container.innerHTML = '<button click="missing">Click me</button>';
-      const viewModel = {};
-
-      setupClickBindings(container, viewModel);
-
-      const button = container.querySelector("button")!;
-      button.addEventListener("click", (e) => {
-        e.stopPropagation();
-      });
-
-      expect(() => {
-        const handler = (viewModel as any)["missing"];
-        if (typeof handler !== "function") {
-          throw new InvalidHandlerError("missing", "TestViewModel", "click");
-        }
-      }).toThrow(InvalidHandlerError);
     });
 
     it("should allow handler to modify viewModel", () => {

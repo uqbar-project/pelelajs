@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { registerViewModel, getViewModel, hasViewModel } from "./viewModelRegistry";
-import { RegistrationError } from "../errors/index";
+import { registerViewModel, getViewModel, hasViewModel, clearRegistry } from "./viewModelRegistry";
+import { ViewModelRegistrationError } from "../errors";
 
 class TestViewModel {
   value = 0;
@@ -11,6 +11,10 @@ class AnotherViewModel {
 }
 
 describe("viewModelRegistry", () => {
+  beforeEach(() => {
+    clearRegistry();
+  });
+
   describe("registerViewModel", () => {
     it("should register a new view model", () => {
       registerViewModel("Test", TestViewModel);
@@ -23,7 +27,7 @@ describe("viewModelRegistry", () => {
 
       expect(() => {
         registerViewModel("Duplicate", AnotherViewModel);
-      }).toThrow(RegistrationError);
+      }).toThrow(ViewModelRegistrationError);
     });
 
     it("should allow registering multiple view models with different names", () => {
