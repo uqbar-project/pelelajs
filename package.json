@@ -7,6 +7,7 @@
   "main": "index.js",
   "scripts": {
     "preinstall": "node scripts/preinstall.js",
+    "typecheck": "pnpm -r run typecheck",
     "build": "pnpm -r run build",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -15,7 +16,7 @@
     "lint": "pnpm -r run lint",
     "install:vscode": "node scripts/install-pelela-vscode.cjs",
     "audit": "pnpm audit --audit-level moderate",
-    "ci:local": "pnpm install && pnpm run lint && pnpm run build && pnpm run test:coverage",
+    "ci:local": "pnpm install && pnpm run lint && pnpm run typecheck && pnpm run build && pnpm run test:coverage",
     "ci:act": "act -j build"
   },
   "keywords": [],

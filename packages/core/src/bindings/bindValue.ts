@@ -27,11 +27,11 @@ export function setupValueBindings<T extends object>(
 
         if (typeof currentValue === "number") {
           const numeric = Number(target.value.replace(",", "."));
-          viewModel[propertyName] = Number.isNaN(numeric)
+          (viewModel as Record<string, unknown>)[propertyName] = Number.isNaN(numeric)
             ? 0
             : numeric;
         } else {
-          viewModel[propertyName] = target.value;
+          (viewModel as Record<string, unknown>)[propertyName] = target.value;
         }
       });
     }
