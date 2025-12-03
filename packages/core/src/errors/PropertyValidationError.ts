@@ -1,6 +1,6 @@
 import { PelelaError } from "./PelelaError";
 
-export type BindingKind = "bind-class" | "bind-value" | "bind-style" | "if";
+export type BindingKind = "bind-class" | "bind-value" | "bind-style" | 'for-each' | "if";
 
 export class PropertyValidationError extends PelelaError {
   constructor(
