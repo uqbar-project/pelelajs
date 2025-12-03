@@ -7,3 +7,7 @@ export type PelelaOptions = {
   root?: ParentNode;
 };
 
+export interface PelelaElement<T = object> extends HTMLElement {
+  __pelelaViewModel: T;
+}
+
