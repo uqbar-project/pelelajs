@@ -25,10 +25,25 @@ export type StyleBinding = {
   propertyName: string;
 };
 
+export type ForEachBinding = {
+  collectionName: string;
+  itemName: string;
+  template: HTMLElement;
+  placeholder: Comment;
+  renderedElements: {
+    element: HTMLElement;
+    viewModel: ViewModel;
+    itemRef: { current: any };
+    render: () => void;
+  }[];
+  previousLength: number;
+};
+
 export type BindingsCollection = {
   valueBindings: ValueBinding[];
   ifBindings: IfBinding[];
   classBindings: ClassBinding[];
   styleBindings: StyleBinding[];
+  forEachBindings: ForEachBinding[];
 };
 
