@@ -1,67 +1,49 @@
-# pelela-vscode
+# pelela-vscode extension
 
-Extensión de VS Code para el lenguaje Pelela.
+VS Code extension for the Pelela language.
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 pelela-vscode/
 ├── src/
-│   ├── extension.js           # Punto de entrada principal
+│   ├── extension.js           # Main entry point
 │   ├── parsers/
-│   │   ├── documentParser.js  # Parsing de documentos .pelela
-│   │   ├── viewModelParser.js # Extracción de miembros del ViewModel
-│   │   └── definitionFinder.js # Búsqueda de definiciones
+│   │   ├── documentParser.js  # .pelela document parsing
+│   │   ├── viewModelParser.js # ViewModel member extraction
+│   │   └── definitionFinder.js # Definition search
 │   ├── providers/
-│   │   ├── completionProvider.js # Autocompletado
+│   │   ├── completionProvider.js # Autocomplete
 │   │   └── definitionProvider.js # Go to definition
 │   └── utils/
-│       ├── fileUtils.js       # Utilidades de archivos
-│       └── htmlUtils.js       # Elementos y atributos HTML
+│       ├── fileUtils.js       # File utilities
+│       └── htmlUtils.js       # HTML elements and attributes
 ├── test/
-│   ├── parsers/
-│   ├── utils/
-│   ├── fixtures/
-│   ├── vscode-stub.cjs
-│   └── setup.cjs
+│   ├── parsers/              # Parser tests
+│   ├── utils/                # Utility tests
+│   ├── fixtures/             # Temporary test files
+│   ├── vscode-stub.cjs       # VSCode API mock
+│   └── setup.cjs             # Mocha configuration
 ├── syntaxes/
 ├── snippets/
 └── package.json
 ```
 
-## Características Técnicas
+## Technical Features
 
-- ✅ **CommonJS**: Código con `require`/`module.exports` (requerido por VSCode)
-- ✅ **Modular**: Código separado por responsabilidades
-- ✅ **Testeado**: 61 tests con cobertura completa
-- ✅ **Documentado**: README, REFACTORING, ARCHITECTURE, COMMONJS_REVERT
-- ✅ **pnpm**: Gestión de dependencias consistente con el proyecto principal
+- ✅ **CommonJS**: Code with `require`/`module.exports` (required by VSCode)
+- ✅ **pnpm**: Dependency management
 
-## Desarrollo
+## Development
 
-### Instalación de dependencias
+### Install dependencies
 
 ```bash
 pnpm install --ignore-workspace
 ```
 
-### Ejecutar tests
+### Run tests
 
 ```bash
 pnpm test
 ```
-
-## Características
-
-- Syntax highlighting para archivos `.pelela`
-- Autocompletado para atributos de Pelela
-- Autocompletado basado en el ViewModel
-- Go to definition para propiedades y métodos
-- Soporte para propiedades anidadas
-- Soporte para `for-each` loops
-
-## ⚠️ Nota Importante
-
-Esta extensión usa **CommonJS** (no ES Modules) porque VSCode requiere este formato para las extensiones. Ver `COMMONJS_REVERT.md` para más detalles.
-
-
