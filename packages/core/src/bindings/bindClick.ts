@@ -12,9 +12,10 @@ function setupSingleClickBinding<T extends object>(
     const handler = viewModel[handlerName];
 
     if (typeof handler !== "function") {
-      throw new Error(
-        `[pelela] Handler "${handlerName}" definido en click="..." no es una función ` +
-        `del view model "${viewModel.constructor?.name ?? "Unknown"}".`,
+      throw new InvalidHandlerError(
+        handlerName,
+        viewModel.constructor?.name ?? "Unknown",
+        "click"
       );
     }
 
