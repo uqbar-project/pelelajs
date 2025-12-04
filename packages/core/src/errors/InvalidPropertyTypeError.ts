@@ -8,13 +8,13 @@ export type ExpectedType =
   | "a boolean"
   | "an object";
 
-interface InvalidPropertyTypeErrorOptions {
+interface InvalidPropertyTypeErrorParams {
   propertyName: string;
   bindingKind: BindingKind;
   expectedType: ExpectedType;
   viewModelName: string;
   elementSnippet: string;
-  cause?: ErrorOptions;
+  options?: ErrorOptions;
 }
 
 export class InvalidPropertyTypeError extends PelelaError {
@@ -24,17 +24,17 @@ export class InvalidPropertyTypeError extends PelelaError {
   public readonly viewModelName: string;
   public readonly elementSnippet: string;
 
-  constructor(options: InvalidPropertyTypeErrorOptions) {
+  constructor(params: InvalidPropertyTypeErrorParams) {
     super(
-      `[pelela] Property "${options.propertyName}" used in ${options.bindingKind} must be ${options.expectedType}, ` +
-        `but found different type on view model "${options.viewModelName}". Element: ${options.elementSnippet}`,
-      options.cause
+      `[pelela] Property "${params.propertyName}" used in ${params.bindingKind} must be ${params.expectedType}, ` +
+        `but found different type on view model "${params.viewModelName}". Element: ${params.elementSnippet}`,
+      params.options
     );
 
-    this.propertyName = options.propertyName;
-    this.bindingKind = options.bindingKind;
-    this.expectedType = options.expectedType;
-    this.viewModelName = options.viewModelName;
-    this.elementSnippet = options.elementSnippet;
+    this.propertyName = params.propertyName;
+    this.bindingKind = params.bindingKind;
+    this.expectedType = params.expectedType;
+    this.viewModelName = params.viewModelName;
+    this.elementSnippet = params.elementSnippet;
   }
 }

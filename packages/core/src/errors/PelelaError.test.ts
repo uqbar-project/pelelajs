@@ -58,7 +58,7 @@ describe("PelelaError", () => {
         bindingKind: "bind-value",
         viewModelName: "TestVM",
         elementSnippet: "<div>",
-        cause: originalError
+        options: { cause: originalError }
       });
 
       expect(validationError.cause).toBe(originalError);
@@ -100,7 +100,7 @@ describe("PelelaError", () => {
             bindingKind: "bind-value",
             viewModelName: "DataViewModel",
             elementSnippet: "<div>",
-            cause: error instanceof Error ? error : undefined
+            options: error instanceof Error ? { cause: error } : undefined
           });
         }
       }
