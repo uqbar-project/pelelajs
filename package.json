@@ -13,6 +13,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:packages": "pnpm -r run test",
+    "test:vscode": "pnpm -C tools/pelela-vscode test",
+    "test:all": "pnpm run test:packages && pnpm run test:vscode",
     "lint": "pnpm -r run lint",
     "install:vscode": "node scripts/install-pelela-vscode.cjs",
     "audit": "pnpm audit --audit-level moderate",
