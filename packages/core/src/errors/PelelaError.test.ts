@@ -22,12 +22,12 @@ describe("PelelaError", () => {
     });
 
     it("should set correct name from constructor", () => {
-      const error = new PropertyValidationError(
-        "myProp",
-        "bind-value",
-        "TestVM",
-        "<div>"
-      );
+      const error = new PropertyValidationError({
+        propertyName: "myProp",
+        bindingKind: "bind-value",
+        viewModelName: "TestVM",
+        elementSnippet: "<div>"
+      });
 
       expect(error.name).toBe("PropertyValidationError");
     });
@@ -53,13 +53,13 @@ describe("PelelaError", () => {
 
     it("should work with PropertyValidationError and cause", () => {
       const originalError = new TypeError("Property access failed");
-      const validationError = new PropertyValidationError(
-        "myProp",
-        "bind-value",
-        "TestVM",
-        "<div>",
-        { cause: originalError }
-      );
+      const validationError = new PropertyValidationError({
+        propertyName: "myProp",
+        bindingKind: "bind-value",
+        viewModelName: "TestVM",
+        elementSnippet: "<div>",
+        cause: originalError
+      });
 
       expect(validationError.cause).toBe(originalError);
       expect(validationError.propertyName).toBe("myProp");
@@ -95,13 +95,13 @@ describe("PelelaError", () => {
         try {
           riskyOperation();
         } catch (error) {
-          throw new PropertyValidationError(
-            "data",
-            "bind-value",
-            "DataViewModel",
-            "<div>",
-            { cause: error instanceof Error ? error : undefined }
-          );
+          throw new PropertyValidationError({
+            propertyName: "data",
+            bindingKind: "bind-value",
+            viewModelName: "DataViewModel",
+            elementSnippet: "<div>",
+            cause: error instanceof Error ? error : undefined
+          });
         }
       }
 
@@ -131,12 +131,12 @@ describe("PelelaError", () => {
     });
 
     it("should pass instanceof checks for specific error type", () => {
-      const error = new PropertyValidationError(
-        "prop",
-        "bind-value",
-        "VM",
-        "<div>"
-      );
+      const error = new PropertyValidationError({
+        propertyName: "prop",
+        bindingKind: "bind-value",
+        viewModelName: "VM",
+        elementSnippet: "<div>"
+      });
       expect(error instanceof Error).toBe(true);
       expect(error instanceof PelelaError).toBe(true);
       expect(error instanceof PropertyValidationError).toBe(true);
