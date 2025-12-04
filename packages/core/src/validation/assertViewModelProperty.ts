@@ -1,3 +1,5 @@
+import { BindingKind, PropertyValidationError } from "../errors";
+
 function hasNestedProperty(obj: any, path: string): boolean {
   if (path in obj) {
     return true;
@@ -24,15 +26,17 @@ function hasNestedProperty(obj: any, path: string): boolean {
 export function assertViewModelProperty<T extends object>(
   viewModel: T,
   propertyName: string,
-  kind: string,
+  kind: BindingKind,
   element: Element,
 ): void {
   if (!hasNestedProperty(viewModel, propertyName)) {
     const snippet = element.outerHTML.replace(/\s+/g, " ").trim().slice(0, 100);
 
-    throw new Error(
-      `[pelela] Unknown property "${propertyName}" used in ${kind} on: ${snippet}. ` +
-      `Make sure your view model "${viewModel.constructor.name}" defines it.`,
+    throw new PropertyValidationError(
+      propertyName,
+      kind,
+      viewModel.constructor.name,
+      snippet,
     );
   }
 }

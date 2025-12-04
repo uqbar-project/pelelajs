@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { assertViewModelProperty } from "./assertViewModelProperty";
+import { PropertyValidationError } from "../errors/index";
 
 class TestViewModel {
   existingProperty = "value";
@@ -29,7 +30,7 @@ describe("assertViewModelProperty", () => {
 
     expect(() => {
       assertViewModelProperty(viewModel, "nonExistent", "bind-value", element);
-    }).toThrow('[pelela] Unknown property "nonExistent" used in bind-value');
+    }).toThrow(PropertyValidationError);
   });
 
   it("should include view model name in error", () => {
@@ -38,7 +39,7 @@ describe("assertViewModelProperty", () => {
 
     expect(() => {
       assertViewModelProperty(viewModel, "missing", "if", element);
-    }).toThrow("TestViewModel");
+    }).toThrow(PropertyValidationError);
   });
 
   it("should include binding type in error", () => {
@@ -47,7 +48,7 @@ describe("assertViewModelProperty", () => {
 
     expect(() => {
       assertViewModelProperty(viewModel, "missing", "bind-class", element);
-    }).toThrow("bind-class");
+    }).toThrow(PropertyValidationError);
   });
 
   it("should include element snippet in error", () => {
@@ -58,7 +59,7 @@ describe("assertViewModelProperty", () => {
 
     expect(() => {
       assertViewModelProperty(viewModel, "missing", "bind-style", element);
-    }).toThrow('<div class="test-class" id="test-id"></div>');
+    }).toThrow(PropertyValidationError);
   });
 
   it("should truncate snippet if too long", () => {

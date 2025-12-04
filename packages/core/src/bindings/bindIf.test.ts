@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { setupIfBindings, renderIfBindings } from "./bindIf";
 import type { ViewModel } from "./types";
+import { PropertyValidationError } from "../errors/index";
 import { testHelpers } from "../test/helpers";
 
 describe("bindIf", () => {
@@ -51,7 +52,7 @@ describe("bindIf", () => {
 
       expect(() => {
         setupIfBindings(container, viewModel);
-      }).toThrow("Unknown property");
+      }).toThrow(PropertyValidationError);
     });
   });
 

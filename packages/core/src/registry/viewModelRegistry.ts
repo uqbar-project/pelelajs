@@ -1,4 +1,5 @@
 import type { ViewModelConstructor } from "../types";
+import { ViewModelRegistrationError } from "../errors/index";
 
 const viewModelRegistry = new Map<string, ViewModelConstructor>();
 
@@ -7,7 +8,7 @@ export function registerViewModel(
   ctor: ViewModelConstructor,
 ): void {
   if (viewModelRegistry.has(name)) {
-    throw new Error(`[pelela] View model "${name}" is already registered`);
+    throw new ViewModelRegistrationError(name, "duplicate");
   }
   viewModelRegistry.set(name, ctor);
 }

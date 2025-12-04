@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { setupStyleBindings, renderStyleBindings } from "./bindStyle";
 import type { ViewModel } from "./types";
+import { PropertyValidationError } from "../errors/index";
 import { testHelpers } from "../test/helpers";
 
 describe("bindStyle", () => {
@@ -33,7 +34,7 @@ describe("bindStyle", () => {
 
       expect(() => {
         setupStyleBindings(container, viewModel);
-      }).toThrow("Unknown property");
+      }).toThrow(PropertyValidationError);
     });
   });
 

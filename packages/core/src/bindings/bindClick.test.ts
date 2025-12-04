@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { setupClickBindings } from "./bindClick";
+import { InvalidHandlerError } from "../errors/index";
 import { testHelpers } from "../test/helpers";
 
 describe("bindClick", () => {

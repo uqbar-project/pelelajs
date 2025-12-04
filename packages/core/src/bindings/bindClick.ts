@@ -1,4 +1,5 @@
 import type { ViewModel } from "./types";
+import { InvalidHandlerError } from "../errors/index";
 
 function setupSingleClickBinding<T extends object>(
   element: HTMLElement,
@@ -31,4 +32,3 @@ export function setupClickBindings<T extends object>(
     setupSingleClickBinding(element, viewModel);
   }
 }
-

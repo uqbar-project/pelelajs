@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { registerViewModel, getViewModel, hasViewModel, clearRegistry } from "./viewModelRegistry";
+import { ViewModelRegistrationError } from "../errors";
 
 class TestViewModel {
   value = 0;
@@ -26,7 +27,7 @@ describe("viewModelRegistry", () => {
 
       expect(() => {
         registerViewModel("Duplicate", AnotherViewModel);
-      }).toThrow('[pelela] View model "Duplicate" is already registered');
+      }).toThrow(ViewModelRegistrationError);
     });
 
     it("should allow registering multiple view models with different names", () => {

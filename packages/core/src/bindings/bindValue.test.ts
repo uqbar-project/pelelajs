@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { setupValueBindings, renderValueBindings } from "./bindValue";
 import type { ViewModel } from "./types";
+import { PropertyValidationError } from "../errors/index";
 import { testHelpers } from "../test/helpers";
 
 describe("bindValue", () => {
@@ -100,7 +101,7 @@ describe("bindValue", () => {
 
       expect(() => {
         setupValueBindings(container, viewModel);
-      }).toThrow("Unknown property");
+      }).toThrow(PropertyValidationError);
     });
 
     it("should ignore elements with empty bind-value", () => {

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { bootstrap } from "./bootstrap";
 import { registerViewModel, clearRegistry } from "../registry/viewModelRegistry";
+import { ViewModelRegistrationError } from "../errors/index";
 import type { PelelaElement } from "../types";
 
 class TestViewModel {
@@ -95,7 +96,7 @@ describe("bootstrap", () => {
 
     expect(() => {
       bootstrap();
-    }).toThrow('View model "UnregisteredVM" is not registered');
+    }).toThrow(ViewModelRegistrationError);
   });
 
   it("should show warning if no pelela elements found", () => {
