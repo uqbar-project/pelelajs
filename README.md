@@ -27,14 +27,18 @@ Restart VSCode or reload window and you'll be able to test pelela examples in yo
 
 ## Linting and Formatting
 
-This project uses [Biome](https://biomejs.dev/) for linting and formatting.
+This project uses [Biome](https://biomejs.dev/) for linting, formatting, and import organization.
 
 ```bash
-pnpm lint
+# All-in-one
+pnpm check          # Check linting + format + imports
+pnpm check:fix      # Auto-fix everything (lint + format + organize imports)
 
-pnpm format
-
-pnpm format:check
+# Individual commands
+pnpm lint           # Run linter
+pnpm lint:fix       # Auto-fix linting issues
+pnpm format         # Format code
+pnpm format:check   # Check formatting (CI-friendly)
 ```
 
 ## Managing Dependencies
