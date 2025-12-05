@@ -20,6 +20,12 @@
         "noInnerDeclarations": "off",
         "useYield": "off"
       },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn"
+      },
+      "performance": {
+        "noAccumulatingSpread": "warn"
+      },
       "nursery": {
         "noUnusedExpressions": "off"
       }
@@ -48,5 +54,10 @@
     "clientKind": "git",
     "useIgnoreFile": true,
     "defaultBranch": "main"
+  },
+  "assist": {
+    "actions": {
+      "source": { "organizeImports": "on" }
+    }
   }
 }
