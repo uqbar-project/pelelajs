@@ -31,14 +31,14 @@ This project uses [Biome](https://biomejs.dev/) for linting, formatting, and imp
 
 ```bash
 # All-in-one
-pnpm check          # Check linting + format + imports
-pnpm check:fix      # Auto-fix everything (lint + format + organize imports)
+pnpm biome:check        # Check linting + format + imports
+pnpm biome:check:fix    # Auto-fix everything (lint + format + organize imports)
 
 # Individual commands
-pnpm lint           # Run linter
-pnpm lint:fix       # Auto-fix linting issues
-pnpm format         # Format code
-pnpm format:check   # Check formatting (CI-friendly)
+pnpm biome:lint         # Run linter only
+pnpm biome:lint:fix     # Auto-fix linting issues
+pnpm biome:format       # Check code formatting
+pnpm biome:format:fix   # Auto-fix formatting
 ```
 
 ## Managing Dependencies
