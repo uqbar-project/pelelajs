@@ -5,6 +5,7 @@ import { setupIfBindings, renderIfBindings } from "./bindIf";
 import { setupClassBindings, renderClassBindings } from "./bindClass";
 import { setupStyleBindings, renderStyleBindings } from "./bindStyle";
 import { setupClickBindings } from "./bindClick";
+import { InvalidBindingSyntaxError, InvalidPropertyTypeError, InvalidDOMStructureError } from "../errors/index";
 
 function parseForEachExpression(expression: string): {
   itemName: string;
@@ -206,8 +207,10 @@ function setupSingleForEachBinding<T extends object>(
 
   const parsed = parseForEachExpression(expression);
   if (!parsed) {
-    throw new Error(
-      `[pelela] Invalid for-each expression: "${expression}". Expected format: "item of collection"`,
+    throw new InvalidBindingSyntaxError(
+      "for-each",
+      expression,
+      "item of collection"
     );
   }
 
@@ -217,9 +220,13 @@ function setupSingleForEachBinding<T extends object>(
 
   const collection = viewModel[collectionName];
   if (!Array.isArray(collection)) {
-    throw new Error(
-      `[pelela] Property "${collectionName}" must be an array for for-each binding`,
-    );
+    throw new InvalidPropertyTypeError({
+      propertyName: collectionName,
+      bindingKind: "for-each",
+      expectedType: "an array",
+      viewModelName: viewModel.constructor?.name ?? "Unknown",
+      elementSnippet: element.outerHTML.substring(0, 50)
+    });
   }
 
   const template = element.cloneNode(true) as HTMLElement;
@@ -233,8 +240,9 @@ function setupSingleForEachBinding<T extends object>(
   );
 
   if (!element.parentNode) {
-    throw new Error(
-      `[pelela] for-each: Cannot setup binding, element has no parent node`,
+    throw new InvalidDOMStructureError(
+      "for-each",
+      "element has no parent node"
     );
   }
 
