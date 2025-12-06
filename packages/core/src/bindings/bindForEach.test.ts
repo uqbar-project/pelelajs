@@ -1,6 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { setupForEachBindings, renderForEachBindings } from "./bindForEach";
-import type { ViewModel } from "./types";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  InvalidBindingSyntaxError,
+  InvalidPropertyTypeError,
+  PropertyValidationError
+} from "../errors/index";
+import { renderForEachBindings, setupForEachBindings } from "./bindForEach";
 
 describe("bindForEach", () => {
   let container: HTMLElement;
@@ -55,31 +59,31 @@ describe("bindForEach", () => {
       expect(comment?.textContent).toContain("for-each: item of items");
     });
 
-    it("should throw error if collection property does not exist", () => {
+    it("should throw PropertyValidationError if collection property does not exist", () => {
       container.innerHTML = '<div for-each="item of missing"></div>';
       const viewModel = {};
 
       expect(() => {
         setupForEachBindings(container, viewModel);
-      }).toThrow("Unknown property");
+      }).toThrow(PropertyValidationError);
     });
 
-    it("should handle invalid for-each expression", () => {
+    it("should throw InvalidBindingSyntaxError for invalid expression", () => {
       container.innerHTML = '<div for-each="invalid"></div>';
       const viewModel = { invalid: [] };
 
       expect(() => {
         setupForEachBindings(container, viewModel);
-      }).toThrow("Invalid for-each expression");
+      }).toThrow(InvalidBindingSyntaxError);
     });
 
-    it("should handle non-array collection", () => {
+    it("should throw InvalidPropertyTypeError for non-array collection", () => {
       container.innerHTML = '<div for-each="item of notArray"></div>';
       const viewModel = { notArray: "string" };
 
       expect(() => {
         setupForEachBindings(container, viewModel);
-      }).toThrow("must be an array");
+      }).toThrow(InvalidPropertyTypeError);
     });
 
     it("should ignore elements with empty for-each", () => {

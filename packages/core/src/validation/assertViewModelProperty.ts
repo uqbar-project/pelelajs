@@ -32,12 +32,12 @@ export function assertViewModelProperty<T extends object>(
   if (!hasNestedProperty(viewModel, propertyName)) {
     const snippet = element.outerHTML.replace(/\s+/g, " ").trim().slice(0, 100);
 
-    throw new PropertyValidationError(
+    throw new PropertyValidationError({
       propertyName,
-      kind,
-      viewModel.constructor.name,
-      snippet,
-    );
+      bindingKind: kind,
+      viewModelName: viewModel.constructor.name,
+      elementSnippet: snippet,
+    });
   }
 }
 
