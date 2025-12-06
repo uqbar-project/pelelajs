@@ -11,13 +11,28 @@
   "activationEvents": [
     "onLanguage:pelela"
   ],
-  "categories": ["Programming Languages"],
+  "categories": [
+    "Programming Languages"
+  ],
+  "scripts": {
+    "test": "mocha --require test/setup.cjs test/**/*.test.js"
+  },
+  "devDependencies": {
+    "chai": "^4.3.10",
+    "glob": "^13.0.0",
+    "mocha": "^10.2.0"
+  },
   "contributes": {
     "languages": [
       {
         "id": "pelela",
-        "aliases": ["Pelela Template", "pelela"],
-        "extensions": [".pelela"],
+        "aliases": [
+          "Pelela Template",
+          "pelela"
+        ],
+        "extensions": [
+          ".pelela"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -51,7 +66,10 @@
       {
         "scopeName": "pelela.injection",
         "path": "./syntaxes/pelela.tmLanguage.json",
-        "injectTo": ["text.html.basic", "text.html"]
+        "injectTo": [
+          "text.html.basic",
+          "text.html"
+        ]
       }
     ],
     "snippets": [
@@ -61,7 +79,9 @@
       }
     ],
     "html": {
-      "customData": ["./html-custom-data.json"]
+      "customData": [
+        "./html-custom-data.json"
+      ]
     }
   }
 }
