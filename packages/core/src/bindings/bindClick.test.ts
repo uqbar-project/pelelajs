@@ -161,5 +161,33 @@ describe("bindClick", () => {
         new InvalidHandlerError("invalidHandler", "TestViewModel", "click")
       );
     });
+
+    it("should throw InvalidHandlerError when handler is undefined", () => {
+      container.innerHTML = '<button click="nonExistentHandler">Click me</button>';
+      const viewModel = {};
+      const button = container.querySelector("button")!;
+
+      const addEventListenerSpy = vi.spyOn(button, "addEventListener");
+      setupClickBindings(container, viewModel);
+
+      const clickListener = addEventListenerSpy.mock.calls[0][1] as EventListener;
+      const mockEvent = new MouseEvent("click");
+
+      expect(() => clickListener(mockEvent)).toThrow(InvalidHandlerError);
+    });
+
+    it("should throw InvalidHandlerError when handler is null", () => {
+      container.innerHTML = '<button click="nullHandler">Click me</button>';
+      const viewModel = { nullHandler: null };
+      const button = container.querySelector("button")!;
+
+      const addEventListenerSpy = vi.spyOn(button, "addEventListener");
+      setupClickBindings(container, viewModel);
+
+      const clickListener = addEventListenerSpy.mock.calls[0][1] as EventListener;
+      const mockEvent = new MouseEvent("click");
+
+      expect(() => clickListener(mockEvent)).toThrow(InvalidHandlerError);
+    });
   });
 });
