@@ -47,7 +47,15 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx", "**/*.json", "**/*.jsonc"]
+    "includes": [
+      "**/*.js",
+      "**/*.ts",
+      "**/*.jsx",
+      "**/*.tsx",
+      "**/*.json",
+      "**/*.jsonc",
+      "!examples"
+    ]
   },
   "vcs": {
     "enabled": true,
