@@ -8,8 +8,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsup src/index.ts --dts --format cjs,esm --clean",
-    "test": "vitest",
-    "lint": "echo \"(linter a definir)\""
+    "test": "vitest"
   },
   "keywords": [],
   "author": "",

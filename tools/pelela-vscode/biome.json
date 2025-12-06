@@ -1,0 +1,65 @@
+{
+  "root": false,
+  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "es5",
+      "bracketSpacing": true,
+      "arrowParentheses": "always"
+    },
+    "globals": [
+      "require",
+      "module",
+      "exports",
+      "__dirname",
+      "__filename",
+      "process",
+      "Buffer",
+      "global"
+    ]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noConsole": "off",
+        "noExplicitAny": "off",
+        "noEmptyBlockStatements": "off"
+      },
+      "style": {
+        "useConst": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noConstantCondition": "warn",
+        "noSwitchDeclarations": "off",
+        "noInnerDeclarations": "off",
+        "useYield": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off"
+      },
+      "performance": {
+        "noAccumulatingSpread": "warn"
+      },
+      "nursery": {
+        "noUnusedExpressions": "off"
+      }
+    }
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
+  }
+}

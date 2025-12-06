@@ -25,6 +25,22 @@ Then go to `pelela-vscode-x.y.z.vsix` in `tools/pelela-vscode` folder, right cli
 
 Restart VSCode or reload window and you'll be able to test pelela examples in your VSCode.
 
+## Linting and Formatting
+
+This project uses [Biome](https://biomejs.dev/) for linting, formatting, and import organization.
+
+```bash
+# All-in-one
+pnpm biome:check        # Check linting + format + imports
+pnpm biome:check:fix    # Auto-fix everything (lint + format + organize imports)
+
+# Individual commands
+pnpm biome:lint         # Run linter only
+pnpm biome:lint:fix     # Auto-fix linting issues
+pnpm biome:format       # Check code formatting
+pnpm biome:format:fix   # Auto-fix formatting
+```
+
 ## Managing Dependencies
 
 Use pnpm commands to add, remove, or update dependencies:
