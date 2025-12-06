@@ -127,5 +127,39 @@ describe("bindClick", () => {
 
       expect(handler).toHaveBeenCalledTimes(3);
     });
+
+    it("should throw InvalidHandlerError when handler is not a function", () => {
+      container.innerHTML = '<button click="notAFunction">Click me</button>';
+      const viewModel = { notAFunction: "this is a string" };
+      const button = container.querySelector("button")!;
+
+      const addEventListenerSpy = vi.spyOn(button, "addEventListener");
+      setupClickBindings(container, viewModel);
+
+      const clickListener = addEventListenerSpy.mock.calls[0][1] as EventListener;
+      const mockEvent = new MouseEvent("click");
+
+      expect(() => clickListener(mockEvent)).toThrow(InvalidHandlerError);
+    });
+
+    it("should throw InvalidHandlerError with correct parameters when handler is not a function", () => {
+      container.innerHTML = '<button click="invalidHandler">Click me</button>';
+      class TestViewModel {
+        [key: string]: unknown;
+        invalidHandler = 42;
+      }
+      const viewModel = new TestViewModel();
+      const button = container.querySelector("button")!;
+
+      const addEventListenerSpy = vi.spyOn(button, "addEventListener");
+      setupClickBindings(container, viewModel);
+
+      const clickListener = addEventListenerSpy.mock.calls[0][1] as EventListener;
+      const mockEvent = new MouseEvent("click");
+
+      expect(() => clickListener(mockEvent)).toThrow(
+        new InvalidHandlerError("invalidHandler", "TestViewModel", "click")
+      );
+    });
   });
 });
