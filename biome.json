@@ -6,7 +6,7 @@
       "recommended": true,
       "suspicious": {
         "noExplicitAny": "off",
-        "noConsole": "warn",
+        "noConsole": "off",
         "noEmptyBlockStatements": "off"
       },
       "style": {
