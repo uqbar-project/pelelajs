@@ -26,24 +26,24 @@
 ## **4. SISTEMA DE BINDINGS**
 
 ### **4.1 Sistema de Binding General**
-- [ ] Setup de bindings (setupBindings)
-- [ ] Render pipeline (executeRenderPipeline)
-- [ ] BindingsCollection (estructura de datos)
+- [x] Setup de bindings (setupBindings)
+- [x] Render pipeline (executeRenderPipeline)
+- [x] BindingsCollection (estructura de datos)
 
 ### **4.2 Dependency Tracker**
-- [ ] Registro de dependencias
-- [ ] Algoritmo de matching de paths
-- [ ] Renderizado selectivo (getDependentBindings)
-- [ ] Optimización de renders
+- [x] Registro de dependencias
+- [x] Algoritmo de matching de paths
+- [x] Renderizado selectivo (getDependentBindings)
+- [x] Optimización de renders
 
 ### **4.3 Bindings Específicos**
 
 #### **4.3.1 bind-value**
-- [ ] Setup y configuración
-- [ ] Two-way data binding
-- [ ] Manejo de inputs (HTMLInputElement, HTMLTextAreaElement, HTMLSelectElement)
-- [ ] Conversión de tipos (números, strings)
-- [ ] Render de valores en elementos no-input
+- [x] Setup y configuración
+- [x] Two-way data binding
+- [x] Manejo de inputs (HTMLInputElement, HTMLTextAreaElement, HTMLSelectElement)
+- [x] Conversión de tipos (números, strings)
+- [x] Render de valores en elementos no-input
 
 #### **4.3.2 if (conditional rendering)**
 - [ ] Setup y configuración
