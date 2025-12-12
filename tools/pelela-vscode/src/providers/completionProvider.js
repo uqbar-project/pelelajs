@@ -12,7 +12,7 @@ const {
 } = require("../parsers/documentParser");
 const { extractViewModelMembers, extractNestedProperties } = require("../parsers/viewModelParser");
 
-async function provideCompletionItems(document, position, token, context) {
+async function provideCompletionItems(document, position, _token, _context) {
   const items = [];
   const line = document.lineAt(position.line);
   const lineText = line.text;
@@ -45,7 +45,7 @@ function addHtmlElementCompletions(items) {
       tag,
       vscode.CompletionItemKind.Property
     );
-    item.sortText = "z" + tag;
+    item.sortText = `z${tag}`;
     items.push(item);
   }
 }
@@ -57,7 +57,7 @@ function addHtmlAttributeCompletions(items) {
       vscode.CompletionItemKind.Property
     );
     item.insertText = new vscode.SnippetString(`${attr}="\${1}"`);
-    item.sortText = "z" + attr;
+    item.sortText = `z${attr}`;
     items.push(item);
   }
 }
@@ -80,11 +80,11 @@ function addPelelaAttributeCompletions(items) {
     if (snippets[name]) {
       item.insertText = new vscode.SnippetString(snippets[name].text);
       item.detail = snippets[name].detail;
-      item.sortText = "!0_" + name;
+      item.sortText = `!0_${name}`;
     } else if (name.startsWith("bind-")) {
       item.insertText = new vscode.SnippetString(`${name}="\${1:propiedad}"`);
       item.detail = "Pelela: binding al view model";
-      item.sortText = "!0_" + name;
+      item.sortText = `!0_${name}`;
     }
 
     items.push(item);
