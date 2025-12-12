@@ -3,11 +3,7 @@ import { PelelaError } from "./PelelaError";
 import { PropertyValidationError } from "./PropertyValidationError";
 
 // Concrete test class since PelelaError is abstract
-class TestPelelaError extends PelelaError {
-  constructor(message: string, options?: ErrorOptions) {
-    super(message, options)
-  }
-}
+class TestPelelaError extends PelelaError {}
 
 describe("PelelaError", () => {
   describe("basic error creation", () => {

@@ -29,7 +29,7 @@ function createExtendedViewModel<T extends object>(
     {
       has(_target, prop) {
         if (prop === itemName) return true;
-        if (typeof prop === "string" && prop.startsWith(itemName + ".")) {
+        if (typeof prop === "string" && prop.startsWith(`${itemName}.`)) {
           return true;
         }
         return prop in parentViewModel;
@@ -38,7 +38,7 @@ function createExtendedViewModel<T extends object>(
         if (prop === itemName) {
           return itemRef.current;
         }
-        if (typeof prop === "string" && prop.startsWith(itemName + ".")) {
+        if (typeof prop === "string" && prop.startsWith(`${itemName}.`)) {
           const itemProp = prop.substring(itemName.length + 1);
           return getNestedProperty(itemRef.current, itemProp);
         }
@@ -49,7 +49,7 @@ function createExtendedViewModel<T extends object>(
           itemRef.current = value;
           return true;
         }
-        if (typeof prop === "string" && prop.startsWith(itemName + ".")) {
+        if (typeof prop === "string" && prop.startsWith(`${itemName}.`)) {
           return true;
         }
         (parentViewModel as Record<string, unknown>)[prop as string] = value;

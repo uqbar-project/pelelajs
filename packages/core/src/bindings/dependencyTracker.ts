@@ -86,13 +86,13 @@ export class DependencyTracker {
 
     // Caso 2: El binding depende de una propiedad anidada del cambio
     // Ejemplo: cambió "prueba", el binding usa "prueba.nombre" → debe re-renderizar
-    if (bindingPath.startsWith(changedPath + ".")) {
+    if (bindingPath.startsWith(`${changedPath}.`)) {
       return true;
     }
 
     // Caso 3: Cambió una propiedad anidada, el binding depende del padre
     // Ejemplo: cambió "prueba.nombre", el binding usa "prueba" → debe re-renderizar
-    if (changedPath.startsWith(bindingPath + ".")) {
+    if (changedPath.startsWith(`${bindingPath}.`)) {
       return true;
     }
 

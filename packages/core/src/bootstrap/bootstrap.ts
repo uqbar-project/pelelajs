@@ -3,7 +3,6 @@ import { getViewModel } from "../registry/viewModelRegistry";
 import { createReactiveViewModel } from "../reactivity/reactiveProxy";
 import { setupBindings } from "../bindings/setupBindings";
 import { ViewModelRegistrationError } from "../errors/index";
-import { ViewModel } from "../bindings/types";
 
 export function bootstrap(options: PelelaOptions = {}): void {
   const doc = options.document ?? window.document;
