@@ -117,7 +117,7 @@
 - [x] **9.6** Tipos de Bindings (ValueBinding, IfBinding, ClassBinding, StyleBinding, ForEachBinding)
 
 ## **10. INTEGRACIÓN CON VITE**
-- [ ] **10.1** vite-plugin-pelelajs
+- [x] **10.1** vite-plugin-pelelajs
   - Procesamiento de archivos .pelela
   - Transformación a TypeScript
 
