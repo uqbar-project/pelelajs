@@ -97,7 +97,7 @@
   - Limpieza del registro (clearRegistry)
 
 ## **7. SISTEMA DE VALIDACIÓN**
-- [ ] **7.1** assertViewModelProperty
+- [x] **7.1** assertViewModelProperty
   - Validación de propiedades en ViewModel
   - Soporte de propiedades anidadas
   - Generación de mensajes de error informativos
