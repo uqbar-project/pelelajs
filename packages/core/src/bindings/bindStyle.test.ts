@@ -130,7 +130,7 @@ describe("bindStyle", () => {
       const bindings = setupStyleBindings(container, viewModel);
 
       renderStyleBindings(bindings, viewModel);
-      let div = container.querySelector("div")!;
+      const div = container.querySelector("div")!;
       expect(div.style.color).toBe("red");
 
       viewModel.styles = {
@@ -153,7 +153,7 @@ describe("bindStyle", () => {
       const bindings = setupStyleBindings(container, viewModel);
 
       renderStyleBindings(bindings, viewModel);
-      let div = container.querySelector("div")!;
+      const div = container.querySelector("div")!;
       expect(div.style.color).toBe("red");
       expect(div.style.fontSize).toBe("16px");
 

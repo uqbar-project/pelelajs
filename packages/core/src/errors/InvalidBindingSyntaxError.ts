@@ -1,4 +1,4 @@
-import { BindingKind } from ".";
+import type { BindingKind } from ".";
 import { PelelaError } from "./PelelaError";
 
 export class InvalidBindingSyntaxError extends PelelaError {
