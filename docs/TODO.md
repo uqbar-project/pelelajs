@@ -85,9 +85,9 @@
 - [ ] Mapeo de elementos (mapElementPath)
 
 ## **5. SISTEMA DE PROPIEDADES ANIDADAS**
-- [ ] **5.1** getNestedProperty (lectura de paths con dots)
-- [ ] **5.2** setNestedProperty (escritura de paths con dots)
-- [ ] **5.3** Validación de propiedades anidadas
+- [x] **5.1** getNestedProperty (lectura de paths con dots)
+- [x] **5.2** setNestedProperty (escritura de paths con dots)
+- [x] **5.3** Validación de propiedades anidadas
 
 ## **6. REGISTRO DE VIEWMODELS**
 - [ ] **6.1** ViewModelRegistry
