@@ -46,43 +46,43 @@
 - [x] Render de valores en elementos no-input
 
 #### **4.3.2 if (conditional rendering)**
-- [ ] Setup y configuración
-- [ ] Evaluación de condiciones booleanas
-- [ ] Preservación de display original
-- [ ] Show/hide mediante display CSS
+- [x] Setup y configuración
+- [x] Evaluación de condiciones booleanas
+- [x] Preservación de display original
+- [x] Show/hide mediante display CSS
 
 #### **4.3.3 bind-class**
-- [ ] Setup y configuración
-- [ ] Soporte de múltiples formatos:
+- [x] Setup y configuración
+- [x] Soporte de múltiples formatos:
   - String único
   - Array de clases
   - Objeto con condiciones (key-value)
-- [ ] Preservación de clases estáticas
+- [x] Preservación de clases estáticas
 
 #### **4.3.4 bind-style**
-- [ ] Setup y configuración
-- [ ] Aplicación de estilos dinámicos
-- [ ] Formato de objeto de estilos
-- [ ] Limpieza de estilos
+- [x] Setup y configuración
+- [x] Aplicación de estilos dinámicos
+- [x] Formato de objeto de estilos
+- [x] Limpieza de estilos
 
 #### **4.3.5 click (event binding)**
-- [ ] Setup de event listeners
-- [ ] Invocación de handlers del ViewModel
-- [ ] Context binding (this)
-- [ ] Validación de handlers
+- [x] Setup de event listeners
+- [x] Invocación de handlers del ViewModel
+- [x] Context binding (this)
+- [x] Validación de handlers
 
 #### **4.3.6 for-each (list rendering)**
-- [ ] Parsing de expresiones (`item of collection`)
-- [ ] Sistema de templates
-- [ ] Placeholder comments
-- [ ] Extended ViewModel (proxy para scope local)
-- [ ] Creación dinámica de elementos
-- [ ] Reconciliación de elementos:
+- [x] Parsing de expresiones (`item of collection`)
+- [x] Sistema de templates
+- [x] Placeholder comments
+- [x] Extended ViewModel (proxy para scope local)
+- [x] Creación dinámica de elementos
+- [x] Reconciliación de elementos:
   - Agregado de nuevos elementos
   - Remoción de elementos extras
   - Actualización de elementos existentes
-- [ ] Bindings anidados dentro de for-each
-- [ ] Mapeo de elementos (mapElementPath)
+- [x] Bindings anidados dentro de for-each
+- [x] Mapeo de elementos (mapElementPath)
 
 ## **5. SISTEMA DE PROPIEDADES ANIDADAS**
 - [x] **5.1** getNestedProperty (lectura de paths con dots)
