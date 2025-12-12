@@ -103,18 +103,18 @@
   - Generación de mensajes de error informativos
 
 ## **8. SISTEMA DE ERRORES**
-- [ ] **8.1** PelelaError (base)
-- [ ] **8.2** PropertyValidationError
-- [ ] **8.3** ViewModelRegistrationError
-- [ ] **8.4** InvalidHandlerError
+- [x] **8.1** PelelaError (base)
+- [x] **8.2** PropertyValidationError
+- [x] **8.3** ViewModelRegistrationError
+- [x] **8.4** InvalidHandlerError
 
 ## **9. TIPOS Y CONTRATOS**
-- [ ] **9.1** ViewModelConstructor
-- [ ] **9.2** PelelaOptions
-- [ ] **9.3** PelelaElement
-- [ ] **9.4** ViewModel Type
-- [ ] **9.5** ReactiveViewModel Type
-- [ ] **9.6** Tipos de Bindings (ValueBinding, IfBinding, ClassBinding, StyleBinding, ForEachBinding)
+- [x] **9.1** ViewModelConstructor
+- [x] **9.2** PelelaOptions
+- [x] **9.3** PelelaElement
+- [x] **9.4** ViewModel Type
+- [x] **9.5** ReactiveViewModel Type
+- [x] **9.6** Tipos de Bindings (ValueBinding, IfBinding, ClassBinding, StyleBinding, ForEachBinding)
 
 ## **10. INTEGRACIÓN CON VITE**
 - [ ] **10.1** vite-plugin-pelelajs
