@@ -64,10 +64,16 @@ function addHtmlAttributeCompletions(items) {
 
 function addPelelaAttributeCompletions(items) {
   const attrNames = getPelelaAttributes();
+
+  // VSCode snippet definitions use ${N:placeholder} syntax for tab stops
   const snippets = {
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
     "view-model": { text: 'view-model="${1:App}"', detail: "Pelela: view model asociado al template" },
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
     "click": { text: 'click="${1:handler}"', detail: "Pelela: ejecuta un método del view model al hacer click" },
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
     "if": { text: 'if="${1:condicion}"', detail: "Pelela: renderizado condicional" },
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
     "for-each": { text: 'for-each="${1:item} of ${2:collection}"', detail: "Pelela: itera sobre una colección del view model" },
   };
 
