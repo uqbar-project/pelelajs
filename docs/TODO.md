@@ -90,7 +90,7 @@
 - [x] **5.3** Validación de propiedades anidadas
 
 ## **6. REGISTRO DE VIEWMODELS**
-- [ ] **6.1** ViewModelRegistry
+- [x] **6.1** ViewModelRegistry
   - Registro de ViewModels (defineViewModel/registerViewModel)
   - Obtención de ViewModels (getViewModel)
   - Verificación de existencia (hasViewModel)
