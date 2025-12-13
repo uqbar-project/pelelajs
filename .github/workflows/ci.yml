@@ -11,6 +11,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+
+      - name: Run Biome CI
+        run: biome ci .
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
