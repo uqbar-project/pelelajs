@@ -1,62 +1,62 @@
-import type { ClassBinding, ViewModel } from "./types";
-import { assertViewModelProperty } from "../validation/assertViewModelProperty";
-import { getNestedProperty } from "./nestedProperties";
+import { assertViewModelProperty } from '../validation/assertViewModelProperty'
+import { getNestedProperty } from './nestedProperties'
+import type { ClassBinding, ViewModel } from './types'
 
 function setupSingleClassBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): ClassBinding | null {
-  const propertyName = element.getAttribute("bind-class");
-  if (!propertyName || !propertyName.trim()) return null;
+  const propertyName = element.getAttribute('bind-class')
+  if (!propertyName || !propertyName.trim()) return null
 
-  assertViewModelProperty(viewModel, propertyName, "bind-class", element);
+  assertViewModelProperty(viewModel, propertyName, 'bind-class', element)
 
   return {
     element,
     propertyName,
     staticClassName: element.className,
-  };
+  }
 }
 
 export function setupClassBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): ClassBinding[] {
-  const bindings: ClassBinding[] = [];
-  const elements = root.querySelectorAll<HTMLElement>("[bind-class]");
+  const bindings: ClassBinding[] = []
+  const elements = root.querySelectorAll<HTMLElement>('[bind-class]')
 
   for (const element of elements) {
-    const binding = setupSingleClassBinding(element, viewModel);
+    const binding = setupSingleClassBinding(element, viewModel)
     if (binding) {
-      bindings.push(binding);
+      bindings.push(binding)
     }
   }
 
-  return bindings;
+  return bindings
 }
 
 function renderSingleClassBinding<T extends object>(
   binding: ClassBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = getNestedProperty(viewModel, binding.propertyName);
+  const value = getNestedProperty(viewModel, binding.propertyName)
 
-  const staticClasses = binding.staticClassName.trim();
-  let dynamicClasses = "";
+  const staticClasses = binding.staticClassName.trim()
+  let dynamicClasses = ''
 
-  if (typeof value === "string") {
-    dynamicClasses = value;
+  if (typeof value === 'string') {
+    dynamicClasses = value
   } else if (Array.isArray(value)) {
-    dynamicClasses = value.filter(Boolean).join(" ");
-  } else if (value && typeof value === "object") {
+    dynamicClasses = value.filter(Boolean).join(' ')
+  } else if (value && typeof value === 'object') {
     dynamicClasses = Object.entries(value)
       .filter(([, enabled]) => Boolean(enabled))
       .map(([name]) => name)
-      .join(" ");
+      .join(' ')
   }
 
-  const classes = [staticClasses, dynamicClasses].filter(Boolean).join(" ");
-  binding.element.className = classes;
+  const classes = [staticClasses, dynamicClasses].filter(Boolean).join(' ')
+  binding.element.className = classes
 }
 
 export function renderClassBindings<T extends object>(
@@ -64,7 +64,6 @@ export function renderClassBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   for (const binding of bindings) {
-    renderSingleClassBinding(binding, viewModel);
+    renderSingleClassBinding(binding, viewModel)
   }
 }
-

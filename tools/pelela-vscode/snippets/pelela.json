@@ -1,11 +1,7 @@
 {
   "Pelela root": {
     "prefix": "pelela",
-    "body": [
-      "<pelela view-model=\"$1\">",
-      "  $0",
-      "</pelela>"
-    ],
+    "body": ["<pelela view-model=\"$1\">", "  $0", "</pelela>"],
     "description": "Crea la raíz de un template Pelela"
   },
   "bind-value": {

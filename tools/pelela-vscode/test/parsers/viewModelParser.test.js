@@ -1,19 +1,19 @@
-const assert = require("node:assert");
-const path = require("node:path");
-const fs = require("node:fs");
-const { 
-  extractViewModelMembers, 
+const assert = require('node:assert')
+const path = require('node:path')
+const fs = require('node:fs')
+const {
+  extractViewModelMembers,
   extractNestedProperties,
-  extractInterfaceProperties
-} = require("../../src/parsers/viewModelParser");
+  extractInterfaceProperties,
+} = require('../../src/parsers/viewModelParser')
 
-describe("viewModelParser", () => {
-  const testFilesDir = path.join(__dirname, "../fixtures");
-  const testVMPath = path.join(testFilesDir, "testViewModel.ts");
+describe('viewModelParser', () => {
+  const testFilesDir = path.join(__dirname, '../fixtures')
+  const testVMPath = path.join(testFilesDir, 'testViewModel.ts')
 
   before(() => {
     if (!fs.existsSync(testFilesDir)) {
-      fs.mkdirSync(testFilesDir, { recursive: true });
+      fs.mkdirSync(testFilesDir, { recursive: true })
     }
 
     const testVMContent = `
@@ -49,86 +49,86 @@ interface Item {
   title: string;
   completed: boolean;
 }
-`;
-    fs.writeFileSync(testVMPath, testVMContent);
-  });
+`
+    fs.writeFileSync(testVMPath, testVMContent)
+  })
 
   after(() => {
     if (fs.existsSync(testVMPath)) {
-      fs.unlinkSync(testVMPath);
+      fs.unlinkSync(testVMPath)
     }
-  });
+  })
 
-  describe("extractViewModelMembers", () => {
-    it("debería extraer propiedades y métodos de una clase", () => {
-      const { properties, methods } = extractViewModelMembers(testVMPath);
-      
-      assert.ok(properties.includes("name"));
-      assert.ok(properties.includes("_internal"));
-      assert.ok(properties.includes("items"));
-      assert.ok(properties.includes("user"));
-      assert.ok(properties.includes("fullName"));
-      
-      assert.ok(methods.includes("handleClick"));
-      assert.ok(methods.includes("helperMethod"));
-      assert.ok(!methods.includes("constructor"));
-    });
+  describe('extractViewModelMembers', () => {
+    it('debería extraer propiedades y métodos de una clase', () => {
+      const { properties, methods } = extractViewModelMembers(testVMPath)
 
-    it("no debería incluir constructor en los métodos", () => {
-      const { methods } = extractViewModelMembers(testVMPath);
-      assert.ok(!methods.includes("constructor"));
-    });
+      assert.ok(properties.includes('name'))
+      assert.ok(properties.includes('_internal'))
+      assert.ok(properties.includes('items'))
+      assert.ok(properties.includes('user'))
+      assert.ok(properties.includes('fullName'))
 
-    it("debería incluir getters como propiedades", () => {
-      const { properties } = extractViewModelMembers(testVMPath);
-      assert.ok(properties.includes("fullName"));
-    });
-  });
+      assert.ok(methods.includes('handleClick'))
+      assert.ok(methods.includes('helperMethod'))
+      assert.ok(!methods.includes('constructor'))
+    })
 
-  describe("extractNestedProperties", () => {
-    it("debería extraer propiedades anidadas de un objeto literal", () => {
-      const props = extractNestedProperties(testVMPath, ["user"]);
-      
-      assert.ok(props.includes("name"));
-      assert.ok(props.includes("address"));
-    });
+    it('no debería incluir constructor en los métodos', () => {
+      const { methods } = extractViewModelMembers(testVMPath)
+      assert.ok(!methods.includes('constructor'))
+    })
 
-    it("debería extraer propiedades profundamente anidadas", () => {
-      const props = extractNestedProperties(testVMPath, ["user", "address"]);
-      
-      assert.ok(props.includes("street"));
-      assert.ok(props.includes("number"));
-    });
+    it('debería incluir getters como propiedades', () => {
+      const { properties } = extractViewModelMembers(testVMPath)
+      assert.ok(properties.includes('fullName'))
+    })
+  })
 
-    it("debería retornar array vacío para propiedades inexistentes", () => {
-      const props = extractNestedProperties(testVMPath, ["nonExistent"]);
-      assert.strictEqual(props.length, 0);
-    });
+  describe('extractNestedProperties', () => {
+    it('debería extraer propiedades anidadas de un objeto literal', () => {
+      const props = extractNestedProperties(testVMPath, ['user'])
 
-    it("debería extraer propiedades de una interfaz cuando la propiedad es un array", () => {
-      const props = extractNestedProperties(testVMPath, ["items"]);
-      
-      assert.ok(props.includes("id"));
-      assert.ok(props.includes("title"));
-      assert.ok(props.includes("completed"));
-    });
-  });
+      assert.ok(props.includes('name'))
+      assert.ok(props.includes('address'))
+    })
 
-  describe("extractInterfaceProperties", () => {
-    it("debería extraer propiedades de una interfaz", () => {
-      const testVMContent = fs.readFileSync(testVMPath, "utf-8");
-      const props = extractInterfaceProperties(testVMContent, "Item");
-      
-      assert.ok(props.includes("id"));
-      assert.ok(props.includes("title"));
-      assert.ok(props.includes("completed"));
-    });
+    it('debería extraer propiedades profundamente anidadas', () => {
+      const props = extractNestedProperties(testVMPath, ['user', 'address'])
 
-    it("debería retornar array vacío para interfaces inexistentes", () => {
-      const testVMContent = fs.readFileSync(testVMPath, "utf-8");
-      const props = extractInterfaceProperties(testVMContent, "NonExistent");
-      
-      assert.strictEqual(props.length, 0);
-    });
-  });
-});
+      assert.ok(props.includes('street'))
+      assert.ok(props.includes('number'))
+    })
+
+    it('debería retornar array vacío para propiedades inexistentes', () => {
+      const props = extractNestedProperties(testVMPath, ['nonExistent'])
+      assert.strictEqual(props.length, 0)
+    })
+
+    it('debería extraer propiedades de una interfaz cuando la propiedad es un array', () => {
+      const props = extractNestedProperties(testVMPath, ['items'])
+
+      assert.ok(props.includes('id'))
+      assert.ok(props.includes('title'))
+      assert.ok(props.includes('completed'))
+    })
+  })
+
+  describe('extractInterfaceProperties', () => {
+    it('debería extraer propiedades de una interfaz', () => {
+      const testVMContent = fs.readFileSync(testVMPath, 'utf-8')
+      const props = extractInterfaceProperties(testVMContent, 'Item')
+
+      assert.ok(props.includes('id'))
+      assert.ok(props.includes('title'))
+      assert.ok(props.includes('completed'))
+    })
+
+    it('debería retornar array vacío para interfaces inexistentes', () => {
+      const testVMContent = fs.readFileSync(testVMPath, 'utf-8')
+      const props = extractInterfaceProperties(testVMContent, 'NonExistent')
+
+      assert.strictEqual(props.length, 0)
+    })
+  })
+})

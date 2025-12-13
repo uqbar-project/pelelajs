@@ -1,26 +1,26 @@
-import { type BindingKind, PropertyValidationError } from "../errors";
+import { type BindingKind, PropertyValidationError } from '../errors'
 
 function hasNestedProperty(obj: any, path: string): boolean {
   if (path in obj) {
-    return true;
+    return true
   }
 
-  const parts = path.split(".");
-  let current = obj;
+  const parts = path.split('.')
+  let current = obj
 
   for (const part of parts) {
     if (current === null || current === undefined) {
-      return false;
+      return false
     }
-    
+
     if (!(part in current)) {
-      return false;
+      return false
     }
-    
-    current = current[part];
+
+    current = current[part]
   }
 
-  return true;
+  return true
 }
 
 export function assertViewModelProperty<T extends object>(
@@ -30,14 +30,13 @@ export function assertViewModelProperty<T extends object>(
   element: Element,
 ): void {
   if (!hasNestedProperty(viewModel, propertyName)) {
-    const snippet = element.outerHTML.replace(/\s+/g, " ").trim().slice(0, 100);
+    const snippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
 
     throw new PropertyValidationError({
       propertyName,
       bindingKind: kind,
       viewModelName: viewModel.constructor.name,
       elementSnippet: snippet,
-    });
+    })
   }
 }
-
