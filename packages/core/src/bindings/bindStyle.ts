@@ -1,59 +1,59 @@
-import type { StyleBinding, ViewModel } from "./types";
-import { assertViewModelProperty } from "../validation/assertViewModelProperty";
-import { getNestedProperty } from "./nestedProperties";
+import { assertViewModelProperty } from '../validation/assertViewModelProperty'
+import { getNestedProperty } from './nestedProperties'
+import type { StyleBinding, ViewModel } from './types'
 
 function setupSingleStyleBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): StyleBinding | null {
-  const propertyName = element.getAttribute("bind-style");
-  if (!propertyName || !propertyName.trim()) return null;
+  const propertyName = element.getAttribute('bind-style')
+  if (!propertyName || !propertyName.trim()) return null
 
-  assertViewModelProperty(viewModel, propertyName, "bind-style", element);
+  assertViewModelProperty(viewModel, propertyName, 'bind-style', element)
 
   return {
     element,
     propertyName,
-  };
+  }
 }
 
 export function setupStyleBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): StyleBinding[] {
-  const bindings: StyleBinding[] = [];
-  const elements = root.querySelectorAll<HTMLElement>("[bind-style]");
+  const bindings: StyleBinding[] = []
+  const elements = root.querySelectorAll<HTMLElement>('[bind-style]')
 
   for (const element of elements) {
-    const binding = setupSingleStyleBinding(element, viewModel);
+    const binding = setupSingleStyleBinding(element, viewModel)
     if (binding) {
-      bindings.push(binding);
+      bindings.push(binding)
     }
   }
 
-  return bindings;
+  return bindings
 }
 
 function renderSingleStyleBinding<T extends object>(
   binding: StyleBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = getNestedProperty(viewModel, binding.propertyName);
+  const value = getNestedProperty(viewModel, binding.propertyName)
 
-  if (!value || typeof value !== "object") {
-    binding.element.removeAttribute("style");
-    return;
+  if (!value || typeof value !== 'object') {
+    binding.element.removeAttribute('style')
+    return
   }
 
-  const styleObj = value as Record<string, string | number>;
-  const elStyle = binding.element.style;
+  const styleObj = value as Record<string, string | number>
+  const elStyle = binding.element.style
 
-  elStyle.cssText = "";
+  elStyle.cssText = ''
 
   for (const [key, v] of Object.entries(styleObj)) {
-    if (v === undefined || v === null) continue;
-    const cssValue = String(v);
-    (elStyle as any)[key as any] = cssValue;
+    if (v === undefined || v === null) continue
+    const cssValue = String(v)
+    ;(elStyle as any)[key as any] = cssValue
   }
 }
 
@@ -62,7 +62,6 @@ export function renderStyleBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   for (const binding of bindings) {
-    renderSingleStyleBinding(binding, viewModel);
+    renderSingleStyleBinding(binding, viewModel)
   }
 }
-

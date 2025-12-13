@@ -1,132 +1,130 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { setupIfBindings, renderIfBindings } from "./bindIf";
-import type { ViewModel } from "./types";
-import { PropertyValidationError } from "../errors/index";
-import { testHelpers } from "../test/helpers";
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { PropertyValidationError } from '../errors/index'
+import { testHelpers } from '../test/helpers'
+import { renderIfBindings, setupIfBindings } from './bindIf'
+import type { ViewModel } from './types'
 
-describe("bindIf", () => {
-  let container: HTMLElement;
+describe('bindIf', () => {
+  let container: HTMLElement
 
   beforeEach(() => {
-    container = testHelpers.createTestContainer();
-  });
+    container = testHelpers.createTestContainer()
+  })
 
   afterEach(() => {
-    testHelpers.cleanupTestContainer(container);
-  });
+    testHelpers.cleanupTestContainer(container)
+  })
 
-  describe("setupIfBindings", () => {
-    it("should collect elements with if", () => {
+  describe('setupIfBindings', () => {
+    it('should collect elements with if', () => {
       container.innerHTML = `
         <div if="show1"></div>
         <div if="show2"></div>
-      `;
+      `
 
-      const viewModel = { show1: true, show2: false };
-      const bindings = setupIfBindings(container, viewModel);
+      const viewModel = { show1: true, show2: false }
+      const bindings = setupIfBindings(container, viewModel)
 
-      expect(bindings).toHaveLength(2);
-    });
+      expect(bindings).toHaveLength(2)
+    })
 
-    it("should save original display of element", () => {
-      container.innerHTML = '<div if="show" style="display: flex;"></div>';
+    it('should save original display of element', () => {
+      container.innerHTML = '<div if="show" style="display: flex;"></div>'
 
-      const viewModel = { show: true };
-      const bindings = setupIfBindings(container, viewModel);
+      const viewModel = { show: true }
+      const bindings = setupIfBindings(container, viewModel)
 
-      expect(bindings[0].originalDisplay).toBe("flex");
-    });
+      expect(bindings[0].originalDisplay).toBe('flex')
+    })
 
-    it("should use empty string as original display if no style", () => {
-      container.innerHTML = '<div if="show"></div>';
+    it('should use empty string as original display if no style', () => {
+      container.innerHTML = '<div if="show"></div>'
 
-      const viewModel = { show: true };
-      const bindings = setupIfBindings(container, viewModel);
+      const viewModel = { show: true }
+      const bindings = setupIfBindings(container, viewModel)
 
-      expect(bindings[0].originalDisplay).toBe("");
-    });
+      expect(bindings[0].originalDisplay).toBe('')
+    })
 
-    it("should throw error if property does not exist", () => {
-      container.innerHTML = '<div if="missing"></div>';
-      const viewModel = {};
+    it('should throw error if property does not exist', () => {
+      container.innerHTML = '<div if="missing"></div>'
+      const viewModel = {}
 
       expect(() => {
-        setupIfBindings(container, viewModel);
-      }).toThrow(PropertyValidationError);
-    });
-  });
+        setupIfBindings(container, viewModel)
+      }).toThrow(PropertyValidationError)
+    })
+  })
 
-  describe("renderIfBindings", () => {
-    it("should show elements when value is true", () => {
-      container.innerHTML = '<div if="show"></div>';
-      const viewModel = { show: false };
-      const bindings = setupIfBindings(container, viewModel);
+  describe('renderIfBindings', () => {
+    it('should show elements when value is true', () => {
+      container.innerHTML = '<div if="show"></div>'
+      const viewModel = { show: false }
+      const bindings = setupIfBindings(container, viewModel)
 
-      viewModel.show = true;
-      renderIfBindings(bindings, viewModel);
+      viewModel.show = true
+      renderIfBindings(bindings, viewModel)
 
-      const div = container.querySelector("div")!;
-      expect(div.style.display).toBe("");
-    });
+      const div = container.querySelector('div')!
+      expect(div.style.display).toBe('')
+    })
 
-    it("should hide elements when value is false", () => {
-      container.innerHTML = '<div if="show"></div>';
-      const viewModel = { show: true };
-      const bindings = setupIfBindings(container, viewModel);
+    it('should hide elements when value is false', () => {
+      container.innerHTML = '<div if="show"></div>'
+      const viewModel = { show: true }
+      const bindings = setupIfBindings(container, viewModel)
 
-      viewModel.show = false;
-      renderIfBindings(bindings, viewModel);
+      viewModel.show = false
+      renderIfBindings(bindings, viewModel)
 
-      const div = container.querySelector("div")!;
-      expect(div.style.display).toBe("none");
-    });
+      const div = container.querySelector('div')!
+      expect(div.style.display).toBe('none')
+    })
 
-    it("should restore original display when showing", () => {
-      container.innerHTML = '<div if="show" style="display: flex;"></div>';
-      const viewModel = { show: false };
-      const bindings = setupIfBindings(container, viewModel);
+    it('should restore original display when showing', () => {
+      container.innerHTML = '<div if="show" style="display: flex;"></div>'
+      const viewModel = { show: false }
+      const bindings = setupIfBindings(container, viewModel)
 
-      viewModel.show = true;
-      renderIfBindings(bindings, viewModel);
+      viewModel.show = true
+      renderIfBindings(bindings, viewModel)
 
-      const div = container.querySelector("div")!;
-      expect(div.style.display).toBe("flex");
-    });
+      const div = container.querySelector('div')!
+      expect(div.style.display).toBe('flex')
+    })
 
-    it("should treat falsy values as false", () => {
-      container.innerHTML = '<div if="value"></div>';
-      const viewModel: ViewModel<{ value: unknown }> = { value: 0 };
-      const bindings = setupIfBindings(container, viewModel);
+    it('should treat falsy values as false', () => {
+      container.innerHTML = '<div if="value"></div>'
+      const viewModel: ViewModel<{ value: unknown }> = { value: 0 }
+      const bindings = setupIfBindings(container, viewModel)
 
-      renderIfBindings(bindings, viewModel);
-      expect(container.querySelector("div")!.style.display).toBe("none");
+      renderIfBindings(bindings, viewModel)
+      expect(container.querySelector('div')!.style.display).toBe('none')
 
-      viewModel.value = "";
-      renderIfBindings(bindings, viewModel);
-      expect(container.querySelector("div")!.style.display).toBe("none");
+      viewModel.value = ''
+      renderIfBindings(bindings, viewModel)
+      expect(container.querySelector('div')!.style.display).toBe('none')
 
-      viewModel.value = null;
-      renderIfBindings(bindings, viewModel);
-      expect(container.querySelector("div")!.style.display).toBe("none");
-    });
+      viewModel.value = null
+      renderIfBindings(bindings, viewModel)
+      expect(container.querySelector('div')!.style.display).toBe('none')
+    })
 
-    it("should treat truthy values as true", () => {
-      container.innerHTML = '<div if="value"></div>';
-      const viewModel: ViewModel<{ value: unknown }> = { value: 1 };
-      const bindings = setupIfBindings(container, viewModel);
+    it('should treat truthy values as true', () => {
+      container.innerHTML = '<div if="value"></div>'
+      const viewModel: ViewModel<{ value: unknown }> = { value: 1 }
+      const bindings = setupIfBindings(container, viewModel)
 
-      renderIfBindings(bindings, viewModel);
-      expect(container.querySelector("div")!.style.display).not.toBe("none");
+      renderIfBindings(bindings, viewModel)
+      expect(container.querySelector('div')!.style.display).not.toBe('none')
 
-      viewModel.value = "text";
-      renderIfBindings(bindings, viewModel);
-      expect(container.querySelector("div")!.style.display).not.toBe("none");
+      viewModel.value = 'text'
+      renderIfBindings(bindings, viewModel)
+      expect(container.querySelector('div')!.style.display).not.toBe('none')
 
-      viewModel.value = {};
-      renderIfBindings(bindings, viewModel);
-      expect(container.querySelector("div")!.style.display).not.toBe("none");
-    });
-  });
-});
-
-
+      viewModel.value = {}
+      renderIfBindings(bindings, viewModel)
+      expect(container.querySelector('div')!.style.display).not.toBe('none')
+    })
+  })
+})

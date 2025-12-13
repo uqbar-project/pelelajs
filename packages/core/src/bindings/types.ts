@@ -1,49 +1,48 @@
 export type ViewModel<T extends object = object> = T & {
-  [key: string]: unknown;
-};
+  [key: string]: unknown
+}
 
 export type ValueBinding = {
-  element: HTMLElement;
-  propertyName: string;
-  isInput: boolean;
-};
+  element: HTMLElement
+  propertyName: string
+  isInput: boolean
+}
 
 export type IfBinding = {
-  element: HTMLElement;
-  propertyName: string;
-  originalDisplay: string;
-};
+  element: HTMLElement
+  propertyName: string
+  originalDisplay: string
+}
 
 export type ClassBinding = {
-  element: HTMLElement;
-  propertyName: string;
-  staticClassName: string;
-};
+  element: HTMLElement
+  propertyName: string
+  staticClassName: string
+}
 
 export type StyleBinding = {
-  element: HTMLElement;
-  propertyName: string;
-};
+  element: HTMLElement
+  propertyName: string
+}
 
 export type ForEachBinding = {
-  collectionName: string;
-  itemName: string;
-  template: HTMLElement;
-  placeholder: Comment;
+  collectionName: string
+  itemName: string
+  template: HTMLElement
+  placeholder: Comment
   renderedElements: {
-    element: HTMLElement;
-    viewModel: ViewModel;
-    itemRef: { current: any };
-    render: () => void;
-  }[];
-  previousLength: number;
-};
+    element: HTMLElement
+    viewModel: ViewModel
+    itemRef: { current: any }
+    render: () => void
+  }[]
+  previousLength: number
+}
 
 export type BindingsCollection = {
-  valueBindings: ValueBinding[];
-  ifBindings: IfBinding[];
-  classBindings: ClassBinding[];
-  styleBindings: StyleBinding[];
-  forEachBindings: ForEachBinding[];
-};
-
+  valueBindings: ValueBinding[]
+  ifBindings: IfBinding[]
+  classBindings: ClassBinding[]
+  styleBindings: StyleBinding[]
+  forEachBindings: ForEachBinding[]
+}
