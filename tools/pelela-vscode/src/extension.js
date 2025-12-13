@@ -35,7 +35,7 @@ function setupLanguageHandlers() {
 
 function configurePelelaLanguage() {
   vscode.languages.setLanguageConfiguration("pelela", {
-    wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\$\^\&\*\(\)\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\s]+)/g,
+    wordPattern: /(-?\d*\.\d\w*)|([^`~!@$^&*()=+[{\]}\\|;:'",.<>/\s]+)/g,
   });
 }
 

@@ -1,4 +1,4 @@
-const fs = require("fs");
+const fs = require("node:fs");
 
 function findViewModelFile(pelelaUri) {
   const pelelaPath = pelelaUri.fsPath;

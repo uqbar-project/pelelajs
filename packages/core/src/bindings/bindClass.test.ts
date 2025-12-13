@@ -120,7 +120,7 @@ describe("bindClass", () => {
       const bindings = setupClassBindings(container, viewModel);
 
       renderClassBindings(bindings, viewModel);
-      let div = container.querySelector("div")!;
+      const div = container.querySelector("div")!;
       expect(div.className).toBe("active");
 
       viewModel.classes = {

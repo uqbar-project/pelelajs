@@ -1,4 +1,4 @@
-import { BindingKind, PropertyValidationError } from "../errors";
+import { type BindingKind, PropertyValidationError } from "../errors";
 
 function hasNestedProperty(obj: any, path: string): boolean {
   if (path in obj) {

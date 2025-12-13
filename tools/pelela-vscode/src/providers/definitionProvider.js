@@ -8,7 +8,11 @@ const {
   findMethodDefinition,
 } = require("../parsers/definitionFinder");
 
-function provideDefinition(document, position, token) {
+// Regex patterns for attribute matching
+const BIND_ATTRIBUTE_PATTERN = /(?:bind-[a-zA-Z0-9_-]+|if|for-each)=["']([^"']+)["']/g;
+const CLICK_ATTRIBUTE_PATTERN = /click=["']([^"']+)["']/g;
+
+function provideDefinition(document, position, _token) {
   const line = document.lineAt(position.line);
   const lineText = line.text;
   
@@ -41,15 +45,12 @@ function checkViewModelDefinition(document, position, lineText) {
 }
 
 function checkBindAttributeDefinitions(document, position, lineText, forEachInElement) {
-  const bindMatch = /(?:bind-[a-zA-Z0-9_-]+|if|for-each)=["']([^"']+)["']/g;
-  let match;
-  
-  while ((match = bindMatch.exec(lineText)) !== null) {
+  for (const match of lineText.matchAll(BIND_ATTRIBUTE_PATTERN)) {
     const fullValue = match[1];
     const attrStartPos = match.index;
     const valueStartPos = attrStartPos + match[0].indexOf(fullValue);
     const valueEndPos = valueStartPos + fullValue.length;
-    
+
     if (position.character >= valueStartPos && position.character <= valueEndPos) {
       const tsFile = findViewModelFile(document.uri);
       if (!tsFile) continue;
@@ -64,7 +65,7 @@ function checkBindAttributeDefinitions(document, position, lineText, forEachInEl
       }
     }
   }
-  
+
   return null;
 }
 
@@ -110,14 +111,11 @@ function handlePropertyPathDefinition(document, fullValue, cursorOffsetInValue, 
 }
 
 function checkClickAttributeDefinition(document, position, lineText) {
-  const clickMatch = /click=["']([^"']+)["']/g;
-  let match;
-  
-  while ((match = clickMatch.exec(lineText)) !== null) {
+  for (const match of lineText.matchAll(CLICK_ATTRIBUTE_PATTERN)) {
     const methodName = match[1];
     const startPos = match.index + match[0].indexOf(methodName);
     const endPos = startPos + methodName.length;
-    
+
     if (position.character >= startPos && position.character <= endPos) {
       const tsFile = findViewModelFile(document.uri);
       if (tsFile) {
@@ -125,7 +123,7 @@ function checkClickAttributeDefinition(document, position, lineText) {
       }
     }
   }
-  
+
   return null;
 }
 

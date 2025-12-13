@@ -79,7 +79,6 @@ function traverseNestedPath(lines, startIndex, remainingPath, tsFilePath) {
         if (line.includes('{')) {
           inObjectLiteral = true;
           braceDepth = calculateBraceDepth(line);
-          continue;
         }
       } else {
         braceDepth = updateBraceDepth(braceDepth, line);

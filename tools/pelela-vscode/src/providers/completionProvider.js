@@ -12,7 +12,7 @@ const {
 } = require("../parsers/documentParser");
 const { extractViewModelMembers, extractNestedProperties } = require("../parsers/viewModelParser");
 
-async function provideCompletionItems(document, position, token, context) {
+async function provideCompletionItems(document, position, _token, _context) {
   const items = [];
   const line = document.lineAt(position.line);
   const lineText = line.text;
@@ -45,7 +45,7 @@ function addHtmlElementCompletions(items) {
       tag,
       vscode.CompletionItemKind.Property
     );
-    item.sortText = "z" + tag;
+    item.sortText = `z${tag}`;
     items.push(item);
   }
 }
@@ -57,17 +57,23 @@ function addHtmlAttributeCompletions(items) {
       vscode.CompletionItemKind.Property
     );
     item.insertText = new vscode.SnippetString(`${attr}="\${1}"`);
-    item.sortText = "z" + attr;
+    item.sortText = `z${attr}`;
     items.push(item);
   }
 }
 
 function addPelelaAttributeCompletions(items) {
   const attrNames = getPelelaAttributes();
+
+  // VSCode snippet definitions use ${N:placeholder} syntax for tab stops
   const snippets = {
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
     "view-model": { text: 'view-model="${1:App}"', detail: "Pelela: view model asociado al template" },
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
     "click": { text: 'click="${1:handler}"', detail: "Pelela: ejecuta un método del view model al hacer click" },
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
     "if": { text: 'if="${1:condicion}"', detail: "Pelela: renderizado condicional" },
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
     "for-each": { text: 'for-each="${1:item} of ${2:collection}"', detail: "Pelela: itera sobre una colección del view model" },
   };
 
@@ -80,11 +86,11 @@ function addPelelaAttributeCompletions(items) {
     if (snippets[name]) {
       item.insertText = new vscode.SnippetString(snippets[name].text);
       item.detail = snippets[name].detail;
-      item.sortText = "!0_" + name;
+      item.sortText = `!0_${name}`;
     } else if (name.startsWith("bind-")) {
       item.insertText = new vscode.SnippetString(`${name}="\${1:propiedad}"`);
       item.detail = "Pelela: binding al view model";
-      item.sortText = "!0_" + name;
+      item.sortText = `!0_${name}`;
     }
 
     items.push(item);
