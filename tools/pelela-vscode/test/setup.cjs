@@ -1,12 +1,11 @@
-const Module = require('node:module');
-const originalRequire = Module.prototype.require;
+const Module = require('node:module')
+const originalRequire = Module.prototype.require
 
-const vscodeStub = require('./vscode-stub.cjs');
+const vscodeStub = require('./vscode-stub.cjs')
 
-Module.prototype.require = function(id, ...args) {
+Module.prototype.require = function (id, ...args) {
   if (id === 'vscode') {
-    return vscodeStub;
+    return vscodeStub
   }
-  return originalRequire.apply(this, [id, ...args]);
-};
-
+  return originalRequire.apply(this, [id, ...args])
+}

@@ -1,11 +1,11 @@
-export type { ViewModelConstructor, PelelaOptions } from "./types";
-export { bootstrap } from "./bootstrap/bootstrap";
-export { mountTemplate } from "./bootstrap/mountTemplate";
-export { registerViewModel as defineViewModel } from "./registry/viewModelRegistry";
+export { bootstrap } from './bootstrap/bootstrap'
+export { mountTemplate } from './bootstrap/mountTemplate'
+export type { BindingKind, EventType, RegistrationType } from './errors/index'
 export {
+  InvalidHandlerError,
   PelelaError,
   PropertyValidationError,
   ViewModelRegistrationError,
-  InvalidHandlerError,
-} from "./errors/index";
-export type { BindingKind, RegistrationType, EventType } from "./errors/index";
+} from './errors/index'
+export { registerViewModel as defineViewModel } from './registry/viewModelRegistry'
+export type { PelelaOptions, ViewModelConstructor } from './types'

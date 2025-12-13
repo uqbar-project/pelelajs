@@ -1,12 +1,12 @@
-export { PelelaError } from "./PelelaError";
-export { PropertyValidationError } from "./PropertyValidationError";
-export { ViewModelRegistrationError } from "./ViewModelRegistrationError";
-export { InvalidHandlerError } from "./InvalidHandlerError";
-export { InvalidBindingSyntaxError } from "./InvalidBindingSyntaxError";
-export { InvalidPropertyTypeError } from "./InvalidPropertyTypeError";
-export { InvalidDOMStructureError } from "./InvalidDOMStructureError";
+export { InvalidBindingSyntaxError } from './InvalidBindingSyntaxError'
+export { InvalidDOMStructureError } from './InvalidDOMStructureError'
+export type { EventType } from './InvalidHandlerError'
+export { InvalidHandlerError } from './InvalidHandlerError'
+export type { ExpectedType } from './InvalidPropertyTypeError'
+export { InvalidPropertyTypeError } from './InvalidPropertyTypeError'
+export { PelelaError } from './PelelaError'
 
-export type { BindingKind } from "./PropertyValidationError";
-export type { RegistrationType } from "./ViewModelRegistrationError";
-export type { EventType } from "./InvalidHandlerError";
-export type { ExpectedType } from "./InvalidPropertyTypeError";
+export type { BindingKind } from './PropertyValidationError'
+export { PropertyValidationError } from './PropertyValidationError'
+export type { RegistrationType } from './ViewModelRegistrationError'
+export { ViewModelRegistrationError } from './ViewModelRegistrationError'
