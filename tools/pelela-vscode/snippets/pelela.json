@@ -7,7 +7,12 @@
   "bind-value": {
     "prefix": "bindv",
     "body": ["bind-value=\"$1\""],
-    "description": "Atributo bind-value para binding de valor"
+    "description": "Atributo bind-value para binding de valor (input, textarea, select)"
+  },
+  "bind-content": {
+    "prefix": "bindcontent",
+    "body": ["bind-content=\"$1\""],
+    "description": "Atributo bind-content para binding de contenido (span, div, p, etc)"
   },
   "if": {
     "prefix": "if",

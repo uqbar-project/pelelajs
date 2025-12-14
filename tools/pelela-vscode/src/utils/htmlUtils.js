@@ -68,7 +68,7 @@ function getHtmlAttributes() {
 }
 
 function getPelelaAttributes() {
-  return ['view-model', 'bind-value', 'if', 'bind-class', 'bind-style', 'click', 'for-each']
+  return ['view-model', 'bind-value', 'bind-content', 'if', 'bind-class', 'bind-style', 'click', 'for-each']
 }
 
 module.exports = {
