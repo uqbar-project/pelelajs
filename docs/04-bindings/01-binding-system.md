@@ -19,6 +19,7 @@ Este documento explica cómo funciona el sistema general de bindings: el setup, 
 │       │                                                          │
 │       ├─► setupForEachBindings()  → ForEachBinding[]            │
 │       ├─► setupValueBindings()    → ValueBinding[]              │
+│       ├─► setupContentBindings()  → ContentBinding[]            │
 │       ├─► setupIfBindings()       → IfBinding[]                 │
 │       ├─► setupClassBindings()    → ClassBinding[]              │
 │       ├─► setupStyleBindings()    → StyleBinding[]              │
@@ -80,6 +81,7 @@ export function setupBindings<T extends object>(
   const bindings: BindingsCollection = {
     forEachBindings: setupForEachBindings(root, viewModel),
     valueBindings: setupValueBindings(root, viewModel),
+    contentBindings: setupContentBindings(root, viewModel),
     ifBindings: setupIfBindings(root, viewModel),
     classBindings: setupClassBindings(root, viewModel),
     styleBindings: setupStyleBindings(root, viewModel),
@@ -88,11 +90,11 @@ export function setupBindings<T extends object>(
   setupClickBindings(root, viewModel);
 
   const tracker = new DependencyTracker();
-  registerAllBindingDependencies(bindings, tracker);
+  registerAllBindingDependencies(bindings, tracker, viewModel);
 
   const render = (changedPath?: string) => {
     const targetBindings = changedPath 
-      ? tracker.getDependentBindings(changedPath, bindings)
+      ? tracker.getDependentBindingsWithGetterSupport(changedPath, bindings)
       : bindings;
 
     executeRenderPipeline(targetBindings, viewModel);
@@ -110,6 +112,7 @@ export function setupBindings<T extends object>(
 ```typescript
 export type BindingsCollection = {
   valueBindings: ValueBinding[];
+  contentBindings: ContentBinding[];
   ifBindings: IfBinding[];
   classBindings: ClassBinding[];
   styleBindings: StyleBinding[];
@@ -130,11 +133,12 @@ La `BindingsCollection` agrupa todos los bindings por tipo, permitiendo:
 
 ```html
 <pelela view-model="AppViewModel">
-  <h1 bind-value="title"></h1>
-  <p if="showDescription" bind-value="description"></p>
+  <input bind-value="title" />
+  <h1 bind-content="title"></h1>
+  <p if="showDescription" bind-content="description"></p>
   <button click="handleClick" bind-class="buttonClass">Click</button>
   <div for-each="item of items">
-    <span bind-value="item.name"></span>
+    <span bind-content="item.name"></span>
   </div>
 </pelela>
 ```
@@ -144,9 +148,12 @@ Resultado después de setup:
 ```typescript
 bindings = {
   valueBindings: [
-    { element: <h1>, propertyName: "title", isInput: false },
-    { element: <p>, propertyName: "description", isInput: false },
-    { element: <span>, propertyName: "item.name", isInput: false }
+    { element: <input>, propertyName: "title" }
+  ],
+  contentBindings: [
+    { element: <h1>, propertyName: "title" },
+    { element: <p>, propertyName: "description" },
+    { element: <span>, propertyName: "item.name" }
   ],
   ifBindings: [
     { element: <p>, propertyName: "showDescription", originalDisplay: "" }
@@ -176,13 +183,29 @@ bindings = {
 export type ValueBinding = {
   element: HTMLElement;
   propertyName: string;
-  isInput: boolean;
 };
 ```
 
-**Propósito:** Sincronizar el valor de una propiedad con el contenido de un elemento.
+**Propósito:** Sincronizar el valor de una propiedad con elementos de formulario (input, textarea, select).
 
 **Atributo HTML:** `bind-value="propertyName"`
+
+**Características:** Bidireccional, solo para inputs.
+
+#### ContentBinding
+
+```typescript
+export type ContentBinding = {
+  element: HTMLElement;
+  propertyName: string;
+};
+```
+
+**Propósito:** Mostrar contenido de una propiedad en elementos de display (span, div, p, etc.).
+
+**Atributo HTML:** `bind-content="propertyName"`
+
+**Características:** Unidireccional, usa innerHTML.
 
 #### IfBinding
 
