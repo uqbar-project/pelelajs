@@ -1,6 +1,12 @@
 import { PelelaError } from './PelelaError'
 
-export type BindingKind = 'bind-class' | 'bind-value' | 'bind-content' | 'bind-style' | 'for-each' | 'if'
+export type BindingKind =
+  | 'bind-class'
+  | 'bind-value'
+  | 'bind-content'
+  | 'bind-style'
+  | 'for-each'
+  | 'if'
 
 interface PropertyValidationErrorParams {
   propertyName: string

@@ -9,9 +9,9 @@ function isPropertyGetter(obj: any, propertyPath: string): boolean {
     if (!current || typeof current !== 'object') return false
 
     const part = parts[i]
-    
+
     let descriptor = Object.getOwnPropertyDescriptor(current, part)
-    
+
     if (!descriptor && current.constructor && current.constructor.prototype) {
       descriptor = Object.getOwnPropertyDescriptor(current.constructor.prototype, part)
     }

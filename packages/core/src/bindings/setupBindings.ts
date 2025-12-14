@@ -17,7 +17,13 @@ import type {
   ViewModel,
 } from './types'
 
-type AnyBinding = ForEachBinding | ValueBinding | ContentBinding | IfBinding | ClassBinding | StyleBinding
+type AnyBinding =
+  | ForEachBinding
+  | ValueBinding
+  | ContentBinding
+  | IfBinding
+  | ClassBinding
+  | StyleBinding
 
 function registerAllBindingDependencies(
   bindings: BindingsCollection,
