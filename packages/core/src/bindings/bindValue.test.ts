@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { PropertyValidationError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { renderValueBindings, setupValueBindings } from './bindValue'
-import type { ViewModel } from './types'
 
 describe('bindValue', () => {
   let container: HTMLElement
@@ -16,31 +15,43 @@ describe('bindValue', () => {
   })
 
   describe('setupValueBindings', () => {
-    it('should collect elements with bind-value', () => {
+    it('should collect input elements with bind-value', () => {
       container.innerHTML = `
-        <span bind-value="message"></span>
         <input bind-value="name" />
+        <textarea bind-value="description"></textarea>
       `
 
-      const viewModel = { message: '', name: '' }
+      const viewModel = { name: '', description: '' }
       const bindings = setupValueBindings(container, viewModel)
 
       expect(bindings).toHaveLength(2)
     })
 
-    it('should identify inputs correctly', () => {
-      container.innerHTML = `
-        <span bind-value="text"></span>
-        <input bind-value="input" />
-        <textarea bind-value="area"></textarea>
-      `
+    it('should throw error for non-input elements', () => {
+      container.innerHTML = '<span bind-value="text"></span>'
+      const viewModel = { text: '' }
 
-      const viewModel = { text: '', input: '', area: '' }
-      const bindings = setupValueBindings(container, viewModel)
+      expect(() => {
+        setupValueBindings(container, viewModel)
+      }).toThrow('bind-value can only be used on input, textarea, or select elements')
+    })
 
-      expect(bindings[0].isInput).toBe(false)
-      expect(bindings[1].isInput).toBe(true)
-      expect(bindings[2].isInput).toBe(true)
+    it('should throw error for div elements', () => {
+      container.innerHTML = '<div bind-value="text"></div>'
+      const viewModel = { text: '' }
+
+      expect(() => {
+        setupValueBindings(container, viewModel)
+      }).toThrow('Use bind-content for display elements')
+    })
+
+    it('should throw error for p elements', () => {
+      container.innerHTML = '<p bind-value="text"></p>'
+      const viewModel = { text: '' }
+
+      expect(() => {
+        setupValueBindings(container, viewModel)
+      }).toThrow('bind-value can only be used on input, textarea, or select elements')
     })
 
     it('should setup event listeners on inputs', () => {
@@ -124,18 +135,6 @@ describe('bindValue', () => {
   })
 
   describe('renderValueBindings', () => {
-    it('should update textContent of non-input elements', () => {
-      container.innerHTML = '<span bind-value="message"></span>'
-      const viewModel = { message: 'Hello' }
-      const bindings = setupValueBindings(container, viewModel)
-
-      viewModel.message = 'World'
-      renderValueBindings(bindings, viewModel)
-
-      const span = container.querySelector('span')!
-      expect(span.textContent).toBe('World')
-    })
-
     it('should update value of inputs', () => {
       container.innerHTML = '<input bind-value="name" />'
       const viewModel = { name: 'John' }
@@ -149,27 +148,27 @@ describe('bindValue', () => {
     })
 
     it('should handle null and undefined values', () => {
-      container.innerHTML = '<span bind-value="text"></span>'
-      const viewModel: ViewModel<{ text: unknown }> = { text: 'initial' }
+      container.innerHTML = '<input bind-value="text" />'
+      const viewModel: { text: unknown } = { text: 'initial' }
       const bindings = setupValueBindings(container, viewModel)
 
       viewModel.text = null
       renderValueBindings(bindings, viewModel)
-      expect(container.querySelector('span')!.textContent).toBe('')
+      expect(container.querySelector('input')!.value).toBe('')
 
       viewModel.text = undefined
       renderValueBindings(bindings, viewModel)
-      expect(container.querySelector('span')!.textContent).toBe('')
+      expect(container.querySelector('input')!.value).toBe('')
     })
 
     it('should convert numbers to strings', () => {
-      container.innerHTML = '<span bind-value="count"></span>'
+      container.innerHTML = '<input bind-value="count" />'
       const viewModel = { count: 42 }
       const bindings = setupValueBindings(container, viewModel)
 
       renderValueBindings(bindings, viewModel)
 
-      expect(container.querySelector('span')!.textContent).toBe('42')
+      expect(container.querySelector('input')!.value).toBe('42')
     })
 
     it('should not update input if value has not changed', () => {

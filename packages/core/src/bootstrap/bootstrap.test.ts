@@ -22,7 +22,7 @@ describe('bootstrap', () => {
   it('should initialize pelela elements with view-model', () => {
     document.body.innerHTML = `
       <pelela view-model="TestVM">
-        <span bind-value="message"></span>
+        <span bind-content="message"></span>
       </pelela>
     `
 
@@ -30,13 +30,13 @@ describe('bootstrap', () => {
     bootstrap()
 
     const span = document.querySelector('span')!
-    expect(span.textContent).toBe('Hello')
+    expect(span.innerHTML).toBe('Hello')
   })
 
   it('should create reactive instances of view models', () => {
     document.body.innerHTML = `
       <pelela view-model="TestVM">
-        <span bind-value="count"></span>
+        <span bind-content="count"></span>
       </pelela>
     `
 
@@ -53,7 +53,7 @@ describe('bootstrap', () => {
   it('should update DOM when view model changes', () => {
     document.body.innerHTML = `
       <pelela view-model="TestVM">
-        <span bind-value="count"></span>
+        <span bind-content="count"></span>
       </pelela>
     `
 
@@ -66,16 +66,16 @@ describe('bootstrap', () => {
 
     viewModel.count = 42
 
-    expect(span.textContent).toBe('42')
+    expect(span.innerHTML).toBe('42')
   })
 
   it('should handle multiple pelela elements', () => {
     document.body.innerHTML = `
       <pelela view-model="TestVM">
-        <span bind-value="message"></span>
+        <span bind-content="message"></span>
       </pelela>
       <pelela view-model="TestVM">
-        <span bind-value="count"></span>
+        <span bind-content="count"></span>
       </pelela>
     `
 
@@ -83,14 +83,14 @@ describe('bootstrap', () => {
     bootstrap()
 
     const spans = document.querySelectorAll('span')
-    expect(spans[0].textContent).toBe('Hello')
-    expect(spans[1].textContent).toBe('0')
+    expect(spans[0].innerHTML).toBe('Hello')
+    expect(spans[1].innerHTML).toBe('0')
   })
 
   it('should throw error if view model is not registered', () => {
     document.body.innerHTML = `
       <pelela view-model="UnregisteredVM">
-        <span bind-value="message"></span>
+        <span bind-content="message"></span>
       </pelela>
     `
 
@@ -114,7 +114,7 @@ describe('bootstrap', () => {
     const customDoc = document.implementation.createHTMLDocument()
     customDoc.body.innerHTML = `
       <pelela view-model="TestVM">
-        <span bind-value="message"></span>
+        <span bind-content="message"></span>
       </pelela>
     `
 
@@ -122,19 +122,19 @@ describe('bootstrap', () => {
     bootstrap({ document: customDoc })
 
     const span = customDoc.querySelector('span')!
-    expect(span.textContent).toBe('Hello')
+    expect(span.innerHTML).toBe('Hello')
   })
 
   it('should search only in specified root', () => {
     document.body.innerHTML = `
       <div id="app1">
         <pelela view-model="TestVM">
-          <span bind-value="message"></span>
+          <span bind-content="message"></span>
         </pelela>
       </div>
       <div id="app2">
         <pelela view-model="TestVM">
-          <span bind-value="count"></span>
+          <span bind-content="count"></span>
         </pelela>
       </div>
     `
@@ -165,7 +165,7 @@ describe('bootstrap', () => {
   it('should setup event handlers correctly', () => {
     document.body.innerHTML = `
       <pelela view-model="TestVM">
-        <span bind-value="count"></span>
+        <span bind-content="count"></span>
         <button click="increment">+</button>
       </pelela>
     `
@@ -186,7 +186,7 @@ describe('bootstrap', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     document.body.innerHTML = `
       <pelela view-model="TestVM">
-        <span bind-value="message"></span>
+        <span bind-content="message"></span>
       </pelela>
     `
 

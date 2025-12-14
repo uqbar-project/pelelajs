@@ -18,7 +18,7 @@ describe('bindForEach', () => {
     it('should parse for-each expression correctly', () => {
       container.innerHTML = `
         <div for-each="user of users">
-          <span bind-value="user.name"></span>
+          <span bind-content="user.name"></span>
         </div>
       `
 
@@ -124,7 +124,7 @@ describe('bindForEach', () => {
     it('should render elements for initial array', () => {
       container.innerHTML = `
         <div for-each="user of users">
-          <span bind-value="user.name"></span>
+          <span bind-content="user.name"></span>
         </div>
       `
 
@@ -137,14 +137,14 @@ describe('bindForEach', () => {
 
       const spans = container.querySelectorAll('span')
       expect(spans).toHaveLength(2)
-      expect(spans[0].textContent).toBe('Alice')
-      expect(spans[1].textContent).toBe('Bob')
+      expect(spans[0].innerHTML).toBe('Alice')
+      expect(spans[1].innerHTML).toBe('Bob')
     })
 
     it('should add new elements when array grows', () => {
       container.innerHTML = `
         <div for-each="item of items">
-          <span bind-value="item.text"></span>
+          <span bind-content="item.text"></span>
         </div>
       `
 
@@ -162,14 +162,14 @@ describe('bindForEach', () => {
 
       const spans = container.querySelectorAll('span')
       expect(spans).toHaveLength(2)
-      expect(spans[0].textContent).toBe('First')
-      expect(spans[1].textContent).toBe('Second')
+      expect(spans[0].innerHTML).toBe('First')
+      expect(spans[1].innerHTML).toBe('Second')
     })
 
     it('should remove elements when array shrinks', () => {
       container.innerHTML = `
         <div for-each="item of items">
-          <span bind-value="item.text"></span>
+          <span bind-content="item.text"></span>
         </div>
       `
 
@@ -187,14 +187,14 @@ describe('bindForEach', () => {
 
       const spans = container.querySelectorAll('span')
       expect(spans).toHaveLength(2)
-      expect(spans[0].textContent).toBe('First')
-      expect(spans[1].textContent).toBe('Second')
+      expect(spans[0].innerHTML).toBe('First')
+      expect(spans[1].innerHTML).toBe('Second')
     })
 
     it('should handle empty arrays', () => {
       container.innerHTML = `
         <div for-each="item of items">
-          <span bind-value="item.text"></span>
+          <span bind-content="item.text"></span>
         </div>
       `
 
@@ -209,7 +209,7 @@ describe('bindForEach', () => {
     it('should access nested item properties', () => {
       container.innerHTML = `
         <div for-each="user of users">
-          <span bind-value="user.profile.email"></span>
+          <span bind-content="user.profile.email"></span>
         </div>
       `
 
@@ -221,14 +221,14 @@ describe('bindForEach', () => {
       renderForEachBindings(bindings, viewModel)
 
       const spans = container.querySelectorAll('span')
-      expect(spans[0].textContent).toBe('alice@test.com')
-      expect(spans[1].textContent).toBe('bob@test.com')
+      expect(spans[0].innerHTML).toBe('alice@test.com')
+      expect(spans[1].innerHTML).toBe('bob@test.com')
     })
 
     it('should support nested bindings like bind-if', () => {
       container.innerHTML = `
         <div for-each="item of items">
-          <span if="item.visible" bind-value="item.text"></span>
+          <span if="item.visible" bind-content="item.text"></span>
         </div>
       `
 
@@ -250,7 +250,7 @@ describe('bindForEach', () => {
     it('should update existing elements when items change', () => {
       container.innerHTML = `
         <div for-each="item of items">
-          <span bind-value="item.text"></span>
+          <span bind-content="item.text"></span>
         </div>
       `
 
@@ -265,14 +265,14 @@ describe('bindForEach', () => {
       renderForEachBindings(bindings, viewModel)
 
       const span = container.querySelector('span')
-      expect(span?.textContent).toBe('Updated')
+      expect(span?.innerHTML).toBe('Updated')
     })
 
     it('should handle list items', () => {
       container.innerHTML = `
         <ul>
           <li for-each="tipo of tipos">
-            <span bind-value="tipo.descripcion"></span>
+            <span bind-content="tipo.descripcion"></span>
           </li>
         </ul>
       `
@@ -289,8 +289,8 @@ describe('bindForEach', () => {
 
       const listItems = container.querySelectorAll('li')
       expect(listItems).toHaveLength(2)
-      expect(listItems[0].querySelector('span')?.textContent).toBe('Tipo A')
-      expect(listItems[1].querySelector('span')?.textContent).toBe('Tipo B')
+      expect(listItems[0].querySelector('span')?.innerHTML).toBe('Tipo A')
+      expect(listItems[1].querySelector('span')?.innerHTML).toBe('Tipo B')
     })
 
     it('should handle table rows', () => {
@@ -298,8 +298,8 @@ describe('bindForEach', () => {
         <table>
           <tbody>
             <tr for-each="user of users">
-              <td bind-value="user.id"></td>
-              <td bind-value="user.name"></td>
+              <td bind-content="user.id"></td>
+              <td bind-content="user.name"></td>
             </tr>
           </tbody>
         </table>
@@ -319,15 +319,15 @@ describe('bindForEach', () => {
       expect(rows).toHaveLength(2)
 
       const firstRowCells = rows[0].querySelectorAll('td')
-      expect(firstRowCells[0].textContent).toBe('1')
-      expect(firstRowCells[1].textContent).toBe('Alice')
+      expect(firstRowCells[0].innerHTML).toBe('1')
+      expect(firstRowCells[1].innerHTML).toBe('Alice')
     })
 
     it('should access parent viewModel properties', () => {
       container.innerHTML = `
         <div for-each="item of items">
-          <span bind-value="prefix"></span>
-          <span bind-value="item.text"></span>
+          <span bind-content="prefix"></span>
+          <span bind-content="item.text"></span>
         </div>
       `
 
@@ -340,17 +340,17 @@ describe('bindForEach', () => {
       renderForEachBindings(bindings, viewModel)
 
       const divs = container.querySelectorAll('div')
-      expect(divs[0].querySelectorAll('span')[0].textContent).toBe('Item:')
-      expect(divs[0].querySelectorAll('span')[1].textContent).toBe('First')
-      expect(divs[1].querySelectorAll('span')[0].textContent).toBe('Item:')
-      expect(divs[1].querySelectorAll('span')[1].textContent).toBe('Second')
+      expect(divs[0].querySelectorAll('span')[0].innerHTML).toBe('Item:')
+      expect(divs[0].querySelectorAll('span')[1].innerHTML).toBe('First')
+      expect(divs[1].querySelectorAll('span')[0].innerHTML).toBe('Item:')
+      expect(divs[1].querySelectorAll('span')[1].innerHTML).toBe('Second')
     })
 
     it('should support if binding on same element as for-each', () => {
       container.innerHTML = `
         <ul>
           <li for-each="item of items" if="item.visible">
-            <span bind-value="item.text"></span>
+            <span bind-content="item.text"></span>
           </li>
         </ul>
       `
@@ -376,7 +376,7 @@ describe('bindForEach', () => {
     it('should support bind-value on same element as for-each', () => {
       container.innerHTML = `
         <select>
-          <option for-each="tipo of tipos" bind-value="tipo.descripcion"></option>
+          <option for-each="tipo of tipos" bind-content="tipo.descripcion"></option>
         </select>
       `
 
@@ -393,15 +393,15 @@ describe('bindForEach', () => {
 
       const options = container.querySelectorAll('option')
       expect(options).toHaveLength(3)
-      expect(options[0].textContent).toBe('Tipo A')
-      expect(options[1].textContent).toBe('Tipo B')
-      expect(options[2].textContent).toBe('Tipo C')
+      expect(options[0].innerHTML).toBe('Tipo A')
+      expect(options[1].innerHTML).toBe('Tipo B')
+      expect(options[2].innerHTML).toBe('Tipo C')
     })
 
     it('should support multiple bindings on same element as for-each', () => {
       container.innerHTML = `
         <div>
-          <span for-each="item of items" if="item.visible" bind-value="item.text" bind-class="item.className"></span>
+          <span for-each="item of items" if="item.visible" bind-content="item.text" bind-class="item.className"></span>
         </div>
       `
 
@@ -420,21 +420,21 @@ describe('bindForEach', () => {
       expect(spans).toHaveLength(3)
 
       expect(spans[0].style.display).not.toBe('none')
-      expect(spans[0].textContent).toBe('First')
+      expect(spans[0].innerHTML).toBe('First')
       expect(spans[0].className).toBe('highlight')
 
       expect(spans[1].style.display).toBe('none')
-      expect(spans[1].textContent).toBe('Second')
+      expect(spans[1].innerHTML).toBe('Second')
 
       expect(spans[2].style.display).not.toBe('none')
-      expect(spans[2].textContent).toBe('Third')
+      expect(spans[2].innerHTML).toBe('Third')
       expect(spans[2].className).toBe('highlight')
     })
 
     it('should work with select and option elements', () => {
       container.innerHTML = `
         <select>
-          <option for-each="tipo of tipos" bind-value="tipo.descripcion"></option>
+          <option for-each="tipo of tipos" bind-content="tipo.descripcion"></option>
         </select>
       `
 
@@ -454,9 +454,9 @@ describe('bindForEach', () => {
 
       expect(options).toBeDefined()
       expect(options?.length).toBe(3)
-      expect(options?.[0].textContent).toBe('Opción 1')
-      expect(options?.[1].textContent).toBe('Opción 2')
-      expect(options?.[2].textContent).toBe('Opción 3')
+      expect(options?.[0].innerHTML).toBe('Opción 1')
+      expect(options?.[1].innerHTML).toBe('Opción 2')
+      expect(options?.[2].innerHTML).toBe('Opción 3')
     })
   })
 })

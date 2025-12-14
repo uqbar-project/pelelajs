@@ -1,7 +1,34 @@
 import type { BindingsCollection } from './types'
 
+function isPropertyGetter(obj: any, propertyPath: string): boolean {
+  const rawObj = obj?.$raw || obj
+  const parts = propertyPath.split('.')
+  let current = rawObj
+
+  for (let i = 0; i < parts.length; i++) {
+    if (!current || typeof current !== 'object') return false
+
+    const part = parts[i]
+    
+    let descriptor = Object.getOwnPropertyDescriptor(current, part)
+    
+    if (!descriptor && current.constructor && current.constructor.prototype) {
+      descriptor = Object.getOwnPropertyDescriptor(current.constructor.prototype, part)
+    }
+
+    if (descriptor && descriptor.get) {
+      return true
+    }
+
+    current = current[part]
+  }
+
+  return false
+}
+
 export type FilteredBindings = {
   valueBindings: Array<any>
+  contentBindings: Array<any>
   ifBindings: Array<any>
   classBindings: Array<any>
   styleBindings: Array<any>
@@ -10,17 +37,31 @@ export type FilteredBindings = {
 
 export class DependencyTracker {
   private dependencies = new Map<any, Set<string>>()
+  private getterBindings = new Set<any>()
 
-  registerDependency(binding: any, propertyPath: string): void {
+  registerDependency(binding: any, propertyPath: string, viewModel?: any): void {
     if (!this.dependencies.has(binding)) {
       this.dependencies.set(binding, new Set())
     }
     this.dependencies.get(binding)!.add(propertyPath)
+
+    if (viewModel && isPropertyGetter(viewModel, propertyPath)) {
+      this.markAsGetterBinding(binding)
+    }
+  }
+
+  markAsGetterBinding(binding: any): void {
+    this.getterBindings.add(binding)
+  }
+
+  isGetterBinding(binding: any): boolean {
+    return this.getterBindings.has(binding)
   }
 
   getDependentBindings(changedPath: string, allBindings: BindingsCollection): FilteredBindings {
     const result: FilteredBindings = {
       valueBindings: [],
+      contentBindings: [],
       ifBindings: [],
       classBindings: [],
       styleBindings: [],
@@ -30,6 +71,12 @@ export class DependencyTracker {
     for (const binding of allBindings.valueBindings) {
       if (this.isAffectedByChange(binding, changedPath)) {
         result.valueBindings.push(binding)
+      }
+    }
+
+    for (const binding of allBindings.contentBindings) {
+      if (this.isAffectedByChange(binding, changedPath)) {
+        result.contentBindings.push(binding)
       }
     }
 
@@ -54,6 +101,39 @@ export class DependencyTracker {
     for (const binding of allBindings.forEachBindings) {
       if (this.isAffectedByChange(binding, changedPath)) {
         result.forEachBindings.push(binding)
+      }
+    }
+
+    return result
+  }
+
+  getDependentBindingsWithGetterSupport(
+    changedPath: string,
+    allBindings: BindingsCollection,
+  ): FilteredBindings {
+    const result = this.getDependentBindings(changedPath, allBindings)
+
+    for (const binding of allBindings.ifBindings) {
+      if (!result.ifBindings.includes(binding) && this.isGetterBinding(binding)) {
+        result.ifBindings.push(binding)
+      }
+    }
+
+    for (const binding of allBindings.classBindings) {
+      if (!result.classBindings.includes(binding) && this.isGetterBinding(binding)) {
+        result.classBindings.push(binding)
+      }
+    }
+
+    for (const binding of allBindings.styleBindings) {
+      if (!result.styleBindings.includes(binding) && this.isGetterBinding(binding)) {
+        result.styleBindings.push(binding)
+      }
+    }
+
+    for (const binding of allBindings.contentBindings) {
+      if (!result.contentBindings.includes(binding) && this.isGetterBinding(binding)) {
+        result.contentBindings.push(binding)
       }
     }
 
