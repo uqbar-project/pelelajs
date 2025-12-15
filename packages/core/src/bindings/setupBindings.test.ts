@@ -15,7 +15,7 @@ describe('setupBindings', () => {
 
   it('should setup all binding types', () => {
     container.innerHTML = `
-      <span bind-value="message"></span>
+      <input bind-value="message" />
       <div if="show"></div>
       <div bind-class="classes"></div>
       <div bind-style="styles"></div>
@@ -36,18 +36,18 @@ describe('setupBindings', () => {
   })
 
   it('should perform initial render automatically', () => {
-    container.innerHTML = '<span bind-value="message"></span>'
+    container.innerHTML = '<span bind-content="message"></span>'
     const viewModel = { message: 'Initial' }
 
     setupBindings(container, viewModel)
 
     const span = container.querySelector('span')!
-    expect(span.textContent).toBe('Initial')
+    expect(span.innerHTML).toBe('Initial')
   })
 
   it('should return render function that updates all bindings', () => {
     container.innerHTML = `
-      <span bind-value="count"></span>
+      <span bind-content="count"></span>
       <div if="show"></div>
     `
 
@@ -62,15 +62,15 @@ describe('setupBindings', () => {
     viewModel.show = true
     render()
 
-    expect(container.querySelector('span')!.textContent).toBe('42')
+    expect(container.querySelector('span')!.innerHTML).toBe('42')
     expect(container.querySelector('div')!.style.display).not.toBe('none')
   })
 
   it('should handle multiple elements of same binding type', () => {
     container.innerHTML = `
-      <span bind-value="value1"></span>
-      <span bind-value="value2"></span>
-      <span bind-value="value3"></span>
+      <span bind-content="value1"></span>
+      <span bind-content="value2"></span>
+      <span bind-content="value3"></span>
     `
 
     const viewModel = {
@@ -82,9 +82,9 @@ describe('setupBindings', () => {
     setupBindings(container, viewModel)
 
     const spans = container.querySelectorAll('span')
-    expect(spans[0].textContent).toBe('one')
-    expect(spans[1].textContent).toBe('two')
-    expect(spans[2].textContent).toBe('three')
+    expect(spans[0].innerHTML).toBe('one')
+    expect(spans[1].innerHTML).toBe('two')
+    expect(spans[2].innerHTML).toBe('three')
   })
 
   it('should setup event listeners for click', () => {
@@ -101,8 +101,8 @@ describe('setupBindings', () => {
 
   it('should only update necessary elements on each render', () => {
     container.innerHTML = `
-      <span bind-value="changing"></span>
-      <span bind-value="static"></span>
+      <span bind-content="changing"></span>
+      <span bind-content="static"></span>
     `
 
     const viewModel = {
@@ -116,8 +116,8 @@ describe('setupBindings', () => {
     render()
 
     const spans = container.querySelectorAll('span')
-    expect(spans[0].textContent).toBe('updated')
-    expect(spans[1].textContent).toBe('never changes')
+    expect(spans[0].innerHTML).toBe('updated')
+    expect(spans[1].innerHTML).toBe('never changes')
   })
 
   it('should handle empty element without error', () => {
@@ -134,7 +134,7 @@ describe('setupBindings', () => {
       <div>
         <input bind-value="name" />
         <div if="showMessage">
-          <span bind-value="message" bind-class="messageClass" bind-style="messageStyle"></span>
+          <span bind-content="message" bind-class="messageClass" bind-style="messageStyle"></span>
         </div>
         <button click="submit">Submit</button>
       </div>
@@ -153,7 +153,7 @@ describe('setupBindings', () => {
     const render = setupBindings(container, viewModel)
 
     expect(container.querySelector('input')!.value).toBe('John')
-    expect(container.querySelector('span')!.textContent).toBe('Hello')
+    expect(container.querySelector('span')!.innerHTML).toBe('Hello')
     expect(container.querySelector('span')!.className).toContain('highlight')
     expect(container.querySelector('span')!.style.color).toBe('blue')
 

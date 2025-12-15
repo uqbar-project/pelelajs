@@ -20,7 +20,12 @@
     },
     {
       "name": "bind-value",
-      "description": "Pelela: Binds the value property to a ViewModel property",
+      "description": "Pelela: Binds the value property to a ViewModel property (for input, textarea, select)",
+      "valueSet": "v"
+    },
+    {
+      "name": "bind-content",
+      "description": "Pelela: Binds the innerHTML content to a ViewModel property (for display elements)",
       "valueSet": "v"
     },
     {
