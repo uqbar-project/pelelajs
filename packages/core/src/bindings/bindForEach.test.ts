@@ -130,6 +130,33 @@ describe('bindForEach', () => {
       }).toThrow(InvalidBindingSyntaxError)
     })
 
+    it('should throw InvalidBindingSyntaxError when item and collection names are equal', () => {
+      container.innerHTML = '<div for-each="items of items"></div>'
+      const viewModel = { items: [] }
+
+      expect(() => {
+        setupForEachBindings(container, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
+    })
+
+    it('should throw InvalidBindingSyntaxError when indexed item and collection names are equal', () => {
+      container.innerHTML = '<div for-each="(items, i) of items"></div>'
+      const viewModel = { items: [] }
+
+      expect(() => {
+        setupForEachBindings(container, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
+    })
+
+    it('should throw InvalidBindingSyntaxError when index and collection names are equal', () => {
+      container.innerHTML = '<div for-each="(item, items) of items"></div>'
+      const viewModel = { items: [] }
+
+      expect(() => {
+        setupForEachBindings(container, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
+    })
+
     it('should create placeholder comment with index syntax', () => {
       container.innerHTML = `
         <div for-each="(item, idx) of items"></div>

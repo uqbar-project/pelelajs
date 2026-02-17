@@ -255,6 +255,14 @@ function setupSingleForEachBinding<T extends object>(
     )
   }
 
+  if (itemName === collectionName || indexName === collectionName) {
+    throw new InvalidBindingSyntaxError(
+      'for-each',
+      expression,
+      'item, index and collection names must be different',
+    )
+  }
+
   assertViewModelProperty(viewModel, collectionName, 'for-each', element)
 
   const collection = viewModel[collectionName]
