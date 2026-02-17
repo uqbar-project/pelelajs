@@ -249,6 +249,24 @@ describe('documentParser', () => {
       assert.strictEqual(lines[1].slice(result.itemPos, result.itemPos + 4), 'item')
       assert.strictEqual(lines[1].slice(result.indexPos, result.indexPos + 3), 'idx')
     })
+
+    it('debería ubicar indexPos correctamente cuando el índice es substring de itemName', () => {
+      const lines = [
+        '<div>',
+        '  <span for-each="(index, in) of items" bind-value="in"></span>',
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 1)
+      assert.strictEqual(lines[1].slice(result.itemPos, result.itemPos + 5), 'index')
+      assert.strictEqual(lines[1].slice(result.indexPos, result.indexPos + 2), 'in')
+      assert.ok(result.indexPos > result.itemPos)
+    })
   })
 
   describe('parsePropertyPath', () => {

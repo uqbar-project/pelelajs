@@ -38,6 +38,30 @@ function parseForEachValue(forEachValue) {
   return null
 }
 
+function getForEachAliasPositions(attrValue, hasIndexAlias) {
+  if (hasIndexAlias) {
+    const indexedMatch = /^(\s*\(\s*)(\w+)(\s*,\s*)(\w+)(\s*\)\s+of\s+)(\w+)(\s*)$/.exec(attrValue)
+    if (!indexedMatch) {
+      return null
+    }
+
+    return {
+      itemPos: indexedMatch[1].length,
+      indexPos: indexedMatch[1].length + indexedMatch[2].length + indexedMatch[3].length,
+    }
+  }
+
+  const basicMatch = /^(\s*)(\w+)(\s+of\s+)(\w+)(\s*)$/.exec(attrValue)
+  if (!basicMatch) {
+    return null
+  }
+
+  return {
+    itemPos: basicMatch[1].length,
+    indexPos: undefined,
+  }
+}
+
 function findForEachInElement(document, currentLine) {
   const forEachResults = []
 
@@ -54,17 +78,16 @@ function findForEachInElement(document, currentLine) {
       const attrValue = attrMatch[2]
       const valueStart = attrMatch.index + attrText.indexOf(attrValue)
 
-      const itemOffset = attrValue.indexOf(forEachExpression.itemName)
-      if (itemOffset < 0) {
+      const aliasPositions = getForEachAliasPositions(attrValue, !!forEachExpression.indexName)
+      if (!aliasPositions) {
         continue
       }
-      const itemPos = valueStart + itemOffset
 
-      let indexPos
-      if (forEachExpression.indexName) {
-        const indexOffset = attrValue.indexOf(forEachExpression.indexName)
-        indexPos = indexOffset >= 0 ? valueStart + indexOffset : undefined
-      }
+      const itemPos = valueStart + aliasPositions.itemPos
+      const indexPos =
+        typeof aliasPositions.indexPos === 'number'
+          ? valueStart + aliasPositions.indexPos
+          : undefined
 
       forEachResults.push({
         ...forEachExpression,
