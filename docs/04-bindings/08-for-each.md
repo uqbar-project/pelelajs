@@ -361,7 +361,10 @@ function createExtendedViewModel<T extends object>(
       },
       get(_target, prop) {
         if (indexName && prop === indexName) {
-          return indexRef?.current ?? 0;
+          if (!indexRef) {
+            throw new Error("indexRef is required when using indexName");
+          }
+          return indexRef.current;
         }
         if (prop === itemName) {
           return itemRef.current;
