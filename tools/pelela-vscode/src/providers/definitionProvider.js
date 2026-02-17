@@ -1,6 +1,6 @@
 const vscode = require('vscode')
 const { findViewModelFile } = require('../utils/fileUtils')
-const { findForEachInElement } = require('../parsers/documentParser')
+const { findForEachInElement, parseForEachExpression } = require('../parsers/documentParser')
 const {
   findClassDefinition,
   findPropertyDefinition,
@@ -78,9 +78,10 @@ function checkBindAttributeDefinitions(document, position, lineText, forEachInEl
 }
 
 function handleForEachDefinition(fullValue, cursorOffsetInValue, tsFile) {
-  const forEachMatch = /^\s*(\w+)\s+of\s+(\w+)\s*$/.exec(fullValue)
+  const forEachMatch = parseForEachExpression(`for-each="${fullValue}"`)
   if (forEachMatch) {
-    const collectionName = forEachMatch[2]
+    const { collectionName } = forEachMatch
+
     const collectionStart = fullValue.indexOf(collectionName)
     const collectionEnd = collectionStart + collectionName.length
 
@@ -111,6 +112,17 @@ function handlePropertyPathDefinition(
         return new vscode.Location(
           document.uri,
           new vscode.Position(forEachInElement.line, forEachInElement.itemPos)
+        )
+      }
+
+      if (
+        forEachInElement?.indexName &&
+        part === forEachInElement.indexName &&
+        typeof forEachInElement.indexPos === 'number'
+      ) {
+        return new vscode.Location(
+          document.uri,
+          new vscode.Position(forEachInElement.line, forEachInElement.indexPos)
         )
       }
 

@@ -4,6 +4,7 @@ const {
   isInsideTag,
   isStartingTag,
   getAttributeValueMatch,
+  findForEachInElement,
   parseForEachExpression,
   parsePropertyPath,
 } = require('../../src/parsers/documentParser')
@@ -114,8 +115,31 @@ describe('documentParser', () => {
       })
     })
 
+    it('debería parsear la sintaxis con índice', () => {
+      const result = parseForEachExpression('for-each="(item, index) of items"')
+      assert.deepStrictEqual(result, {
+        itemName: 'item',
+        indexName: 'index',
+        collectionName: 'items',
+      })
+    })
+
+    it('debería parsear la sintaxis con índice personalizado', () => {
+      const result = parseForEachExpression("for-each='(user, i) of users'")
+      assert.deepStrictEqual(result, {
+        itemName: 'user',
+        indexName: 'i',
+        collectionName: 'users',
+      })
+    })
+
     it('debería retornar null si la expresión es inválida', () => {
       const result = parseForEachExpression('for-each="invalid"')
+      assert.strictEqual(result, null)
+    })
+
+    it('debería retornar null si la expresión con índice es inválida', () => {
+      const result = parseForEachExpression('for-each="(item index) of items"')
       assert.strictEqual(result, null)
     })
 
@@ -125,6 +149,48 @@ describe('documentParser', () => {
         itemName: 'item',
         collectionName: 'items',
       })
+    })
+  })
+
+  describe('findForEachInElement', () => {
+    it('debería encontrar for-each con índice e incluir posiciones', () => {
+      const lines = [
+        '<div>',
+        '  <span for-each="(item, idx) of items" bind-value="item.name"></span>',
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 1)
+      assert.strictEqual(result.itemName, 'item')
+      assert.strictEqual(result.indexName, 'idx')
+      assert.strictEqual(result.collectionName, 'items')
+      assert.strictEqual(result.line, 1)
+      assert.ok(typeof result.itemPos === 'number')
+      assert.ok(typeof result.indexPos === 'number')
+    })
+
+    it('debería encontrar for-each sin índice manteniendo compatibilidad', () => {
+      const lines = [
+        '<div>',
+        '  <span for-each="item of items" bind-value="item.name"></span>',
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 1)
+      assert.strictEqual(result.itemName, 'item')
+      assert.strictEqual(result.collectionName, 'items')
+      assert.strictEqual(result.indexName, undefined)
+      assert.strictEqual(result.indexPos, undefined)
     })
   })
 

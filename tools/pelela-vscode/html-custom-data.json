@@ -45,7 +45,7 @@
     },
     {
       "name": "for-each",
-      "description": "Pelela: Iterates over a collection from the ViewModel (syntax: item of collection)",
+      "description": "Pelela: Iterates over a collection from the ViewModel (syntax: item of collection or (item, index) of collection)",
       "valueSet": "v"
     }
   ]

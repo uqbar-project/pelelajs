@@ -80,7 +80,7 @@ function addPelelaAttributeCompletions(items) {
     if: { text: 'if="${1:condicion}"', detail: 'Pelela: renderizado condicional' },
     'for-each': {
       // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
-      text: 'for-each="${1:item} of ${2:collection}"',
+      text: 'for-each="(${1:item}, ${2:index}) of ${3:collection}"',
       detail: 'Pelela: itera sobre una colección del view model',
     },
   }
@@ -125,8 +125,13 @@ async function provideAttributeValueCompletions(
   }
 
   const valueBeforeCursor = getAttributeValueMatch(textBeforeCursor)
+
+  if (attributeName === 'for-each') {
+    return await provideForEachValueCompletions(document, position, tsFile, valueBeforeCursor ?? '')
+  }
+
   if (!valueBeforeCursor) {
-    return await provideBasicViewModelCompletions(tsFile, attributeName)
+    return await provideBasicViewModelCompletions(document, position, tsFile, attributeName)
   }
 
   const propertyPath = parsePropertyPath(valueBeforeCursor)
@@ -134,26 +139,75 @@ async function provideAttributeValueCompletions(
     return await provideNestedPropertyCompletions(document, position, tsFile, propertyPath)
   }
 
-  return await provideBasicViewModelCompletions(tsFile, attributeName)
+  return await provideBasicViewModelCompletions(document, position, tsFile, attributeName)
 }
 
-async function provideBasicViewModelCompletions(tsFile, attributeName) {
+function isForEachCollectionContext(valueBeforeCursor) {
+  // `(item, index) of users` and `item of users` are both valid.
+  // Before `of`, user is naming local aliases; after `of`, user is choosing a VM collection.
+  return /(?:^|\s)of\s+(\w*)$/.test(valueBeforeCursor)
+}
+
+async function provideForEachValueCompletions(document, position, tsFile, valueBeforeCursor) {
+  if (isForEachCollectionContext(valueBeforeCursor)) {
+    return await provideBasicViewModelCompletions(document, position, tsFile, 'for-each')
+  }
+  // In the alias section of `for-each`, users are declaring names (item/index),
+  // so we intentionally avoid ViewModel suggestions there.
+  return []
+}
+
+function getForEachLocalAliases(forEachInElement, attributeName) {
+  if (attributeName === 'for-each' || !forEachInElement) {
+    return []
+  }
+
+  const aliases = [forEachInElement.itemName]
+
+  if (forEachInElement.indexName) {
+    aliases.push(forEachInElement.indexName)
+  }
+
+  return aliases
+}
+
+function buildCompletionCandidateNames(properties, localAliases) {
+  return [...new Set([...localAliases, ...properties])]
+}
+
+function createFieldCompletionItem(name, isLocalAlias) {
+  const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
+  item.detail = isLocalAlias ? 'Pelela for-each local variable' : 'Pelela ViewModel property'
+  item.sortText = `!0_${name}`
+  return item
+}
+
+function createMethodCompletionItem(name) {
+  const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Method)
+  item.detail = 'Pelela ViewModel method'
+  item.sortText = `!0_${name}`
+  return item
+}
+
+async function provideBasicViewModelCompletions(document, position, tsFile, attributeName) {
   const items = []
   const { properties, methods } = extractViewModelMembers(tsFile)
+  const forEachInElement = findForEachInElement(document, position.line)
 
   if (attributeName.startsWith('bind-') || attributeName === 'if' || attributeName === 'for-each') {
-    for (const name of properties) {
-      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
-      item.detail = 'Pelela ViewModel property'
-      item.sortText = `!0_${name}`
-      items.push(item)
+    const localAliases = getForEachLocalAliases(forEachInElement, attributeName)
+    const candidateNames = buildCompletionCandidateNames(properties, localAliases)
+    const localAliasSet = new Set(localAliases)
+
+    for (const name of candidateNames) {
+      const isLocalAlias = localAliasSet.has(name)
+      const completionItem = createFieldCompletionItem(name, isLocalAlias)
+      items.push(completionItem)
     }
   } else if (attributeName === 'click') {
     for (const name of methods) {
-      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Method)
-      item.detail = 'Pelela ViewModel method'
-      item.sortText = `!0_${name}`
-      items.push(item)
+      const completionItem = createMethodCompletionItem(name)
+      items.push(completionItem)
     }
   }
 
@@ -182,6 +236,13 @@ async function provideNestedPropertyCompletions(document, position, tsFile, prop
       }
       return items
     }
+  }
+
+  const indexName = forEachInElement?.indexName
+  // `index` is a local numeric alias in for-each, not an object path from the ViewModel.
+  // Avoid offering nested completions for expressions like `index.`
+  if (typeof indexName === 'string' && propertyPath.length === 1 && propertyPath[0] === indexName) {
+    return items
   }
 
   const nestedProps = extractNestedProperties(tsFile, propertyPath)

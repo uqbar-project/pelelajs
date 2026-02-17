@@ -73,8 +73,16 @@ const vscodeStub = {
   },
 
   languages: {
-    registerCompletionItemProvider: () => ({ dispose: () => {} }),
-    registerDefinitionProvider: () => ({ dispose: () => {} }),
+    _lastCompletionProvider: null,
+    _lastDefinitionProvider: null,
+    registerCompletionItemProvider: (_selector, provider) => {
+      vscodeStub.languages._lastCompletionProvider = provider
+      return { dispose: () => {} }
+    },
+    registerDefinitionProvider: (_selector, provider) => {
+      vscodeStub.languages._lastDefinitionProvider = provider
+      return { dispose: () => {} }
+    },
     setTextDocumentLanguage: () => Promise.resolve(),
     setLanguageConfiguration: () => ({ dispose: () => {} }),
   },

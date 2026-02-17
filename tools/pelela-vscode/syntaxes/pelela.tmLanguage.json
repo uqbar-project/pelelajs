@@ -165,6 +165,23 @@
           },
           "patterns": [
             {
+              "match": "\\(\\s*(\\w+)\\s*,\\s*(\\w+)\\s*\\)\\s+(of)\\s+(\\w+)\\b",
+              "captures": {
+                "1": {
+                  "name": "variable.other.loop.pelela"
+                },
+                "2": {
+                  "name": "variable.other.loop.pelela"
+                },
+                "3": {
+                  "name": "keyword.operator.pelela"
+                },
+                "4": {
+                  "name": "variable.other.collection.pelela"
+                }
+              }
+            },
+            {
               "match": "\\b(\\w+)\\s+(of)\\s+(\\w+)\\b",
               "captures": {
                 "1": {

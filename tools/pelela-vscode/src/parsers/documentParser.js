@@ -17,17 +17,46 @@ function getAttributeValueMatch(textBeforeCursor) {
   return attrValueMatch ? attrValueMatch[1] : null
 }
 
+function parseForEachValue(forEachValue) {
+  const indexedExprMatch = /^\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)\s+of\s+(\w+)\s*$/.exec(forEachValue)
+  if (indexedExprMatch) {
+    return {
+      itemName: indexedExprMatch[1],
+      indexName: indexedExprMatch[2],
+      collectionName: indexedExprMatch[3],
+    }
+  }
+
+  const basicExprMatch = /^\s*(\w+)\s+of\s+(\w+)\s*$/.exec(forEachValue)
+  if (basicExprMatch) {
+    return {
+      itemName: basicExprMatch[1],
+      collectionName: basicExprMatch[2],
+    }
+  }
+
+  return null
+}
+
 function findForEachInElement(document, currentLine) {
   const forEachResults = []
 
   for (let i = currentLine; i >= 0; i--) {
     const lineText = document.lineAt(i).text
+    const forEachExpression = parseForEachExpression(lineText)
+    if (forEachExpression) {
+      const attrStart = lineText.indexOf('for-each=')
+      const itemPos = lineText.indexOf(forEachExpression.itemName, attrStart)
+      const indexPos = forEachExpression.indexName
+        ? lineText.indexOf(forEachExpression.indexName, attrStart)
+        : undefined
 
-    const forEachMatch = /for-each=["'](\w+)\s+of\s+\w+["']/.exec(lineText)
-    if (forEachMatch) {
-      const itemName = forEachMatch[1]
-      const itemPos = lineText.indexOf(itemName, lineText.indexOf('for-each='))
-      forEachResults.push({ itemName, line: i, itemPos })
+      forEachResults.push({
+        ...forEachExpression,
+        line: i,
+        itemPos,
+        indexPos,
+      })
     }
   }
 
@@ -35,14 +64,12 @@ function findForEachInElement(document, currentLine) {
 }
 
 function parseForEachExpression(forEachLine) {
-  const forEachExprMatch = /for-each=["'](\w+)\s+of\s+(\w+)["']/.exec(forEachLine)
-  if (forEachExprMatch) {
-    return {
-      itemName: forEachExprMatch[1],
-      collectionName: forEachExprMatch[2],
-    }
+  const forEachAttrMatch = /for-each=["']([^"']+)["']/.exec(forEachLine)
+  if (!forEachAttrMatch) {
+    return null
   }
-  return null
+
+  return parseForEachValue(forEachAttrMatch[1])
 }
 
 function parsePropertyPath(valueBeforeCursor) {
