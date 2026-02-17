@@ -5,6 +5,7 @@ import {
   PropertyValidationError,
 } from '../errors/index'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
+import { setupBindings } from './setupBindings'
 
 describe('bindForEach', () => {
   let container: HTMLElement
@@ -27,6 +28,40 @@ describe('bindForEach', () => {
 
       expect(bindings).toHaveLength(1)
       expect(bindings[0].itemName).toBe('user')
+      expect(bindings[0].collectionName).toBe('users')
+    })
+
+    it('should parse for-each expression with index correctly', () => {
+      container.innerHTML = `
+        <div for-each="(user, index) of users">
+          <span bind-value="index"></span>
+          <span bind-value="user.name"></span>
+        </div>
+      `
+
+      const viewModel = { users: [] }
+      const bindings = setupForEachBindings(container, viewModel)
+
+      expect(bindings).toHaveLength(1)
+      expect(bindings[0].itemName).toBe('user')
+      expect(bindings[0].indexName).toBe('index')
+      expect(bindings[0].collectionName).toBe('users')
+    })
+
+    it('should parse for-each expression with custom index name', () => {
+      container.innerHTML = `
+        <div for-each="(user, i) of users">
+          <span bind-value="i"></span>
+          <span bind-value="user.name"></span>
+        </div>
+      `
+
+      const viewModel = { users: [] }
+      const bindings = setupForEachBindings(container, viewModel)
+
+      expect(bindings).toHaveLength(1)
+      expect(bindings[0].itemName).toBe('user')
+      expect(bindings[0].indexName).toBe('i')
       expect(bindings[0].collectionName).toBe('users')
     })
 
@@ -71,6 +106,56 @@ describe('bindForEach', () => {
     it('should throw InvalidBindingSyntaxError for invalid expression', () => {
       container.innerHTML = '<div for-each="invalid"></div>'
       const viewModel = { invalid: [] }
+
+      expect(() => {
+        setupForEachBindings(container, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
+    })
+
+    it('should throw InvalidBindingSyntaxError for invalid indexed expression', () => {
+      container.innerHTML = '<div for-each="(item index) of items"></div>'
+      const viewModel = { items: [] }
+
+      expect(() => {
+        setupForEachBindings(container, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
+    })
+
+    it('should throw InvalidBindingSyntaxError when item and index names are equal', () => {
+      container.innerHTML = '<div for-each="(item, item) of items"></div>'
+      const viewModel = { items: [] }
+
+      expect(() => {
+        setupForEachBindings(container, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
+    })
+
+    it('should create placeholder comment with index syntax', () => {
+      container.innerHTML = `
+        <div for-each="(item, idx) of items"></div>
+      `
+
+      const viewModel = { items: [] }
+      setupForEachBindings(container, viewModel)
+
+      const comment = Array.from(container.childNodes).find(
+        (node) => node.nodeType === Node.COMMENT_NODE,
+      )
+      expect(comment?.textContent).toContain('for-each: (item, idx) of items')
+    })
+
+    it('should throw InvalidBindingSyntaxError for malformed index expression with trailing comma', () => {
+      container.innerHTML = '<div for-each="(item,) of items"></div>'
+      const viewModel = { items: [] }
+
+      expect(() => {
+        setupForEachBindings(container, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
+    })
+
+    it('should throw InvalidBindingSyntaxError for unclosed parenthesis', () => {
+      container.innerHTML = '<div for-each="(item, index of items"></div>'
+      const viewModel = { items: [] }
 
       expect(() => {
         setupForEachBindings(container, viewModel)
@@ -268,6 +353,134 @@ describe('bindForEach', () => {
       expect(span?.textContent).toBe('Updated')
     })
 
+    it('should render zero-based index with indexed for-each syntax', () => {
+      container.innerHTML = `
+        <div for-each="(item, idx) of items">
+          <span bind-value="idx"></span>
+          <span bind-value="item.text"></span>
+        </div>
+      `
+
+      const viewModel = {
+        items: [{ text: 'First' }, { text: 'Second' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const divs = container.querySelectorAll('div')
+      expect(divs).toHaveLength(2)
+      expect(divs[0].querySelectorAll('span')[0].textContent).toBe('0')
+      expect(divs[0].querySelectorAll('span')[1].textContent).toBe('First')
+      expect(divs[1].querySelectorAll('span')[0].textContent).toBe('1')
+      expect(divs[1].querySelectorAll('span')[1].textContent).toBe('Second')
+    })
+
+    it('should recalculate indexes after unshift', () => {
+      container.innerHTML = `
+        <div for-each="(item, idx) of items">
+          <span bind-value="idx"></span>
+          <span bind-value="item.text"></span>
+        </div>
+      `
+
+      const viewModel = {
+        items: [{ text: 'A' }, { text: 'B' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      viewModel.items.unshift({ text: 'Z' })
+      renderForEachBindings(bindings, viewModel)
+
+      const divs = container.querySelectorAll('div')
+      expect(divs).toHaveLength(3)
+      expect(divs[0].querySelectorAll('span')[0].textContent).toBe('0')
+      expect(divs[0].querySelectorAll('span')[1].textContent).toBe('Z')
+      expect(divs[1].querySelectorAll('span')[0].textContent).toBe('1')
+      expect(divs[1].querySelectorAll('span')[1].textContent).toBe('A')
+      expect(divs[2].querySelectorAll('span')[0].textContent).toBe('2')
+      expect(divs[2].querySelectorAll('span')[1].textContent).toBe('B')
+    })
+
+    it('should recalculate indexes after sort', () => {
+      container.innerHTML = `
+        <div for-each="(item, idx) of items">
+          <span bind-value="idx"></span>
+          <span bind-value="item.text"></span>
+        </div>
+      `
+
+      const viewModel = {
+        items: [{ text: 'B' }, { text: 'A' }, { text: 'C' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      viewModel.items.sort((a, b) => a.text.localeCompare(b.text))
+      renderForEachBindings(bindings, viewModel)
+
+      const divs = container.querySelectorAll('div')
+      expect(divs).toHaveLength(3)
+      expect(divs[0].querySelectorAll('span')[0].textContent).toBe('0')
+      expect(divs[0].querySelectorAll('span')[1].textContent).toBe('A')
+      expect(divs[1].querySelectorAll('span')[0].textContent).toBe('1')
+      expect(divs[1].querySelectorAll('span')[1].textContent).toBe('B')
+      expect(divs[2].querySelectorAll('span')[0].textContent).toBe('2')
+      expect(divs[2].querySelectorAll('span')[1].textContent).toBe('C')
+    })
+
+    it('should update index when array shrinks', () => {
+      container.innerHTML = `
+        <div for-each="(item, index) of items">
+          <span class="idx" bind-value="index"></span>
+          <span class="text" bind-value="item.text"></span>
+        </div>
+      `
+
+      const viewModel = {
+        items: [{ text: 'A' }, { text: 'B' }, { text: 'C' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      viewModel.items.shift()
+      renderForEachBindings(bindings, viewModel)
+
+      const divs = container.querySelectorAll('div')
+      expect(divs).toHaveLength(2)
+      expect(divs[0].querySelector('.idx')?.textContent).toBe('0')
+      expect(divs[0].querySelector('.text')?.textContent).toBe('B')
+      expect(divs[1].querySelector('.idx')?.textContent).toBe('1')
+      expect(divs[1].querySelector('.text')?.textContent).toBe('C')
+    })
+
+    it('should assign correct indexes when array grows', () => {
+      container.innerHTML = `
+        <div for-each="(item, i) of items">
+          <span bind-value="i"></span>
+        </div>
+      `
+
+      const viewModel = {
+        items: [{ text: 'A' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      viewModel.items.push({ text: 'B' }, { text: 'C' })
+      renderForEachBindings(bindings, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans[0].textContent).toBe('0')
+      expect(spans[1].textContent).toBe('1')
+      expect(spans[2].textContent).toBe('2')
+    })
+
     it('should handle list items', () => {
       container.innerHTML = `
         <ul>
@@ -429,6 +642,105 @@ describe('bindForEach', () => {
       expect(spans[2].style.display).not.toBe('none')
       expect(spans[2].textContent).toBe('Third')
       expect(spans[2].className).toBe('highlight')
+    })
+
+    it('should support index with nested bindings in repeated template', () => {
+      container.innerHTML = `
+        <div for-each="(item, index) of items">
+          <span bind-value="index"></span>
+          <span if="item.visible" bind-value="item.text"></span>
+        </div>
+      `
+
+      const viewModel = {
+        items: [
+          { text: 'Visible', visible: true },
+          { text: 'Hidden', visible: false },
+        ],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const divs = container.querySelectorAll('div')
+      expect(divs).toHaveLength(2)
+      expect(divs[0].querySelectorAll('span')[0].textContent).toBe('0')
+      expect(divs[0].querySelectorAll('span')[1].textContent).toBe('Visible')
+      expect(divs[0].querySelectorAll('span')[1].style.display).not.toBe('none')
+      expect(divs[1].querySelectorAll('span')[0].textContent).toBe('1')
+      expect(divs[1].querySelectorAll('span')[1].textContent).toBe('Hidden')
+      expect(divs[1].querySelectorAll('span')[1].style.display).toBe('none')
+    })
+
+    it('should ignore writes to index and restore real index on next render', () => {
+      container.innerHTML = `
+        <div for-each="(item, index) of items">
+          <input class="idx-input" bind-value="index" />
+          <span class="idx-text" bind-value="index"></span>
+          <span class="item-text" bind-value="item.text"></span>
+        </div>
+      `
+
+      const viewModel = {
+        items: [{ text: 'A' }, { text: 'B' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const firstInput = container.querySelectorAll<HTMLInputElement>('.idx-input')[0]
+      expect(firstInput.value).toBe('0')
+
+      firstInput.value = '999'
+      firstInput.dispatchEvent(new Event('input', { bubbles: true }))
+
+      renderForEachBindings(bindings, viewModel)
+
+      const idxInputs = container.querySelectorAll<HTMLInputElement>('.idx-input')
+      const idxTexts = container.querySelectorAll('.idx-text')
+      const itemTexts = container.querySelectorAll('.item-text')
+
+      expect(idxInputs[0].value).toBe('0')
+      expect(idxInputs[1].value).toBe('1')
+      expect(idxTexts[0].textContent).toBe('0')
+      expect(idxTexts[1].textContent).toBe('1')
+      expect(itemTexts[0].textContent).toBe('A')
+      expect(itemTexts[1].textContent).toBe('B')
+    })
+
+    it('should prioritize for-each index scope over parent property with same name', () => {
+      container.innerHTML = `
+        <span id="outside" bind-value="i"></span>
+        <div for-each="(item, i) of items">
+          <span class="inside-index" bind-value="i"></span>
+          <span class="inside-item" bind-value="item.text"></span>
+        </div>
+      `
+
+      const viewModel = {
+        i: 999,
+        items: [{ text: 'A' }, { text: 'B' }],
+      }
+
+      const render = setupBindings(container, viewModel)
+
+      expect(container.querySelector('#outside')?.textContent).toBe('999')
+      expect(container.querySelectorAll('.inside-index')[0].textContent).toBe('0')
+      expect(container.querySelectorAll('.inside-index')[1].textContent).toBe('1')
+
+      viewModel.items.unshift({ text: 'Z' })
+      render('items')
+
+      const insideIndexes = container.querySelectorAll('.inside-index')
+      const insideItems = container.querySelectorAll('.inside-item')
+
+      expect(container.querySelector('#outside')?.textContent).toBe('999')
+      expect(insideIndexes[0].textContent).toBe('0')
+      expect(insideIndexes[1].textContent).toBe('1')
+      expect(insideIndexes[2].textContent).toBe('2')
+      expect(insideItems[0].textContent).toBe('Z')
+      expect(insideItems[1].textContent).toBe('A')
+      expect(insideItems[2].textContent).toBe('B')
     })
 
     it('should work with select and option elements', () => {

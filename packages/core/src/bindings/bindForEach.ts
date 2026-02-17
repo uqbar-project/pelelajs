@@ -11,15 +11,30 @@ import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import type { ForEachBinding, ViewModel } from './types'
 
-function parseForEachExpression(expression: string): {
+type ParsedForEachExpression = {
   itemName: string
+  indexName?: string
   collectionName: string
-} | null {
-  const match = expression.trim().match(/^(\w+)\s+of\s+(\w+)$/)
-  if (!match) return null
+}
+
+function parseForEachExpression(expression: string): ParsedForEachExpression | null {
+  const normalizedExpression = expression.trim()
+
+  const indexedMatch = normalizedExpression.match(/^\(\s*(\w+)\s*,\s*(\w+)\s*\)\s+of\s+(\w+)$/)
+  if (indexedMatch) {
+    return {
+      itemName: indexedMatch[1],
+      indexName: indexedMatch[2],
+      collectionName: indexedMatch[3],
+    }
+  }
+
+  const defaultMatch = normalizedExpression.match(/^(\w+)\s+of\s+(\w+)$/)
+  if (!defaultMatch) return null
+
   return {
-    itemName: match[1],
-    collectionName: match[2],
+    itemName: defaultMatch[1],
+    collectionName: defaultMatch[2],
   }
 }
 
@@ -27,11 +42,14 @@ function createExtendedViewModel<T extends object>(
   parentViewModel: ViewModel<T>,
   itemName: string,
   itemRef: { current: any },
+  indexName?: string,
+  indexRef?: { current: number },
 ): ViewModel {
   return new Proxy(
     {},
     {
       has(_target, prop) {
+        if (indexName && prop === indexName) return true
         if (prop === itemName) return true
         if (typeof prop === 'string' && prop.startsWith(`${itemName}.`)) {
           return true
@@ -39,6 +57,12 @@ function createExtendedViewModel<T extends object>(
         return prop in parentViewModel
       },
       get(_target, prop) {
+        if (indexName && prop === indexName) {
+          if (!indexRef) {
+            throw new Error('[pelela] Internal error: missing indexRef for indexed for-each')
+          }
+          return indexRef.current
+        }
         if (prop === itemName) {
           return itemRef.current
         }
@@ -49,6 +73,9 @@ function createExtendedViewModel<T extends object>(
         return parentViewModel[prop as string]
       },
       set(_target, prop, value) {
+        if (indexName && prop === indexName) {
+          return true
+        }
         if (prop === itemName) {
           itemRef.current = value
           return true
@@ -211,10 +238,22 @@ function setupSingleForEachBinding<T extends object>(
 
   const parsed = parseForEachExpression(expression)
   if (!parsed) {
-    throw new InvalidBindingSyntaxError('for-each', expression, 'item of collection')
+    throw new InvalidBindingSyntaxError(
+      'for-each',
+      expression,
+      'item of collection or (item, index) of collection',
+    )
   }
 
-  const { itemName, collectionName } = parsed
+  const { itemName, indexName, collectionName } = parsed
+
+  if (indexName && itemName === indexName) {
+    throw new InvalidBindingSyntaxError(
+      'for-each',
+      expression,
+      'item and index names must be different',
+    )
+  }
 
   assertViewModelProperty(viewModel, collectionName, 'for-each', element)
 
@@ -232,8 +271,12 @@ function setupSingleForEachBinding<T extends object>(
   const template = element.cloneNode(true) as HTMLElement
   template.removeAttribute('for-each')
 
+  const displayExpression = indexName
+    ? `(${itemName}, ${indexName}) of ${collectionName}`
+    : `${itemName} of ${collectionName}`
+
   console.log(
-    `[pelela] for-each setup: ${itemName} of ${collectionName}, element:`,
+    `[pelela] for-each setup: ${displayExpression}, element:`,
     element.tagName,
     'parent:',
     element.parentNode?.nodeName,
@@ -243,13 +286,14 @@ function setupSingleForEachBinding<T extends object>(
     throw new InvalidDOMStructureError('for-each', 'element has no parent node')
   }
 
-  const placeholder = document.createComment(`for-each: ${itemName} of ${collectionName}`)
+  const placeholder = document.createComment(`for-each: ${displayExpression}`)
   element.parentNode.insertBefore(placeholder, element)
   element.remove()
 
   return {
     collectionName,
     itemName,
+    indexName,
     template,
     placeholder,
     renderedElements: [],
@@ -290,7 +334,14 @@ function createNewElement<T extends object>(
   )
 
   const itemRef = { current: item }
-  const extendedViewModel = createExtendedViewModel(viewModel, binding.itemName, itemRef)
+  const indexRef = { current: index }
+  const extendedViewModel = createExtendedViewModel(
+    viewModel,
+    binding.itemName,
+    itemRef,
+    binding.indexName,
+    indexRef,
+  )
 
   const render = setupBindingsForElement(element, extendedViewModel)
 
@@ -298,6 +349,7 @@ function createNewElement<T extends object>(
     element,
     viewModel: extendedViewModel,
     itemRef,
+    indexRef,
     render,
   })
 
@@ -350,6 +402,7 @@ function updateExistingElements(binding: ForEachBinding, collection: any[]): voi
     const rendered = binding.renderedElements[i]
 
     rendered.itemRef.current = item
+    rendered.indexRef.current = i
     rendered.render()
   }
 }
