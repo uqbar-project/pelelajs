@@ -62,14 +62,34 @@ function getForEachAliasPositions(attrValue, hasIndexAlias) {
   }
 }
 
-function getForEachTagName(lineText) {
-  const tagMatch = /<\s*([a-zA-Z][\w-]*)\b[^>]*\bfor-each\s*=/.exec(lineText)
-  return tagMatch ? tagMatch[1] : null
+function findForEachHostTag(document, forEachLine) {
+  const forEachLineText = document.lineAt(forEachLine).text ?? ''
+  const inlineHostMatch = /<\s*([a-zA-Z][\w-]*)\b[^>]*\bfor-each\s*=/.exec(forEachLineText)
+  if (inlineHostMatch) {
+    return {
+      line: forEachLine,
+      tagName: inlineHostMatch[1],
+    }
+  }
+
+  for (let lineIndex = forEachLine; lineIndex >= 0; lineIndex--) {
+    const lineText = document.lineAt(lineIndex).text ?? ''
+    const tagMatches = [...lineText.matchAll(/<\s*([a-zA-Z][\w-]*)\b[^>]*(?:>|$)/g)]
+    if (tagMatches.length > 0) {
+      const lastTagMatch = tagMatches[tagMatches.length - 1]
+      return {
+        line: lineIndex,
+        tagName: lastTagMatch[1],
+      }
+    }
+  }
+
+  return null
 }
 
 function findForEachScopeEndBeforeCursor(
   document,
-  forEachLine,
+  hostStartLine,
   currentLine,
   currentCharacter,
   tagName
@@ -77,7 +97,7 @@ function findForEachScopeEndBeforeCursor(
   const tagRegex = new RegExp(`<\\/?\\s*${tagName}\\b[^>]*>`, 'g')
   let openDepth = 0
 
-  for (let lineIndex = forEachLine; lineIndex <= currentLine; lineIndex++) {
+  for (let lineIndex = hostStartLine; lineIndex <= currentLine; lineIndex++) {
     const fullLineText = document.lineAt(lineIndex).text ?? ''
     const lineText =
       lineIndex === currentLine && typeof currentCharacter === 'number'
@@ -106,15 +126,15 @@ function findForEachScopeEndBeforeCursor(
   return null
 }
 
-function isWithinForEachScope(document, forEachLine, currentLine, currentCharacter, tagName) {
-  if (currentLine === forEachLine) {
+function isWithinForEachScope(document, hostStartLine, currentLine, currentCharacter, tagName) {
+  if (currentLine === hostStartLine) {
     return true
   }
 
   // The cursor is inside the loop scope only if the host tag has not closed yet.
   const scopeEnd = findForEachScopeEndBeforeCursor(
     document,
-    forEachLine,
+    hostStartLine,
     currentLine,
     currentCharacter,
     tagName
@@ -134,12 +154,20 @@ function findForEachInElement(document, currentLine, currentCharacter) {
         continue
       }
 
-      const forEachTagName = getForEachTagName(lineText)
-      if (!forEachTagName) {
+      const hostTag = findForEachHostTag(document, i)
+      if (!hostTag) {
         continue
       }
 
-      if (!isWithinForEachScope(document, i, currentLine, currentCharacter, forEachTagName)) {
+      if (
+        !isWithinForEachScope(
+          document,
+          hostTag.line,
+          currentLine,
+          currentCharacter,
+          hostTag.tagName
+        )
+      ) {
         continue
       }
 

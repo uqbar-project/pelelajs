@@ -129,4 +129,20 @@ interface Item {
     assert.ok(!labels.includes('item'))
     assert.ok(!labels.includes('index'))
   })
+
+  it('debería sugerir aliases locales dentro de for-each con tag multiline', async () => {
+    const lines = [
+      '<div',
+      '  for-each="(item, index) of items"',
+      '>',
+      '  <span bind-value="',
+      '</div>',
+    ]
+    const document = createFakeDocument(lines)
+    const labels = await getCompletionLabels(document, 3, lines[3].length)
+
+    assert.ok(labels.includes('item'))
+    assert.ok(labels.includes('index'))
+    assert.ok(labels.includes('items'))
+  })
 })

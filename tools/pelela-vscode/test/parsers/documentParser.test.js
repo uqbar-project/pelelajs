@@ -284,6 +284,27 @@ describe('documentParser', () => {
       const result = findForEachInElement(fakeDocument, 3)
       assert.strictEqual(result, null)
     })
+
+    it('debería encontrar for-each cuando el atributo está en una línea distinta al tag de apertura', () => {
+      const lines = [
+        '<div',
+        '  for-each="(item, index) of items"',
+        '>',
+        '  <span bind-value="item.text"></span>',
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 3)
+      assert.ok(result)
+      assert.strictEqual(result.itemName, 'item')
+      assert.strictEqual(result.indexName, 'index')
+      assert.strictEqual(result.collectionName, 'items')
+    })
   })
 
   describe('parsePropertyPath', () => {
