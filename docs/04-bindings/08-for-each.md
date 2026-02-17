@@ -117,20 +117,16 @@ function parseForEachExpression(expression: string): {
 ### Regex Breakdown
 
 ```
+Sintaxis clásica:
 /^(\w+)\s+of\s+(\w+)$/
-o
-/^\(\s*(\w+)\s*,\s*(\w+)\s*\)\s+of\s+(\w+)$/
+Grupo 1: itemName
+Grupo 2: collectionName
 
-^           - Inicio de string
-\(\s*(\w+)  - Grupo 1: itemName (sintaxis con índice)
-\s*,\s*(\w+) - Grupo 2: indexName (sintaxis con índice)
-\s*\)\s+of\s+(\w+) - Grupo 3: collectionName (sintaxis con índice)
-(\w+)       - Grupo 1: itemName (sintaxis clásica)
-\s+         - Uno o más espacios
-of          - Literal "of"
-\s+         - Uno o más espacios
-(\w+)       - Grupo 2: collectionName (sintaxis clásica)
-$           - Fin de string
+Sintaxis con índice:
+/^\(\s*(\w+)\s*,\s*(\w+)\s*\)\s+of\s+(\w+)$/
+Grupo 1: itemName
+Grupo 2: indexName
+Grupo 3: collectionName
 ```
 
 ### Ejemplos de Parsing
