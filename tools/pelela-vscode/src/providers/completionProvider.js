@@ -80,7 +80,7 @@ function addPelelaAttributeCompletions(items) {
     if: { text: 'if="${1:condicion}"', detail: 'Pelela: renderizado condicional' },
     'for-each': {
       // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
-      text: 'for-each="(${1:item}, ${2:index}) of ${3:collection}"',
+      text: 'for-each="${1:item} of ${2:collection}"',
       detail: 'Pelela: itera sobre una colección del view model',
     },
   }
