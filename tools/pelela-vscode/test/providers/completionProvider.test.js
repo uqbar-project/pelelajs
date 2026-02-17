@@ -71,6 +71,15 @@ interface Item {
     assert.ok(labels.includes('items'))
   })
 
+  it('debería sugerir aliases locales cuando bind-value usa comillas simples', async () => {
+    const lines = ["<div for-each='(item, index) of items'>", "  <span bind-value='", '</div>']
+    const document = createFakeDocument(lines)
+    const labels = await getCompletionLabels(document, 1, lines[1].length)
+
+    assert.ok(labels.includes('item'))
+    assert.ok(labels.includes('index'))
+  })
+
   it('no debería sugerir propiedades del view model al comenzar un atributo for-each', async () => {
     const lines = ['<div for-each="']
     const document = createFakeDocument(lines)
@@ -162,5 +171,39 @@ interface Item {
 
     assert.ok(labels.includes('item'))
     assert.ok(labels.includes('index'))
+  })
+
+  it('debería sugerir aliases con tag host y tag anidado multiline del mismo tipo', async () => {
+    const lines = [
+      '<div',
+      '  for-each="(item, index) of items"',
+      '>',
+      '  <div',
+      '    class="nested"',
+      '  >',
+      '    <span bind-value="item.text"></span>',
+      '  </div>',
+      '  <span bind-value="',
+      '</div>',
+    ]
+    const document = createFakeDocument(lines)
+    const labels = await getCompletionLabels(document, 8, lines[8].length)
+
+    assert.ok(labels.includes('item'))
+    assert.ok(labels.includes('index'))
+  })
+
+  it('debería sugerir aliases con for-each y bind-value usando espacios alrededor de "="', async () => {
+    const lines = [
+      '<div for-each = "(item, index) of items">',
+      '  <span bind-value = "',
+      '</div>',
+    ]
+    const document = createFakeDocument(lines)
+    const labels = await getCompletionLabels(document, 1, lines[1].length)
+
+    assert.ok(labels.includes('item'))
+    assert.ok(labels.includes('index'))
+    assert.ok(labels.includes('items'))
   })
 })

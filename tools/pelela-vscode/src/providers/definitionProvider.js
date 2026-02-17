@@ -9,8 +9,8 @@ const {
 } = require('../parsers/definitionFinder')
 
 // Regex patterns for attribute matching
-const BIND_ATTRIBUTE_PATTERN = /(?:bind-[a-zA-Z0-9_-]+|if|for-each)=["']([^"']+)["']/g
-const CLICK_ATTRIBUTE_PATTERN = /click=["']([^"']+)["']/g
+const BIND_ATTRIBUTE_PATTERN = /(?:bind-[a-zA-Z0-9_-]+|if|for-each)\s*=\s*(["'])([^"']+)\1/g
+const CLICK_ATTRIBUTE_PATTERN = /click\s*=\s*(["'])([^"']+)\1/g
 
 function provideDefinition(document, position, _token) {
   const line = document.lineAt(position.line)
@@ -31,13 +31,13 @@ function provideDefinition(document, position, _token) {
 }
 
 function checkViewModelDefinition(document, position, lineText) {
-  const viewModelMatch = /view-model=["']([^"']+)["']/g.exec(lineText)
+  const viewModelMatch = /view-model\s*=\s*(["'])([^"']+)\1/g.exec(lineText)
   if (
     viewModelMatch &&
-    position.character >= lineText.indexOf(viewModelMatch[1]) &&
-    position.character <= lineText.indexOf(viewModelMatch[1]) + viewModelMatch[1].length
+    position.character >= lineText.indexOf(viewModelMatch[2]) &&
+    position.character <= lineText.indexOf(viewModelMatch[2]) + viewModelMatch[2].length
   ) {
-    const className = viewModelMatch[1]
+    const className = viewModelMatch[2]
     const tsFile = findViewModelFile(document.uri)
     if (tsFile) {
       return findClassDefinition(tsFile, className)
@@ -48,7 +48,7 @@ function checkViewModelDefinition(document, position, lineText) {
 
 function checkBindAttributeDefinitions(document, position, lineText, forEachInElement) {
   for (const match of lineText.matchAll(BIND_ATTRIBUTE_PATTERN)) {
-    const fullValue = match[1]
+    const fullValue = match[2]
     const attrStartPos = match.index
     const valueStartPos = attrStartPos + match[0].indexOf(fullValue)
     const valueEndPos = valueStartPos + fullValue.length
@@ -58,7 +58,7 @@ function checkBindAttributeDefinitions(document, position, lineText, forEachInEl
       if (!tsFile) continue
 
       const cursorOffsetInValue = position.character - valueStartPos
-      const attrName = match[0].match(/^([^=]+)=/)[1]
+      const attrName = match[0].match(/^([^=]+)=/)[1].trim()
 
       if (attrName === 'for-each') {
         return handleForEachDefinition(fullValue, cursorOffsetInValue, tsFile)
@@ -138,7 +138,7 @@ function handlePropertyPathDefinition(
 
 function checkClickAttributeDefinition(document, position, lineText) {
   for (const match of lineText.matchAll(CLICK_ATTRIBUTE_PATTERN)) {
-    const methodName = match[1]
+    const methodName = match[2]
     const startPos = match.index + match[0].indexOf(methodName)
     const endPos = startPos + methodName.length
 

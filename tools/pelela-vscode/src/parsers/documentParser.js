@@ -1,6 +1,6 @@
 function getCurrentAttributeName(lineText, positionCharacter) {
   const textUpToCursor = lineText.slice(0, positionCharacter)
-  const match = /(\b[\w-]+)\s*=\s*"[^"]*$/.exec(textUpToCursor)
+  const match = /(\b[\w-]+)\s*=\s*["'][^"']*$/.exec(textUpToCursor)
   return match ? match[1] : null
 }
 
@@ -13,7 +13,7 @@ function isStartingTag(textBeforeCursor) {
 }
 
 function getAttributeValueMatch(textBeforeCursor) {
-  const attrValueMatch = /=\s*"([^"]*)$/.exec(textBeforeCursor)
+  const attrValueMatch = /=\s*["']([^"']*)$/.exec(textBeforeCursor)
   return attrValueMatch ? attrValueMatch[1] : null
 }
 
@@ -70,6 +70,7 @@ function findForEachHostTag(document, forEachLine) {
   if (inlineHostMatch) {
     return {
       line: forEachLine,
+      character: inlineHostMatch.index,
       tagName: inlineHostMatch[1],
     }
   }
@@ -81,6 +82,7 @@ function findForEachHostTag(document, forEachLine) {
       const lastTagMatch = tagMatches[tagMatches.length - 1]
       return {
         line: lineIndex,
+        character: lastTagMatch.index,
         tagName: lastTagMatch[1],
       }
     }
@@ -92,57 +94,62 @@ function findForEachHostTag(document, forEachLine) {
 function findForEachScopeEndBeforeCursor(
   document,
   hostStartLine,
+  hostStartCharacter,
   currentLine,
   currentCharacter,
   tagName
 ) {
-  const tagRegex = new RegExp(`<\\/?\\s*${tagName}\\b[^>]*>`, 'g')
-  const hostLineText = document.lineAt(hostStartLine).text ?? ''
-  const hostOpenTagMatch = new RegExp(`<\\s*${tagName}\\b[^>]*>`).exec(hostLineText)
-  // Host loop tag is always open by definition at this point.
-  let openDepth = 1
-
+  const textLines = []
   for (let lineIndex = hostStartLine; lineIndex <= currentLine; lineIndex++) {
     const fullLineText = document.lineAt(lineIndex).text ?? ''
-    const lineText =
-      lineIndex === currentLine && typeof currentCharacter === 'number'
-        ? fullLineText.slice(0, currentCharacter)
-        : fullLineText
+    let lineText = fullLineText
+    if (lineIndex === hostStartLine) {
+      lineText = lineText.slice(hostStartCharacter)
+    }
+    if (lineIndex === currentLine && typeof currentCharacter === 'number') {
+      lineText = lineText.slice(0, currentCharacter)
+    }
+    textLines.push(lineText)
+  }
 
-    for (const tagMatch of lineText.matchAll(tagRegex)) {
-      const tagText = tagMatch[0]
-      const isClosingTag = /^<\s*\//.test(tagText)
-      const isSelfClosingTag = /\/\s*>$/.test(tagText)
+  const scopeText = textLines.join('\n')
+  const tagRegex = new RegExp(`<\\/?\\s*${tagName}\\b[^>]*>`, 'g')
+  // Host loop tag is always open by definition at this point.
+  let openDepth = 1
+  let hostOpeningSkipped = false
 
-      // Avoid double-counting the host opening tag when it is fully present in hostStartLine.
-      if (
-        lineIndex === hostStartLine &&
-        hostOpenTagMatch &&
-        !isClosingTag &&
-        !isSelfClosingTag &&
-        tagMatch.index === hostOpenTagMatch.index
-      ) {
-        continue
+  for (const tagMatch of scopeText.matchAll(tagRegex)) {
+    const tagText = tagMatch[0]
+    const isClosingTag = /^<\s*\//.test(tagText)
+    const isSelfClosingTag = /\/\s*>$/.test(tagText)
+
+    // Skip host opening (first non-closing/non-self-closing match) to avoid double count.
+    if (!hostOpeningSkipped && !isClosingTag && !isSelfClosingTag) {
+      hostOpeningSkipped = true
+      continue
+    }
+
+    if (isClosingTag) {
+      openDepth -= 1
+      if (openDepth <= 0) {
+        return { offset: tagMatch.index }
       }
-
-      if (isClosingTag) {
-        openDepth -= 1
-        if (openDepth <= 0) {
-          return {
-            line: lineIndex,
-            character: tagMatch.index,
-          }
-        }
-      } else if (!isSelfClosingTag) {
-        openDepth += 1
-      }
+    } else if (!isSelfClosingTag) {
+      openDepth += 1
     }
   }
 
   return null
 }
 
-function isWithinForEachScope(document, hostStartLine, currentLine, currentCharacter, tagName) {
+function isWithinForEachScope(
+  document,
+  hostStartLine,
+  hostStartCharacter,
+  currentLine,
+  currentCharacter,
+  tagName
+) {
   if (currentLine === hostStartLine) {
     return true
   }
@@ -151,6 +158,7 @@ function isWithinForEachScope(document, hostStartLine, currentLine, currentChara
   const scopeEnd = findForEachScopeEndBeforeCursor(
     document,
     hostStartLine,
+    hostStartCharacter,
     currentLine,
     currentCharacter,
     tagName
@@ -165,7 +173,7 @@ function findForEachInElement(document, currentLine, currentCharacter) {
     const lineText = document.lineAt(i).text
     const forEachExpression = parseForEachExpression(lineText)
     if (forEachExpression) {
-      const attrMatch = /for-each=(["'])([^"']+)\1/.exec(lineText)
+      const attrMatch = /for-each\s*=\s*(["'])([^"']+)\1/.exec(lineText)
       if (!attrMatch) {
         continue
       }
@@ -179,6 +187,7 @@ function findForEachInElement(document, currentLine, currentCharacter) {
         !isWithinForEachScope(
           document,
           hostTag.line,
+          hostTag.character,
           currentLine,
           currentCharacter,
           hostTag.tagName
@@ -215,12 +224,12 @@ function findForEachInElement(document, currentLine, currentCharacter) {
 }
 
 function parseForEachExpression(forEachLine) {
-  const forEachAttrMatch = /for-each=["']([^"']+)["']/.exec(forEachLine)
+  const forEachAttrMatch = /for-each\s*=\s*(["'])([^"']+)\1/.exec(forEachLine)
   if (!forEachAttrMatch) {
     return null
   }
 
-  return parseForEachValue(forEachAttrMatch[1])
+  return parseForEachValue(forEachAttrMatch[2])
 }
 
 function parsePropertyPath(valueBeforeCursor) {

@@ -30,6 +30,11 @@ describe('documentParser', () => {
       const result = getCurrentAttributeName('<div click = "handler', 21)
       assert.strictEqual(result, 'click')
     })
+
+    it('debería extraer el nombre del atributo con comillas simples', () => {
+      const result = getCurrentAttributeName("<div bind-value='test", 21)
+      assert.strictEqual(result, 'bind-value')
+    })
   })
 
   describe('isInsideTag', () => {
@@ -96,6 +101,11 @@ describe('documentParser', () => {
       const result = getAttributeValueMatch('bind-value = "test')
       assert.strictEqual(result, 'test')
     })
+
+    it('debería extraer el valor cuando usa comillas simples', () => {
+      const result = getAttributeValueMatch("bind-value='test")
+      assert.strictEqual(result, 'test')
+    })
   })
 
   describe('parseForEachExpression', () => {
@@ -147,6 +157,15 @@ describe('documentParser', () => {
       const result = parseForEachExpression('for-each="item of items"')
       assert.deepStrictEqual(result, {
         itemName: 'item',
+        collectionName: 'items',
+      })
+    })
+
+    it('debería parsear for-each con espacios alrededor del signo igual', () => {
+      const result = parseForEachExpression('for-each = "(item, index) of items"')
+      assert.deepStrictEqual(result, {
+        itemName: 'item',
+        indexName: 'index',
         collectionName: 'items',
       })
     })
@@ -324,6 +343,49 @@ describe('documentParser', () => {
       }
 
       const result = findForEachInElement(fakeDocument, 6, lines[6].length)
+      assert.ok(result)
+      assert.strictEqual(result.itemName, 'item')
+      assert.strictEqual(result.indexName, 'index')
+    })
+
+    it('debería mantener scope cuando un tag anidado del mismo tipo también es multiline', () => {
+      const lines = [
+        '<div',
+        '  for-each="(item, index) of items"',
+        '>',
+        '  <div',
+        '    class="nested"',
+        '  >',
+        '    <span bind-value="item.text"></span>',
+        '  </div>',
+        '  <span bind-value="item.text"></span>',
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 8, lines[8].length)
+      assert.ok(result)
+      assert.strictEqual(result.itemName, 'item')
+      assert.strictEqual(result.indexName, 'index')
+    })
+
+    it('debería encontrar for-each cuando el atributo usa espacios alrededor del signo igual', () => {
+      const lines = [
+        '<div>',
+        '  <span for-each = "(item, index) of items" bind-value="item.text"></span>',
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 1, lines[1].length)
       assert.ok(result)
       assert.strictEqual(result.itemName, 'item')
       assert.strictEqual(result.indexName, 'index')
