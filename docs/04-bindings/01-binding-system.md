@@ -231,12 +231,14 @@ export type StyleBinding = {
 export type ForEachBinding = {
   collectionName: string;
   itemName: string;
+  indexName?: string;
   template: HTMLElement;
   placeholder: Comment;
   renderedElements: {
     element: HTMLElement;
     viewModel: ViewModel;
     itemRef: { current: any };
+    indexRef: { current: number };
     render: () => void;
   }[];
   previousLength: number;
@@ -245,7 +247,9 @@ export type ForEachBinding = {
 
 **Propósito:** Renderizar listas de elementos.
 
-**Atributo HTML:** `for-each="item of collection"`
+**Atributo HTML:** `for-each="item of collection"` o `for-each="(item, index) of collection"`
+
+**Nota:** El índice es base 0 y configurable (`index`, `i`, `idx`, etc.). La reconciliación es por posición (sin `key`).
 
 ## Fase 1: Setup de Bindings
 
@@ -1079,4 +1083,3 @@ La combinación de setup → registro → render inicial → renders selectivos 
 - [Arquitectura General](../01-architecture/01-general-architecture.md)
 - [Sistema de Reactividad](../03-reactivity/01-reactive-proxy.md)
 - [Bootstrap Process](../02-bootstrap/01-bootstrap-process.md)
-

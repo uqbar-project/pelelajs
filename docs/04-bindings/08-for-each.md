@@ -37,12 +37,21 @@ El binding `for-each` es el más complejo y poderoso de PelelaJS. Permite render
 <elemento for-each="itemName of collectionName">
   <!-- Template que se repite por cada item -->
 </elemento>
+
+<elemento for-each="(itemName, indexName) of collectionName">
+  <!-- Template que se repite por cada item -->
+</elemento>
 ```
 
 ### Ejemplos
 
 ```html
 <div for-each="todo of todos">
+  <span bind-value="todo.title"></span>
+</div>
+
+<div for-each="(todo, index) of todos">
+  <span bind-value="index"></span>
   <span bind-value="todo.title"></span>
 </div>
 
@@ -62,12 +71,14 @@ El binding `for-each` es el más complejo y poderoso de PelelaJS. Permite render
 export type ForEachBinding = {
   collectionName: string;
   itemName: string;
+  indexName?: string;
   template: HTMLElement;
   placeholder: Comment;
   renderedElements: {
     element: HTMLElement;
     viewModel: ViewModel;
     itemRef: { current: any };
+    indexRef: { current: number };
     render: () => void;
   }[];
   previousLength: number;
@@ -81,8 +92,19 @@ export type ForEachBinding = {
 ```typescript
 function parseForEachExpression(expression: string): {
   itemName: string;
+  indexName?: string;
   collectionName: string;
 } | null {
+  const indexedMatch = expression
+    .trim()
+    .match(/^\(\s*(\w+)\s*,\s*(\w+)\s*\)\s+of\s+(\w+)$/);
+  if (indexedMatch) {
+    return {
+      itemName: indexedMatch[1],
+      indexName: indexedMatch[2],
+      collectionName: indexedMatch[3],
+    };
+  }
   const match = expression.trim().match(/^(\w+)\s+of\s+(\w+)$/);
   if (!match) return null;
   return {
@@ -96,13 +118,18 @@ function parseForEachExpression(expression: string): {
 
 ```
 /^(\w+)\s+of\s+(\w+)$/
+o
+/^\(\s*(\w+)\s*,\s*(\w+)\s*\)\s+of\s+(\w+)$/
 
 ^           - Inicio de string
-(\w+)       - Grupo 1: itemName (uno o más word chars)
+\(\s*(\w+)  - Grupo 1: itemName (sintaxis con índice)
+\s*,\s*(\w+) - Grupo 2: indexName (sintaxis con índice)
+\s*\)\s+of\s+(\w+) - Grupo 3: collectionName (sintaxis con índice)
+(\w+)       - Grupo 1: itemName (sintaxis clásica)
 \s+         - Uno o más espacios
 of          - Literal "of"
 \s+         - Uno o más espacios
-(\w+)       - Grupo 2: collectionName
+(\w+)       - Grupo 2: collectionName (sintaxis clásica)
 $           - Fin de string
 ```
 
@@ -135,7 +162,21 @@ match[2] = "items"
 Result: { itemName: "item", collectionName: "items" }
 ```
 
-#### Ejemplo 3: Inválido - Falta "of"
+#### Ejemplo 3: Con Índice
+
+```typescript
+parseForEachExpression("(todo, i) of todos")
+```
+
+```
+match[1] = "todo"      → itemName
+match[2] = "i"         → indexName
+match[3] = "todos"     → collectionName
+
+Result: { itemName: "todo", indexName: "i", collectionName: "todos" }
+```
+
+#### Ejemplo 4: Inválido - Falta "of"
 
 ```typescript
 parseForEachExpression("item items")
@@ -167,7 +208,7 @@ throw Error: Invalid for-each expression: "item name of items"
 setupSingleForEachBinding(element, viewModel)
     │
     ├─► 1. PARSING
-    │      parseForEachExpression("item of collection")
+    │      parseForEachExpression("item of collection" | "(item, index) of collection")
     │        └─► { itemName, collectionName }
     │
     ├─► 2. VALIDACIÓN
@@ -180,6 +221,7 @@ setupSingleForEachBinding(element, viewModel)
     │
     ├─► 4. PLACEHOLDER
     │      Crear comment node: <!-- for-each: item of collection -->
+    │      o <!-- for-each: (item, index) of collection -->
     │
     ├─► 5. REEMPLAZO
     │      Insertar placeholder antes del elemento
@@ -209,7 +251,7 @@ function setupSingleForEachBinding<T extends object>(
   const parsed = parseForEachExpression(expression);
   if (!parsed) {
     throw new Error(
-      `[pelela] Invalid for-each expression: "${expression}". Expected format: "item of collection"`,
+      `[pelela] Invalid for-each expression: "${expression}". Expected format: "item of collection" or "(item, index) of collection"`,
     );
   }
 
@@ -303,11 +345,14 @@ function createExtendedViewModel<T extends object>(
   parentViewModel: ViewModel<T>,
   itemName: string,
   itemRef: { current: any },
+  indexName?: string,
+  indexRef?: { current: number },
 ): ViewModel {
   return new Proxy(
     {},
     {
       has(_target, prop) {
+        if (indexName && prop === indexName) return true;
         if (prop === itemName) return true;
         if (typeof prop === "string" && prop.startsWith(itemName + ".")) {
           return true;
@@ -315,6 +360,9 @@ function createExtendedViewModel<T extends object>(
         return prop in parentViewModel;
       },
       get(_target, prop) {
+        if (indexName && prop === indexName) {
+          return indexRef?.current ?? 0;
+        }
         if (prop === itemName) {
           return itemRef.current;
         }
@@ -325,6 +373,9 @@ function createExtendedViewModel<T extends object>(
         return parentViewModel[prop as string];
       },
       set(_target, prop, value) {
+        if (indexName && prop === indexName) {
+          return true; // index es read-only
+        }
         if (prop === itemName) {
           itemRef.current = value;
           return true;
@@ -342,16 +393,17 @@ function createExtendedViewModel<T extends object>(
 
 ### Propósito del Extended ViewModel
 
-**Problema:** Los bindings dentro del template necesitan acceder tanto al item actual como al ViewModel parent.
+**Problema:** Los bindings dentro del template necesitan acceder tanto al item actual como al ViewModel parent, y opcionalmente al índice del loop.
 
 ```html
-<div for-each="todo of todos">
-  <span bind-value="todo.title"></span>      <!-- item scope -->
-  <button click="deleteTodo">Delete</button>  <!-- parent scope -->
+<div for-each="(todo, i) of todos">
+  <span bind-value="i"></span>                 <!-- index scope -->
+  <span bind-value="todo.title"></span>        <!-- item scope -->
+  <button click="deleteTodo">Delete</button>   <!-- parent scope -->
 </div>
 ```
 
-**Solución:** Un Proxy que combina ambos scopes.
+**Solución:** Un Proxy que combina todos los scopes.
 
 ### Diagrama de Scopes
 
@@ -369,14 +421,20 @@ function createExtendedViewModel<T extends object>(
 │    current: { id: 1, title: "Task 1", done: false }        │
 │  }                                                           │
 │                                                              │
+│  indexRef = {                                                │
+│    current: 0                                               │
+│  }                                                           │
+│                                                              │
 │  extendedViewModel = Proxy {                                │
 │    get(target, prop):                                       │
+│      ├─ prop === "i"              → indexRef.current         │
 │      ├─ prop === "todo"           → itemRef.current         │
 │      ├─ prop.startsWith("todo.")  → itemRef.current[...]    │
 │      └─ else                      → parentViewModel[prop]   │
 │  }                                                           │
 │                                                              │
 │  Accesos:                                                   │
+│    extendedVM.i              → 0                            │
 │    extendedVM.todo           → { id: 1, title: "Task 1" }  │
 │    extendedVM.todo.title     → "Task 1"                     │
 │    extendedVM.deleteTodo     → function() { ... }           │
@@ -451,10 +509,13 @@ function createNewElement<T extends object>(
   const element = binding.template.cloneNode(true) as HTMLElement;
 
   const itemRef = { current: item };
+  const indexRef = { current: index };
   const extendedViewModel = createExtendedViewModel(
     viewModel,
     binding.itemName,
     itemRef,
+    binding.indexName,
+    indexRef,
   );
 
   const render = setupBindingsForElement(element, extendedViewModel);
@@ -463,6 +524,7 @@ function createNewElement<T extends object>(
     element,
     viewModel: extendedViewModel,
     itemRef,
+    indexRef,
     render,
   });
 
@@ -485,11 +547,12 @@ createNewElement(binding, viewModel, item, index)
     ├─► 1. CLONE TEMPLATE
     │      element = binding.template.cloneNode(true)
     │
-    ├─► 2. CREATE ITEM REF
+    ├─► 2. CREATE REFS
     │      itemRef = { current: item }
+    │      indexRef = { current: index }
     │
     ├─► 3. CREATE EXTENDED VIEW MODEL
-    │      extendedViewModel = Proxy(parent + item)
+    │      extendedViewModel = Proxy(parent + item + index)
     │
     ├─► 4. SETUP BINDINGS FOR ELEMENT
     │      render = setupBindingsForElement(element, extendedVM)
@@ -673,6 +736,7 @@ function updateExistingElements(
     const rendered = binding.renderedElements[i];
 
     rendered.itemRef.current = item;
+    rendered.indexRef.current = i;
     rendered.render();
   }
 }
@@ -758,7 +822,7 @@ DOM final:
   <div>Task 3</div>
 ```
 
-**Nota:** PelelaJS **no** usa keyed rendering como React. Reutiliza elementos por posición, no por identidad.
+**Nota:** Reconciliación por posición (sin `key`). Ver Limitaciones para detalle.
 
 ## Fase 6: Bindings Anidados dentro de for-each
 
@@ -1207,7 +1271,7 @@ describe("for-each binding", () => {
 
 ### 1. No Keyed Rendering
 
-PelelaJS reutiliza elementos por posición, no por key:
+PelelaJS reutiliza elementos por posición (sin `key`). Esta es una decisión de diseño actual para mantener el runtime simple y didáctico. Para los casos de uso actuales alcanza; si se necesita identidad estable en reordenamientos, se evaluará incorporar `key`:
 
 ```typescript
 items = [
@@ -1283,4 +1347,3 @@ Es la piedra angular para construir listas dinámicas en PelelaJS.
 - [bind-value](./03-bind-value.md)
 - [Propiedades Anidadas](../05-nested-properties/01-nested-properties.md)
 - [ReactiveProxy](../03-reactivity/01-reactive-proxy.md)
-

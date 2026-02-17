@@ -22,8 +22,10 @@
   <h2>Lista de Ítems</h2>
   
   <ul>
-    <div for-each="item of items">
+    <div for-each="(item, index) of items">
       <li if="item.visible">
+        <span bind-value="index"></span>
+        <span> - </span>
         <span bind-value="item.text"></span>
       </li>
     </div>
