@@ -45,11 +45,26 @@ function findForEachInElement(document, currentLine) {
     const lineText = document.lineAt(i).text
     const forEachExpression = parseForEachExpression(lineText)
     if (forEachExpression) {
-      const attrStart = lineText.indexOf('for-each=')
-      const itemPos = lineText.indexOf(forEachExpression.itemName, attrStart)
-      const indexPos = forEachExpression.indexName
-        ? lineText.indexOf(forEachExpression.indexName, attrStart)
-        : undefined
+      const attrMatch = /for-each=(["'])([^"']+)\1/.exec(lineText)
+      if (!attrMatch) {
+        continue
+      }
+
+      const attrText = attrMatch[0]
+      const attrValue = attrMatch[2]
+      const valueStart = attrMatch.index + attrText.indexOf(attrValue)
+
+      const itemOffset = attrValue.indexOf(forEachExpression.itemName)
+      if (itemOffset < 0) {
+        continue
+      }
+      const itemPos = valueStart + itemOffset
+
+      let indexPos
+      if (forEachExpression.indexName) {
+        const indexOffset = attrValue.indexOf(forEachExpression.indexName)
+        indexPos = indexOffset >= 0 ? valueStart + indexOffset : undefined
+      }
 
       forEachResults.push({
         ...forEachExpression,

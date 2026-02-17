@@ -192,6 +192,63 @@ describe('documentParser', () => {
       assert.strictEqual(result.indexName, undefined)
       assert.strictEqual(result.indexPos, undefined)
     })
+
+    it('debería calcular itemPos dentro del valor de for-each y no en otros atributos', () => {
+      const lines = [
+        '<div>',
+        '  <span class="item" for-each="(item, index) of items" bind-value="item.name"></span>',
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 1)
+      const classItemPos = lines[1].indexOf('item')
+      assert.ok(typeof result.itemPos === 'number')
+      assert.ok(result.itemPos > classItemPos)
+      assert.strictEqual(lines[1].slice(result.itemPos, result.itemPos + 4), 'item')
+    })
+
+    it('debería calcular indexPos dentro del valor de for-each aunque exista index en atributos previos', () => {
+      const lines = [
+        '<div>',
+        '  <span data-index="index" for-each="(item, index) of items" bind-value="index"></span>',
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 1)
+      const dataIndexPos = lines[1].indexOf('index')
+      assert.ok(typeof result.indexPos === 'number')
+      assert.ok(result.indexPos > dataIndexPos)
+      assert.strictEqual(lines[1].slice(result.indexPos, result.indexPos + 5), 'index')
+    })
+
+    it('debería calcular posiciones correctamente con for-each entre comillas simples', () => {
+      const lines = [
+        '<div>',
+        "  <span class='item' for-each='(item, idx) of items' bind-value='item.name'></span>",
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 1)
+      assert.strictEqual(result.itemName, 'item')
+      assert.strictEqual(result.indexName, 'idx')
+      assert.strictEqual(lines[1].slice(result.itemPos, result.itemPos + 4), 'item')
+      assert.strictEqual(lines[1].slice(result.indexPos, result.indexPos + 3), 'idx')
+    })
   })
 
   describe('parsePropertyPath', () => {
