@@ -64,7 +64,9 @@ function getForEachAliasPositions(attrValue, hasIndexAlias) {
 
 function findForEachHostTag(document, forEachLine) {
   const forEachLineText = document.lineAt(forEachLine).text ?? ''
-  const inlineHostMatch = /<\s*([a-zA-Z][\w-]*)\b[^>]*\bfor-each\s*=/.exec(forEachLineText)
+  const inlineHostMatch = /<\s*([a-zA-Z][\w-]*)\b[^>]*\bfor-each\s*=[^>]*(?:>|$)/.exec(
+    forEachLineText
+  )
   if (inlineHostMatch) {
     return {
       line: forEachLine,
@@ -95,7 +97,10 @@ function findForEachScopeEndBeforeCursor(
   tagName
 ) {
   const tagRegex = new RegExp(`<\\/?\\s*${tagName}\\b[^>]*>`, 'g')
-  let openDepth = 0
+  const hostLineText = document.lineAt(hostStartLine).text ?? ''
+  const hostOpenTagMatch = new RegExp(`<\\s*${tagName}\\b[^>]*>`).exec(hostLineText)
+  // Host loop tag is always open by definition at this point.
+  let openDepth = 1
 
   for (let lineIndex = hostStartLine; lineIndex <= currentLine; lineIndex++) {
     const fullLineText = document.lineAt(lineIndex).text ?? ''
@@ -108,6 +113,17 @@ function findForEachScopeEndBeforeCursor(
       const tagText = tagMatch[0]
       const isClosingTag = /^<\s*\//.test(tagText)
       const isSelfClosingTag = /\/\s*>$/.test(tagText)
+
+      // Avoid double-counting the host opening tag when it is fully present in hostStartLine.
+      if (
+        lineIndex === hostStartLine &&
+        hostOpenTagMatch &&
+        !isClosingTag &&
+        !isSelfClosingTag &&
+        tagMatch.index === hostOpenTagMatch.index
+      ) {
+        continue
+      }
 
       if (isClosingTag) {
         openDepth -= 1

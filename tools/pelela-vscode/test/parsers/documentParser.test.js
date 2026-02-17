@@ -305,6 +305,29 @@ describe('documentParser', () => {
       assert.strictEqual(result.indexName, 'index')
       assert.strictEqual(result.collectionName, 'items')
     })
+
+    it('debería mantener scope del host multiline aunque haya tags anidados del mismo tipo', () => {
+      const lines = [
+        '<div',
+        '  for-each="(item, index) of items"',
+        '>',
+        '  <div>',
+        '    <span bind-value="item.text"></span>',
+        '  </div>',
+        '  <span bind-value="item.text"></span>',
+        '</div>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 6, lines[6].length)
+      assert.ok(result)
+      assert.strictEqual(result.itemName, 'item')
+      assert.strictEqual(result.indexName, 'index')
+    })
   })
 
   describe('parsePropertyPath', () => {

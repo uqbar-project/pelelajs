@@ -145,4 +145,22 @@ interface Item {
     assert.ok(labels.includes('index'))
     assert.ok(labels.includes('items'))
   })
+
+  it('debería sugerir aliases luego de cerrar un tag anidado del mismo tipo en host multiline', async () => {
+    const lines = [
+      '<div',
+      '  for-each="(item, index) of items"',
+      '>',
+      '  <div>',
+      '    <span bind-value="item.text"></span>',
+      '  </div>',
+      '  <span bind-value="',
+      '</div>',
+    ]
+    const document = createFakeDocument(lines)
+    const labels = await getCompletionLabels(document, 6, lines[6].length)
+
+    assert.ok(labels.includes('item'))
+    assert.ok(labels.includes('index'))
+  })
 })
