@@ -267,6 +267,23 @@ describe('documentParser', () => {
       assert.strictEqual(lines[1].slice(result.indexPos, result.indexPos + 2), 'in')
       assert.ok(result.indexPos > result.itemPos)
     })
+
+    it('no debería encontrar for-each cuando el cursor está fuera del scope del loop', () => {
+      const lines = [
+        '<div for-each="(item, index) of items">',
+        '  <span bind-value="item.text"></span>',
+        '</div>',
+        '<span bind-value="title"></span>',
+      ]
+      const fakeDocument = {
+        lineAt(index) {
+          return { text: lines[index] }
+        },
+      }
+
+      const result = findForEachInElement(fakeDocument, 3)
+      assert.strictEqual(result, null)
+    })
   })
 
   describe('parsePropertyPath', () => {

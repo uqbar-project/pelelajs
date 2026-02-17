@@ -113,4 +113,20 @@ interface Item {
     assert.strictEqual(localItem.detail, 'Pelela for-each local variable')
     assert.strictEqual(vmItems.detail, 'Pelela ViewModel property')
   })
+
+  it('no debería sugerir aliases locales fuera del scope de for-each', async () => {
+    const lines = [
+      '<div for-each="(item, index) of items">',
+      '  <span bind-value="item.text"></span>',
+      '</div>',
+      '  <span bind-value="',
+    ]
+    const document = createFakeDocument(lines)
+    const labels = await getCompletionLabels(document, 3, lines[3].length)
+
+    assert.ok(labels.includes('items'))
+    assert.ok(labels.includes('title'))
+    assert.ok(!labels.includes('item'))
+    assert.ok(!labels.includes('index'))
+  })
 })

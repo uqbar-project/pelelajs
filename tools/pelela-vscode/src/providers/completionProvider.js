@@ -192,7 +192,7 @@ function createMethodCompletionItem(name) {
 async function provideBasicViewModelCompletions(document, position, tsFile, attributeName) {
   const items = []
   const { properties, methods } = extractViewModelMembers(tsFile)
-  const forEachInElement = findForEachInElement(document, position.line)
+  const forEachInElement = findForEachInElement(document, position.line, position.character)
 
   if (attributeName.startsWith('bind-') || attributeName === 'if' || attributeName === 'for-each') {
     const localAliases = getForEachLocalAliases(forEachInElement, attributeName)
@@ -216,7 +216,7 @@ async function provideBasicViewModelCompletions(document, position, tsFile, attr
 
 async function provideNestedPropertyCompletions(document, position, tsFile, propertyPath) {
   const items = []
-  const forEachInElement = findForEachInElement(document, position.line)
+  const forEachInElement = findForEachInElement(document, position.line, position.character)
 
   if (
     forEachInElement &&

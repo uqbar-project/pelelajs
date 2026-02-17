@@ -19,7 +19,7 @@ function provideDefinition(document, position, _token) {
   const viewModelLocation = checkViewModelDefinition(document, position, lineText)
   if (viewModelLocation) return viewModelLocation
 
-  const forEachInElement = findForEachInElement(document, position.line)
+  const forEachInElement = findForEachInElement(document, position.line, position.character)
 
   const bindLocation = checkBindAttributeDefinitions(document, position, lineText, forEachInElement)
   if (bindLocation) return bindLocation

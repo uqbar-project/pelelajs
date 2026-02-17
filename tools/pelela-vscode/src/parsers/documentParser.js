@@ -62,7 +62,67 @@ function getForEachAliasPositions(attrValue, hasIndexAlias) {
   }
 }
 
-function findForEachInElement(document, currentLine) {
+function getForEachTagName(lineText) {
+  const tagMatch = /<\s*([a-zA-Z][\w-]*)\b[^>]*\bfor-each\s*=/.exec(lineText)
+  return tagMatch ? tagMatch[1] : null
+}
+
+function findForEachScopeEndBeforeCursor(
+  document,
+  forEachLine,
+  currentLine,
+  currentCharacter,
+  tagName
+) {
+  const tagRegex = new RegExp(`<\\/?\\s*${tagName}\\b[^>]*>`, 'g')
+  let openDepth = 0
+
+  for (let lineIndex = forEachLine; lineIndex <= currentLine; lineIndex++) {
+    const fullLineText = document.lineAt(lineIndex).text ?? ''
+    const lineText =
+      lineIndex === currentLine && typeof currentCharacter === 'number'
+        ? fullLineText.slice(0, currentCharacter)
+        : fullLineText
+
+    for (const tagMatch of lineText.matchAll(tagRegex)) {
+      const tagText = tagMatch[0]
+      const isClosingTag = /^<\s*\//.test(tagText)
+      const isSelfClosingTag = /\/\s*>$/.test(tagText)
+
+      if (isClosingTag) {
+        openDepth -= 1
+        if (openDepth <= 0) {
+          return {
+            line: lineIndex,
+            character: tagMatch.index,
+          }
+        }
+      } else if (!isSelfClosingTag) {
+        openDepth += 1
+      }
+    }
+  }
+
+  return null
+}
+
+function isWithinForEachScope(document, forEachLine, currentLine, currentCharacter, tagName) {
+  if (currentLine === forEachLine) {
+    return true
+  }
+
+  // The cursor is inside the loop scope only if the host tag has not closed yet.
+  const scopeEnd = findForEachScopeEndBeforeCursor(
+    document,
+    forEachLine,
+    currentLine,
+    currentCharacter,
+    tagName
+  )
+  return scopeEnd === null
+}
+
+function findForEachInElement(document, currentLine, currentCharacter) {
   const forEachResults = []
 
   for (let i = currentLine; i >= 0; i--) {
@@ -71,6 +131,15 @@ function findForEachInElement(document, currentLine) {
     if (forEachExpression) {
       const attrMatch = /for-each=(["'])([^"']+)\1/.exec(lineText)
       if (!attrMatch) {
+        continue
+      }
+
+      const forEachTagName = getForEachTagName(lineText)
+      if (!forEachTagName) {
+        continue
+      }
+
+      if (!isWithinForEachScope(document, i, currentLine, currentCharacter, forEachTagName)) {
         continue
       }
 
