@@ -96,8 +96,6 @@ export function setupBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): (changedPath?: string) => void {
-  setupComponentBindings(root, viewModel)
-
   const bindings: BindingsCollection = {
     forEachBindings: setupForEachBindings(root, viewModel),
     valueBindings: setupValueBindings(root, viewModel),
@@ -108,6 +106,7 @@ export function setupBindings<T extends object>(
   }
 
   setupClickBindings(root, viewModel)
+  setupComponentBindings(root, viewModel)
 
   const tracker = new DependencyTracker()
   registerAllBindingDependencies(bindings, tracker, viewModel)

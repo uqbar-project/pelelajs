@@ -1,6 +1,7 @@
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { ClassBinding, ViewModel } from './types'
+import { isInsideComponent } from './componentHelpers'
 
 function setupSingleClassBinding<T extends object>(
   element: HTMLElement,
@@ -26,6 +27,9 @@ export function setupClassBindings<T extends object>(
   const elements = root.querySelectorAll<HTMLElement>('[bind-class]')
 
   for (const element of elements) {
+    if (isInsideComponent(element, root)) {
+      continue
+    }
     const binding = setupSingleClassBinding(element, viewModel)
     if (binding) {
       bindings.push(binding)

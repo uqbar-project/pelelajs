@@ -178,7 +178,7 @@ import { ${comp.componentName} as ViewModel${index} } from '${comp.viewModelPath
 
   const registrations = components
     .map((comp, index) => {
-      return `  registerComponent('${comp.componentName}', {
+      return `  defineComponent('${comp.componentName}', {
     viewModelName: '${comp.componentName}',
     viewModelConstructor: ViewModel${index},
     template: template${index},
@@ -187,7 +187,7 @@ import { ${comp.componentName} as ViewModel${index} } from '${comp.viewModelPath
     .join('\n')
 
   return `
-import { registerComponent } from 'pelelajs/registry';
+import { defineComponent } from 'pelelajs';
 
 ${imports}
 

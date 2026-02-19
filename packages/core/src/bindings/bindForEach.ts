@@ -10,7 +10,9 @@ import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
+import { setupComponentBindings } from './bindComponent'
 import type { ForEachBinding, ViewModel } from './types'
+import { isInsideComponent } from './componentHelpers'
 
 function parseForEachExpression(expression: string): {
   itemName: string
@@ -111,6 +113,7 @@ function setupBindingsForElement<T extends object>(
   )
 
   setupClickBindings(wrapper, viewModel)
+  setupComponentBindings(wrapper, viewModel)
 
   const bindings = {
     valueBindings: tempBindings.valueBindings.map((b) =>
@@ -273,6 +276,9 @@ export function setupForEachBindings<T extends object>(
   const elements = root.querySelectorAll<HTMLElement>('[for-each]')
 
   for (const element of elements) {
+    if (isInsideComponent(element, root)) {
+      continue
+    }
     const binding = setupSingleForEachBinding(element, viewModel)
     if (binding) {
       bindings.push(binding)

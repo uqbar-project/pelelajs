@@ -1,6 +1,7 @@
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { StyleBinding, ViewModel } from './types'
+import { isInsideComponent } from './componentHelpers'
 
 function setupSingleStyleBinding<T extends object>(
   element: HTMLElement,
@@ -25,6 +26,9 @@ export function setupStyleBindings<T extends object>(
   const elements = root.querySelectorAll<HTMLElement>('[bind-style]')
 
   for (const element of elements) {
+    if (isInsideComponent(element, root)) {
+      continue
+    }
     const binding = setupSingleStyleBinding(element, viewModel)
     if (binding) {
       bindings.push(binding)

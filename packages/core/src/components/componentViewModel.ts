@@ -5,9 +5,13 @@ export function createComponentViewModel<T extends object>(
   parentViewModel: ViewModel,
   props: ComponentProps,
 ): ViewModel<T> {
+  console.log('[pelela] Creating component viewModel with props:', props)
+  
   const resolvedUnidirectionalProps: Record<string, any> = {}
   for (const [propName, propExpression] of Object.entries(props.unidirectional)) {
-    resolvedUnidirectionalProps[propName] = resolvePropertyValue(propExpression, parentViewModel)
+    const resolved = resolvePropertyValue(propExpression, parentViewModel)
+    console.log(`[pelela] Resolving prop "${propName}" = "${propExpression}" -> ${resolved}`)
+    resolvedUnidirectionalProps[propName] = resolved
   }
 
   const bidirectionalPropsMap: Record<string, string> = { ...props.bidirectional }
@@ -67,6 +71,7 @@ export function createComponentViewModel<T extends object>(
     },
   })
 
+  console.log('[pelela] Component viewModel created:', proxy)
   return proxy as ViewModel<T>
 }
 
@@ -88,7 +93,12 @@ function resolvePropertyValue(expression: string, parentViewModel: ViewModel): a
   if (expression === 'null') return null
   if (expression === 'undefined') return undefined
 
-  return getNestedProperty(parentViewModel, expression)
+  const nestedValue = getNestedProperty(parentViewModel, expression)
+  if (nestedValue !== undefined) {
+    return nestedValue
+  }
+
+  return expression
 }
 
 function getNestedProperty(obj: any, path: string): any {

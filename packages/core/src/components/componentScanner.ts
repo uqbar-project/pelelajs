@@ -19,8 +19,14 @@ function isPascalCase(str: string): boolean {
   return /^[A-Z][a-zA-Z0-9]*$/.test(str)
 }
 
+function normalizeToPascalCase(tagName: string): string {
+  if (!tagName) return tagName
+  return tagName.charAt(0).toUpperCase() + tagName.slice(1).toLowerCase()
+}
+
 function isRegisteredComponent(tagName: string): boolean {
-  return isPascalCase(tagName) && hasComponent(tagName)
+  const normalized = normalizeToPascalCase(tagName)
+  return isPascalCase(normalized) && hasComponent(normalized)
 }
 
 function extractPropsFromElement(element: HTMLElement): ComponentPropsData {
@@ -46,27 +52,34 @@ export function scanComponents(root: HTMLElement): ComponentInstance[] {
   const components: ComponentInstance[] = []
   const allElements = Array.from(root.querySelectorAll('*'))
 
+  console.log(`[pelela] Scanning ${allElements.length} elements for components...`)
+
   for (const element of allElements) {
     const tagName = element.tagName
+    const normalizedTagName = normalizeToPascalCase(tagName)
+
+    console.log(`[pelela] Checking element: ${tagName} -> ${normalizedTagName}`)
 
     if (isRegisteredComponent(tagName)) {
-      const config = getComponent(tagName)
+      console.log(`[pelela] Found registered component: ${normalizedTagName}`)
+      const config = getComponent(normalizedTagName)
 
       if (!config) {
-        throw new ComponentNotFoundError(tagName, element.outerHTML.substring(0, 150))
+        throw new ComponentNotFoundError(normalizedTagName, element.outerHTML.substring(0, 150))
       }
 
       const props = extractPropsFromElement(element as HTMLElement)
 
       components.push({
         element: element as HTMLElement,
-        componentName: tagName,
+        componentName: normalizedTagName,
         config,
         props,
       })
     }
   }
 
+  console.log(`[pelela] Found ${components.length} component(s)`)
   return components
 }
 

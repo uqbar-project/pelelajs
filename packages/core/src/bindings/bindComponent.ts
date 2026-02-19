@@ -70,6 +70,8 @@ function setupSingleComponentBinding(
     const { instance, extendedViewModel } = instantiateComponent(componentInstance, parentViewModel)
 
     const templateElement = replaceComponentTagWithTemplate(componentName, config.template)
+    
+    templateElement.setAttribute('data-pelela-component', componentName)
 
     let render: (changedPath?: string) => void = () => {}
 
@@ -82,6 +84,8 @@ function setupSingleComponentBinding(
 
     ;(templateElement as any).__pelelaViewModel = reactiveInstance
 
+    console.log(`[pelela] Setting up bindings for ${componentName}`)
+    
     render = setupBindings(templateElement, reactiveInstance)
 
     const parent = element.parentNode

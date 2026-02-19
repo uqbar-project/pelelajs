@@ -4,3 +4,7 @@ declare module "*.pelela" {
   export const viewModelName: string;
 }
 
+declare module "pelela:components" {
+  export function registerAllComponents(): void;
+}
+
