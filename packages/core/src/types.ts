@@ -10,3 +10,14 @@ export type PelelaOptions = {
 export interface PelelaElement<T = object> extends HTMLElement {
   __pelelaViewModel: T
 }
+
+export type ComponentConfig = {
+  viewModelName: string
+  viewModelConstructor: ViewModelConstructor
+  template: string
+}
+
+export type ComponentProps = {
+  unidirectional: Record<string, any>
+  bidirectional: Record<string, string>
+}

@@ -1,0 +1,13 @@
+.validation-row {
+  margin-top: 0.5rem;
+}
+
+.validation {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  padding: 0.5rem;
+  color: #c33;
+  font-size: 0.9rem;
+}
+

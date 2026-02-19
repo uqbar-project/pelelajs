@@ -5,6 +5,7 @@ import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
+import { setupComponentBindings } from './bindComponent'
 import { DependencyTracker } from './dependencyTracker'
 import type {
   BindingsCollection,
@@ -95,6 +96,8 @@ export function setupBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): (changedPath?: string) => void {
+  setupComponentBindings(root, viewModel)
+
   const bindings: BindingsCollection = {
     forEachBindings: setupForEachBindings(root, viewModel),
     valueBindings: setupValueBindings(root, viewModel),

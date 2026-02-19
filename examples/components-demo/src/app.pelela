@@ -1,0 +1,64 @@
+<pelela view-model="App">
+  <h1>Demo de Componentes - PelelaJS</h1>
+
+  <div class="section">
+    <h3>1. Componente Contador con Binding Bidireccional</h3>
+    <p style="margin-bottom: 1rem; color: #666;">
+      El contador sincroniza su valor con el ViewModel padre usando <code>link-valor</code>
+    </p>
+    <div class="demo-container">
+      <Contador link-valor="itemSeleccionado" desde="1" hasta="totalProductos" />
+      <div style="padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+        <strong>Valor en el padre:</strong> <span bind-content="itemSeleccionado"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>2. Componente de Validación</h3>
+    <p style="margin-bottom: 1rem; color: #666;">
+      Muestra mensajes de error cuando el monto es menor a $100
+    </p>
+    <div>
+      <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+        Monto de la apuesta:
+      </label>
+      <input 
+        type="number" 
+        bind-value="apuesta.monto" 
+        style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 200px;"
+      />
+      <ValidationField domainElement="this" field="monto" />
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>3. Componentes Anidados (Card + Badge)</h3>
+    <p style="margin-bottom: 1rem; color: #666;">
+      El componente Card usa internamente el componente Badge
+    </p>
+    <div class="grid">
+      <div for-each="tarjeta of tarjetas">
+        <Card 
+          titulo="tarjeta.titulo"
+          descripcion="tarjeta.descripcion"
+          estado="tarjeta.estado"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>4. Múltiples Instancias del Mismo Componente</h3>
+    <p style="margin-bottom: 1rem; color: #666;">
+      Cada Badge es una instancia independiente con su propia configuración
+    </p>
+    <div class="demo-container">
+      <Badge label="Nuevo" color="blue" />
+      <Badge label="Completado" color="green" />
+      <Badge label="Error" color="red" />
+      <Badge label="Advertencia" color="yellow" />
+    </div>
+  </div>
+</pelela>
+

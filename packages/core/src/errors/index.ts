@@ -10,3 +10,8 @@ export type { BindingKind } from './PropertyValidationError'
 export { PropertyValidationError } from './PropertyValidationError'
 export type { RegistrationType } from './ViewModelRegistrationError'
 export { ViewModelRegistrationError } from './ViewModelRegistrationError'
+
+export { CircularComponentError } from './CircularComponentError'
+export { ComponentNotFoundError } from './ComponentNotFoundError'
+export type { PropErrorType } from './InvalidComponentPropError'
+export { InvalidComponentPropError } from './InvalidComponentPropError'

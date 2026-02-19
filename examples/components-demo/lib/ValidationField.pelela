@@ -1,0 +1,6 @@
+<component view-model="ValidationField">
+  <div class="validation-row" if="hasErrors">
+    <div class="validation" bind-content="errorMessage"></div>
+  </div>
+</component>
+
