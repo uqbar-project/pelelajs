@@ -46,7 +46,7 @@ function renderSingleContentBinding<T extends object>(
     value,
   )
 
-  binding.element.innerHTML = value === undefined || value === null ? '' : String(value)
+  binding.element.textContent = value === undefined || value === null ? '' : String(value)
 }
 
 export function renderContentBindings<T extends object>(
