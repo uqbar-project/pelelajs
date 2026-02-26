@@ -83,9 +83,6 @@ function setupSingleComponentBinding(
     )
 
     ;(templateElement as any).__pelelaViewModel = reactiveInstance
-
-    console.log(`[pelela] Setting up bindings for ${componentName}`)
-    
     render = setupBindings(templateElement, reactiveInstance)
 
     const parent = element.parentNode
@@ -124,19 +121,9 @@ export function setupComponentBindings<T extends object>(
       break
     }
 
-    console.log(
-      `[pelela] Iteration ${iterationCount}: Found ${components.length} component instance(s) to mount`,
-    )
-
     for (const component of components) {
-      try {
-        const binding = setupSingleComponentBinding(component, viewModel)
-        bindings.push(binding)
-        console.log(`[pelela] Component "${component.componentName}" mounted successfully`)
-      } catch (error) {
-        console.error(`[pelela] Failed to mount component "${component.componentName}":`, error)
-        throw error
-      }
+      const binding = setupSingleComponentBinding(component, viewModel)
+      bindings.push(binding)
     }
   }
 
@@ -145,8 +132,6 @@ export function setupComponentBindings<T extends object>(
       '[pelela] Maximum component nesting iterations reached. Possible infinite recursion?',
     )
   }
-
-  console.log(`[pelela] Total components mounted: ${bindings.length}`)
 
   return bindings
 }

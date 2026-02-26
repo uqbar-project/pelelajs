@@ -3,6 +3,10 @@ import path from 'node:path'
 
 type PelelaFileType = 'page' | 'component'
 
+function expandSelfClosingComponents(html: string): string {
+  return html.replace(/<([A-Z][a-zA-Z0-9]*)\b([^>]*?)\/>/gs, '<$1$2></$1>')
+}
+
 function escapeTemplate(html: string): string {
   return html.replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
 }
@@ -163,9 +167,7 @@ function scanComponentsInDirectory(dir: string): ComponentInfo[] {
 function generateComponentRegistryCode(components: ComponentInfo[]): string {
   if (components.length === 0) {
     return `
-export function registerAllComponents() {
-  console.log('[pelela] No components found to register');
-}
+export function registerAllComponents() {}
 `
   }
 
@@ -192,9 +194,7 @@ import { defineComponent } from 'pelelajs';
 ${imports}
 
 export function registerAllComponents() {
-  console.log('[pelela] Registering ${components.length} component(s)...');
 ${registrations}
-  console.log('[pelela] All components registered successfully');
 }
 `
 }
@@ -228,11 +228,6 @@ export function pelelajsPlugin(): PelelaVitePlugin {
 
       componentRegistryCode = generateComponentRegistryCode(allComponents)
 
-      if (allComponents.length > 0) {
-        console.log(
-          `[pelela] Found ${allComponents.length} component(s): ${allComponents.map((c) => c.componentName).join(', ')}`,
-        )
-      }
     },
 
     resolveId(id) {
@@ -256,7 +251,8 @@ export function pelelajsPlugin(): PelelaVitePlugin {
       validatePelelaStructure(code, id, fileType, this.error.bind(this))
       const viewModelName = extractViewModelName(code, id, fileType, this.error.bind(this))
 
-      const escaped = escapeTemplate(code)
+      const expanded = expandSelfClosingComponents(code)
+      const escaped = escapeTemplate(expanded)
 
       if (fileType === 'component') {
         const componentName = getComponentNameFromPath(id)

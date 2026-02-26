@@ -32,7 +32,7 @@ describe('bindComponent - integration', () => {
       const bindings = setupComponentBindings(root, parentVM as any)
 
       expect(bindings).toHaveLength(1)
-      expect(bindings[0].componentName).toBe('COUNTER')
+      expect(bindings[0].componentName).toBe('Counter')
     })
 
     it('should replace component tag with template content', () => {
@@ -192,7 +192,8 @@ describe('bindComponent - integration', () => {
 
       const bindings = setupComponentBindings(root, {} as any)
 
-      expect(bindings).toHaveLength(2)
+      expect(bindings).toHaveLength(1)
+      expect(bindings[0].componentName).toBe('Outer')
       expect(root.querySelector('span')).not.toBeNull()
     })
 

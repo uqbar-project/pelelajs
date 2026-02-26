@@ -52,16 +52,11 @@ export function scanComponents(root: HTMLElement): ComponentInstance[] {
   const components: ComponentInstance[] = []
   const allElements = Array.from(root.querySelectorAll('*'))
 
-  console.log(`[pelela] Scanning ${allElements.length} elements for components...`)
-
   for (const element of allElements) {
     const tagName = element.tagName
     const normalizedTagName = normalizeToPascalCase(tagName)
 
-    console.log(`[pelela] Checking element: ${tagName} -> ${normalizedTagName}`)
-
     if (isRegisteredComponent(tagName)) {
-      console.log(`[pelela] Found registered component: ${normalizedTagName}`)
       const config = getComponent(normalizedTagName)
 
       if (!config) {
@@ -79,7 +74,6 @@ export function scanComponents(root: HTMLElement): ComponentInstance[] {
     }
   }
 
-  console.log(`[pelela] Found ${components.length} component(s)`)
   return components
 }
 

@@ -1,7 +1,7 @@
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { ContentBinding, ViewModel } from './types'
-import { isInsideComponent } from './componentHelpers'
+import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 
 function setupSingleContentBinding<T extends object>(
   element: HTMLElement,
@@ -20,7 +20,7 @@ export function setupContentBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): ContentBinding[] {
   const bindings: ContentBinding[] = []
-  const elements = root.querySelectorAll<HTMLElement>('[bind-content]')
+  const elements = querySelectorAllInclusive(root, '[bind-content]')
 
   for (const element of elements) {
     if (isInsideComponent(element, root)) {
@@ -41,16 +41,6 @@ function renderSingleContentBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   const value = getNestedProperty(viewModel, binding.propertyName)
-
-  console.log(
-    '[pelela] renderContentBinding:',
-    binding.element.tagName,
-    'property:',
-    binding.propertyName,
-    'value:',
-    value,
-  )
-
   binding.element.innerHTML = value === undefined || value === null ? '' : String(value)
 }
 

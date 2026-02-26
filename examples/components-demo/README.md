@@ -5,8 +5,8 @@ Este ejemplo demuestra el sistema completo de componentización de PelelaJS.
 ## Características Demostradas
 
 ### 1. Componente Contador con Binding Bidireccional
-- Usa `link-valor` para sincronizar el estado entre padre e hijo
-- Props `desde` y `hasta` para configurar límites
+- Usa el patrón `link-nombrepropiedad` para binding bidireccional (ej. `link-valor`)
+- Sin prefijo el binding es unidireccional (ej. `desde`, `hasta`)
 - Demuestra cómo los cambios en el componente se reflejan automáticamente en el padre
 
 ### 2. Componente de Validación (ValidationField)
@@ -74,8 +74,8 @@ http://localhost:5173
 Componente interactivo con botones +/- que sincroniza su valor con el padre.
 
 **Props:**
-- `link-valor`: Propiedad bidireccional para el valor actual
-- `desde`: Valor mínimo (unidireccional)
+- `link-*`: Cualquier prop con prefijo `link-` es bidireccional (ej. `link-valor` sincroniza la prop `valor` con el padre)
+- `desde`: Valor mínimo (unidireccional; si fuera `link-desde` sería bidireccional)
 - `hasta`: Valor máximo (unidireccional)
 
 ### ValidationField
@@ -107,10 +107,12 @@ Tarjeta que muestra información con un badge de estado.
 <Badge label="Nuevo" color="blue" />
 ```
 
-### Props Bidireccionales (link-*)
+### Props Bidireccionales (link-nombrepropiedad)
+Cualquier atributo con prefijo `link-` es bidireccional; el nombre de la prop es lo que sigue al guión.
 ```html
 <Contador link-valor="itemSeleccionado" />
 ```
+Si usaras `link-desde="indice"`, la prop `desde` del componente quedaría sincronizada bidireccionalmente con `indice` del padre.
 
 ### Componentes Anidados
 ```html

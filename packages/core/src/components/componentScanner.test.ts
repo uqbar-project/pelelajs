@@ -24,7 +24,7 @@ describe('componentScanner', () => {
       const components = scanComponents(root)
 
       expect(components).toHaveLength(1)
-      expect(components[0].componentName).toBe('TESTCOMPONENT')
+      expect(components[0].componentName).toBe('Testcomponent')
     })
 
     it('should extract unidirectional props', () => {
@@ -100,11 +100,12 @@ describe('componentScanner', () => {
       expect(components).toHaveLength(3)
     })
 
-    it('should throw error for unregistered component', () => {
+    it('should skip unregistered PascalCase elements', () => {
       const root = document.createElement('div')
       root.innerHTML = '<UnregisteredComponent></UnregisteredComponent>'
 
-      expect(() => scanComponents(root)).toThrow()
+      const components = scanComponents(root)
+      expect(components).toHaveLength(0)
     })
   })
 

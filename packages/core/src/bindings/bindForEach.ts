@@ -10,9 +10,9 @@ import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
-import { setupComponentBindings } from './bindComponent'
+import { setupComponentBindings, renderComponentBindings } from './bindComponent'
 import type { ForEachBinding, ViewModel } from './types'
-import { isInsideComponent } from './componentHelpers'
+import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 
 function parseForEachExpression(expression: string): {
   itemName: string
@@ -80,69 +80,17 @@ function setupBindingsForElement<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): () => void {
-  const wrapper = document.createElement('div')
-  const clonedForSearch = element.cloneNode(true) as HTMLElement
-  wrapper.appendChild(clonedForSearch)
-
-  console.log(
-    '[pelela] setupBindingsForElement:',
-    element.tagName,
-    'cloned:',
-    clonedForSearch.outerHTML,
-  )
-
-  const tempBindings = {
-    valueBindings: setupValueBindings(wrapper, viewModel),
-    contentBindings: setupContentBindings(wrapper, viewModel),
-    ifBindings: setupIfBindings(wrapper, viewModel),
-    classBindings: setupClassBindings(wrapper, viewModel),
-    styleBindings: setupStyleBindings(wrapper, viewModel),
-  }
-
-  console.log(
-    '[pelela] Found bindings - value:',
-    tempBindings.valueBindings.length,
-    'content:',
-    tempBindings.contentBindings.length,
-    'if:',
-    tempBindings.ifBindings.length,
-    'class:',
-    tempBindings.classBindings.length,
-    'style:',
-    tempBindings.styleBindings.length,
-  )
-
-  setupClickBindings(wrapper, viewModel)
-  setupComponentBindings(wrapper, viewModel)
+  const componentBindings = setupComponentBindings(element, viewModel)
 
   const bindings = {
-    valueBindings: tempBindings.valueBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
-    ),
-    contentBindings: tempBindings.contentBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
-    ),
-    ifBindings: tempBindings.ifBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
-    ),
-    classBindings: tempBindings.classBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
-    ),
-    styleBindings: tempBindings.styleBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
-    ),
+    valueBindings: setupValueBindings(element, viewModel),
+    contentBindings: setupContentBindings(element, viewModel),
+    ifBindings: setupIfBindings(element, viewModel),
+    classBindings: setupClassBindings(element, viewModel),
+    styleBindings: setupStyleBindings(element, viewModel),
   }
 
-  console.log(
-    '[pelela] Mapped bindings to real element:',
-    element.tagName,
-    'value bindings:',
-    bindings.valueBindings.map((b) => ({
-      el: b.element.tagName,
-      prop: b.propertyName,
-      same: b.element === element,
-    })),
-  )
+  setupClickBindings(element, viewModel)
 
   const render = () => {
     renderValueBindings(bindings.valueBindings, viewModel)
@@ -150,67 +98,10 @@ function setupBindingsForElement<T extends object>(
     renderIfBindings(bindings.ifBindings, viewModel)
     renderClassBindings(bindings.classBindings, viewModel)
     renderStyleBindings(bindings.styleBindings, viewModel)
+    renderComponentBindings(componentBindings)
   }
 
   return render
-}
-
-function mapBindingToRealElement<T extends { element: HTMLElement }>(
-  binding: T,
-  clonedRoot: HTMLElement,
-  realRoot: HTMLElement,
-): T {
-  return {
-    ...binding,
-    element: mapElementPath(binding.element, clonedRoot, realRoot),
-  }
-}
-
-function mapElementPath(
-  sourceElement: HTMLElement,
-  sourceRoot: HTMLElement,
-  targetRoot: HTMLElement,
-): HTMLElement {
-  if (sourceElement === sourceRoot) {
-    console.log(
-      '[pelela] mapElementPath: source === root, returning target',
-      sourceRoot.tagName,
-      '->',
-      targetRoot.tagName,
-    )
-    return targetRoot
-  }
-
-  const path: number[] = []
-  let current: HTMLElement | null = sourceElement
-
-  while (current && current !== sourceRoot) {
-    const parent = current.parentElement
-    if (!parent) break
-    path.unshift(Array.from(parent.children).indexOf(current))
-    current = parent as HTMLElement
-  }
-
-  console.log(
-    '[pelela] mapElementPath: following path',
-    path,
-    'from',
-    sourceRoot.tagName,
-    'to child',
-    sourceElement.tagName,
-  )
-
-  let target: HTMLElement = targetRoot
-  for (const index of path) {
-    const children = target.children
-    if (index >= children.length) break
-    target = children[index] as HTMLElement
-    if (!target) break
-  }
-
-  console.log('[pelela] mapElementPath: result', target.tagName)
-
-  return target
 }
 
 function setupSingleForEachBinding<T extends object>(
@@ -243,13 +134,6 @@ function setupSingleForEachBinding<T extends object>(
   const template = element.cloneNode(true) as HTMLElement
   template.removeAttribute('for-each')
 
-  console.log(
-    `[pelela] for-each setup: ${itemName} of ${collectionName}, element:`,
-    element.tagName,
-    'parent:',
-    element.parentNode?.nodeName,
-  )
-
   if (!element.parentNode) {
     throw new InvalidDOMStructureError('for-each', 'element has no parent node')
   }
@@ -273,7 +157,7 @@ export function setupForEachBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): ForEachBinding[] {
   const bindings: ForEachBinding[] = []
-  const elements = root.querySelectorAll<HTMLElement>('[for-each]')
+  const elements = querySelectorAllInclusive(root, '[for-each]')
 
   for (const element of elements) {
     if (isInsideComponent(element, root)) {
@@ -296,13 +180,6 @@ function createNewElement<T extends object>(
 ): void {
   const element = binding.template.cloneNode(true) as HTMLElement
 
-  console.log(
-    `[pelela] for-each creating element #${index}:`,
-    element.tagName,
-    'template:',
-    binding.template.outerHTML,
-  )
-
   const itemRef = { current: item }
   const extendedViewModel = createExtendedViewModel(viewModel, binding.itemName, itemRef)
 
@@ -318,23 +195,9 @@ function createNewElement<T extends object>(
   const lastElement =
     binding.renderedElements[binding.renderedElements.length - 2]?.element || binding.placeholder
 
-  console.log(
-    `[pelela] for-each inserting:`,
-    element.tagName,
-    'after:',
-    lastElement.nodeName,
-    'parent:',
-    lastElement.parentNode?.nodeName,
-  )
-
   if (lastElement.parentNode) {
     lastElement.parentNode.insertBefore(element, lastElement.nextSibling)
-    console.log(
-      `[pelela] for-each inserted successfully, element in DOM:`,
-      element.parentNode?.nodeName,
-    )
     render()
-    console.log(`[pelela] for-each render called for element #${index}`)
   } else {
     console.warn('[pelela] for-each: Could not insert element, parent node not found')
   }
@@ -383,10 +246,6 @@ function renderSingleForEachBinding<T extends object>(
 
   const currentLength = collection.length
   const previousLength = binding.previousLength
-
-  console.log(
-    `[pelela] for-each render: ${binding.itemName} of ${binding.collectionName}, items: ${currentLength}, prev: ${previousLength}`,
-  )
 
   if (currentLength > previousLength) {
     addNewElements(binding, viewModel, collection, previousLength)

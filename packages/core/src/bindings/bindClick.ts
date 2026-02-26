@@ -1,6 +1,6 @@
 import { InvalidHandlerError } from '../errors/index'
 import type { ViewModel } from './types'
-import { isInsideComponent } from './componentHelpers'
+import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 
 function setupSingleClickBinding<T extends object>(
   element: HTMLElement,
@@ -24,7 +24,7 @@ export function setupClickBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): void {
-  const elements = root.querySelectorAll<HTMLElement>('[click]')
+  const elements = querySelectorAllInclusive(root, '[click]')
 
   for (const element of elements) {
     if (isInsideComponent(element, root)) {

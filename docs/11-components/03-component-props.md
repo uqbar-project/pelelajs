@@ -91,11 +91,13 @@ Las props bidireccionales sincronizan datos entre padre e hijo. Los cambios en c
 
 ### Sintaxis
 
-Usa el prefijo `link-` para indicar binding bidireccional:
+El prefijo `link-nombrepropiedad` indica binding bidireccional para esa prop. Cualquier nombre de propiedad vale: `link-valor`, `link-desde`, `link-titulo`, etc. Sin el prefijo, el mismo nombre es unidireccional (solo padre → hijo).
 
 ```html
-<Contador link-valor="itemActual" />
+<Contador link-valor="itemActual" desde="1" hasta="totalProductos" />
 ```
+
+En el ejemplo, `valor` es bidireccional (`link-valor`) y `desde`/`hasta` son unidireccionales.
 
 ### Funcionamiento
 
@@ -193,7 +195,7 @@ Puedes usar ambos tipos en el mismo componente:
 />
 ```
 
-- `link-valor`: Bidireccional - sincroniza el valor del campo
+- `link-valor`: Bidireccional (cualquier `link-*` sincroniza esa prop con el padre)
 - `etiqueta`, `tipo`, `requerido`: Unidireccionales - configuran el componente
 
 ## Validación de Props

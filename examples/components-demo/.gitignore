@@ -1,0 +1,10 @@
+# Node.js
+node_modules/
+
+# Build
+dist
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/

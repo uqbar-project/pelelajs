@@ -5,22 +5,22 @@ export function createComponentViewModel<T extends object>(
   parentViewModel: ViewModel,
   props: ComponentProps,
 ): ViewModel<T> {
-  console.log('[pelela] Creating component viewModel with props:', props)
-  
   const resolvedUnidirectionalProps: Record<string, any> = {}
   for (const [propName, propExpression] of Object.entries(props.unidirectional)) {
-    const resolved = resolvePropertyValue(propExpression, parentViewModel)
-    console.log(`[pelela] Resolving prop "${propName}" = "${propExpression}" -> ${resolved}`)
-    resolvedUnidirectionalProps[propName] = resolved
+    resolvedUnidirectionalProps[propName.toLowerCase()] = resolvePropertyValue(propExpression, parentViewModel)
   }
 
-  const bidirectionalPropsMap: Record<string, string> = { ...props.bidirectional }
+  const bidirectionalPropsMap: Record<string, string> = {}
+  for (const [propName, propExpression] of Object.entries(props.bidirectional)) {
+    bidirectionalPropsMap[propName.toLowerCase()] = propExpression
+  }
 
   const proxy = new Proxy(componentInstance as Record<string, unknown>, {
     has(_target, prop) {
       if (typeof prop === 'string') {
-        if (prop in resolvedUnidirectionalProps) return true
-        if (prop in bidirectionalPropsMap) return true
+        const lower = prop.toLowerCase()
+        if (lower in resolvedUnidirectionalProps) return true
+        if (lower in bidirectionalPropsMap) return true
         if (prop in componentInstance) return true
         if (prop in parentViewModel) return true
       }
@@ -29,17 +29,27 @@ export function createComponentViewModel<T extends object>(
 
     get(_target, prop) {
       if (typeof prop === 'string') {
-        if (prop in resolvedUnidirectionalProps) {
-          return resolvedUnidirectionalProps[prop]
+        const lower = prop.toLowerCase()
+
+        if (lower in resolvedUnidirectionalProps) {
+          return resolvedUnidirectionalProps[lower]
         }
 
-        if (prop in bidirectionalPropsMap) {
-          const parentProp = bidirectionalPropsMap[prop]
+        if (lower in bidirectionalPropsMap) {
+          const parentProp = bidirectionalPropsMap[lower]
           return getNestedProperty(parentViewModel, parentProp)
         }
 
         if (prop in componentInstance) {
-          return (componentInstance as any)[prop]
+          const descriptor = getPropertyDescriptor(componentInstance, prop)
+          if (descriptor?.get) {
+            return descriptor.get.call(proxy)
+          }
+          const value = (componentInstance as any)[prop]
+          if (typeof value === 'function') {
+            return value.bind(proxy)
+          }
+          return value
         }
 
         if (prop in parentViewModel) {
@@ -52,8 +62,10 @@ export function createComponentViewModel<T extends object>(
 
     set(_target, prop, value) {
       if (typeof prop === 'string') {
-        if (prop in bidirectionalPropsMap) {
-          const parentProp = bidirectionalPropsMap[prop]
+        const lower = prop.toLowerCase()
+
+        if (lower in bidirectionalPropsMap) {
+          const parentProp = bidirectionalPropsMap[lower]
           setNestedProperty(parentViewModel, parentProp, value)
           return true
         }
@@ -71,7 +83,6 @@ export function createComponentViewModel<T extends object>(
     },
   })
 
-  console.log('[pelela] Component viewModel created:', proxy)
   return proxy as ViewModel<T>
 }
 
@@ -92,6 +103,7 @@ function resolvePropertyValue(expression: string, parentViewModel: ViewModel): a
   if (expression === 'false') return false
   if (expression === 'null') return null
   if (expression === 'undefined') return undefined
+  if (expression === 'this') return parentViewModel
 
   const nestedValue = getNestedProperty(parentViewModel, expression)
   if (nestedValue !== undefined) {
@@ -99,6 +111,16 @@ function resolvePropertyValue(expression: string, parentViewModel: ViewModel): a
   }
 
   return expression
+}
+
+function getPropertyDescriptor(obj: any, prop: string): PropertyDescriptor | undefined {
+  let current = Object.getPrototypeOf(obj)
+  while (current) {
+    const descriptor = Object.getOwnPropertyDescriptor(current, prop)
+    if (descriptor) return descriptor
+    current = Object.getPrototypeOf(current)
+  }
+  return undefined
 }
 
 function getNestedProperty(obj: any, path: string): any {

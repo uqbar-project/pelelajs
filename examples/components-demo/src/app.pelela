@@ -4,7 +4,7 @@
   <div class="section">
     <h3>1. Componente Contador con Binding Bidireccional</h3>
     <p style="margin-bottom: 1rem; color: #666;">
-      El contador sincroniza su valor con el ViewModel padre usando <code>link-valor</code>
+      El contador sincroniza su valor con el ViewModel padre usando <code>link-nombrepropiedad</code> (ej. <code>link-valor</code>). Sin prefijo el binding es unidireccional (ej. <code>desde</code>, <code>hasta</code>).
     </p>
     <div class="demo-container">
       <Contador link-valor="itemSeleccionado" desde="1" hasta="totalProductos" />
