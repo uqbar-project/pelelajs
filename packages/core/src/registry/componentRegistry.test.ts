@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import type { ComponentConfig } from '../types'
 import {
   clearComponentRegistry,
   getComponent,
   hasComponent,
   registerComponent,
 } from './componentRegistry'
-import type { ComponentConfig } from '../types'
 
 describe('componentRegistry', () => {
   beforeEach(() => {
@@ -138,4 +138,3 @@ describe('componentRegistry', () => {
     })
   })
 })
-

@@ -19,14 +19,10 @@ export function isInsideComponent(element: Element, root: Element): boolean {
   return false
 }
 
-export function querySelectorAllInclusive(
-  root: HTMLElement,
-  selector: string,
-): HTMLElement[] {
+export function querySelectorAllInclusive(root: HTMLElement, selector: string): HTMLElement[] {
   const descendants = Array.from(root.querySelectorAll<HTMLElement>(selector))
   if (root.matches(selector)) {
     return [root, ...descendants]
   }
   return descendants
 }
-

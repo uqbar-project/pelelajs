@@ -99,11 +99,7 @@ type ComponentInfo = {
   viewModelPath: string
 }
 
-function generatePageCode(
-  viewModelName: string,
-  template: string,
-  cssImport: string,
-): string {
+function generatePageCode(viewModelName: string, template: string, cssImport: string): string {
   return `
 ${cssImport}export const viewModelName = ${JSON.stringify(viewModelName)};
 const template = \`${template}\`;
@@ -200,7 +196,7 @@ ${registrations}
 }
 
 const VIRTUAL_COMPONENT_MODULE = 'pelela:components'
-const RESOLVED_VIRTUAL_MODULE = '\0' + VIRTUAL_COMPONENT_MODULE
+const RESOLVED_VIRTUAL_MODULE = `\0${VIRTUAL_COMPONENT_MODULE}`
 
 export function pelelajsPlugin(): PelelaVitePlugin {
   let projectRoot = ''
@@ -227,7 +223,6 @@ export function pelelajsPlugin(): PelelaVitePlugin {
       }
 
       componentRegistryCode = generateComponentRegistryCode(allComponents)
-
     },
 
     resolveId(id) {

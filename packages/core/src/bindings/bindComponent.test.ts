@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { setupComponentBindings } from './bindComponent'
-import { clearComponentRegistry, registerComponent } from '../registry/componentRegistry'
 import { resetGlobalComponentTracker } from '../components/nestedComponents'
+import { clearComponentRegistry, registerComponent } from '../registry/componentRegistry'
 import type { ComponentConfig } from '../types'
+import { setupComponentBindings } from './bindComponent'
 
 describe('bindComponent - integration', () => {
   beforeEach(() => {
@@ -67,8 +67,7 @@ describe('bindComponent - integration', () => {
       const config: ComponentConfig = {
         viewModelName: 'Greeting',
         viewModelConstructor: Greeting,
-        template:
-          '<component view-model="Greeting"><span bind-content="name"></span></component>',
+        template: '<component view-model="Greeting"><span bind-content="name"></span></component>',
       }
 
       registerComponent('Greeting', config)
@@ -117,8 +116,7 @@ describe('bindComponent - integration', () => {
       const config: ComponentConfig = {
         viewModelName: 'Counter',
         viewModelConstructor: Counter,
-        template:
-          '<component view-model="Counter"><span bind-content="value"></span></component>',
+        template: '<component view-model="Counter"><span bind-content="value"></span></component>',
       }
 
       registerComponent('Counter', config)
@@ -142,8 +140,7 @@ describe('bindComponent - integration', () => {
       const config: ComponentConfig = {
         viewModelName: 'Counter',
         viewModelConstructor: Counter,
-        template:
-          '<component view-model="Counter"><input bind-value="value" /></component>',
+        template: '<component view-model="Counter"><input bind-value="value" /></component>',
       }
 
       registerComponent('Counter', config)
@@ -209,8 +206,7 @@ describe('bindComponent - integration', () => {
       const labelConfig: ComponentConfig = {
         viewModelName: 'Label',
         viewModelConstructor: Label,
-        template:
-          '<component view-model="Label"><span bind-content="text"></span></component>',
+        template: '<component view-model="Label"><span bind-content="text"></span></component>',
       }
 
       const cardConfig: ComponentConfig = {
@@ -244,8 +240,7 @@ describe('bindComponent - integration', () => {
       const config: ComponentConfig = {
         viewModelName: 'Badge',
         viewModelConstructor: Badge,
-        template:
-          '<component view-model="Badge"><span bind-content="label"></span></component>',
+        template: '<component view-model="Badge"><span bind-content="label"></span></component>',
       }
 
       registerComponent('Badge', config)
@@ -264,4 +259,3 @@ describe('bindComponent - integration', () => {
     })
   })
 })
-

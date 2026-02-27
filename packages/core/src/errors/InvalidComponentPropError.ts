@@ -30,4 +30,3 @@ Suggestion: Check that the parent ViewModel has the property "${propName}" defin
     super(message, options)
   }
 }
-

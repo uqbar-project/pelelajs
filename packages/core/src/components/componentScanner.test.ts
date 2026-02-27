@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { hasComponentElements, scanComponents } from './componentScanner'
 import { clearComponentRegistry, registerComponent } from '../registry/componentRegistry'
 import type { ComponentConfig } from '../types'
+import { hasComponentElements, scanComponents } from './componentScanner'
 
 describe('componentScanner', () => {
   beforeEach(() => {
@@ -132,4 +132,3 @@ describe('componentScanner', () => {
     })
   })
 })
-

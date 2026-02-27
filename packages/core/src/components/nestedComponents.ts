@@ -39,4 +39,3 @@ export function resetGlobalComponentTracker(): void {
     globalTracker.exitComponent()
   }
 }
-

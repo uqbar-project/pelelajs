@@ -1,10 +1,10 @@
-import { setupBindings } from './setupBindings'
-import type { ViewModel } from './types'
-import { createReactiveViewModel } from '../reactivity/reactiveProxy'
-import { scanComponents, hasComponentElements } from '../components/componentScanner'
 import type { ComponentInstance } from '../components/componentScanner'
+import { hasComponentElements, scanComponents } from '../components/componentScanner'
 import { createComponentViewModel } from '../components/componentViewModel'
 import { getGlobalComponentTracker } from '../components/nestedComponents'
+import { createReactiveViewModel } from '../reactivity/reactiveProxy'
+import { setupBindings } from './setupBindings'
+import type { ViewModel } from './types'
 
 export type ComponentBinding = {
   componentName: string
@@ -15,7 +15,7 @@ export type ComponentBinding = {
   render: (changedPath?: string) => void
 }
 
-function parseTemplate(templateString: string): HTMLElement {
+function _parseTemplate(templateString: string): HTMLElement {
   const parser = new DOMParser()
   const doc = parser.parseFromString(templateString, 'text/html')
   const root = doc.body.firstElementChild
@@ -27,10 +27,7 @@ function parseTemplate(templateString: string): HTMLElement {
   return root as HTMLElement
 }
 
-function replaceComponentTagWithTemplate(
-  componentTag: string,
-  templateHtml: string,
-): HTMLElement {
+function replaceComponentTagWithTemplate(_componentTag: string, templateHtml: string): HTMLElement {
   const cleaned = templateHtml.replace(/<component\b[^>]*>/i, '').replace(/<\/component>/i, '')
   const wrapper = document.createElement('div')
   wrapper.innerHTML = cleaned.trim()
@@ -49,7 +46,7 @@ function instantiateComponent(componentInstance: ComponentInstance, parentViewMo
   const { config, props } = componentInstance
   const instance = new config.viewModelConstructor()
 
-  const extendedViewModel = createComponentViewModel(instance, parentViewModel, {
+  const extendedViewModel = createComponentViewModel(instance as object, parentViewModel, {
     unidirectional: props.unidirectional,
     bidirectional: props.bidirectional,
   })
@@ -70,7 +67,7 @@ function setupSingleComponentBinding(
     const { instance, extendedViewModel } = instantiateComponent(componentInstance, parentViewModel)
 
     const templateElement = replaceComponentTagWithTemplate(componentName, config.template)
-    
+
     templateElement.setAttribute('data-pelela-component', componentName)
 
     let render: (changedPath?: string) => void = () => {}
@@ -108,7 +105,7 @@ export function setupComponentBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): ComponentBinding[] {
   const bindings: ComponentBinding[] = []
-  let currentRoot = root
+  const currentRoot = root
   let iterationCount = 0
   const maxIterations = 100
 
@@ -141,4 +138,3 @@ export function renderComponentBindings(bindings: ComponentBinding[]): void {
     binding.render()
   }
 }
-

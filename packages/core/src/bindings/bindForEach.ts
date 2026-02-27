@@ -6,13 +6,13 @@ import {
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
+import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
-import { setupComponentBindings, renderComponentBindings } from './bindComponent'
-import type { ForEachBinding, ViewModel } from './types'
 import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
+import type { ForEachBinding, ViewModel } from './types'
 
 function parseForEachExpression(expression: string): {
   itemName: string
@@ -176,7 +176,7 @@ function createNewElement<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
   item: any,
-  index: number,
+  _index: number,
 ): void {
   const element = binding.template.cloneNode(true) as HTMLElement
 

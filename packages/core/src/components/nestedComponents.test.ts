@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { CircularComponentError } from '../errors/index'
 import {
   ComponentHierarchyTracker,
   getGlobalComponentTracker,
   resetGlobalComponentTracker,
 } from './nestedComponents'
-import { CircularComponentError } from '../errors/index'
 
 describe('nestedComponents', () => {
   describe('ComponentHierarchyTracker', () => {
@@ -92,4 +92,3 @@ describe('nestedComponents', () => {
     })
   })
 })
-

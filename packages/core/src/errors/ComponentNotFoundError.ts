@@ -18,4 +18,3 @@ Element: ${elementSnippet.substring(0, 100)}${elementSnippet.length > 100 ? '...
     super(message, options)
   }
 }
-

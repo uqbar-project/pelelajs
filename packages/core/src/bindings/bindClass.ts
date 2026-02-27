@@ -1,7 +1,7 @@
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
+import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 import { getNestedProperty } from './nestedProperties'
 import type { ClassBinding, ViewModel } from './types'
-import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 
 function setupSingleClassBinding<T extends object>(
   element: HTMLElement,

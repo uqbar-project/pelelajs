@@ -88,4 +88,3 @@ export function hasComponentElements(root: HTMLElement): boolean {
 
   return false
 }
-

@@ -1,6 +1,6 @@
 import { InvalidHandlerError } from '../errors/index'
-import type { ViewModel } from './types'
 import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
+import type { ViewModel } from './types'
 
 function setupSingleClickBinding<T extends object>(
   element: HTMLElement,

@@ -1,7 +1,7 @@
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
+import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 import { getNestedProperty } from './nestedProperties'
 import type { ContentBinding, ViewModel } from './types'
-import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 
 function setupSingleContentBinding<T extends object>(
   element: HTMLElement,
@@ -26,7 +26,7 @@ export function setupContentBindings<T extends object>(
     if (isInsideComponent(element, root)) {
       continue
     }
-    
+
     const binding = setupSingleContentBinding(element, viewModel)
     if (binding) {
       bindings.push(binding)

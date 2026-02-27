@@ -29,4 +29,3 @@ export function clearComponentRegistry(): void {
 export function getAllComponents(): Map<string, ComponentConfig> {
   return new Map(componentRegistry)
 }
-

@@ -1,4 +1,5 @@
-import type { ComponentProps, ViewModel } from '../types'
+import type { ViewModel } from '../bindings/types'
+import type { ComponentProps } from '../types'
 
 export function createComponentViewModel<T extends object>(
   componentInstance: T,
@@ -7,12 +8,44 @@ export function createComponentViewModel<T extends object>(
 ): ViewModel<T> {
   const resolvedUnidirectionalProps: Record<string, any> = {}
   for (const [propName, propExpression] of Object.entries(props.unidirectional)) {
-    resolvedUnidirectionalProps[propName.toLowerCase()] = resolvePropertyValue(propExpression, parentViewModel)
+    resolvedUnidirectionalProps[propName.toLowerCase()] = resolvePropertyValue(
+      propExpression,
+      parentViewModel,
+    )
   }
 
   const bidirectionalPropsMap: Record<string, string> = {}
   for (const [propName, propExpression] of Object.entries(props.bidirectional)) {
     bidirectionalPropsMap[propName.toLowerCase()] = propExpression
+  }
+
+  const NOT_FOUND = Symbol('not found')
+
+  function getFromUnidirectional(lower: string): unknown {
+    if (lower in resolvedUnidirectionalProps) return resolvedUnidirectionalProps[lower]
+    return NOT_FOUND
+  }
+
+  function getFromBidirectional(lower: string): unknown {
+    if (lower in bidirectionalPropsMap) {
+      const parentProp = bidirectionalPropsMap[lower]
+      return getNestedProperty(parentViewModel, parentProp)
+    }
+    return NOT_FOUND
+  }
+
+  function getFromComponentInstance(prop: string): unknown {
+    if (!(prop in componentInstance)) return NOT_FOUND
+    const descriptor = getPropertyDescriptor(componentInstance, prop)
+    if (descriptor?.get) return descriptor.get.call(proxy)
+    const value = (componentInstance as any)[prop]
+    if (typeof value === 'function') return value.bind(proxy)
+    return value
+  }
+
+  function getFromParent(prop: string): unknown {
+    if (prop in parentViewModel) return parentViewModel[prop as string]
+    return NOT_FOUND
   }
 
   const proxy = new Proxy(componentInstance as Record<string, unknown>, {
@@ -28,35 +61,16 @@ export function createComponentViewModel<T extends object>(
     },
 
     get(_target, prop) {
-      if (typeof prop === 'string') {
-        const lower = prop.toLowerCase()
-
-        if (lower in resolvedUnidirectionalProps) {
-          return resolvedUnidirectionalProps[lower]
-        }
-
-        if (lower in bidirectionalPropsMap) {
-          const parentProp = bidirectionalPropsMap[lower]
-          return getNestedProperty(parentViewModel, parentProp)
-        }
-
-        if (prop in componentInstance) {
-          const descriptor = getPropertyDescriptor(componentInstance, prop)
-          if (descriptor?.get) {
-            return descriptor.get.call(proxy)
-          }
-          const value = (componentInstance as any)[prop]
-          if (typeof value === 'function') {
-            return value.bind(proxy)
-          }
-          return value
-        }
-
-        if (prop in parentViewModel) {
-          return parentViewModel[prop as string]
-        }
-      }
-
+      if (typeof prop !== 'string') return undefined
+      const lower = prop.toLowerCase()
+      const fromUni = getFromUnidirectional(lower)
+      if (fromUni !== NOT_FOUND) return fromUni
+      const fromBi = getFromBidirectional(lower)
+      if (fromBi !== NOT_FOUND) return fromBi
+      const fromInstance = getFromComponentInstance(prop)
+      if (fromInstance !== NOT_FOUND) return fromInstance
+      const fromParent = getFromParent(prop)
+      if (fromParent !== NOT_FOUND) return fromParent
       return undefined
     },
 
@@ -95,7 +109,7 @@ function resolvePropertyValue(expression: string, parentViewModel: ViewModel): a
     return expression.slice(1, -1)
   }
 
-  if (!isNaN(Number(expression))) {
+  if (!Number.isNaN(Number(expression))) {
     return Number(expression)
   }
 
@@ -156,4 +170,3 @@ function setNestedProperty(obj: any, path: string, value: any): void {
   const lastPart = parts[parts.length - 1]
   current[lastPart] = value
 }
-
