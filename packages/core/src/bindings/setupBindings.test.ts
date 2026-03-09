@@ -42,7 +42,7 @@ describe('setupBindings', () => {
     setupBindings(container, viewModel)
 
     const span = container.querySelector('span')!
-    expect(span.innerHTML).toBe('Initial')
+    expect(span.textContent).toBe('Initial')
   })
 
   it('should return render function that updates all bindings', () => {
@@ -62,7 +62,7 @@ describe('setupBindings', () => {
     viewModel.show = true
     render()
 
-    expect(container.querySelector('span')!.innerHTML).toBe('42')
+    expect(container.querySelector('span')!.textContent).toBe('42')
     expect(container.querySelector('div')!.style.display).not.toBe('none')
   })
 
@@ -82,9 +82,9 @@ describe('setupBindings', () => {
     setupBindings(container, viewModel)
 
     const spans = container.querySelectorAll('span')
-    expect(spans[0].innerHTML).toBe('one')
-    expect(spans[1].innerHTML).toBe('two')
-    expect(spans[2].innerHTML).toBe('three')
+    expect(spans[0].textContent).toBe('one')
+    expect(spans[1].textContent).toBe('two')
+    expect(spans[2].textContent).toBe('three')
   })
 
   it('should setup event listeners for click', () => {
@@ -116,8 +116,8 @@ describe('setupBindings', () => {
     render()
 
     const spans = container.querySelectorAll('span')
-    expect(spans[0].innerHTML).toBe('updated')
-    expect(spans[1].innerHTML).toBe('never changes')
+    expect(spans[0].textContent).toBe('updated')
+    expect(spans[1].textContent).toBe('never changes')
   })
 
   it('should handle empty element without error', () => {
@@ -153,7 +153,7 @@ describe('setupBindings', () => {
     const render = setupBindings(container, viewModel)
 
     expect(container.querySelector('input')!.value).toBe('John')
-    expect(container.querySelector('span')!.innerHTML).toBe('Hello')
+    expect(container.querySelector('span')!.textContent).toBe('Hello')
     expect(container.querySelector('span')!.className).toContain('highlight')
     expect(container.querySelector('span')!.style.color).toBe('blue')
 

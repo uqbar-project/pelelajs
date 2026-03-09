@@ -81,7 +81,7 @@ describe('bindContent', () => {
   })
 
   describe('renderContentBindings', () => {
-    it('should update innerHTML of elements', () => {
+    it('should update textContent of elements', () => {
       container.innerHTML = '<span bind-content="message"></span>'
       const viewModel = { message: 'Hello' }
       const bindings = setupContentBindings(container, viewModel)
@@ -90,7 +90,7 @@ describe('bindContent', () => {
       renderContentBindings(bindings, viewModel)
 
       const span = container.querySelector('span')!
-      expect(span.innerHTML).toBe('World')
+      expect(span.textContent).toBe('World')
     })
 
     it('should handle null values', () => {
@@ -100,7 +100,7 @@ describe('bindContent', () => {
 
       viewModel.text = null
       renderContentBindings(bindings, viewModel)
-      expect(container.querySelector('span')!.innerHTML).toBe('')
+      expect(container.querySelector('span')!.textContent).toBe('')
     })
 
     it('should handle undefined values', () => {
@@ -110,7 +110,7 @@ describe('bindContent', () => {
 
       viewModel.text = undefined
       renderContentBindings(bindings, viewModel)
-      expect(container.querySelector('span')!.innerHTML).toBe('')
+      expect(container.querySelector('span')!.textContent).toBe('')
     })
 
     it('should convert numbers to strings', () => {
@@ -120,7 +120,7 @@ describe('bindContent', () => {
 
       renderContentBindings(bindings, viewModel)
 
-      expect(container.querySelector('span')!.innerHTML).toBe('42')
+      expect(container.querySelector('span')!.textContent).toBe('42')
     })
 
     it('should convert booleans to strings', () => {
@@ -130,7 +130,7 @@ describe('bindContent', () => {
 
       renderContentBindings(bindings, viewModel)
 
-      expect(container.querySelector('span')!.innerHTML).toBe('true')
+      expect(container.querySelector('span')!.textContent).toBe('true')
     })
 
     it('should handle nested properties', () => {
@@ -140,7 +140,7 @@ describe('bindContent', () => {
 
       renderContentBindings(bindings, viewModel)
 
-      expect(container.querySelector('span')!.innerHTML).toBe('John')
+      expect(container.querySelector('span')!.textContent).toBe('John')
     })
 
     it('should update deeply nested properties', () => {
@@ -150,7 +150,7 @@ describe('bindContent', () => {
 
       renderContentBindings(bindings, viewModel)
 
-      expect(container.querySelector('span')!.innerHTML).toBe('Alice')
+      expect(container.querySelector('span')!.textContent).toBe('Alice')
     })
 
     it('should handle empty strings', () => {
@@ -160,7 +160,7 @@ describe('bindContent', () => {
 
       renderContentBindings(bindings, viewModel)
 
-      expect(container.querySelector('span')!.innerHTML).toBe('')
+      expect(container.querySelector('span')!.textContent).toBe('')
     })
 
     it('should render multiple bindings', () => {
@@ -173,8 +173,8 @@ describe('bindContent', () => {
 
       renderContentBindings(bindings, viewModel)
 
-      expect(container.querySelector('span')!.innerHTML).toBe('First')
-      expect(container.querySelector('div')!.innerHTML).toBe('Second')
+      expect(container.querySelector('span')!.textContent).toBe('First')
+      expect(container.querySelector('div')!.textContent).toBe('Second')
     })
   })
 })

@@ -41,7 +41,17 @@ function renderSingleContentBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   const value = getNestedProperty(viewModel, binding.propertyName)
-  binding.element.innerHTML = value === undefined || value === null ? '' : String(value)
+
+  console.log(
+    '[pelela] renderContentBinding:',
+    binding.element.tagName,
+    'property:',
+    binding.propertyName,
+    'value:',
+    value,
+  )
+
+  binding.element.textContent = value === undefined || value === null ? '' : String(value)
 }
 
 export function renderContentBindings<T extends object>(
