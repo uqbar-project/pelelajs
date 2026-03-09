@@ -15,7 +15,7 @@ describe('setupBindings', () => {
 
   it('should setup all binding types', () => {
     container.innerHTML = `
-      <span bind-value="message"></span>
+      <input bind-value="message" />
       <div if="show"></div>
       <div bind-class="classes"></div>
       <div bind-style="styles"></div>
@@ -36,7 +36,7 @@ describe('setupBindings', () => {
   })
 
   it('should perform initial render automatically', () => {
-    container.innerHTML = '<span bind-value="message"></span>'
+    container.innerHTML = '<span bind-content="message"></span>'
     const viewModel = { message: 'Initial' }
 
     setupBindings(container, viewModel)
@@ -47,7 +47,7 @@ describe('setupBindings', () => {
 
   it('should return render function that updates all bindings', () => {
     container.innerHTML = `
-      <span bind-value="count"></span>
+      <span bind-content="count"></span>
       <div if="show"></div>
     `
 
@@ -68,9 +68,9 @@ describe('setupBindings', () => {
 
   it('should handle multiple elements of same binding type', () => {
     container.innerHTML = `
-      <span bind-value="value1"></span>
-      <span bind-value="value2"></span>
-      <span bind-value="value3"></span>
+      <span bind-content="value1"></span>
+      <span bind-content="value2"></span>
+      <span bind-content="value3"></span>
     `
 
     const viewModel = {
@@ -101,8 +101,8 @@ describe('setupBindings', () => {
 
   it('should only update necessary elements on each render', () => {
     container.innerHTML = `
-      <span bind-value="changing"></span>
-      <span bind-value="static"></span>
+      <span bind-content="changing"></span>
+      <span bind-content="static"></span>
     `
 
     const viewModel = {
@@ -134,7 +134,7 @@ describe('setupBindings', () => {
       <div>
         <input bind-value="name" />
         <div if="showMessage">
-          <span bind-value="message" bind-class="messageClass" bind-style="messageStyle"></span>
+          <span bind-content="message" bind-class="messageClass" bind-style="messageStyle"></span>
         </div>
         <button click="submit">Submit</button>
       </div>

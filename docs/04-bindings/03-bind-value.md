@@ -2,7 +2,9 @@
 
 ## Introducción
 
-`bind-value` es el binding más utilizado en PelelaJS. Permite sincronizar el valor de una propiedad del ViewModel con el contenido de un elemento HTML. En elementos de input (input, textarea, select), implementa **two-way data binding** (bidireccional).
+`bind-value` es el binding bidireccional de PelelaJS. Permite sincronizar el valor de una propiedad del ViewModel con elementos de formulario (input, textarea, select), implementando **two-way data binding** (bidireccional).
+
+**IMPORTANTE:** `bind-value` SOLO funciona con elementos `<input>`, `<textarea>` y `<select>`. Para mostrar contenido en otros elementos (span, div, p, etc.), usa [`bind-content`](./04-bind-content.md).
 
 Este documento explica cómo funciona bind-value en profundidad, incluyendo el setup, el two-way binding, la conversión de tipos, y el renderizado.
 
@@ -12,15 +14,6 @@ Este documento explica cómo funciona bind-value en profundidad, incluyendo el s
 ┌────────────────────────────────────────────────────────────────┐
 │                      bind-value PURPOSE                        │
 ├────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ELEMENTOS NO-INPUT (span, p, div, etc.)                       │
-│  ────────────────────────────────────────────                  │
-│  ViewModel → DOM (unidireccional)                              │
-│                                                                 │
-│  viewModel.message = "Hello"                                   │
-│       │                                                         │
-│       └─► <span bind-value="message">Hello</span>              │
-│                                                                 │
 │                                                                 │
 │  ELEMENTOS INPUT (input, textarea, select)                     │
 │  ──────────────────────────────────────────                    │
@@ -34,21 +27,49 @@ Este documento explica cómo funciona bind-value en profundidad, incluyendo el s
 │             │                                                   │
 │             └─► viewModel.name = "Jane"                        │
 │                                                                 │
+│  ⚠️  Para elementos NO-INPUT usa bind-content                  │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+## Restricción de Elementos
+
+bind-value **SOLO** acepta estos elementos:
+
+- ✅ `<input>` (todos los tipos)
+- ✅ `<textarea>`
+- ✅ `<select>`
+
+Para otros elementos:
+
+- ❌ `<span>`, `<div>`, `<p>`, `<td>`, etc. → Usa `bind-content`
+
+Si intentas usar bind-value en un elemento no permitido:
+
+```html
+<span bind-value="message"></span>
+```
+
+**Error:**
+```
+Error: bind-value can only be used on input, textarea, or select elements.
+Found on <span>. Use bind-content for display elements.
+Element: <span bind-value="message"></span>
 ```
 
 ## Syntax HTML
 
 ```html
-<elemento bind-value="propertyName"></elemento>
+<input bind-value="propertyName">
+<textarea bind-value="propertyName"></textarea>
+<select bind-value="propertyName"></select>
 ```
 
 ### Ejemplos
 
 ```html
-<span bind-value="message"></span>
-<p bind-value="user.name"></p>
 <input bind-value="email">
+<input type="number" bind-value="age">
 <textarea bind-value="description"></textarea>
 <select bind-value="country"></select>
 ```
@@ -72,28 +93,33 @@ function setupSingleValueBinding<T extends object>(
     element instanceof HTMLTextAreaElement ||
     element instanceof HTMLSelectElement;
 
-  if (isInput) {
-    element.addEventListener("input", (event) => {
-      const target = event.target as
-        | HTMLInputElement
-        | HTMLTextAreaElement
-        | HTMLSelectElement;
-      const currentValue = getNestedProperty(viewModel, propertyName);
-
-      if (typeof currentValue === "number") {
-        const numeric = Number(target.value.replace(",", "."));
-        setNestedProperty(
-          viewModel,
-          propertyName,
-          Number.isNaN(numeric) ? 0 : numeric,
-        );
-      } else {
-        setNestedProperty(viewModel, propertyName, target.value);
-      }
-    });
+  if (!isInput) {
+    const snippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
+    throw new Error(
+      `bind-value can only be used on input, textarea, or select elements. Found on <${element.tagName.toLowerCase()}>. Use bind-content for display elements.\nElement: ${snippet}`
+    )
   }
 
-  return { element, propertyName, isInput };
+  element.addEventListener("input", (event) => {
+    const target = event.target as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement;
+    const currentValue = getNestedProperty(viewModel, propertyName);
+
+    if (typeof currentValue === "number") {
+      const numeric = Number(target.value.replace(",", "."));
+      setNestedProperty(
+        viewModel,
+        propertyName,
+        Number.isNaN(numeric) ? 0 : numeric,
+      );
+    } else {
+      setNestedProperty(viewModel, propertyName, target.value);
+    }
+  });
+
+  return { element, propertyName };
 }
 
 export function setupValueBindings<T extends object>(
@@ -130,28 +156,15 @@ function renderSingleValueBinding<T extends object>(
     binding.propertyName,
     "value:",
     value,
-    "isInput:",
-    binding.isInput,
   );
 
-  if (binding.isInput) {
-    const input = binding.element as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement;
-    const newValue = value ?? "";
-    if (input.value !== String(newValue)) {
-      input.value = String(newValue);
-    }
-  } else {
-    binding.element.textContent =
-      value === undefined || value === null ? "" : String(value);
-    console.log(
-      "[pelela] set textContent:",
-      binding.element.tagName,
-      "to:",
-      binding.element.textContent,
-    );
+  const input = binding.element as
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | HTMLSelectElement;
+  const newValue = value ?? "";
+  if (input.value !== String(newValue)) {
+    input.value = String(newValue);
   }
 }
 
@@ -171,9 +184,10 @@ export function renderValueBindings<T extends object>(
 export type ValueBinding = {
   element: HTMLElement;
   propertyName: string;
-  isInput: boolean;
 };
 ```
+
+**Nota:** El campo `isInput` fue removido porque bind-value ahora solo soporta elementos input.
 
 ## Fase 1: Setup de bind-value
 
@@ -191,8 +205,8 @@ setupValueBindings(root, viewModel)
                 │
                 ├─► 1. Obtener propertyName
                 ├─► 2. Validar propiedad existe en ViewModel
-                ├─► 3. Detectar si es input
-                ├─► 4. Si es input: agregar event listener
+                ├─► 3. Validar que sea input/textarea/select
+                ├─► 4. Agregar event listener
                 └─► 5. Retornar ValueBinding
 ```
 
@@ -282,49 +296,66 @@ Error: PropertyValidationError
   Element: <span bind-value="nonExistent"></span>
 ```
 
-### Paso 3: Detectar si es Input
+### Paso 3: Validar que sea Input
 
 ```typescript
 const isInput =
   element instanceof HTMLInputElement ||
   element instanceof HTMLTextAreaElement ||
   element instanceof HTMLSelectElement;
-```
 
-**Elementos Input:**
-- `<input>` (todos los tipos)
-- `<textarea>`
-- `<select>`
-
-**Elementos NO-Input:**
-- `<span>`, `<p>`, `<div>`, `<h1>`, etc.
-
-### Paso 4: Agregar Event Listener (Solo Inputs)
-
-```typescript
-if (isInput) {
-  element.addEventListener("input", (event) => {
-    const target = event.target as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement;
-    const currentValue = getNestedProperty(viewModel, propertyName);
-
-    if (typeof currentValue === "number") {
-      const numeric = Number(target.value.replace(",", "."));
-      setNestedProperty(
-        viewModel,
-        propertyName,
-        Number.isNaN(numeric) ? 0 : numeric,
-      );
-    } else {
-      setNestedProperty(viewModel, propertyName, target.value);
-    }
-  });
+if (!isInput) {
+  const snippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
+  throw new Error(
+    `bind-value can only be used on input, textarea, or select elements. Found on <${element.tagName.toLowerCase()}>. Use bind-content for display elements.\nElement: ${snippet}`
+  )
 }
 ```
 
-Este listener se dispara cada vez que el usuario escribe en el input.
+**Elementos Válidos:**
+- ✅ `<input>` (todos los tipos)
+- ✅ `<textarea>`
+- ✅ `<select>`
+
+**Elementos NO Válidos:**
+- ❌ `<span>`, `<div>`, `<p>`, `<h1>`, etc.
+
+**Ejemplo de error:**
+
+```html
+<div bind-value="message"></div>
+```
+
+```
+Error: bind-value can only be used on input, textarea, or select elements.
+Found on <div>. Use bind-content for display elements.
+Element: <div bind-value="message"></div>
+```
+
+### Paso 4: Agregar Event Listener
+
+```typescript
+element.addEventListener("input", (event) => {
+  const target = event.target as
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | HTMLSelectElement;
+  const currentValue = getNestedProperty(viewModel, propertyName);
+
+  if (typeof currentValue === "number") {
+    const numeric = Number(target.value.replace(",", "."));
+    setNestedProperty(
+      viewModel,
+      propertyName,
+      Number.isNaN(numeric) ? 0 : numeric,
+    );
+  } else {
+    setNestedProperty(viewModel, propertyName, target.value);
+  }
+});
+```
+
+Este listener se dispara cada vez que el usuario escribe en el input. Todos los elementos que llegan aquí son input/textarea/select válidos.
 
 #### Flujo del Event Listener
 
@@ -351,10 +382,10 @@ Usuario escribe en input
 ### Paso 5: Retornar ValueBinding
 
 ```typescript
-return { element, propertyName, isInput };
+return { element, propertyName };
 ```
 
-Este objeto se guarda en el array de bindings.
+Este objeto se guarda en el array de bindings. Ya no incluye `isInput` porque todos los bindings son de inputs.
 
 ## Two-Way Data Binding
 
@@ -410,7 +441,7 @@ class FormViewModel {
 ```html
 <pelela view-model="FormViewModel">
   <input bind-value="name">
-  <p>Your name is: <span bind-value="name"></span></p>
+  <p>Your name is: <span bind-content="name"></span></p>
   <button click="reset">Reset</button>
 </pelela>
 ```
@@ -421,21 +452,14 @@ class FormViewModel {
 INICIAL
 ───────
 1. Setup
-   ├─ <input bind-value="name">
-   │   ├─ isInput = true
-   │   ├─ addEventListener("input", ...)
-   │   └─ ValueBinding { element: <input>, propertyName: "name", isInput: true }
-   │
-   └─ <span bind-value="name">
-       ├─ isInput = false
-       └─ ValueBinding { element: <span>, propertyName: "name", isInput: false }
+   <input bind-value="name">
+     ├─ Valida que sea input/textarea/select
+     ├─ addEventListener("input", ...)
+     └─ ValueBinding { element: <input>, propertyName: "name" }
 
 2. Render inicial
-   ├─ renderValueBinding(<input>)
-   │   └─ <input>.value = "John"
-   │
-   └─ renderValueBinding(<span>)
-       └─ <span>.textContent = "John"
+   renderValueBinding(<input>)
+     └─ <input>.value = "John"
 
 
 USER ESCRIBE
@@ -451,14 +475,11 @@ USER ESCRIBE
    │                           └─ render("name")
    │                                 ├─ renderValueBinding(<input>)
    │                                 │   └─ input.value === "J"? SÍ → skip
-   │                                 │
-   │                                 └─ renderValueBinding(<span>)
-   │                                       └─ <span>.textContent = "J"
 
 4. Usuario continúa escribiendo "Jane"
    └─ Se repite el proceso para cada letra
 
-Resultado: <input> y <span> sincronizados en tiempo real
+Resultado: Input sincronizado con ViewModel en tiempo real
 ```
 
 ## Conversión de Tipos
@@ -604,16 +625,10 @@ renderValueBinding(binding, viewModel)
     ├─► 1. Obtener valor del ViewModel
     │      value = getNestedProperty(viewModel, binding.propertyName)
     │
-    ├─► 2. Es input?
-    │     │
-    │     ├─ SÍ:
-    │     │   ├─ Convertir valor a string
-    │     │   ├─ Comparar con input.value actual
-    │     │   └─ Si diferente: actualizar input.value
-    │     │
-    │     └─ NO:
-    │         ├─ Convertir valor a string
-    │         └─ Actualizar element.textContent
+    ├─► 2. Actualizar input.value
+    │      ├─ Convertir valor a string
+    │      ├─ Comparar con input.value actual
+    │      └─ Si diferente: actualizar input.value
     │
     └─► 3. DOM actualizado
 ```
@@ -621,17 +636,17 @@ renderValueBinding(binding, viewModel)
 ### Render de Input
 
 ```typescript
-if (binding.isInput) {
-  const input = binding.element as
-    | HTMLInputElement
-    | HTMLTextAreaElement
-    | HTMLSelectElement;
-  const newValue = value ?? "";
-  if (input.value !== String(newValue)) {
-    input.value = String(newValue);
-  }
+const input = binding.element as
+  | HTMLInputElement
+  | HTMLTextAreaElement
+  | HTMLSelectElement;
+const newValue = value ?? "";
+if (input.value !== String(newValue)) {
+  input.value = String(newValue);
 }
 ```
+
+Todos los elementos aquí son inputs válidos, ya no necesitamos el check de `isInput`.
 
 #### Check de Igualdad
 
@@ -662,29 +677,6 @@ input.value = "H"  ← Resetea el cursor!
 ```
 
 El cursor del usuario saltaría al final cada vez que escribe.
-
-### Render de NO-Input
-
-```typescript
-else {
-  binding.element.textContent =
-    value === undefined || value === null ? "" : String(value);
-}
-```
-
-#### Manejo de null/undefined
-
-```typescript
-value === undefined || value === null ? "" : String(value)
-```
-
-```
-value = undefined → textContent = ""
-value = null → textContent = ""
-value = 0 → textContent = "0"
-value = false → textContent = "false"
-value = "" → textContent = ""
-```
 
 ### Conversión a String
 
@@ -1019,18 +1011,19 @@ it("should update viewmodel when input changes", () => {
 
 ## Conclusión
 
-`bind-value` es el binding fundamental de PelelaJS:
+`bind-value` es el binding bidireccional de PelelaJS para formularios:
 
-1. **Unidireccional** en elementos normales (span, p, div)
-2. **Bidireccional** en inputs (input, textarea, select)
+1. **Bidireccional** solo en elementos input/textarea/select
+2. **Validación estricta** de elementos permitidos
 3. **Conversión automática** de tipos (number)
 4. **Soporte de propiedades anidadas** (user.profile.name)
-5. **Optimizado** con check de igualdad en inputs
+5. **Optimizado** con check de igualdad para evitar resets del cursor
 
-Es simple pero poderoso, permitiendo sincronización automática entre ViewModel y DOM con mínimo código.
+Para mostrar contenido de solo lectura, usa [`bind-content`](./04-bind-content.md).
 
 ## Referencias
 
+- [bind-content (unidireccional)](./04-bind-content.md)
 - [Sistema de Binding General](./01-binding-system.md)
 - [Dependency Tracker](./02-dependency-tracker.md)
 - [Propiedades Anidadas](../05-nested-properties/01-nested-properties.md)

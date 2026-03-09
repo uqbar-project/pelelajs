@@ -5,7 +5,11 @@ export type ViewModel<T extends object = object> = T & {
 export type ValueBinding = {
   element: HTMLElement
   propertyName: string
-  isInput: boolean
+}
+
+export type ContentBinding = {
+  element: HTMLElement
+  propertyName: string
 }
 
 export type IfBinding = {
@@ -41,6 +45,7 @@ export type ForEachBinding = {
 
 export type BindingsCollection = {
   valueBindings: ValueBinding[]
+  contentBindings: ContentBinding[]
   ifBindings: IfBinding[]
   classBindings: ClassBinding[]
   styleBindings: StyleBinding[]

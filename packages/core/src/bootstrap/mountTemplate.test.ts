@@ -20,7 +20,7 @@ describe('mountTemplate', () => {
   it('should insert template HTML into container', () => {
     const template = `
       <pelela view-model="TestVM">
-        <span bind-value="message"></span>
+        <span bind-content="message"></span>
       </pelela>
     `
 
@@ -34,7 +34,7 @@ describe('mountTemplate', () => {
   it('should initialize view models in template', () => {
     const template = `
       <pelela view-model="TestVM">
-        <span bind-value="message"></span>
+        <span bind-content="message"></span>
       </pelela>
     `
 
@@ -42,13 +42,13 @@ describe('mountTemplate', () => {
     mountTemplate(container, template)
 
     const span = container.querySelector('span')!
-    expect(span.textContent).toBe('Hello from template')
+    expect(span.innerHTML).toBe('Hello from template')
   })
 
   it('should create reactive view models', () => {
     const template = `
       <pelela view-model="TestVM">
-        <span bind-value="count"></span>
+        <span bind-content="count"></span>
       </pelela>
     `
 
@@ -61,7 +61,7 @@ describe('mountTemplate', () => {
 
     viewModel.count = 99
 
-    expect(span.textContent).toBe('99')
+    expect(span.innerHTML).toBe('99')
   })
 
   it('should replace existing container content', () => {
@@ -69,7 +69,7 @@ describe('mountTemplate', () => {
 
     const template = `
       <pelela view-model="TestVM">
-        <span bind-value="message"></span>
+        <span bind-content="message"></span>
       </pelela>
     `
 
@@ -84,10 +84,10 @@ describe('mountTemplate', () => {
     const template = `
       <div>
         <pelela view-model="TestVM">
-          <span bind-value="message"></span>
+          <span bind-content="message"></span>
         </pelela>
         <pelela view-model="TestVM">
-          <span bind-value="count"></span>
+          <span bind-content="count"></span>
         </pelela>
       </div>
     `
@@ -97,8 +97,8 @@ describe('mountTemplate', () => {
 
     const spans = container.querySelectorAll('span')
     expect(spans).toHaveLength(2)
-    expect(spans[0].textContent).toBe('Hello from template')
-    expect(spans[1].textContent).toBe('0')
+    expect(spans[0].innerHTML).toBe('Hello from template')
+    expect(spans[1].innerHTML).toBe('0')
   })
 
   it('should handle empty templates', () => {
@@ -124,7 +124,7 @@ describe('mountTemplate', () => {
   it('should allow accessing view model after mounting', () => {
     const template = `
       <pelela view-model="TestVM">
-        <span bind-value="message"></span>
+        <span bind-content="message"></span>
       </pelela>
     `
 
@@ -142,7 +142,7 @@ describe('mountTemplate', () => {
     const template = `
       <pelela view-model="TestVM">
         <input bind-value="count" />
-        <span bind-value="count"></span>
+        <span bind-content="count"></span>
       </pelela>
     `
 
@@ -155,6 +155,6 @@ describe('mountTemplate', () => {
     input.value = '42'
     input.dispatchEvent(new Event('input'))
 
-    expect(span.textContent).toBe('42')
+    expect(span.innerHTML).toBe('42')
   })
 })

@@ -12,9 +12,9 @@ describe('Selective Rendering Performance', () => {
 
   it('should only re-render bindings affected by changed property', () => {
     container.innerHTML = `
-      <span bind-value="name"></span>
-      <span bind-value="email"></span>
-      <span bind-value="age"></span>
+      <span bind-content="name"></span>
+      <span bind-content="email"></span>
+      <span bind-content="age"></span>
       <div if="isActive"></div>
       <div bind-class="classes"></div>
     `
@@ -44,9 +44,9 @@ describe('Selective Rendering Performance', () => {
 
   it('should render all bindings on initial setup', () => {
     container.innerHTML = `
-      <span bind-value="value1"></span>
-      <span bind-value="value2"></span>
-      <span bind-value="value3"></span>
+      <span bind-content="value1"></span>
+      <span bind-content="value2"></span>
+      <span bind-content="value3"></span>
     `
 
     const viewModel = {
@@ -65,7 +65,7 @@ describe('Selective Rendering Performance', () => {
 
   it('should support render without changedPath for backward compatibility', () => {
     container.innerHTML = `
-      <span bind-value="message"></span>
+      <span bind-content="message"></span>
       <div if="show"></div>
     `
 
@@ -87,9 +87,9 @@ describe('Selective Rendering Performance', () => {
 
   it('should handle nested property changes efficiently', () => {
     container.innerHTML = `
-      <span bind-value="user.name"></span>
-      <span bind-value="user.email"></span>
-      <span bind-value="other"></span>
+      <span bind-content="user.name"></span>
+      <span bind-content="user.email"></span>
+      <span bind-content="other"></span>
     `
 
     const viewModel = {
@@ -119,9 +119,9 @@ describe('Selective Rendering Performance', () => {
   it('should handle for-each changes efficiently', () => {
     container.innerHTML = `
       <div for-each="item of items">
-        <span bind-value="item"></span>
+        <span bind-content="item"></span>
       </div>
-      <span bind-value="other"></span>
+      <span bind-content="other"></span>
     `
 
     const viewModel = {
@@ -148,7 +148,7 @@ describe('Selective Rendering Performance', () => {
   it('should demonstrate performance improvement with many bindings', () => {
     const bindingsHtml: string[] = []
     for (let i = 0; i < 50; i++) {
-      bindingsHtml.push(`<span bind-value="prop${i}"></span>`)
+      bindingsHtml.push(`<span bind-content="prop${i}"></span>`)
     }
     container.innerHTML = bindingsHtml.join('')
 

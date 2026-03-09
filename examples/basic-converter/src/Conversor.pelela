@@ -11,7 +11,7 @@
   <p if="hasResult">
     Kilómetros:
     <span 
-      bind-value="kilometros" 
+      bind-content="kilometros" 
       bind-class="claseKilometros" />
   </p>
 </pelela>

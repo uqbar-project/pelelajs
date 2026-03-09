@@ -6,6 +6,7 @@ import {
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
+import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
@@ -90,6 +91,7 @@ function setupBindingsForElement<T extends object>(
 
   const tempBindings = {
     valueBindings: setupValueBindings(wrapper, viewModel),
+    contentBindings: setupContentBindings(wrapper, viewModel),
     ifBindings: setupIfBindings(wrapper, viewModel),
     classBindings: setupClassBindings(wrapper, viewModel),
     styleBindings: setupStyleBindings(wrapper, viewModel),
@@ -98,6 +100,8 @@ function setupBindingsForElement<T extends object>(
   console.log(
     '[pelela] Found bindings - value:',
     tempBindings.valueBindings.length,
+    'content:',
+    tempBindings.contentBindings.length,
     'if:',
     tempBindings.ifBindings.length,
     'class:',
@@ -110,6 +114,9 @@ function setupBindingsForElement<T extends object>(
 
   const bindings = {
     valueBindings: tempBindings.valueBindings.map((b) =>
+      mapBindingToRealElement(b, clonedForSearch, element),
+    ),
+    contentBindings: tempBindings.contentBindings.map((b) =>
       mapBindingToRealElement(b, clonedForSearch, element),
     ),
     ifBindings: tempBindings.ifBindings.map((b) =>
@@ -136,6 +143,7 @@ function setupBindingsForElement<T extends object>(
 
   const render = () => {
     renderValueBindings(bindings.valueBindings, viewModel)
+    renderContentBindings(bindings.contentBindings, viewModel)
     renderIfBindings(bindings.ifBindings, viewModel)
     renderClassBindings(bindings.classBindings, viewModel)
     renderStyleBindings(bindings.styleBindings, viewModel)

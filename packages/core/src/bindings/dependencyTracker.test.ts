@@ -9,13 +9,13 @@ describe('DependencyTracker', () => {
       const binding = {
         element: document.createElement('div'),
         propertyName: 'users',
-        isInput: false,
       }
 
       tracker.registerDependency(binding, 'users')
 
       const bindings: BindingsCollection = {
         valueBindings: [binding],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],
@@ -31,7 +31,6 @@ describe('DependencyTracker', () => {
       const binding = {
         element: document.createElement('div'),
         propertyName: 'user.name',
-        isInput: false,
       }
 
       tracker.registerDependency(binding, 'user')
@@ -39,6 +38,7 @@ describe('DependencyTracker', () => {
 
       const bindings: BindingsCollection = {
         valueBindings: [binding],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],
@@ -64,7 +64,6 @@ describe('DependencyTracker', () => {
       const binding2 = {
         element: document.createElement('div'),
         propertyName: 'items',
-        isInput: false,
       }
 
       tracker.registerDependency(binding1, 'users')
@@ -72,6 +71,7 @@ describe('DependencyTracker', () => {
 
       const bindings: BindingsCollection = {
         valueBindings: [binding1, binding2],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],
@@ -89,13 +89,13 @@ describe('DependencyTracker', () => {
       const binding = {
         element: document.createElement('div'),
         propertyName: 'users',
-        isInput: false,
       }
 
       tracker.registerDependency(binding, 'users')
 
       const bindings: BindingsCollection = {
         valueBindings: [binding],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],
@@ -118,6 +118,7 @@ describe('DependencyTracker', () => {
 
       const bindings: BindingsCollection = {
         valueBindings: [binding],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],
@@ -138,7 +139,6 @@ describe('DependencyTracker', () => {
       const binding2 = {
         element: document.createElement('div'),
         propertyName: 'items',
-        isInput: false,
       }
 
       tracker.registerDependency(binding1, 'users')
@@ -146,6 +146,7 @@ describe('DependencyTracker', () => {
 
       const bindings: BindingsCollection = {
         valueBindings: [binding1, binding2],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],
@@ -162,7 +163,6 @@ describe('DependencyTracker', () => {
       const valueBinding = {
         element: document.createElement('div'),
         propertyName: 'message',
-        isInput: false,
       }
       const ifBinding = {
         element: document.createElement('div'),
@@ -181,6 +181,7 @@ describe('DependencyTracker', () => {
 
       const bindings: BindingsCollection = {
         valueBindings: [valueBinding],
+        contentBindings: [],
         ifBindings: [ifBinding],
         classBindings: [classBinding],
         styleBindings: [],
@@ -213,6 +214,7 @@ describe('DependencyTracker', () => {
 
       const bindings: BindingsCollection = {
         valueBindings: [],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],
@@ -230,13 +232,13 @@ describe('DependencyTracker', () => {
       const binding = {
         element: document.createElement('div'),
         propertyName: 'user.profile.name',
-        isInput: false,
       }
 
       tracker.registerDependency(binding, 'user.profile.name')
 
       const bindings: BindingsCollection = {
         valueBindings: [binding],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],
@@ -257,13 +259,13 @@ describe('DependencyTracker', () => {
       const binding = {
         element: document.createElement('div'),
         propertyName: 'user',
-        isInput: false,
       }
 
       tracker.registerDependency(binding, 'user')
 
       const bindings: BindingsCollection = {
         valueBindings: [binding],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],
@@ -283,12 +285,10 @@ describe('DependencyTracker', () => {
       const binding1 = {
         element: document.createElement('div'),
         propertyName: 'prueba.nombre',
-        isInput: false,
       }
       const binding2 = {
         element: document.createElement('span'),
         propertyName: 'prueba.direccion.calle.nombre',
-        isInput: false,
       }
 
       tracker.registerDependency(binding1, 'prueba.nombre')
@@ -296,6 +296,7 @@ describe('DependencyTracker', () => {
 
       const bindings: BindingsCollection = {
         valueBindings: [binding1, binding2],
+        contentBindings: [],
         ifBindings: [],
         classBindings: [],
         styleBindings: [],

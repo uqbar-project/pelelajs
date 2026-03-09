@@ -1,5 +1,6 @@
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
+import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
@@ -8,6 +9,7 @@ import { DependencyTracker } from './dependencyTracker'
 import type {
   BindingsCollection,
   ClassBinding,
+  ContentBinding,
   ForEachBinding,
   IfBinding,
   StyleBinding,
@@ -15,11 +17,18 @@ import type {
   ViewModel,
 } from './types'
 
-type AnyBinding = ForEachBinding | ValueBinding | IfBinding | ClassBinding | StyleBinding
+type AnyBinding =
+  | ForEachBinding
+  | ValueBinding
+  | ContentBinding
+  | IfBinding
+  | ClassBinding
+  | StyleBinding
 
 function registerAllBindingDependencies(
   bindings: BindingsCollection,
   tracker: DependencyTracker,
+  viewModel: ViewModel<any>,
 ): void {
   const bindingConfigurations: Array<{
     list: AnyBinding[]
@@ -32,6 +41,10 @@ function registerAllBindingDependencies(
     {
       list: bindings.valueBindings,
       getPath: (binding) => (binding as ValueBinding).propertyName,
+    },
+    {
+      list: bindings.contentBindings,
+      getPath: (binding) => (binding as ContentBinding).propertyName,
     },
     {
       list: bindings.ifBindings,
@@ -49,7 +62,7 @@ function registerAllBindingDependencies(
 
   for (const config of bindingConfigurations) {
     for (const binding of config.list) {
-      tracker.registerDependency(binding, config.getPath(binding))
+      tracker.registerDependency(binding, config.getPath(binding), viewModel)
     }
   }
 }
@@ -63,6 +76,9 @@ function executeRenderPipeline<T extends object>(
   }
   if (targetBindings.valueBindings.length > 0) {
     renderValueBindings(targetBindings.valueBindings, viewModel)
+  }
+  if (targetBindings.contentBindings.length > 0) {
+    renderContentBindings(targetBindings.contentBindings, viewModel)
   }
   if (targetBindings.ifBindings.length > 0) {
     renderIfBindings(targetBindings.ifBindings, viewModel)
@@ -82,6 +98,7 @@ export function setupBindings<T extends object>(
   const bindings: BindingsCollection = {
     forEachBindings: setupForEachBindings(root, viewModel),
     valueBindings: setupValueBindings(root, viewModel),
+    contentBindings: setupContentBindings(root, viewModel),
     ifBindings: setupIfBindings(root, viewModel),
     classBindings: setupClassBindings(root, viewModel),
     styleBindings: setupStyleBindings(root, viewModel),
@@ -90,11 +107,11 @@ export function setupBindings<T extends object>(
   setupClickBindings(root, viewModel)
 
   const tracker = new DependencyTracker()
-  registerAllBindingDependencies(bindings, tracker)
+  registerAllBindingDependencies(bindings, tracker, viewModel)
 
   const render = (changedPath?: string) => {
     const targetBindings = changedPath
-      ? tracker.getDependentBindings(changedPath, bindings)
+      ? tracker.getDependentBindingsWithGetterSupport(changedPath, bindings)
       : bindings
 
     executeRenderPipeline(targetBindings, viewModel)

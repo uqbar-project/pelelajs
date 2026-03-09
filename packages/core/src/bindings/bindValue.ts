@@ -16,21 +16,26 @@ function setupSingleValueBinding<T extends object>(
     element instanceof HTMLTextAreaElement ||
     element instanceof HTMLSelectElement
 
-  if (isInput) {
-    element.addEventListener('input', (event) => {
-      const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      const currentValue = getNestedProperty(viewModel, propertyName)
-
-      if (typeof currentValue === 'number') {
-        const numeric = Number(target.value.replace(',', '.'))
-        setNestedProperty(viewModel, propertyName, Number.isNaN(numeric) ? 0 : numeric)
-      } else {
-        setNestedProperty(viewModel, propertyName, target.value)
-      }
-    })
+  if (!isInput) {
+    const snippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
+    throw new Error(
+      `bind-value can only be used on input, textarea, or select elements. Found on <${element.tagName.toLowerCase()}>. Use bind-content for display elements.\nElement: ${snippet}`,
+    )
   }
 
-  return { element, propertyName, isInput }
+  element.addEventListener('input', (event) => {
+    const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    const currentValue = getNestedProperty(viewModel, propertyName)
+
+    if (typeof currentValue === 'number') {
+      const numeric = Number(target.value.replace(',', '.'))
+      setNestedProperty(viewModel, propertyName, Number.isNaN(numeric) ? 0 : numeric)
+    } else {
+      setNestedProperty(viewModel, propertyName, target.value)
+    }
+  })
+
+  return { element, propertyName }
 }
 
 export function setupValueBindings<T extends object>(
@@ -63,24 +68,12 @@ function renderSingleValueBinding<T extends object>(
     binding.propertyName,
     'value:',
     value,
-    'isInput:',
-    binding.isInput,
   )
 
-  if (binding.isInput) {
-    const input = binding.element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    const newValue = value ?? ''
-    if (input.value !== String(newValue)) {
-      input.value = String(newValue)
-    }
-  } else {
-    binding.element.textContent = value === undefined || value === null ? '' : String(value)
-    console.log(
-      '[pelela] set textContent:',
-      binding.element.tagName,
-      'to:',
-      binding.element.textContent,
-    )
+  const input = binding.element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  const newValue = value ?? ''
+  if (input.value !== String(newValue)) {
+    input.value = String(newValue)
   }
 }
 
