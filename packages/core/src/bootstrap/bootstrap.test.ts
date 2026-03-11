@@ -182,7 +182,7 @@ describe('bootstrap', () => {
     expect(span.textContent).toBe('2')
   })
 
-  it('should log initialization information', () => {
+  it('should mount without logging debug information', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     document.body.innerHTML = `
       <pelela view-model="TestVM">
@@ -193,10 +193,7 @@ describe('bootstrap', () => {
     registerViewModel('TestVM', TestViewModel)
     bootstrap()
 
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[pelela] View model "TestVM" instantiated and bound'),
-      expect.any(Object),
-    )
+    expect(logSpy).not.toHaveBeenCalled()
 
     logSpy.mockRestore()
   })

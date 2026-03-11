@@ -1,0 +1,10 @@
+<component view-model="Card">
+  <div class="card">
+    <div class="card-header">
+      <h4 bind-content="titulo"></h4>
+      <Badge label="estado" color="estadoColor" />
+    </div>
+    <p class="card-body" bind-content="descripcion"></p>
+  </div>
+</component>
+

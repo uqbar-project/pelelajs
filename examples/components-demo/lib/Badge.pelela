@@ -1,0 +1,6 @@
+<component view-model="Badge">
+  <span class="badge" bind-class="color">
+    <span bind-content="label"></span>
+  </span>
+</component>
+

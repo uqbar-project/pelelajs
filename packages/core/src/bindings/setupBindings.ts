@@ -1,5 +1,6 @@
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
+import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderIfBindings, setupIfBindings } from './bindIf'
@@ -105,6 +106,7 @@ export function setupBindings<T extends object>(
   }
 
   setupClickBindings(root, viewModel)
+  const componentBindings = setupComponentBindings(root, viewModel)
 
   const tracker = new DependencyTracker()
   registerAllBindingDependencies(bindings, tracker, viewModel)
@@ -115,6 +117,7 @@ export function setupBindings<T extends object>(
       : bindings
 
     executeRenderPipeline(targetBindings, viewModel)
+    renderComponentBindings(componentBindings)
   }
 
   render()

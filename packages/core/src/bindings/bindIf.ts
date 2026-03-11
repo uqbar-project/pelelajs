@@ -1,4 +1,5 @@
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
+import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 import { getNestedProperty } from './nestedProperties'
 import type { IfBinding, ViewModel } from './types'
 
@@ -23,9 +24,12 @@ export function setupIfBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): IfBinding[] {
   const bindings: IfBinding[] = []
-  const elements = root.querySelectorAll<HTMLElement>('[if]')
+  const elements = querySelectorAllInclusive(root, '[if]')
 
   for (const element of elements) {
+    if (isInsideComponent(element, root)) {
+      continue
+    }
     const binding = setupSingleIfBinding(element, viewModel)
     if (binding) {
       bindings.push(binding)

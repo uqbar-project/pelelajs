@@ -1,4 +1,5 @@
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
+import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 import { getNestedProperty } from './nestedProperties'
 import type { StyleBinding, ViewModel } from './types'
 
@@ -22,9 +23,12 @@ export function setupStyleBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): StyleBinding[] {
   const bindings: StyleBinding[] = []
-  const elements = root.querySelectorAll<HTMLElement>('[bind-style]')
+  const elements = querySelectorAllInclusive(root, '[bind-style]')
 
   for (const element of elements) {
+    if (isInsideComponent(element, root)) {
+      continue
+    }
     const binding = setupSingleStyleBinding(element, viewModel)
     if (binding) {
       bindings.push(binding)

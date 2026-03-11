@@ -1,4 +1,5 @@
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
+import { isInsideComponent, querySelectorAllInclusive } from './componentHelpers'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
 import type { ValueBinding, ViewModel } from './types'
 
@@ -43,9 +44,12 @@ export function setupValueBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): ValueBinding[] {
   const bindings: ValueBinding[] = []
-  const elements = root.querySelectorAll<HTMLElement>('[bind-value]')
+  const elements = querySelectorAllInclusive(root, '[bind-value]')
 
   for (const element of elements) {
+    if (isInsideComponent(element, root)) {
+      continue
+    }
     const binding = setupSingleValueBinding(element, viewModel)
     if (binding) {
       bindings.push(binding)
@@ -60,16 +64,6 @@ function renderSingleValueBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   const value = getNestedProperty(viewModel, binding.propertyName)
-
-  console.log(
-    '[pelela] renderValueBinding:',
-    binding.element.tagName,
-    'property:',
-    binding.propertyName,
-    'value:',
-    value,
-  )
-
   const input = binding.element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
   const newValue = value ?? ''
   if (input.value !== String(newValue)) {

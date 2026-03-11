@@ -1,0 +1,140 @@
+import type { ComponentInstance } from '../components/componentScanner'
+import { hasComponentElements, scanComponents } from '../components/componentScanner'
+import { createComponentViewModel } from '../components/componentViewModel'
+import { getGlobalComponentTracker } from '../components/nestedComponents'
+import { createReactiveViewModel } from '../reactivity/reactiveProxy'
+import { setupBindings } from './setupBindings'
+import type { ViewModel } from './types'
+
+export type ComponentBinding = {
+  componentName: string
+  originalElement: HTMLElement
+  mountedElement: HTMLElement
+  componentInstance: any
+  reactiveInstance: any
+  render: (changedPath?: string) => void
+}
+
+function _parseTemplate(templateString: string): HTMLElement {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(templateString, 'text/html')
+  const root = doc.body.firstElementChild
+
+  if (!root) {
+    throw new Error('[pelela] Component template is empty or invalid')
+  }
+
+  return root as HTMLElement
+}
+
+function replaceComponentTagWithTemplate(_componentTag: string, templateHtml: string): HTMLElement {
+  const cleaned = templateHtml.replace(/<component\b[^>]*>/i, '').replace(/<\/component>/i, '')
+  const wrapper = document.createElement('div')
+  wrapper.innerHTML = cleaned.trim()
+
+  const firstChild = wrapper.firstElementChild
+  if (!firstChild) {
+    const span = document.createElement('span')
+    span.textContent = cleaned.trim()
+    return span as HTMLElement
+  }
+
+  return firstChild as HTMLElement
+}
+
+function instantiateComponent(componentInstance: ComponentInstance, parentViewModel: ViewModel) {
+  const { config, props } = componentInstance
+  const instance = new config.viewModelConstructor()
+
+  const extendedViewModel = createComponentViewModel(instance as object, parentViewModel, {
+    unidirectional: props.unidirectional,
+    bidirectional: props.bidirectional,
+  })
+
+  return { instance, extendedViewModel }
+}
+
+function setupSingleComponentBinding(
+  componentInstance: ComponentInstance,
+  parentViewModel: ViewModel,
+): ComponentBinding {
+  const { element, config, componentName } = componentInstance
+  const tracker = getGlobalComponentTracker()
+
+  tracker.enterComponent(componentName)
+
+  try {
+    const { instance, extendedViewModel } = instantiateComponent(componentInstance, parentViewModel)
+
+    const templateElement = replaceComponentTagWithTemplate(componentName, config.template)
+
+    templateElement.setAttribute('data-pelela-component', componentName)
+
+    let render: (changedPath?: string) => void = () => {}
+
+    const reactiveInstance = createReactiveViewModel(
+      extendedViewModel as Record<string, unknown>,
+      (changedPath: string) => {
+        render(changedPath)
+      },
+    )
+
+    ;(templateElement as any).__pelelaViewModel = reactiveInstance
+    render = setupBindings(templateElement, reactiveInstance)
+
+    const parent = element.parentNode
+    if (parent) {
+      parent.replaceChild(templateElement, element)
+    }
+
+    return {
+      componentName,
+      originalElement: element,
+      mountedElement: templateElement,
+      componentInstance: instance,
+      reactiveInstance,
+      render,
+    }
+  } finally {
+    tracker.exitComponent()
+  }
+}
+
+export function setupComponentBindings<T extends object>(
+  root: HTMLElement,
+  viewModel: ViewModel<T>,
+): ComponentBinding[] {
+  const bindings: ComponentBinding[] = []
+  const currentRoot = root
+  let iterationCount = 0
+  const maxIterations = 100
+
+  while (hasComponentElements(currentRoot) && iterationCount < maxIterations) {
+    iterationCount++
+
+    const components = scanComponents(currentRoot)
+
+    if (components.length === 0) {
+      break
+    }
+
+    for (const component of components) {
+      const binding = setupSingleComponentBinding(component, viewModel)
+      bindings.push(binding)
+    }
+  }
+
+  if (iterationCount >= maxIterations) {
+    console.warn(
+      '[pelela] Maximum component nesting iterations reached. Possible infinite recursion?',
+    )
+  }
+
+  return bindings
+}
+
+export function renderComponentBindings(bindings: ComponentBinding[]): void {
+  for (const binding of bindings) {
+    binding.render()
+  }
+}

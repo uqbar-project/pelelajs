@@ -1,0 +1,39 @@
+.contador {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f5f5f5;
+  padding: 1rem;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.btn-contador {
+  background: #667eea;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-contador:hover {
+  background: #5568d3;
+  transform: scale(1.1);
+}
+
+.btn-contador:active {
+  transform: scale(0.95);
+}
+
+.valor-contador {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  min-width: 50px;
+  text-align: center;
+}
+
