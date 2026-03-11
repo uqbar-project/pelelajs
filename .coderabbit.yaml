@@ -1,0 +1,126 @@
+language: es-AR
+early_access: false
+tone_instructions: >
+  Framework web didáctico (UNSAM/Uqbar) en desarrollo activo. Contributors son
+  docentes. Priorizá correctitud, consistencia de API pública, testing y
+  mantenibilidad del monorepo. Feedback técnico y directo.
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  poem: false
+  review_status: true
+  commit_status: true
+  fail_commit_status: false
+  collapse_walkthrough: true
+  changed_files_summary: true
+  estimate_code_review_effort: true
+  sequence_diagrams: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 3
+    ignore_title_keywords:
+      - WIP
+      - Draft
+  path_instructions:
+    - path: packages/**/src/**/*.ts
+      instructions: >
+        Código core del framework. Revisá con máxima exigencia: - API pública
+        clara, consistente y bien tipada - No exponer internals que no deberían
+        ser públicos - Manejo correcto de errores y edge cases - Código
+        idiomático de TypeScript, null-safety estricta - Que los cambios no
+        rompan compatibilidad sin justificación
+    - path: packages/**/src/**/*.tsx
+      instructions: >
+        Componentes UI del framework. Aplican las mismas reglas que para
+        archivos .ts, con foco adicional en que los componentes sean claros y
+        reutilizables como parte de la API pública.
+    - path: packages/**/src/index.ts
+      instructions: >
+        Punto de entrada público del package. Cambios acá afectan directamente a
+        los consumidores del framework. Revisá: - Que no se exporten internals
+        por error - Que no se eliminen exports existentes sin justificación
+          (es un breaking change)
+        - Que los re-exports sean claros y mantenibles
+    - path: packages/**/*.test.ts
+      instructions: >
+        Tests del framework (Vitest). Revisá: - Cobertura de edge cases y
+        comportamiento observable - Nombres claros que documenten el contrato
+        del módulo - No acoplar tests a detalles de implementación - Señalar
+        tests faltantes cuando el riesgo sea real
+    - path: packages/**/*.spec.ts
+      instructions: >
+        Tests del framework (Vitest). Aplican las mismas reglas que para
+        archivos .test.ts.
+    - path: packages/**/package.json
+      instructions: >
+        Cada package tiene su propio package.json. Revisá: - Que las
+        dependencias entre packages usen workspace:* - Que exports/main/types
+        estén correctos para el consumidor - No incluir dependencias
+        innecesarias - Versionado coherente dentro del monorepo
+    - path: examples/**
+      instructions: >
+        Los examples son usados por estudiantes como referencia. Revisá que sean
+        claros, mínimos y funcionales. Señalá si un example no refleja la API
+        actual del framework.
+    - path: tools/pelela-vscode/**
+      instructions: >
+        Extensión de VS Code para PelelaJS. Revisá: - Correctitud de la
+        integración con el Language Server / API de VS Code - Que los comandos y
+        configuraciones estén bien definidos - Manejo de errores en
+        activación/desactivación de la extensión
+    - path: docs/**
+      instructions: >
+        Documentación del framework. Revisá solo exactitud técnica, consistencia
+        con la API actual y claridad. Evitá nitpicks de estilo.
+    - path: .github/workflows/**
+      instructions: >
+        Revisá con foco en: - Correctitud del workflow - Riesgos de seguridad
+        (secrets expuestos, actions no pinneadas) - Uso de cachés y versiones de
+        actions - Que funcione correctamente con el monorepo (pnpm workspaces)
+    - path: scripts/**
+      instructions: >
+        Scripts de build/tooling del monorepo. Revisá: - Correctitud y robustez
+        (manejo de errores, exit codes) - Que no hardcodeen paths o asuman
+        estructura específica - Que estén documentados si no son triviales
+    - path: biome.json
+      instructions: >
+        Configuración de Biome (linter + formatter). Revisá que las reglas sean
+        coherentes con el estilo del proyecto y no contradigan convenciones
+        establecidas.
+    - path: pnpm-workspace.yaml
+      instructions: >
+        Configuración del monorepo. Verificá que todos los packages y workspaces
+        estén correctamente listados.
+    - path: vitest.config.ts
+      instructions: >
+        Configuración global de Vitest. Revisá que los workspace projects estén
+        correctamente referenciados y que la config de coverage sea coherente.
+    - path: tsconfig*.json
+      instructions: >
+        Configuración de TypeScript del monorepo. Revisá: - Coherencia entre el
+        base y los tsconfigs de cada package - Paths y project references
+        correctos - Opciones que puedan romper compatibilidad de librería
+          (ej: strict, moduleResolution, target)
+    - path: README.md
+      instructions: >
+        Revisá solo exactitud técnica, pasos rotos y ambigüedades. Evitá
+        comentarios de estilo salvo que mejoren claramente la comprensión.
+  path_filters:
+    - '!**/node_modules/**'
+    - '!**/dist/**'
+    - '!**/pnpm-lock.yaml'
+    - '!**/*.png'
+    - '!**/*.jpg'
+    - '!**/*.jpeg'
+    - '!**/*.gif'
+    - '!**/*.svg'
+    - '!**/coverage/**'
+    - '!**/*.vsix'
+chat:
+  auto_reply: true
