@@ -1,8 +1,6 @@
 import type { BindingsCollection } from './types'
 
 function isPropertyGetter(obj: any, propertyPath: string): boolean {
-  const rawObj = obj?.$raw || obj
-
   const hasGetter = (currentObj: any, part: string): boolean => {
     let descriptor = Object.getOwnPropertyDescriptor(currentObj, part)
 
@@ -13,14 +11,15 @@ function isPropertyGetter(obj: any, propertyPath: string): boolean {
     return !!descriptor?.get
   }
 
-  return propertyPath.split('.').every((part) => {
-    let currentObj = rawObj
-    if (!currentObj || typeof currentObj !== 'object') return false
+  return propertyPath.split('.').some((part) => {
+    let currentObj = obj?.$raw ?? obj
+    const inspectedObj = currentObj?.$raw ?? currentObj
+    if (!inspectedObj || typeof inspectedObj !== 'object') return false
 
-    if (hasGetter(currentObj, part)) return true
+    if (hasGetter(inspectedObj, part)) return true
 
-    currentObj = currentObj[part]
-    return true
+    currentObj = inspectedObj[part]
+    return false
   })
 }
 

@@ -10,6 +10,7 @@ import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
+import { getNestedProperty } from './nestedProperties'
 import type { ForEachBinding, ViewModel } from './types'
 
 function parseForEachExpression(expression: string): {
@@ -62,13 +63,6 @@ function createExtendedViewModel<T extends object>(
       },
     },
   ) as ViewModel
-}
-
-function getNestedProperty(obj: any, path: string): any {
-  return path.split('.').reduce((current, part) => {
-    if (current === null || current === undefined) return undefined
-    return current[part]
-  }, obj)
 }
 
 function setupBindingsForElement<T extends object>(
