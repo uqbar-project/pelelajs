@@ -27,7 +27,12 @@
 
 ## Notas para Asistentes de IA
 
-- Estas reglas deben aplicarse consistentemente en todo el código
-- Priorizá la mantenibilidad y legibilidad sobre optimizaciones prematuras
-- Cuando haya conflicto entre reglas, priorizá los principios fundamentales
-- Siempre explicá los cambios importantes siguiendo estas directrices
+- **Estas reglas deben aplicarse consistentemente en todo el código**
+- **Priorizá la mantenibilidad y legibilidad sobre optimizaciones prematuras**
+- **Ante la duda o conflicto de reglas, preguntá** - "Si no estás seguro de cómo resolver algo o hay varias alternativas posibles, preguntá antes de implementar. No tomes decisiones de diseño o arquitectura por tu cuenta."
+- **Scope acotado** - "Hacé solo lo que se te pide, no refactorices código que no está relacionado con la tarea" (evita PRs gigantes con cambios no solicitados)
+- **Leé antes de modificar** - "Antes de cambiar código, leé el contexto completo para entender el diseño existente"
+- **Dependencias** - "No agregues nuevas dependencias sin consultar primero"
+- **Tests** - "Corré los tests antes de dar por terminado un cambio. Usá `pnpm test --run` para ejecutar una sola vez y evitar que se quede esperando cambios."
+- **Idioma** - "Los comentarios y código en inglés y la documentación en español"
+- **Siempre explicá los cambios importantes siguiendo estas directrices**
