@@ -17,17 +17,18 @@ function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
     return !!descriptor?.get
   }
 
-  return propertyPath.split('.').some((part) => {
-    if (typeof obj !== 'object' || obj === null) return false
+  let currentObj: unknown = obj
 
-    const viewModel = obj as ViewModelWithRaw
-    const rawObj = viewModel.$raw ?? obj
+  return propertyPath.split('.').some((part) => {
+    if (typeof currentObj !== 'object' || currentObj === null) return false
+
+    const viewModel = currentObj as ViewModelWithRaw
+    const rawObj = viewModel.$raw ?? currentObj
     if (!rawObj || typeof rawObj !== 'object') return false
 
     if (hasGetter(rawObj, part)) return true
 
-    // Acceso seguro a propiedad anidada
-    const _nextObj = (rawObj as Record<string, unknown>)[part]
+    currentObj = (rawObj as Record<string, unknown>)[part]
     return false
   })
 }
