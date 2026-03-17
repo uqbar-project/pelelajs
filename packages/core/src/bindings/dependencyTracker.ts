@@ -2,28 +2,26 @@ import type { BindingsCollection } from './types'
 
 function isPropertyGetter(obj: any, propertyPath: string): boolean {
   const rawObj = obj?.$raw || obj
-  const parts = propertyPath.split('.')
-  let current = rawObj
 
-  for (let i = 0; i < parts.length; i++) {
-    if (!current || typeof current !== 'object') return false
+  const hasGetter = (currentObj: any, part: string): boolean => {
+    let descriptor = Object.getOwnPropertyDescriptor(currentObj, part)
 
-    const part = parts[i]
-
-    let descriptor = Object.getOwnPropertyDescriptor(current, part)
-
-    if (!descriptor && current.constructor && current.constructor.prototype) {
-      descriptor = Object.getOwnPropertyDescriptor(current.constructor.prototype, part)
+    if (!descriptor && currentObj.constructor && currentObj.constructor.prototype) {
+      descriptor = Object.getOwnPropertyDescriptor(currentObj.constructor.prototype, part)
     }
 
-    if (descriptor && descriptor.get) {
-      return true
-    }
-
-    current = current[part]
+    return !!descriptor?.get
   }
 
-  return false
+  return propertyPath.split('.').every((part) => {
+    let currentObj = rawObj
+    if (!currentObj || typeof currentObj !== 'object') return false
+
+    if (hasGetter(currentObj, part)) return true
+
+    currentObj = currentObj[part]
+    return true
+  })
 }
 
 export type FilteredBindings = {
@@ -59,52 +57,14 @@ export class DependencyTracker {
   }
 
   getDependentBindings(changedPath: string, allBindings: BindingsCollection): FilteredBindings {
-    const result: FilteredBindings = {
-      valueBindings: [],
-      contentBindings: [],
-      ifBindings: [],
-      classBindings: [],
-      styleBindings: [],
-      forEachBindings: [],
-    }
+    const bindingKeys = Object.keys(allBindings) as (keyof FilteredBindings)[]
 
-    for (const binding of allBindings.valueBindings) {
-      if (this.isAffectedByChange(binding, changedPath)) {
-        result.valueBindings.push(binding)
-      }
-    }
-
-    for (const binding of allBindings.contentBindings) {
-      if (this.isAffectedByChange(binding, changedPath)) {
-        result.contentBindings.push(binding)
-      }
-    }
-
-    for (const binding of allBindings.ifBindings) {
-      if (this.isAffectedByChange(binding, changedPath)) {
-        result.ifBindings.push(binding)
-      }
-    }
-
-    for (const binding of allBindings.classBindings) {
-      if (this.isAffectedByChange(binding, changedPath)) {
-        result.classBindings.push(binding)
-      }
-    }
-
-    for (const binding of allBindings.styleBindings) {
-      if (this.isAffectedByChange(binding, changedPath)) {
-        result.styleBindings.push(binding)
-      }
-    }
-
-    for (const binding of allBindings.forEachBindings) {
-      if (this.isAffectedByChange(binding, changedPath)) {
-        result.forEachBindings.push(binding)
-      }
-    }
-
-    return result
+    return bindingKeys.reduce((result, key) => {
+      result[key] = allBindings[key].filter((binding) =>
+        this.isAffectedByChange(binding, changedPath),
+      )
+      return result
+    }, {} as FilteredBindings)
   }
 
   getDependentBindingsWithGetterSupport(
@@ -113,29 +73,19 @@ export class DependencyTracker {
   ): FilteredBindings {
     const result = this.getDependentBindings(changedPath, allBindings)
 
-    for (const binding of allBindings.ifBindings) {
-      if (!result.ifBindings.includes(binding) && this.isGetterBinding(binding)) {
-        result.ifBindings.push(binding)
-      }
+    const addGetterBindings = (bindings: Array<any>, currentResult: Array<any>): Array<any> => {
+      return [
+        ...currentResult,
+        ...bindings.filter(
+          (binding) => !currentResult.includes(binding) && this.isGetterBinding(binding),
+        ),
+      ]
     }
 
-    for (const binding of allBindings.classBindings) {
-      if (!result.classBindings.includes(binding) && this.isGetterBinding(binding)) {
-        result.classBindings.push(binding)
-      }
-    }
-
-    for (const binding of allBindings.styleBindings) {
-      if (!result.styleBindings.includes(binding) && this.isGetterBinding(binding)) {
-        result.styleBindings.push(binding)
-      }
-    }
-
-    for (const binding of allBindings.contentBindings) {
-      if (!result.contentBindings.includes(binding) && this.isGetterBinding(binding)) {
-        result.contentBindings.push(binding)
-      }
-    }
+    result.ifBindings = addGetterBindings(allBindings.ifBindings, result.ifBindings)
+    result.classBindings = addGetterBindings(allBindings.classBindings, result.classBindings)
+    result.styleBindings = addGetterBindings(allBindings.styleBindings, result.styleBindings)
+    result.contentBindings = addGetterBindings(allBindings.contentBindings, result.contentBindings)
 
     return result
   }
@@ -146,33 +96,24 @@ export class DependencyTracker {
       return false
     }
 
-    for (const bindingPath of bindingPaths) {
-      if (this.pathMatches(bindingPath, changedPath)) {
-        return true
-      }
-    }
-
-    return false
+    return Array.from(bindingPaths).some((bindingPath) =>
+      this.pathMatches(bindingPath, changedPath),
+    )
   }
 
+  /**
+   * Determina si un binding debe actualizarse cuando cambia una propiedad.
+   *
+   * Casos considerados:
+   * - Match exacto: "user.name" === "user.name"
+   * - Propiedad anidada del cambio: "prueba.nombre" cuando cambió "prueba"
+   * - Propiedad padre del cambio: "prueba" cuando cambió "prueba.nombre"
+   */
   private pathMatches(bindingPath: string, changedPath: string): boolean {
-    // Caso 1: Match exacto
-    if (bindingPath === changedPath) {
-      return true
-    }
-
-    // Caso 2: El binding depende de una propiedad anidada del cambio
-    // Ejemplo: cambió "prueba", el binding usa "prueba.nombre" → debe re-renderizar
-    if (bindingPath.startsWith(`${changedPath}.`)) {
-      return true
-    }
-
-    // Caso 3: Cambió una propiedad anidada, el binding depende del padre
-    // Ejemplo: cambió "prueba.nombre", el binding usa "prueba" → debe re-renderizar
-    if (changedPath.startsWith(`${bindingPath}.`)) {
-      return true
-    }
-
-    return false
+    return (
+      bindingPath === changedPath ||
+      bindingPath.startsWith(`${changedPath}.`) ||
+      changedPath.startsWith(`${bindingPath}.`)
+    )
   }
 }

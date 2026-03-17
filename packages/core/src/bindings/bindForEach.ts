@@ -65,13 +65,10 @@ function createExtendedViewModel<T extends object>(
 }
 
 function getNestedProperty(obj: any, path: string): any {
-  const parts = path.split('.')
-  let current = obj
-  for (const part of parts) {
+  return path.split('.').reduce((current, part) => {
     if (current === null || current === undefined) return undefined
-    current = current[part]
-  }
-  return current
+    return current[part]
+  }, obj)
 }
 
 function setupBindingsForElement<T extends object>(
@@ -178,15 +175,21 @@ function mapElementPath(
     return targetRoot
   }
 
-  const path: number[] = []
-  let current: HTMLElement | null = sourceElement
+  const buildPath = (element: HTMLElement, root: HTMLElement): number[] => {
+    const path: number[] = []
+    let current: HTMLElement | null = element
 
-  while (current && current !== sourceRoot) {
-    const parent = current.parentElement
-    if (!parent) break
-    path.unshift(Array.from(parent.children).indexOf(current))
-    current = parent as HTMLElement
+    while (current && current !== root) {
+      const parent = current.parentElement
+      if (!parent) return path
+      path.unshift(Array.from(parent.children).indexOf(current))
+      current = parent as HTMLElement
+    }
+
+    return path
   }
+
+  const path = buildPath(sourceElement, sourceRoot)
 
   console.log(
     '[pelela] mapElementPath: following path',
@@ -197,13 +200,12 @@ function mapElementPath(
     sourceElement.tagName,
   )
 
-  let target: HTMLElement = targetRoot
-  for (const index of path) {
-    const children = target.children
-    if (index >= children.length) break
-    target = children[index] as HTMLElement
-    if (!target) break
-  }
+  const target = path.reduce((currentElement: HTMLElement, index) => {
+    const children = currentElement.children
+    if (index >= children.length) return currentElement
+    const nextElement = children[index] as HTMLElement
+    return nextElement || currentElement
+  }, targetRoot)
 
   console.log('[pelela] mapElementPath: result', target.tagName)
 
@@ -215,7 +217,7 @@ function setupSingleForEachBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): ForEachBinding | null {
   const expression = element.getAttribute('for-each')
-  if (!expression || !expression.trim()) return null
+  if (!expression?.trim()) return null
 
   const parsed = parseForEachExpression(expression)
   if (!parsed) {
@@ -269,17 +271,11 @@ export function setupForEachBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): ForEachBinding[] {
-  const bindings: ForEachBinding[] = []
   const elements = root.querySelectorAll<HTMLElement>('[for-each]')
 
-  for (const element of elements) {
-    const binding = setupSingleForEachBinding(element, viewModel)
-    if (binding) {
-      bindings.push(binding)
-    }
-  }
-
-  return bindings
+  return Array.from(elements)
+    .map((element) => setupSingleForEachBinding(element, viewModel))
+    .filter((binding): binding is ForEachBinding => binding !== null)
 }
 
 function createNewElement<T extends object>(
@@ -347,19 +343,17 @@ function addNewElements<T extends object>(
 
 function removeExtraElements(binding: ForEachBinding, currentLength: number): void {
   const toRemove = binding.renderedElements.splice(currentLength)
-  for (const { element } of toRemove) {
+  toRemove.forEach(({ element }) => {
     element.remove()
-  }
+  })
 }
 
 function updateExistingElements(binding: ForEachBinding, collection: any[]): void {
-  for (let i = 0; i < binding.renderedElements.length; i++) {
+  binding.renderedElements.forEach((rendered, i) => {
     const item = collection[i]
-    const rendered = binding.renderedElements[i]
-
     rendered.itemRef.current = item
     rendered.render()
-  }
+  })
 }
 
 function renderSingleForEachBinding<T extends object>(
@@ -397,7 +391,7 @@ export function renderForEachBindings<T extends object>(
   bindings: ForEachBinding[],
   viewModel: ViewModel<T>,
 ): void {
-  for (const binding of bindings) {
+  bindings.forEach((binding) => {
     renderSingleForEachBinding(binding, viewModel)
-  }
+  })
 }

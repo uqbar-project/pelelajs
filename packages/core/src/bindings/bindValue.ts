@@ -7,7 +7,7 @@ function setupSingleValueBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): ValueBinding | null {
   const propertyName = element.getAttribute('bind-value')
-  if (!propertyName || !propertyName.trim()) return null
+  if (!propertyName?.trim()) return null
 
   assertViewModelProperty(viewModel, propertyName, 'bind-value', element)
 
@@ -42,17 +42,11 @@ export function setupValueBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): ValueBinding[] {
-  const bindings: ValueBinding[] = []
   const elements = root.querySelectorAll<HTMLElement>('[bind-value]')
 
-  for (const element of elements) {
-    const binding = setupSingleValueBinding(element, viewModel)
-    if (binding) {
-      bindings.push(binding)
-    }
-  }
-
-  return bindings
+  return Array.from(elements)
+    .map((element) => setupSingleValueBinding(element, viewModel))
+    .filter((binding): binding is ValueBinding => binding !== null)
 }
 
 function renderSingleValueBinding<T extends object>(
@@ -81,7 +75,7 @@ export function renderValueBindings<T extends object>(
   bindings: ValueBinding[],
   viewModel: ViewModel<T>,
 ): void {
-  for (const binding of bindings) {
+  bindings.forEach((binding) => {
     renderSingleValueBinding(binding, viewModel)
-  }
+  })
 }
