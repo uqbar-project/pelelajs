@@ -1,7 +1,13 @@
 import type { BindingsCollection } from './types'
 
-function isPropertyGetter(obj: any, propertyPath: string): boolean {
-  const hasGetter = (currentObj: any, part: string): boolean => {
+interface ViewModelWithRaw {
+  $raw?: unknown
+}
+
+function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
+  const hasGetter = (currentObj: unknown, part: string): boolean => {
+    if (typeof currentObj !== 'object' || currentObj === null) return false
+
     let descriptor = Object.getOwnPropertyDescriptor(currentObj, part)
 
     if (!descriptor && currentObj.constructor && currentObj.constructor.prototype) {
@@ -12,13 +18,16 @@ function isPropertyGetter(obj: any, propertyPath: string): boolean {
   }
 
   return propertyPath.split('.').some((part) => {
-    let currentObj = obj?.$raw ?? obj
-    const inspectedObj = currentObj?.$raw ?? currentObj
-    if (!inspectedObj || typeof inspectedObj !== 'object') return false
+    if (typeof obj !== 'object' || obj === null) return false
 
-    if (hasGetter(inspectedObj, part)) return true
+    const viewModel = obj as ViewModelWithRaw
+    const rawObj = viewModel.$raw ?? obj
+    if (!rawObj || typeof rawObj !== 'object') return false
 
-    currentObj = inspectedObj[part]
+    if (hasGetter(rawObj, part)) return true
+
+    // Acceso seguro a propiedad anidada
+    const _nextObj = (rawObj as Record<string, unknown>)[part]
     return false
   })
 }
@@ -72,7 +81,10 @@ export class DependencyTracker {
   ): FilteredBindings {
     const result = this.getDependentBindings(changedPath, allBindings)
 
-    const addGetterBindings = (bindings: Array<any>, currentResult: Array<any>): Array<any> => {
+    const addGetterBindings = <T extends object>(
+      bindings: Array<T>,
+      currentResult: Array<T>,
+    ): Array<T> => {
       return [
         ...currentResult,
         ...bindings.filter(

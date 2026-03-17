@@ -17,6 +17,7 @@
 - **Comentarios significativos** - Comentá el "porqué" no el "qué", el código debe explicarse por sí mismo
 - **Consistencia** - Mantené un estilo consistente en todo el código base
 - **Manejo de errores** - usá excepciones para casos excepcionales, no para control de flujo. Fail fast: fallar lo antes posible cuando el usuario haga algo que no debería hacer. Nunca dejar un catch vacío.
+- **Tipado estricto** - No usar `any`. Siempre usar `unknown` o buscar el tipo que corresponda: un tipo existente, genérico `T`, o `unknown` cuando no se pueda determinar el tipo.
 
 ## Arquitectura
 
