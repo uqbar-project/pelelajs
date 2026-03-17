@@ -23,9 +23,9 @@ export function setupClassBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): ClassBinding[] {
   const elementsWithBindClass = root.querySelectorAll<HTMLElement>('[bind-class]')
-  
+
   return Array.from(elementsWithBindClass)
-    .map(element => setupSingleClassBinding(element, viewModel))
+    .map((element) => setupSingleClassBinding(element, viewModel))
     .filter((binding): binding is ClassBinding => binding !== null)
 }
 
@@ -34,12 +34,10 @@ function renderSingleClassBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   const value = getNestedProperty(viewModel, binding.propertyName)
-  
+
   const dynamicClasses = buildDynamicClasses(value)
-  const finalClasses = [binding.staticClassName.trim(), dynamicClasses]
-    .filter(Boolean)
-    .join(' ')
-    
+  const finalClasses = [binding.staticClassName.trim(), dynamicClasses].filter(Boolean).join(' ')
+
   binding.element.className = finalClasses
 }
 
@@ -47,18 +45,18 @@ function buildDynamicClasses(value: unknown): string {
   if (typeof value === 'string') {
     return value
   }
-  
+
   if (Array.isArray(value)) {
     return value.filter(Boolean).join(' ')
   }
-  
+
   if (value && typeof value === 'object') {
     return Object.entries(value)
       .filter(([, enabled]) => Boolean(enabled))
       .map(([name]) => name)
       .join(' ')
   }
-  
+
   return ''
 }
 
@@ -66,5 +64,7 @@ export function renderClassBindings<T extends object>(
   bindings: ClassBinding[],
   viewModel: ViewModel<T>,
 ): void {
-  bindings.forEach(binding => renderSingleClassBinding(binding, viewModel))
+  bindings.forEach((binding) => {
+    renderSingleClassBinding(binding, viewModel)
+  })
 }
