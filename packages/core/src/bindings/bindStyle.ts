@@ -48,7 +48,7 @@ function renderSingleStyleBinding<T extends object>(
     .filter(([, styleValue]) => styleValue !== undefined && styleValue !== null)
     .forEach(([key, styleValue]) => {
       const cssValue = String(styleValue)
-      ;(elStyle as any)[key as any] = cssValue
+      ;(elStyle as unknown as Record<string, string>)[key] = cssValue
     })
 }
 
