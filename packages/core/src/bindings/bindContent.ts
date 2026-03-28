@@ -7,7 +7,7 @@ function setupSingleContentBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): ContentBinding | null {
   const propertyName = element.getAttribute('bind-content')
-  if (!propertyName || !propertyName.trim()) return null
+  if (!propertyName?.trim()) return null
 
   assertViewModelProperty(viewModel, propertyName, 'bind-content', element)
 
@@ -18,17 +18,11 @@ export function setupContentBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): ContentBinding[] {
-  const bindings: ContentBinding[] = []
   const elements = root.querySelectorAll<HTMLElement>('[bind-content]')
 
-  for (const element of elements) {
-    const binding = setupSingleContentBinding(element, viewModel)
-    if (binding) {
-      bindings.push(binding)
-    }
-  }
-
-  return bindings
+  return Array.from(elements)
+    .map((element) => setupSingleContentBinding(element, viewModel))
+    .filter((binding): binding is ContentBinding => binding !== null)
 }
 
 function renderSingleContentBinding<T extends object>(
@@ -53,7 +47,7 @@ export function renderContentBindings<T extends object>(
   bindings: ContentBinding[],
   viewModel: ViewModel<T>,
 ): void {
-  for (const binding of bindings) {
+  bindings.forEach((binding) => {
     renderSingleContentBinding(binding, viewModel)
-  }
+  })
 }

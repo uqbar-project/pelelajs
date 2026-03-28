@@ -7,7 +7,7 @@ function setupSingleStyleBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): StyleBinding | null {
   const propertyName = element.getAttribute('bind-style')
-  if (!propertyName || !propertyName.trim()) return null
+  if (!propertyName?.trim()) return null
 
   assertViewModelProperty(viewModel, propertyName, 'bind-style', element)
 
@@ -21,17 +21,11 @@ export function setupStyleBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): StyleBinding[] {
-  const bindings: StyleBinding[] = []
   const elements = root.querySelectorAll<HTMLElement>('[bind-style]')
 
-  for (const element of elements) {
-    const binding = setupSingleStyleBinding(element, viewModel)
-    if (binding) {
-      bindings.push(binding)
-    }
-  }
-
-  return bindings
+  return Array.from(elements)
+    .map((element) => setupSingleStyleBinding(element, viewModel))
+    .filter((binding): binding is StyleBinding => binding !== null)
 }
 
 function renderSingleStyleBinding<T extends object>(
@@ -50,18 +44,19 @@ function renderSingleStyleBinding<T extends object>(
 
   elStyle.cssText = ''
 
-  for (const [key, v] of Object.entries(styleObj)) {
-    if (v === undefined || v === null) continue
-    const cssValue = String(v)
-    ;(elStyle as any)[key as any] = cssValue
-  }
+  Object.entries(styleObj)
+    .filter(([, styleValue]) => styleValue !== undefined && styleValue !== null)
+    .forEach(([key, styleValue]) => {
+      const cssValue = String(styleValue)
+      ;(elStyle as unknown as Record<string, string>)[key] = cssValue
+    })
 }
 
 export function renderStyleBindings<T extends object>(
   bindings: StyleBinding[],
   viewModel: ViewModel<T>,
 ): void {
-  for (const binding of bindings) {
+  bindings.forEach((binding) => {
     renderSingleStyleBinding(binding, viewModel)
-  }
+  })
 }

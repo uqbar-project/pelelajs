@@ -60,35 +60,52 @@ function registerAllBindingDependencies(
     },
   ]
 
-  for (const config of bindingConfigurations) {
-    for (const binding of config.list) {
+  bindingConfigurations.forEach((config) => {
+    config.list.forEach((binding) => {
       tracker.registerDependency(binding, config.getPath(binding), viewModel)
-    }
-  }
+    })
+  })
 }
 
 function executeRenderPipeline<T extends object>(
   targetBindings: BindingsCollection,
   viewModel: ViewModel<T>,
 ): void {
-  if (targetBindings.forEachBindings.length > 0) {
-    renderForEachBindings(targetBindings.forEachBindings, viewModel)
-  }
-  if (targetBindings.valueBindings.length > 0) {
-    renderValueBindings(targetBindings.valueBindings, viewModel)
-  }
-  if (targetBindings.contentBindings.length > 0) {
-    renderContentBindings(targetBindings.contentBindings, viewModel)
-  }
-  if (targetBindings.ifBindings.length > 0) {
-    renderIfBindings(targetBindings.ifBindings, viewModel)
-  }
-  if (targetBindings.classBindings.length > 0) {
-    renderClassBindings(targetBindings.classBindings, viewModel)
-  }
-  if (targetBindings.styleBindings.length > 0) {
-    renderStyleBindings(targetBindings.styleBindings, viewModel)
-  }
+  const renderActions: Array<{
+    condition: () => boolean
+    render: () => void
+  }> = [
+    {
+      condition: () => targetBindings.forEachBindings.length > 0,
+      render: () => renderForEachBindings(targetBindings.forEachBindings, viewModel),
+    },
+    {
+      condition: () => targetBindings.valueBindings.length > 0,
+      render: () => renderValueBindings(targetBindings.valueBindings, viewModel),
+    },
+    {
+      condition: () => targetBindings.contentBindings.length > 0,
+      render: () => renderContentBindings(targetBindings.contentBindings, viewModel),
+    },
+    {
+      condition: () => targetBindings.ifBindings.length > 0,
+      render: () => renderIfBindings(targetBindings.ifBindings, viewModel),
+    },
+    {
+      condition: () => targetBindings.classBindings.length > 0,
+      render: () => renderClassBindings(targetBindings.classBindings, viewModel),
+    },
+    {
+      condition: () => targetBindings.styleBindings.length > 0,
+      render: () => renderStyleBindings(targetBindings.styleBindings, viewModel),
+    },
+  ]
+
+  renderActions
+    .filter((action) => action.condition())
+    .forEach((action) => {
+      action.render()
+    })
 }
 
 export function setupBindings<T extends object>(

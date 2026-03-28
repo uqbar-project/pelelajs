@@ -7,7 +7,7 @@ function setupSingleIfBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): IfBinding | null {
   const propertyName = element.getAttribute('if')
-  if (!propertyName || !propertyName.trim()) return null
+  if (!propertyName?.trim()) return null
 
   assertViewModelProperty(viewModel, propertyName, 'if', element)
 
@@ -22,17 +22,11 @@ export function setupIfBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): IfBinding[] {
-  const bindings: IfBinding[] = []
   const elements = root.querySelectorAll<HTMLElement>('[if]')
 
-  for (const element of elements) {
-    const binding = setupSingleIfBinding(element, viewModel)
-    if (binding) {
-      bindings.push(binding)
-    }
-  }
-
-  return bindings
+  return Array.from(elements)
+    .map((element) => setupSingleIfBinding(element, viewModel))
+    .filter((binding): binding is IfBinding => binding !== null)
 }
 
 function renderSingleIfBinding<T extends object>(
@@ -49,7 +43,7 @@ export function renderIfBindings<T extends object>(
   bindings: IfBinding[],
   viewModel: ViewModel<T>,
 ): void {
-  for (const binding of bindings) {
+  bindings.forEach((binding) => {
     renderSingleIfBinding(binding, viewModel)
-  }
+  })
 }

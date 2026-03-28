@@ -6,7 +6,7 @@ function setupSingleClickBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   const handlerName = element.getAttribute('click')
-  if (!handlerName || !handlerName.trim()) return
+  if (!handlerName?.trim()) return
 
   element.addEventListener('click', (event) => {
     const handler = viewModel[handlerName]
@@ -25,7 +25,7 @@ export function setupClickBindings<T extends object>(
 ): void {
   const elements = root.querySelectorAll<HTMLElement>('[click]')
 
-  for (const element of elements) {
+  elements.forEach((element) => {
     setupSingleClickBinding(element, viewModel)
-  }
+  })
 }

@@ -1,11 +1,8 @@
 export function getNestedProperty(obj: any, path: string): any {
-  const parts = path.split('.')
-  let current = obj
-  for (const part of parts) {
+  return path.split('.').reduce((current, part) => {
     if (current === null || current === undefined) return undefined
-    current = current[part]
-  }
-  return current
+    return current[part]
+  }, obj)
 }
 
 export function setNestedProperty(obj: any, path: string, value: any): boolean {
@@ -22,6 +19,7 @@ export function setNestedProperty(obj: any, path: string, value: any): boolean {
   }
 
   if (current === null || current === undefined) return false
+
   current[lastPart] = value
   return true
 }
