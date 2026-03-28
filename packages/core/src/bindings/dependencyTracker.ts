@@ -94,12 +94,13 @@ export class DependencyTracker {
       ]
     }
 
-    result.ifBindings = addGetterBindings(allBindings.ifBindings, result.ifBindings)
-    result.classBindings = addGetterBindings(allBindings.classBindings, result.classBindings)
-    result.styleBindings = addGetterBindings(allBindings.styleBindings, result.styleBindings)
-    result.contentBindings = addGetterBindings(allBindings.contentBindings, result.contentBindings)
-
-    return result
+    return {
+      ...result,
+      ifBindings: addGetterBindings(allBindings.ifBindings, result.ifBindings),
+      classBindings: addGetterBindings(allBindings.classBindings, result.classBindings),
+      styleBindings: addGetterBindings(allBindings.styleBindings, result.styleBindings),
+      contentBindings: addGetterBindings(allBindings.contentBindings, result.contentBindings),
+    }
   }
 
   private isAffectedByChange(binding: any, changedPath: string): boolean {
