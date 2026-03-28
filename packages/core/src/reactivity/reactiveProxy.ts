@@ -1,7 +1,3 @@
-/**
- * List of array methods that mutate the array.
- * We need to intercept these to trigger reactivity when elements are added or removed.
- */
 const ARRAY_MUTATION_METHODS = [
   'push',
   'pop',
@@ -36,33 +32,20 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
   ) { }
 
   get(targetObject: T, propertyKey: string | symbol, receiver: unknown): unknown {
-    // Return the original object if the special property $raw is accessed.
     if (propertyKey === '$raw') {
       return targetObject
     }
 
-    // Helper method to set a value on a target object reactively.
     if (propertyKey === '$set') {
-      return (target: object, key: PropertyKey, value: unknown) => {
-        const reactive = makeReactive(value, this.onChange, new WeakSet(), this.parentPath)
-        Reflect.set(target, key, reactive)
-        const fullPath = this.buildPath(String(key))
-        this.onChange(fullPath)
-      }
+      return this.handleSetHelper()
     }
 
-    // Helper method to delete a property from a target object reactively.
     if (propertyKey === '$delete') {
-      return (target: object, key: PropertyKey) => {
-        Reflect.deleteProperty(target, key)
-        const fullPath = this.buildPath(String(key))
-        this.onChange(fullPath)
-      }
+      return this.handleDeleteHelper()
     }
 
     const value = Reflect.get(targetObject, propertyKey, receiver)
 
-    // Intercept array mutation methods to ensure added elements are reactive.
     if (Array.isArray(targetObject) && ARRAY_MUTATION_METHODS.includes(propertyKey as any)) {
       return this.handleArrayMutation(targetObject, propertyKey as string)
     }
@@ -90,8 +73,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
     const result = Reflect.set(targetObject, propertyKey, reactiveValue, receiver)
 
     if (result) {
-      const fullPath = this.buildPath(String(propertyKey))
-      this.onChange(fullPath)
+      this.notifyChange(propertyKey)
     }
 
     return result
@@ -102,8 +84,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
     const result = Reflect.deleteProperty(targetObject, propertyKey)
 
     if (result && hadProperty) {
-      const fullPath = this.buildPath(String(propertyKey))
-      this.onChange(fullPath)
+      this.notifyChange(propertyKey)
     }
 
     return result
@@ -114,6 +95,26 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
    */
   private buildPath(property: string): string {
     return this.parentPath ? `${this.parentPath}.${property}` : property
+  }
+
+  private notifyChange(propertyKey: PropertyKey): void {
+    const fullPath = this.buildPath(String(propertyKey))
+    this.onChange(fullPath)
+  }
+
+  private handleSetHelper(): (target: object, key: PropertyKey, value: unknown) => void {
+    return (target: object, key: PropertyKey, value: unknown) => {
+      const reactive = makeReactive(value, this.onChange, new WeakSet(), this.parentPath)
+      Reflect.set(target, key, reactive)
+      this.notifyChange(key)
+    }
+  }
+
+  private handleDeleteHelper(): (target: object, key: PropertyKey) => void {
+    return (target: object, key: PropertyKey) => {
+      Reflect.deleteProperty(target, key)
+      this.notifyChange(key)
+    }
   }
 
   /**
