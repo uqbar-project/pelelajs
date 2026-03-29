@@ -112,6 +112,11 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
 
   private handleSetHelper(): (target: object, key: PropertyKey, value: unknown) => void {
     return (target: object, key: PropertyKey, value: unknown) => {
+      if (isProxy(target)) {
+        Reflect.set(target, key, value)
+        return
+      }
+
       const fullPath = this.buildPath(String(key))
       const reactive = makeReactive(value, this.onChange, new WeakSet(), fullPath)
       const result = Reflect.set(target, key, reactive)
@@ -124,6 +129,11 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
 
   private handleDeleteHelper(): (target: object, key: PropertyKey) => void {
     return (target: object, key: PropertyKey) => {
+      if (isProxy(target)) {
+        Reflect.deleteProperty(target, key)
+        return
+      }
+
       const result = Reflect.deleteProperty(target, key)
 
       if (result) {
@@ -149,6 +159,13 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
       return result
     }
   }
+}
+
+/**
+ * Checks if a value is a reactive proxy.
+ */
+export function isProxy(value: unknown): boolean {
+  return isObject(value) && rawObjectCache.has(value)
 }
 
 /**

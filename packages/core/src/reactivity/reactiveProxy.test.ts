@@ -320,5 +320,44 @@ describe('reactiveProxy', () => {
       proxy.user.profile.bio = 'Hi'
       expect(onChange).toHaveBeenCalledWith('user.profile.bio')
     })
+
+    it('should throw TypeError when $set fails on non-extensible object', () => {
+      const target = Object.preventExtensions({ a: 1 })
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target, onChange)
+
+      proxy.$set(proxy, 'b', 2)
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('should throw TypeError when $delete fails on non-configurable property', () => {
+      const target = {}
+      Object.defineProperty(target, 'a', { value: 1, configurable: false })
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target as any, onChange)
+
+      proxy.$delete(proxy, 'a')
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('should trigger exactly one notification with full path when using $set on a nested proxy', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ user: { name: 'John' } }, onChange)
+
+      proxy.$set(proxy.user, 'name', 'Jane')
+
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledWith('user.name')
+    })
+
+    it('should trigger exactly one notification with full path when using $delete on a nested proxy', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ user: { name: 'John' } }, onChange)
+
+      proxy.$delete(proxy.user, 'name')
+
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledWith('user.name')
+    })
   })
 })
