@@ -1,28 +1,37 @@
+import { isObject } from '../commons/helpers'
 import { type BindingKind, PropertyValidationError } from '../errors'
 
-function hasNestedProperty(obj: any, path: string): boolean {
-  if (path in obj) {
+function hasNestedProperty(targetObject: unknown, path: string): boolean {
+  if (!isObject(targetObject)) {
+    return false
+  }
+
+  // Optimize for simple property access or full path matches.
+  if (path in targetObject) {
     return true
   }
 
-  const parts = path.split('.')
-  let current = obj
+  const pathSegments = path.split('.')
+  let currentValue: unknown = targetObject
 
-  for (const part of parts) {
-    if (current === null || current === undefined) {
-      return false
+  return pathSegments.every((segment) => {
+    if (isObject(currentValue) && segment in currentValue) {
+      currentValue = currentValue[segment]
+      return true
     }
-
-    if (!(part in current)) {
-      return false
-    }
-
-    current = current[part]
-  }
-
-  return true
+    return false
+  })
 }
 
+/**
+ * Asserts that a property exists in the view model.
+ * If the property is missing, it throws a PropertyValidationError.
+ *
+ * Why we do this:
+ * This is a Developer Experience (DX) feature to catch binding typos or
+ * missing view model properties early in the development cycle, providing
+ * clear, fail-fast feedback with the exact HTML element causing the issue.
+ */
 export function assertViewModelProperty<T extends object>(
   viewModel: T,
   propertyName: string,
@@ -30,13 +39,13 @@ export function assertViewModelProperty<T extends object>(
   element: Element,
 ): void {
   if (!hasNestedProperty(viewModel, propertyName)) {
-    const snippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
+    const elementSnippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
 
     throw new PropertyValidationError({
       propertyName,
       bindingKind: kind,
       viewModelName: viewModel.constructor.name,
-      elementSnippet: snippet,
+      elementSnippet,
     })
   }
 }

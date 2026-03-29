@@ -1,3 +1,5 @@
+import { isObject } from '../commons/helpers'
+
 const ARRAY_MUTATION_METHODS = [
   'push',
   'pop',
@@ -15,10 +17,6 @@ const ARRAY_MUTATION_METHODS = [
  */
 const proxyCache = new WeakMap<object, object>()
 const rawObjectCache = new WeakMap<object, object>()
-
-function isObject(value: unknown): value is object {
-  return value !== null && typeof value === 'object'
-}
 
 /**
  * Handler for the reactive proxy.

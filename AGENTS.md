@@ -4,7 +4,7 @@
 
 - **Nombres representativos** - Usá nombres descriptivos que expliquen el propósito de variables, funciones y clases. Nada de variables de una sola letra, nombres abreviados o muy genéricos.
 - **Abstracciones claras** - Creá abstracciones cohesivas con una única responsabilidad bien definida
-- **Evitar código duplicado** - Aplicá el principio DRY (Don't Repeat Yourself)
+- **Evitar código duplicado** - Aplicá el principio DRY (Don't Repeat Yourself). Si existe una definición en otro archivo, usala (DRY a nivel de archivos). No dupliques lógica común.
 - **Simplicidad primero** - Preferí soluciones simples y directas sobre complejidad innecesaria
 - **Cohesión** - cuando una función se vuelva muy larga partila en funciones más chicas (divide y vencerás). Mantené las funciones cortas y enfocadas en una sola tarea.
 - **Preferir composición sobre herencia** - cuando necesites reutilizar código, preferí composición sobre herencia.
@@ -14,7 +14,7 @@
 
 ## Guías de Estilo
 
-- **Comentarios significativos** - Comentá el "porqué" no el "qué", el código debe explicarse por sí mismo. ¡NO COMENTES TODO! No queremos comentarios inútiles que no aportan nada. El código claro es la mejor documentación.
+- **Comentarios significativos** - Comentá el "porqué" no el "qué", el código debe explicarse por sí mismo. ¡NO COMENTES TODO! No queremos comentarios inútiles que no aportan nada. El código claro es la mejor documentación. No comentes una sola línea de código dentro de una función o método. No uses JSDoc para funciones internas (no exportadas).
 - **Consistencia** - Mantené un estilo consistente en todo el código base
 - **Manejo de errores** - usá excepciones para casos excepcionales, no para control de flujo. Fail fast: fallar lo antes posible cuando el usuario haga algo que no debería hacer. Nunca dejar un catch vacío.
 - **Tipado estricto** - No usar `any`. Siempre usar `unknown` o buscar el tipo que corresponda: un tipo existente, genérico `T`, o `unknown` cuando no se pueda determinar el tipo.
