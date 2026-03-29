@@ -24,21 +24,21 @@ function validatePelelaStructure(
   const closeTags = sourceCode.match(/<\/pelela>/g) || []
 
   if (openTags.length === 0) {
-    errorFn(`Pelela template "${filePath}" must contain exactly one <pelela ...> root tag.`)
+    errorFn(`Pelela template "${filePath}" debe contener exactamente un <pelela ...> como raíz.`)
   }
 
   if (openTags.length > 1) {
     errorFn(
-      `Pelela template "${filePath}" has ${openTags.length} <pelela> tags. Only one root tag is allowed.`,
+      `Pelela template "${filePath}" tiene ${openTags.length} etiquetas <pelela>. Solo se permite una raíz.`,
     )
   }
 
   if (closeTags.length === 0) {
-    errorFn(`Pelela template "${filePath}" is missing a closing </pelela> tag.`)
+    errorFn(`Pelela template "${filePath}" no tiene etiqueta de cierre </pelela>.`)
   }
 
   if (closeTags.length !== openTags.length) {
-    errorFn(`Pelela template "${filePath}" has unbalanced <pelela> and </pelela> tags.`)
+    errorFn(`Pelela template "${filePath}" tiene un número desbalanceado de <pelela> y </pelela>.`)
   }
 }
 
@@ -51,7 +51,7 @@ function extractViewModelName(
   const viewModelName = viewModelMatch ? viewModelMatch[1] : null
 
   if (!viewModelName) {
-    errorFn(`Pelela template "${filePath}" must define a view model via <pelela view-model="...">`)
+    errorFn(`Pelela template "${filePath}" debe contener <pelela view-model="...">`)
     return ''
   }
 

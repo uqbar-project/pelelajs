@@ -35,5 +35,5 @@
 - **Leé antes de modificar** - "Antes de cambiar código, leé el contexto completo para entender el diseño existente"
 - **Dependencias** - "No agregues nuevas dependencias sin consultar primero"
 - **Tests** - "Corré los tests y `biome check` antes de dar por terminado un cambio. Usá `pnpm test --run` para ejecutar una sola vez y evitar que se quede esperando cambios."
-- **Idioma** - "Los comentarios y código en inglés y la documentación en español"
+- **Idioma** - "Los comentarios y código en inglés y la documentación en español, así como los mensajes de error"
 - **Siempre explicá los cambios importantes siguiendo estas directrices**
