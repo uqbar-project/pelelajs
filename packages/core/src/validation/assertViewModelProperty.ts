@@ -7,7 +7,7 @@ function hasNestedProperty(targetObject: unknown, path: string): boolean {
   }
 
   // Optimize for simple property access or full path matches.
-  if (path in targetObject) {
+  if (!path.includes('.') && path in targetObject) {
     return true
   }
 

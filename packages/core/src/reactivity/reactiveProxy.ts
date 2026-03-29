@@ -44,11 +44,8 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
 
     const value = Reflect.get(targetObject, propertyKey, receiver)
 
-    if (
-      Array.isArray(targetObject) &&
-      ARRAY_MUTATION_METHODS.includes(propertyKey as (typeof ARRAY_MUTATION_METHODS)[number])
-    ) {
-      return this.handleArrayMutation(propertyKey as string)
+    if (Array.isArray(targetObject) && this.isArrayMutationMethod(propertyKey)) {
+      return this.handleArrayMutation<unknown>(propertyKey)
     }
 
     // Deep reactivity: if the value is an object, wrap it in a proxy.
@@ -98,6 +95,15 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
     return this.parentPath ? `${this.parentPath}.${property}` : property
   }
 
+  private isArrayMutationMethod(
+    propertyKey: PropertyKey,
+  ): propertyKey is (typeof ARRAY_MUTATION_METHODS)[number] {
+    return (
+      typeof propertyKey === 'string' &&
+      (ARRAY_MUTATION_METHODS as readonly string[]).includes(propertyKey)
+    )
+  }
+
   private notifyChange(propertyKey: PropertyKey): void {
     const fullPath = this.buildPath(String(propertyKey))
     this.onChange(fullPath)
@@ -121,13 +127,16 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
   /**
    * Wraps array mutation methods to track changes and make new elements reactive.
    */
-  private handleArrayMutation(methodName: string): (...args: unknown[]) => unknown {
+  private handleArrayMutation<V>(
+    methodName: (typeof ARRAY_MUTATION_METHODS)[number],
+  ): (...args: unknown[]) => unknown {
     const self = this
-    return function (this: unknown, ...args: unknown[]) {
+    return function (this: V[], ...args: unknown[]) {
       const reactiveArgs = args.map((arg) =>
         isObject(arg) ? makeReactive(arg, self.onChange, new WeakSet(), self.parentPath) : arg,
       )
-      const result = (Array.prototype as any)[methodName].apply(this, reactiveArgs)
+      const method = Array.prototype[methodName] as (...args: unknown[]) => unknown
+      const result = method.apply(this, reactiveArgs)
       self.onChange(self.parentPath || 'root')
       return result
     }
