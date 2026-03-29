@@ -1,6 +1,6 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
-import { type Plugin } from 'vite'
+import type { Plugin } from 'vite'
 
 function escapeTemplateForLiteral(html: string): string {
   return html.replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
@@ -15,7 +15,11 @@ function getCssImport(pelelaFilePath: string): string {
   return ''
 }
 
-function validatePelelaStructure(sourceCode: string, filePath: string, errorFn: (message: string) => void): void {
+function validatePelelaStructure(
+  sourceCode: string,
+  filePath: string,
+  errorFn: (message: string) => void,
+): void {
   const openTags = sourceCode.match(/<pelela\b[^>]*>/g) || []
   const closeTags = sourceCode.match(/<\/pelela>/g) || []
 
@@ -38,7 +42,11 @@ function validatePelelaStructure(sourceCode: string, filePath: string, errorFn: 
   }
 }
 
-function extractViewModelName(sourceCode: string, filePath: string, errorFn: (message: string) => void): string {
+function extractViewModelName(
+  sourceCode: string,
+  filePath: string,
+  errorFn: (message: string) => void,
+): string {
   const viewModelMatch = sourceCode.match(/<pelela[^>]*view-model\s*=\s*"([^"]+)"/)
   const viewModelName = viewModelMatch ? viewModelMatch[1] : null
 
@@ -50,7 +58,11 @@ function extractViewModelName(sourceCode: string, filePath: string, errorFn: (me
   return viewModelName
 }
 
-function generateModuleCode(cssImport: string, viewModelName: string, escapedTemplate: string): string {
+function generateModuleCode(
+  cssImport: string,
+  viewModelName: string,
+  escapedTemplate: string,
+): string {
   return `
 ${cssImport}export const viewModelName = ${JSON.stringify(viewModelName)};
 const template = \`${escapedTemplate}\`;

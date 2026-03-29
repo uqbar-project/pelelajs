@@ -27,7 +27,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
   constructor(
     private readonly onChange: (changedPath: string) => void,
     private readonly parentPath = '',
-  ) { }
+  ) {}
 
   get(targetObject: T, propertyKey: string | symbol, receiver: unknown): unknown {
     if (propertyKey === '$raw') {
@@ -44,8 +44,11 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
 
     const value = Reflect.get(targetObject, propertyKey, receiver)
 
-    if (Array.isArray(targetObject) && ARRAY_MUTATION_METHODS.includes(propertyKey as any)) {
-      return this.handleArrayMutation(targetObject, propertyKey as string)
+    if (
+      Array.isArray(targetObject) &&
+      ARRAY_MUTATION_METHODS.includes(propertyKey as (typeof ARRAY_MUTATION_METHODS)[number])
+    ) {
+      return this.handleArrayMutation(propertyKey as string)
     }
 
     // Deep reactivity: if the value is an object, wrap it in a proxy.
@@ -118,13 +121,13 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
   /**
    * Wraps array mutation methods to track changes and make new elements reactive.
    */
-  private handleArrayMutation(targetArray: any[], methodName: string): (...args: unknown[]) => unknown {
+  private handleArrayMutation(methodName: string): (...args: unknown[]) => unknown {
     const self = this
     return function (this: unknown, ...args: unknown[]) {
       const reactiveArgs = args.map((arg) =>
         isObject(arg) ? makeReactive(arg, self.onChange, new WeakSet(), self.parentPath) : arg,
       )
-      const result = Array.prototype[methodName as any].apply(this, reactiveArgs)
+      const result = (Array.prototype as any)[methodName].apply(this, reactiveArgs)
       self.onChange(self.parentPath || 'root')
       return result
     }
