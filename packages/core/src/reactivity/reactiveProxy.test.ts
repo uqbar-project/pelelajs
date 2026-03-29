@@ -359,5 +359,28 @@ describe('reactiveProxy', () => {
       expect(onChange).toHaveBeenCalledTimes(1)
       expect(onChange).toHaveBeenCalledWith('user.name')
     })
+
+    it('should trigger exactly one notification during array mutation even with multiple arguments', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ items: [1] }, onChange)
+
+      proxy.items.push(2, 3, 4)
+
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledWith('items')
+    })
+
+    it('should implement lazy reactivity: objects are made reactive on access, not on assignment', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ data: {} as any }, onChange)
+      const rawObject = { city: 'New York' }
+
+      proxy.data = rawObject
+      expect(onChange).toHaveBeenCalledWith('data')
+
+      // Verification: it should be reactive now that we access it
+      proxy.data.city = 'Chicago'
+      expect(onChange).toHaveBeenCalledWith('data.city')
+    })
   })
 })

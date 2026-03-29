@@ -45,7 +45,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
     const value = Reflect.get(targetObject, propertyKey, receiver)
 
     if (Array.isArray(targetObject) && this.isArrayMutationMethod(propertyKey)) {
-      return this.handleArrayMutation<unknown>(propertyKey)
+      return this.handleArrayMutation(targetObject, propertyKey)
     }
 
     // Deep reactivity: if the value is an object, wrap it in a proxy.
@@ -64,12 +64,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
       return true
     }
 
-    const childPath = this.buildPath(String(propertyKey))
-    const reactiveValue = isObject(value)
-      ? makeReactive(value, this.onChange, new WeakSet(), childPath)
-      : value
-
-    const result = Reflect.set(targetObject, propertyKey, reactiveValue, receiver)
+    const result = Reflect.set(targetObject, propertyKey, value, receiver)
 
     if (result) {
       this.notifyChange(propertyKey)
@@ -117,9 +112,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
         return
       }
 
-      const fullPath = this.buildPath(String(key))
-      const reactive = makeReactive(value, this.onChange, new WeakSet(), fullPath)
-      const result = Reflect.set(target, key, reactive)
+      const result = Reflect.set(target, key, value)
 
       if (result) {
         this.notifyChange(key)
@@ -146,16 +139,13 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
    * Wraps array mutation methods to track changes and make new elements reactive.
    */
   private handleArrayMutation<V>(
+    targetArray: V[],
     methodName: (typeof ARRAY_MUTATION_METHODS)[number],
   ): (...args: unknown[]) => unknown {
-    const self = this
-    return function (this: V[], ...args: unknown[]) {
-      const reactiveArgs = args.map((arg) =>
-        isObject(arg) ? makeReactive(arg, self.onChange, new WeakSet(), self.parentPath) : arg,
-      )
+    return (...args: unknown[]) => {
       const method = Array.prototype[methodName] as (...args: unknown[]) => unknown
-      const result = method.apply(this, reactiveArgs)
-      self.onChange(self.parentPath || 'root')
+      const result = method.apply(targetArray, args)
+      this.onChange(this.parentPath || 'root')
       return result
     }
   }
