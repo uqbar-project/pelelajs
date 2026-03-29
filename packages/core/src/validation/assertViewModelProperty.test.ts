@@ -135,7 +135,7 @@ describe('assertViewModelProperty', () => {
   })
 
   it('should not use fast path for dotted properties that exist as literal keys: eg. "user.name" when user does not exist', () => {
-    const viewModel = { 'user.name': 'literal value' } as any
+    const viewModel = { 'user.name': 'literal value' }
     const element = document.createElement('div')
 
     expect(() => {
