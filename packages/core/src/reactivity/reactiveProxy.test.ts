@@ -296,5 +296,29 @@ describe('reactiveProxy', () => {
       expect(onChange).not.toHaveBeenCalled()
       expect(target.count).toBe(5)
     })
+
+    it('should use full path when notifying changes of properties in assigned objects', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ address: {} as any }, onChange)
+
+      proxy.address = { city: 'New York' }
+      expect(onChange).toHaveBeenCalledWith('address')
+      onChange.mockClear()
+
+      proxy.address.city = 'Los Angeles'
+      expect(onChange).toHaveBeenCalledWith('address.city')
+    })
+
+    it('should use full path when using $set helper for nested objects', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ user: {} as any }, onChange)
+
+      proxy.$set(proxy.user, 'profile', { bio: 'Hello' })
+      expect(onChange).toHaveBeenCalledWith('user.profile')
+      onChange.mockClear()
+
+      proxy.user.profile.bio = 'Hi'
+      expect(onChange).toHaveBeenCalledWith('user.profile.bio')
+    })
   })
 })

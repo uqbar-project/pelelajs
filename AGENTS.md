@@ -10,7 +10,7 @@
 - **Preferir composición sobre herencia** - cuando necesites reutilizar código, preferí composición sobre herencia.
 - **Declaratividad y orden superior antes que imperatividad** - cuando puedas, usá funciones de orden superior (map, filter, reduce) en lugar de loops, nada de for + if + break + continue.
 - **Polimorfismo** - cuando necesites reutilizar código, preferí polimorfismo sobre condicionales (a menos que no tengamos objetos). Evitar preguntar por la clase a menos de que sea necesario (por ejemplo en las excepciones que es un caso donde es válido).
-- **Linter** - respetá las reglas del linter Biome, que están en el archivo `biome.json` del raíz de este proyecto.
+- **Linter** - respetá las reglas del linter Biome, que están en el archivo `biome.json` del raíz de este proyecto. Incluí siempre `biome check` como parte del plan de implementación y verificación.
 
 ## Guías de Estilo
 
@@ -34,6 +34,6 @@
 - **Scope acotado** - "Hacé solo lo que se te pide, no refactorices código que no está relacionado con la tarea" (evita PRs gigantes con cambios no solicitados)
 - **Leé antes de modificar** - "Antes de cambiar código, leé el contexto completo para entender el diseño existente"
 - **Dependencias** - "No agregues nuevas dependencias sin consultar primero"
-- **Tests** - "Corré los tests antes de dar por terminado un cambio. Usá `pnpm test --run` para ejecutar una sola vez y evitar que se quede esperando cambios."
+- **Tests** - "Corré los tests y `biome check` antes de dar por terminado un cambio. Usá `pnpm test --run` para ejecutar una sola vez y evitar que se quede esperando cambios."
 - **Idioma** - "Los comentarios y código en inglés y la documentación en español"
 - **Siempre explicá los cambios importantes siguiendo estas directrices**

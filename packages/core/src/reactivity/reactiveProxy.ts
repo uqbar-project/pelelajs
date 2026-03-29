@@ -64,8 +64,9 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
       return true
     }
 
+    const childPath = this.buildPath(String(propertyKey))
     const reactiveValue = isObject(value)
-      ? makeReactive(value, this.onChange, new WeakSet(), this.parentPath)
+      ? makeReactive(value, this.onChange, new WeakSet(), childPath)
       : value
 
     const result = Reflect.set(targetObject, propertyKey, reactiveValue, receiver)
@@ -111,16 +112,23 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
 
   private handleSetHelper(): (target: object, key: PropertyKey, value: unknown) => void {
     return (target: object, key: PropertyKey, value: unknown) => {
-      const reactive = makeReactive(value, this.onChange, new WeakSet(), this.parentPath)
-      Reflect.set(target, key, reactive)
-      this.notifyChange(key)
+      const fullPath = this.buildPath(String(key))
+      const reactive = makeReactive(value, this.onChange, new WeakSet(), fullPath)
+      const result = Reflect.set(target, key, reactive)
+
+      if (result) {
+        this.notifyChange(key)
+      }
     }
   }
 
   private handleDeleteHelper(): (target: object, key: PropertyKey) => void {
     return (target: object, key: PropertyKey) => {
-      Reflect.deleteProperty(target, key)
-      this.notifyChange(key)
+      const result = Reflect.deleteProperty(target, key)
+
+      if (result) {
+        this.notifyChange(key)
+      }
     }
   }
 

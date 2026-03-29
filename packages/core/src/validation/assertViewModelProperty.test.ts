@@ -134,11 +134,10 @@ describe('assertViewModelProperty', () => {
     }).toThrow('[pelela] Unknown property "user.name"')
   })
 
-  it('should not use fast path for dotted properties that exist as literal keys', () => {
+  it('should not use fast path for dotted properties that exist as literal keys: eg. "user.name" when user does not exist', () => {
     const viewModel = { 'user.name': 'literal value' } as any
     const element = document.createElement('div')
 
-    // This should throw because 'user' object doesn't exist, even if 'user.name' literal key exists
     expect(() => {
       assertViewModelProperty(viewModel, 'user.name', 'bind-value', element)
     }).toThrow('[pelela] Unknown property "user.name"')
