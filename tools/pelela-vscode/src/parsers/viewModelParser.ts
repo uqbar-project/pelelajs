@@ -5,79 +5,100 @@ export interface ViewModelMembers {
   methods: string[]
 }
 
-export function extractViewModelMembers(tsFilePath: string): ViewModelMembers {
-  const lines = readFileLines(tsFilePath)
-  const properties = new Set<string>()
-  const methods = new Set<string>()
+interface ParserState {
+  properties: Set<string>
+  methods: Set<string>
+  context: 'none' | 'interface' | 'class'
+  braceDepth: number
+  inPropertyValue: boolean
+  propertyBraceDepth: number
+}
 
-  let inInterface = false
-  let inClass = false
-  let interfaceBraceDepth = 0
-  let classBraceDepth = 0
-  let propertyBraceDepth = 0
-  let inPropertyValue = false
+export function extractViewModelMembers(typescriptFilePath: string): ViewModelMembers {
+  const lines = readFileLines(typescriptFilePath)
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-
-    if (isInterfaceDeclaration(line)) {
-      inInterface = true
-      interfaceBraceDepth = calculateBraceDepth(line)
-      if (interfaceBraceDepth === 0) {
-        inInterface = false
-      }
-      continue
-    }
-
-    if (inInterface) {
-      interfaceBraceDepth = updateBraceDepth(interfaceBraceDepth, line)
-      if (interfaceBraceDepth === 0) {
-        inInterface = false
-      }
-      continue
-    }
-
-    if (isClassDeclaration(line)) {
-      inClass = true
-      classBraceDepth = calculateBraceDepth(line)
-      if (classBraceDepth === 0) {
-        inClass = false
-      }
-      continue
-    }
-
-    if (inClass) {
-      const prevClassBraceDepth = classBraceDepth
-      classBraceDepth = updateBraceDepth(classBraceDepth, line)
-
-      if (inPropertyValue) {
-        propertyBraceDepth = updateBraceDepth(propertyBraceDepth, line)
-        if (propertyBraceDepth === 0) {
-          inPropertyValue = false
-        }
-      } else if (prevClassBraceDepth === 1) {
-        extractClassMembers(line, properties, methods)
-
-        if (line.includes('=') && line.includes('{')) {
-          inPropertyValue = true
-          propertyBraceDepth = calculateBraceDepth(line)
-          if (propertyBraceDepth === 0) {
-            inPropertyValue = false
-          }
-        }
-      }
-
-      if (classBraceDepth === 0) {
-        inClass = false
-        inPropertyValue = false
-      }
-    }
+  const initialState: ParserState = {
+    properties: new Set<string>(),
+    methods: new Set<string>(),
+    context: 'none',
+    braceDepth: 0,
+    inPropertyValue: false,
+    propertyBraceDepth: 0,
   }
+
+  const finalState = lines.reduce((state, line) => {
+    const nextState = { ...state }
+
+    if (state.context === 'none') {
+      return handleOuterContext(nextState, line)
+    }
+
+    if (state.context === 'interface') {
+      return handleInterfaceContext(nextState, line)
+    }
+
+    if (state.context === 'class') {
+      return handleClassContext(nextState, line)
+    }
+
+    return nextState
+  }, initialState)
 
   return {
-    properties: Array.from(properties),
-    methods: Array.from(methods),
+    properties: Array.from(finalState.properties),
+    methods: Array.from(finalState.methods),
   }
+}
+
+function handleOuterContext(state: ParserState, line: string): ParserState {
+  const isInterface = isInterfaceDeclaration(line)
+  const isClass = isClassDeclaration(line)
+
+  if (isInterface || isClass) {
+    state.braceDepth = calculateBraceDepth(line)
+    const context = isInterface ? 'interface' : 'class'
+    state.context = state.braceDepth === 0 ? 'none' : context
+    return state
+  }
+
+  return state
+}
+
+function handleInterfaceContext(state: ParserState, line: string): ParserState {
+  state.braceDepth += calculateBraceDepth(line)
+  if (state.braceDepth === 0) {
+    state.context = 'none'
+  }
+  return state
+}
+
+function handleClassContext(state: ParserState, line: string): ParserState {
+  const previousBraceDepth = state.braceDepth
+  state.braceDepth += calculateBraceDepth(line)
+
+  if (state.inPropertyValue) {
+    state.propertyBraceDepth += calculateBraceDepth(line)
+    if (state.propertyBraceDepth === 0) {
+      state.inPropertyValue = false
+    }
+  } else if (previousBraceDepth === 1) {
+    extractClassMembers(line, state.properties, state.methods)
+
+    if (isBeginningOfObjectLiteral(line)) {
+      state.inPropertyValue = true
+      state.propertyBraceDepth = calculateBraceDepth(line)
+      if (state.propertyBraceDepth === 0) {
+        state.inPropertyValue = false
+      }
+    }
+  }
+
+  if (state.braceDepth === 0) {
+    state.context = 'none'
+    state.inPropertyValue = false
+  }
+
+  return state
 }
 
 function isInterfaceDeclaration(line: string): boolean {
@@ -88,220 +109,199 @@ function isClassDeclaration(line: string): boolean {
   return /^\s*(?:export\s+)?class\s+\w+/.test(line)
 }
 
+function isBeginningOfObjectLiteral(line: string): boolean {
+  return line.includes('=') && line.includes('{')
+}
+
 function calculateBraceDepth(line: string): number {
   const openBraces = (line.match(/{/g) || []).length
   const closeBraces = (line.match(/}/g) || []).length
   return openBraces - closeBraces
 }
 
-function updateBraceDepth(currentDepth: number, line: string): number {
-  return currentDepth + calculateBraceDepth(line)
+function extractClassMembers(line: string, properties: Set<string>, methods: Set<string>): void {
+  const nameMatch = findPropertyMatch(line) || findGetterMatch(line) || findMethodMatch(line)
+
+  if (!nameMatch) return
+
+  const { name, type } = nameMatch
+  if (type === 'method' && !isValidMethodName(name)) return
+
+  if (type === 'method') {
+    methods.add(name)
+  } else {
+    properties.add(name)
+  }
 }
 
-function extractClassMembers(line: string, properties: Set<string>, methods: Set<string>): void {
+function findPropertyMatch(line: string): { name: string; type: 'property' } | null {
   const propMatch = /^\s*(?:public\s+|private\s+|protected\s+)?([a-zA-Z_]\w*)\s*(?::|=)\s*/.exec(
     line
   )
-  if (propMatch) {
-    properties.add(propMatch[1])
-    return
-  }
+  return propMatch ? { name: propMatch[1], type: 'property' } : null
+}
 
+function findGetterMatch(line: string): { name: string; type: 'property' } | null {
   const getterMatch = /^\s*(?:public\s+|private\s+|protected\s+)?get\s+([a-zA-Z_]\w*)\s*\(/.exec(
     line
   )
-  if (getterMatch) {
-    properties.add(getterMatch[1])
-    return
-  }
-
-  const methodMatch = /^\s*(?:public\s+|private\s+|protected\s+)?([a-zA-Z_]\w*)\s*\(/.exec(line)
-  if (methodMatch) {
-    const name = methodMatch[1]
-    if (name !== 'constructor' && name !== 'if') {
-      methods.add(name)
-    }
-  }
+  return getterMatch ? { name: getterMatch[1], type: 'property' } : null
 }
 
-export function extractNestedProperties(tsFilePath: string, propertyPath: string[]): string[] {
-  const lines = readFileLines(tsFilePath)
-  const text = readFileContent(tsFilePath)
+function findMethodMatch(line: string): { name: string; type: 'method' } | null {
+  const methodMatch = /^\s*(?:public\s+|private\s+|protected\s+)?([a-zA-Z_]\w*)\s*\(/.exec(line)
+  return methodMatch ? { name: methodMatch[1], type: 'method' } : null
+}
 
-  if (propertyPath.length === 0) {
-    return []
-  }
+function isValidMethodName(name: string): boolean {
+  return name !== 'constructor' && name !== 'if'
+}
 
-  const rootProperty = propertyPath[0]
-  const rootLineIndex = findPropertyLine(lines, rootProperty)
+export function extractNestedProperties(
+  typescriptFilePath: string,
+  propertyPaths: string[]
+): string[] {
+  const lines = readFileLines(typescriptFilePath)
+  const fullFileContent = readFileContent(typescriptFilePath)
 
-  if (rootLineIndex === -1) {
-    return []
-  }
+  if (propertyPaths.length === 0) return []
 
-  const rootLine = lines[rootLineIndex]
-  const arrayTypeMatch = rootLine.match(/:\s*(\w+)\[\]/)
+  const rootPropertyName = propertyPaths[0]
+  const rootPropertyLineIndex = findPropertyLine(lines, rootPropertyName)
 
-  if (arrayTypeMatch && propertyPath.length === 1) {
+  if (rootPropertyLineIndex === -1) return []
+
+  const rootPropertyLine = lines[rootPropertyLineIndex]
+  const arrayTypeMatch = rootPropertyLine.match(/:\s*(\w+)\[\]/)
+
+  if (arrayTypeMatch && propertyPaths.length === 1) {
     const interfaceName = arrayTypeMatch[1]
-    return extractInterfaceProperties(text, interfaceName)
+    return extractInterfaceProperties(fullFileContent, interfaceName)
   }
 
-  return extractPropertiesFromObjectPath(lines, rootLineIndex, propertyPath.slice(1))
+  return extractPropertiesFromObjectPath(lines, rootPropertyLineIndex, propertyPaths.slice(1))
 }
 
 function findPropertyLine(lines: string[], propertyName: string): number {
-  const rootPropRegex = new RegExp(
+  const propertyDeclarationRegex = new RegExp(
     `^\\s*(?:public\\s+|private\\s+|protected\\s+)?${propertyName}\\??\\s*[=:]`,
     'm'
   )
 
-  for (let i = 0; i < lines.length; i++) {
-    if (rootPropRegex.test(lines[i])) {
-      return i
-    }
-  }
-
-  return -1
+  return lines.findIndex((line) => propertyDeclarationRegex.test(line))
 }
 
 function extractPropertiesFromObjectPath(
   lines: string[],
   startLineIndex: number,
-  remainingPath: string[]
+  remainingPropertyPath: string[]
 ): string[] {
-  let currentLineIndex = startLineIndex
-  let braceDepth = 0
-  let inObjectLiteral = false
+  const objectLiteralLineIndex = lines
+    .slice(startLineIndex)
+    .findIndex((line) => (line.includes('=') || line.includes(':')) && line.includes('{'))
 
-  for (let i = currentLineIndex; i < lines.length; i++) {
-    const line = lines[i]
+  if (objectLiteralLineIndex === -1) return []
 
-    if (!inObjectLiteral) {
-      if ((line.includes('=') || line.includes(':')) && line.includes('{')) {
-        inObjectLiteral = true
-        braceDepth = calculateBraceDepth(line)
-        currentLineIndex = i + 1
-        break
-      }
-    }
+  const absoluteObjectLiteralLineIndex = startLineIndex + objectLiteralLineIndex
+  const braceDepth = calculateBraceDepth(lines[absoluteObjectLiteralLineIndex])
+  const searchStartIndex = absoluteObjectLiteralLineIndex + 1
+
+  if (remainingPropertyPath.length === 0) {
+    return collectPropertiesAtBraceLevelOne(lines, searchStartIndex, braceDepth)
   }
 
-  if (!inObjectLiteral) {
-    return []
-  }
-
-  if (remainingPath.length === 0) {
-    return collectPropertiesAtDepth(lines, currentLineIndex, braceDepth)
-  }
-
-  return findNestedProperty(lines, currentLineIndex, braceDepth, remainingPath)
+  return findNestedPropertyRecursive(lines, searchStartIndex, braceDepth, remainingPropertyPath)
 }
 
-function collectPropertiesAtDepth(
+function collectPropertiesAtBraceLevelOne(
   lines: string[],
-  startIndex: number,
+  searchStartIndex: number,
   initialBraceDepth: number
 ): string[] {
-  const nestedProps = new Set<string>()
-  let braceDepth = initialBraceDepth
+  let currentBraceDepth = initialBraceDepth
+  const discoveredProperties = new Set<string>()
 
-  for (let i = startIndex; i < lines.length; i++) {
-    const line = lines[i]
-    const prevBraceDepth = braceDepth
-    braceDepth = updateBraceDepth(braceDepth, line)
+  for (let lineIndex = searchStartIndex; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex]
+    const previousBraceDepth = currentBraceDepth
+    currentBraceDepth += calculateBraceDepth(line)
 
-    if (braceDepth === 0) {
-      break
-    }
+    if (currentBraceDepth === 0) break
 
-    if (prevBraceDepth === 1) {
-      const propMatch = /^\s*([a-zA-Z_]\w*)\s*[=:]/.exec(line)
-      if (propMatch) {
-        nestedProps.add(propMatch[1])
+    if (previousBraceDepth === 1) {
+      const propertyNameMatch = /^\s*([a-zA-Z_]\w*)\s*[=:]/.exec(line)
+      if (propertyNameMatch) {
+        discoveredProperties.add(propertyNameMatch[1])
       }
     }
   }
 
-  return Array.from(nestedProps)
+  return Array.from(discoveredProperties)
 }
 
-function findNestedProperty(
+function findNestedPropertyRecursive(
   lines: string[],
-  startIndex: number,
+  searchStartIndex: number,
   initialBraceDepth: number,
-  remainingPath: string[]
+  remainingPropertyPath: string[]
 ): string[] {
-  const targetProperty = remainingPath[0]
-  let braceDepth = initialBraceDepth
+  const targetProperty = remainingPropertyPath[0]
+  let currentBraceDepth = initialBraceDepth
 
-  for (let i = startIndex; i < lines.length; i++) {
-    const line = lines[i]
-    const prevBraceDepth = braceDepth
-    braceDepth = updateBraceDepth(braceDepth, line)
+  for (let lineIndex = searchStartIndex; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex]
+    const previousBraceDepth = currentBraceDepth
+    currentBraceDepth += calculateBraceDepth(line)
 
-    if (braceDepth === 0) {
-      break
-    }
+    if (currentBraceDepth === 0) break
 
-    const propMatch = new RegExp(`^\\s*${targetProperty}\\s*[=:]`).exec(line)
-    if (propMatch && prevBraceDepth === 1) {
-      return extractPropertiesFromObjectPath(lines, i, remainingPath.slice(1))
+    const propertyMatchRegex = new RegExp(`^\\s*${targetProperty}\\s*[=:]`)
+    if (propertyMatchRegex.test(line) && previousBraceDepth === 1) {
+      return extractPropertiesFromObjectPath(lines, lineIndex, remainingPropertyPath.slice(1))
     }
   }
 
   return []
 }
 
-export function extractInterfaceProperties(text: string, interfaceName: string): string[] {
-  const lines = text.split('\n')
-  const interfaceRegex = new RegExp(`^\\s*interface\\s+${interfaceName}\\s*\\{?`, 'm')
+export function extractInterfaceProperties(
+  fullFileContent: string,
+  interfaceName: string
+): string[] {
+  const lines = fullFileContent.split('\n')
+  const interfaceDeclarationRegex = new RegExp(`^\\s*interface\\s+${interfaceName}\\s*\\{?`, 'm')
 
-  const interfaceLineIndex = findLineMatchingRegex(lines, interfaceRegex)
+  const interfaceStartLineIndex = lines.findIndex((line) => interfaceDeclarationRegex.test(line))
 
-  if (interfaceLineIndex === -1) {
-    return []
-  }
+  if (interfaceStartLineIndex === -1) return []
 
-  return collectInterfaceProperties(lines, interfaceLineIndex)
+  return collectInterfaceMembers(lines, interfaceStartLineIndex)
 }
 
-function findLineMatchingRegex(lines: string[], regex: RegExp): number {
-  for (let i = 0; i < lines.length; i++) {
-    if (regex.test(lines[i])) {
-      return i
-    }
-  }
-  return -1
-}
+function collectInterfaceMembers(lines: string[], searchStartIndex: number): string[] {
+  const discoveredProperties = new Set<string>()
+  let currentBraceDepth = 0
+  let isInsideInterface = false
 
-function collectInterfaceProperties(lines: string[], startIndex: number): string[] {
-  const properties = new Set<string>()
-  let braceDepth = 0
-  let inInterface = false
+  for (let lineIndex = searchStartIndex; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex]
 
-  for (let i = startIndex; i < lines.length; i++) {
-    const line = lines[i]
-
-    if (!inInterface) {
+    if (!isInsideInterface) {
       if (line.includes('{')) {
-        inInterface = true
-        braceDepth = calculateBraceDepth(line)
+        isInsideInterface = true
+        currentBraceDepth = calculateBraceDepth(line)
       }
       continue
     }
 
-    braceDepth = updateBraceDepth(braceDepth, line)
+    currentBraceDepth += calculateBraceDepth(line)
+    if (currentBraceDepth === 0) break
 
-    if (braceDepth === 0) {
-      break
-    }
-
-    const propMatch = /^\s*([a-zA-Z_]\w*)\s*[?:]/.exec(line)
-    if (propMatch) {
-      properties.add(propMatch[1])
+    const interfacePropertyMatch = /^\s*([a-zA-Z_]\w*)\s*[?:]/.exec(line)
+    if (interfacePropertyMatch) {
+      discoveredProperties.add(interfacePropertyMatch[1])
     }
   }
 
-  return Array.from(properties)
+  return Array.from(discoveredProperties)
 }
