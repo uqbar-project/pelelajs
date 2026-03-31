@@ -1,14 +1,13 @@
 import * as vscode from 'vscode'
-import { findForEachInElement } from '../parsers/documentParser'
 import {
   findClassDefinition,
   findMethodDefinition,
   findNestedPropertyDefinition,
   findPropertyDefinition,
 } from '../parsers/definitionFinder'
+import { type ForEachResult, findForEachInElement } from '../parsers/documentParser'
 import { findViewModelFile } from '../utils/fileUtils'
 
-// Regex patterns for attribute matching
 const BIND_ATTRIBUTE_PATTERN = /(?:bind-[a-zA-Z0-9_-]+|if|for-each)=["']([^"']+)["']/g
 const CLICK_ATTRIBUTE_PATTERN = /click=["']([^"']+)["']/g
 
@@ -17,21 +16,13 @@ function provideDefinition(
   position: vscode.Position,
   _token: vscode.CancellationToken
 ): vscode.ProviderResult<vscode.Definition> {
-  const line = document.lineAt(position.line)
-  const lineText = line.text
+  const lineText = document.lineAt(position.line).text
 
-  const viewModelLocation = checkViewModelDefinition(document, position, lineText)
-  if (viewModelLocation) return viewModelLocation
-
-  const forEachInElement = findForEachInElement(document, position.line)
-
-  const bindLocation = checkBindAttributeDefinitions(document, position, lineText, forEachInElement)
-  if (bindLocation) return bindLocation
-
-  const clickLocation = checkClickAttributeDefinition(document, position, lineText)
-  if (clickLocation) return clickLocation
-
-  return null
+  return (
+    checkViewModelDefinition(document, position, lineText) ||
+    checkBindAttributeDefinitions(document, position, lineText) ||
+    checkClickAttributeDefinition(document, position, lineText)
+  )
 }
 
 function checkViewModelDefinition(
@@ -40,73 +31,76 @@ function checkViewModelDefinition(
   lineText: string
 ): vscode.Location | null {
   const viewModelMatch = /view-model=["']([^"']+)["']/g.exec(lineText)
-  if (
-    viewModelMatch &&
-    position.character >= lineText.indexOf(viewModelMatch[1]) &&
-    position.character <= lineText.indexOf(viewModelMatch[1]) + viewModelMatch[1].length
-  ) {
-    const className = viewModelMatch[1]
-    const tsFile = findViewModelFile(document.uri)
-    if (tsFile) {
-      return findClassDefinition(tsFile, className)
-    }
+  if (!viewModelMatch) return null
+
+  const viewModelName = viewModelMatch[1]
+  const valueStartPos = lineText.indexOf(viewModelName)
+  const valueEndPos = valueStartPos + viewModelName.length
+
+  if (position.character >= valueStartPos && position.character <= valueEndPos) {
+    const typescriptFilePath = findViewModelFile(document.uri)
+    return typescriptFilePath ? findClassDefinition(typescriptFilePath, viewModelName) : null
   }
+
   return null
 }
 
 function checkBindAttributeDefinitions(
   document: vscode.TextDocument,
   position: vscode.Position,
-  lineText: string,
-  forEachInElement: any // Using any for ForEachResult as it's not exported, or I should export it
+  lineText: string
 ): vscode.Location | null {
-  for (const match of lineText.matchAll(BIND_ATTRIBUTE_PATTERN)) {
-    const fullValue = match[1]
-    const attrStartPos = match.index
-    const valueStartPos = attrStartPos + match[0].indexOf(fullValue)
-    const valueEndPos = valueStartPos + fullValue.length
+  const matches = Array.from(lineText.matchAll(BIND_ATTRIBUTE_PATTERN))
 
-    if (position.character >= valueStartPos && position.character <= valueEndPos) {
-      const tsFile = findViewModelFile(document.uri)
-      if (!tsFile) continue
+  const activeMatch = matches.find((match) => {
+    const value = match[1]
+    const valueStartPos = match.index + match[0].indexOf(value)
+    const valueEndPos = valueStartPos + value.length
+    return position.character >= valueStartPos && position.character <= valueEndPos
+  })
 
-      const cursorOffsetInValue = position.character - valueStartPos
-      const attrNameMatch = match[0].match(/^([^=]+)=/)
-      if (!attrNameMatch) continue
-      const attrName = attrNameMatch[1]
+  if (!activeMatch) return null
 
-      if (attrName === 'for-each') {
-        return handleForEachDefinition(fullValue, cursorOffsetInValue, tsFile)
-      } else {
-        return handlePropertyPathDefinition(
-          document,
-          fullValue,
-          cursorOffsetInValue,
-          tsFile,
-          forEachInElement
-        )
-      }
-    }
+  const typescriptFilePath = findViewModelFile(document.uri)
+  if (!typescriptFilePath) return null
+
+  const fullValue = activeMatch[1]
+  const valueStartPos = activeMatch.index + activeMatch[0].indexOf(fullValue)
+  const cursorOffsetInValue = position.character - valueStartPos
+
+  const attrNameMatch = activeMatch[0].match(/^([^=]+)=/)
+  const attributeName = attrNameMatch ? attrNameMatch[1] : ''
+
+  if (attributeName === 'for-each') {
+    return handleForEachDefinition(fullValue, cursorOffsetInValue, typescriptFilePath)
   }
 
-  return null
+  const forEachInElement = findForEachInElement(document, position.line)
+  return handlePropertyPathDefinition(
+    document,
+    fullValue,
+    cursorOffsetInValue,
+    typescriptFilePath,
+    forEachInElement
+  )
 }
 
 function handleForEachDefinition(
   fullValue: string,
   cursorOffsetInValue: number,
-  tsFile: string
+  typescriptFilePath: string
 ): vscode.Location | null {
   const forEachMatch = /^\s*(\w+)\s+of\s+(\w+)\s*$/.exec(fullValue)
-  if (forEachMatch) {
-    const collectionName = forEachMatch[2]
-    const collectionStart = fullValue.indexOf(collectionName)
-    const collectionEnd = collectionStart + collectionName.length
+  if (!forEachMatch) return null
 
-    if (cursorOffsetInValue >= collectionStart && cursorOffsetInValue <= collectionEnd) {
-      return findPropertyDefinition(tsFile, collectionName)
-    }
+  const collectionName = forEachMatch[2]
+  const collectionStart = fullValue.indexOf(collectionName)
+  const collectionEnd = collectionStart + collectionName.length
+
+  if (cursorOffsetInValue >= collectionStart && cursorOffsetInValue <= collectionEnd) {
+    return findPropertyDefinition(typescriptFilePath, collectionName)
   }
+
   return null
 }
 
@@ -114,15 +108,15 @@ function handlePropertyPathDefinition(
   document: vscode.TextDocument,
   fullValue: string,
   cursorOffsetInValue: number,
-  tsFile: string,
-  forEachInElement: any
+  typescriptFilePath: string,
+  forEachInElement: ForEachResult | null
 ): vscode.Location | null {
-  const parts = fullValue.split('.')
-  let currentPos = 0
+  const pathParts = fullValue.split('.')
+  let currentSearchPos = 0
 
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i].trim()
-    const partStart = fullValue.indexOf(part, currentPos)
+  for (let partIndex = 0; partIndex < pathParts.length; partIndex++) {
+    const part = pathParts[partIndex].trim()
+    const partStart = fullValue.indexOf(part, currentSearchPos)
     const partEnd = partStart + part.length
 
     if (cursorOffsetInValue >= partStart && cursorOffsetInValue <= partEnd) {
@@ -133,11 +127,10 @@ function handlePropertyPathDefinition(
         )
       }
 
-      const propertyPath = parts.slice(0, i + 1)
-      return findNestedPropertyDefinition(tsFile, propertyPath)
+      return findNestedPropertyDefinition(typescriptFilePath, pathParts.slice(0, partIndex + 1))
     }
 
-    currentPos = partEnd + 1
+    currentSearchPos = partEnd + 1
   }
 
   return null
@@ -148,20 +141,19 @@ function checkClickAttributeDefinition(
   position: vscode.Position,
   lineText: string
 ): vscode.Location | null {
-  for (const match of lineText.matchAll(CLICK_ATTRIBUTE_PATTERN)) {
+  const matches = Array.from(lineText.matchAll(CLICK_ATTRIBUTE_PATTERN))
+
+  const activeMatch = matches.find((match) => {
     const methodName = match[1]
-    const startPos = match.index + match[0].indexOf(methodName)
-    const endPos = startPos + methodName.length
+    const valueStartPos = match.index + match[0].indexOf(methodName)
+    const valueEndPos = valueStartPos + methodName.length
+    return position.character >= valueStartPos && position.character <= valueEndPos
+  })
 
-    if (position.character >= startPos && position.character <= endPos) {
-      const tsFile = findViewModelFile(document.uri)
-      if (tsFile) {
-        return findMethodDefinition(tsFile, methodName)
-      }
-    }
-  }
+  if (!activeMatch) return null
 
-  return null
+  const typescriptFilePath = findViewModelFile(document.uri)
+  return typescriptFilePath ? findMethodDefinition(typescriptFilePath, activeMatch[1]) : null
 }
 
 export function createDefinitionProvider(): vscode.Disposable {

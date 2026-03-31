@@ -1,4 +1,11 @@
 import { readFileContent, readFileLines } from '../utils/fileUtils'
+import {
+  calculateBraceDepth,
+  findMemberMatch,
+  isClassDeclaration,
+  isInterfaceDeclaration,
+  isObjectLiteralStart,
+} from '../utils/parsingUtils'
 
 export interface ViewModelMembers {
   properties: string[]
@@ -27,21 +34,19 @@ export function extractViewModelMembers(typescriptFilePath: string): ViewModelMe
   }
 
   const finalState = lines.reduce((state, line) => {
-    const nextState = { ...state }
-
     if (state.context === 'none') {
-      return handleOuterContext(nextState, line)
+      return handleOuterContext(state, line)
     }
 
     if (state.context === 'interface') {
-      return handleInterfaceContext(nextState, line)
+      return handleInterfaceContext(state, line)
     }
 
     if (state.context === 'class') {
-      return handleClassContext(nextState, line)
+      return handleClassContext(state, line)
     }
 
-    return nextState
+    return state
   }, initialState)
 
   return {
@@ -82,9 +87,16 @@ function handleClassContext(state: ParserState, line: string): ParserState {
       state.inPropertyValue = false
     }
   } else if (previousBraceDepth === 1) {
-    extractClassMembers(line, state.properties, state.methods)
+    const member = findMemberMatch(line)
+    if (member) {
+      if (member.type === 'method') {
+        state.methods.add(member.name)
+      } else {
+        state.properties.add(member.name)
+      }
+    }
 
-    if (isBeginningOfObjectLiteral(line)) {
+    if (isObjectLiteralStart(line)) {
       state.inPropertyValue = true
       state.propertyBraceDepth = calculateBraceDepth(line)
       if (state.propertyBraceDepth === 0) {
@@ -99,62 +111,6 @@ function handleClassContext(state: ParserState, line: string): ParserState {
   }
 
   return state
-}
-
-function isInterfaceDeclaration(line: string): boolean {
-  return /^\s*(?:export\s+)?interface\s+\w+/.test(line)
-}
-
-function isClassDeclaration(line: string): boolean {
-  return /^\s*(?:export\s+)?class\s+\w+/.test(line)
-}
-
-function isBeginningOfObjectLiteral(line: string): boolean {
-  return line.includes('=') && line.includes('{')
-}
-
-function calculateBraceDepth(line: string): number {
-  const openBraces = (line.match(/{/g) || []).length
-  const closeBraces = (line.match(/}/g) || []).length
-  return openBraces - closeBraces
-}
-
-function extractClassMembers(line: string, properties: Set<string>, methods: Set<string>): void {
-  const nameMatch = findPropertyMatch(line) || findGetterMatch(line) || findMethodMatch(line)
-
-  if (!nameMatch) return
-
-  const { name, type } = nameMatch
-  if (type === 'method' && !isValidMethodName(name)) return
-
-  if (type === 'method') {
-    methods.add(name)
-  } else {
-    properties.add(name)
-  }
-}
-
-function findPropertyMatch(line: string): { name: string; type: 'property' } | null {
-  const propMatch = /^\s*(?:public\s+|private\s+|protected\s+)?([a-zA-Z_]\w*)\s*(?::|=)\s*/.exec(
-    line
-  )
-  return propMatch ? { name: propMatch[1], type: 'property' } : null
-}
-
-function findGetterMatch(line: string): { name: string; type: 'property' } | null {
-  const getterMatch = /^\s*(?:public\s+|private\s+|protected\s+)?get\s+([a-zA-Z_]\w*)\s*\(/.exec(
-    line
-  )
-  return getterMatch ? { name: getterMatch[1], type: 'property' } : null
-}
-
-function findMethodMatch(line: string): { name: string; type: 'method' } | null {
-  const methodMatch = /^\s*(?:public\s+|private\s+|protected\s+)?([a-zA-Z_]\w*)\s*\(/.exec(line)
-  return methodMatch ? { name: methodMatch[1], type: 'method' } : null
-}
-
-function isValidMethodName(name: string): boolean {
-  return name !== 'constructor' && name !== 'if'
 }
 
 export function extractNestedProperties(
@@ -198,7 +154,7 @@ function extractPropertiesFromObjectPath(
 ): string[] {
   const objectLiteralLineIndex = lines
     .slice(startLineIndex)
-    .findIndex((line) => (line.includes('=') || line.includes(':')) && line.includes('{'))
+    .findIndex((line) => isObjectLiteralStart(line))
 
   if (objectLiteralLineIndex === -1) return []
 

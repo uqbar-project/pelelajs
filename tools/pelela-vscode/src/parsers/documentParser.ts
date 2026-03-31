@@ -1,9 +1,14 @@
 import type * as vscode from 'vscode'
 
-export function getCurrentAttributeName(lineText: string, positionCharacter: number): string | null {
+const FOR_EACH_REGEX = /for-each=["'](\w+)\s+of\s+(\w+)["']/
+
+export function getCurrentAttributeName(
+  lineText: string,
+  positionCharacter: number
+): string | null {
   const textUpToCursor = lineText.slice(0, positionCharacter)
-  const match = /(\b[\w-]+)\s*=\s*"[^"]*$/.exec(textUpToCursor)
-  return match ? match[1] : null
+  const attributeMatch = /(\b[\w-]+)\s*=\s*"[^"]*$/.exec(textUpToCursor)
+  return attributeMatch ? attributeMatch[1] : null
 }
 
 export function isInsideTag(textBeforeCursor: string): boolean {
@@ -15,8 +20,8 @@ export function isStartingTag(textBeforeCursor: string): boolean {
 }
 
 export function getAttributeValueMatch(textBeforeCursor: string): string | null {
-  const attrValueMatch = /=\s*"([^"]*)$/.exec(textBeforeCursor)
-  return attrValueMatch ? attrValueMatch[1] : null
+  const attributeValueMatch = /=\s*"([^"]*)$/.exec(textBeforeCursor)
+  return attributeValueMatch ? attributeValueMatch[1] : null
 }
 
 export interface ForEachResult {
@@ -27,16 +32,22 @@ export interface ForEachResult {
 
 export function findForEachInElement(
   document: vscode.TextDocument,
-  currentLine: number
+  currentLineIndex: number
 ): ForEachResult | null {
-  for (let i = currentLine; i >= 0; i--) {
-    const lineText = document.lineAt(i).text
+  const lineIndices = Array.from(
+    { length: currentLineIndex + 1 },
+    (_, index) => currentLineIndex - index
+  )
 
-    const forEachMatch = /for-each=["'](\w+)\s+of\s+\w+["']/.exec(lineText)
+  for (const lineIndex of lineIndices) {
+    const lineText = document.lineAt(lineIndex).text
+    const forEachMatch = FOR_EACH_REGEX.exec(lineText)
+
     if (forEachMatch) {
       const itemName = forEachMatch[1]
-      const itemPos = lineText.indexOf(itemName, lineText.indexOf('for-each='))
-      return { itemName, line: i, itemPos }
+      const forEachAttributeStart = lineText.indexOf('for-each=')
+      const itemPosition = lineText.indexOf(itemName, forEachAttributeStart)
+      return { itemName, line: lineIndex, itemPos: itemPosition }
     }
   }
 
@@ -49,17 +60,17 @@ export interface ForEachExpression {
 }
 
 export function parseForEachExpression(forEachLine: string): ForEachExpression | null {
-  const forEachExprMatch = /for-each=["'](\w+)\s+of\s+(\w+)["']/.exec(forEachLine)
-  if (forEachExprMatch) {
+  const forEachExpressionMatch = FOR_EACH_REGEX.exec(forEachLine)
+  if (forEachExpressionMatch) {
     return {
-      itemName: forEachExprMatch[1],
-      collectionName: forEachExprMatch[2],
+      itemName: forEachExpressionMatch[1],
+      collectionName: forEachExpressionMatch[2],
     }
   }
   return null
 }
 
 export function parsePropertyPath(valueBeforeCursor: string): string[] | null {
-  const dotMatch = /(\w+(?:\.\w+)*)\.$/.exec(valueBeforeCursor)
-  return dotMatch ? dotMatch[1].split('.') : null
+  const propertyPathMatch = /(\w+(?:\.\w+)*)\.$/.exec(valueBeforeCursor)
+  return propertyPathMatch ? propertyPathMatch[1].split('.') : null
 }

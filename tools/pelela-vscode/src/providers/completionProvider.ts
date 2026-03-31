@@ -1,10 +1,12 @@
 import * as vscode from 'vscode'
 import {
+  ForEachExpression,
+  type ForEachResult,
+  findForEachInElement,
   getAttributeValueMatch,
   getCurrentAttributeName,
   isInsideTag,
   isStartingTag,
-  findForEachInElement,
   parseForEachExpression,
   parsePropertyPath,
 } from '../parsers/documentParser'
@@ -18,26 +20,11 @@ async function provideCompletionItems(
   _token: vscode.CancellationToken,
   _context: vscode.CompletionContext
 ): Promise<vscode.CompletionItem[]> {
-  const items: vscode.CompletionItem[] = []
-  const line = document.lineAt(position.line)
-  const lineText = line.text
+  const lineText = document.lineAt(position.line).text
   const textBeforeCursor = lineText.slice(0, position.character)
   const attributeName = getCurrentAttributeName(lineText, position.character)
 
-  const isInsideAttributeValue = !!attributeName
-
-  if (isStartingTag(textBeforeCursor) && !isInsideAttributeValue) {
-    addHtmlElementCompletions(items)
-    return items
-  }
-
-  if (isInsideTag(textBeforeCursor) && !isInsideAttributeValue) {
-    addHtmlAttributeCompletions(items)
-    addPelelaAttributeCompletions(items)
-    return items
-  }
-
-  if (isInsideAttributeValue && attributeName) {
+  if (attributeName) {
     return await provideAttributeValueCompletions(
       document,
       position,
@@ -46,30 +33,38 @@ async function provideCompletionItems(
     )
   }
 
+  const items: vscode.CompletionItem[] = []
+  if (isStartingTag(textBeforeCursor)) {
+    addHtmlElementCompletions(items)
+  } else if (isInsideTag(textBeforeCursor)) {
+    addHtmlAttributeCompletions(items)
+    addPelelaAttributeCompletions(items)
+  }
+
   return items
 }
 
 function addHtmlElementCompletions(items: vscode.CompletionItem[]): void {
-  for (const tag of getHtmlElements()) {
+  getHtmlElements().forEach((tag) => {
     const item = new vscode.CompletionItem(tag, vscode.CompletionItemKind.Property)
     item.sortText = `z${tag}`
     items.push(item)
-  }
+  })
 }
 
 function addHtmlAttributeCompletions(items: vscode.CompletionItem[]): void {
-  for (const attr of getHtmlAttributes()) {
+  getHtmlAttributes().forEach((attr) => {
     const item = new vscode.CompletionItem(attr, vscode.CompletionItemKind.Property)
     item.insertText = new vscode.SnippetString(`${attr}="\${1}"`)
     item.sortText = `z${attr}`
     items.push(item)
-  }
+  })
 }
 
 function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
   const attrNames = getPelelaAttributes()
 
-  const snippets: Record<string, { text: string; detail: string }> = {
+  const attributeSnippets: Record<string, { text: string; detail: string }> = {
     'view-model': {
       text: 'view-model="${1:App}"',
       detail: 'Pelela: view model asociado al template',
@@ -85,12 +80,12 @@ function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
     },
   }
 
-  for (const name of attrNames) {
+  attrNames.forEach((name) => {
     const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Property)
 
-    if (snippets[name]) {
-      item.insertText = new vscode.SnippetString(snippets[name].text)
-      item.detail = snippets[name].detail
+    if (attributeSnippets[name]) {
+      item.insertText = new vscode.SnippetString(attributeSnippets[name].text)
+      item.detail = attributeSnippets[name].detail
       item.sortText = `!0_${name}`
     } else if (name.startsWith('bind-')) {
       item.insertText = new vscode.SnippetString(`${name}="\${1:propiedad}"`)
@@ -99,7 +94,7 @@ function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
     }
 
     items.push(item)
-  }
+  })
 }
 
 async function provideAttributeValueCompletions(
@@ -108,99 +103,104 @@ async function provideAttributeValueCompletions(
   attributeName: string,
   textBeforeCursor: string
 ): Promise<vscode.CompletionItem[]> {
-  const items: vscode.CompletionItem[] = []
   const isPelelaAttribute =
-    attributeName.startsWith('bind-') ||
-    attributeName === 'click' ||
-    attributeName === 'if' ||
-    attributeName === 'for-each'
+    attributeName.startsWith('bind-') || ['click', 'if', 'for-each'].includes(attributeName)
 
-  if (!isPelelaAttribute) {
-    return items
-  }
+  if (!isPelelaAttribute) return []
 
-  const tsFile = findViewModelFile(document.uri)
-  if (!tsFile) {
-    return items
-  }
+  const typescriptFilePath = findViewModelFile(document.uri)
+  if (!typescriptFilePath) return []
 
   const valueBeforeCursor = getAttributeValueMatch(textBeforeCursor)
   if (!valueBeforeCursor) {
-    return await provideBasicViewModelCompletions(tsFile, attributeName)
+    return provideBasicViewModelCompletions(typescriptFilePath, attributeName)
   }
 
   const propertyPath = parsePropertyPath(valueBeforeCursor)
-  if (propertyPath) {
-    return await provideNestedPropertyCompletions(document, position, tsFile, propertyPath)
-  }
-
-  return await provideBasicViewModelCompletions(tsFile, attributeName)
+  return propertyPath
+    ? provideNestedPropertyCompletions(document, position, typescriptFilePath, propertyPath)
+    : provideBasicViewModelCompletions(typescriptFilePath, attributeName)
 }
 
-async function provideBasicViewModelCompletions(
-  tsFile: string,
+function provideBasicViewModelCompletions(
+  typescriptFilePath: string,
   attributeName: string
-): Promise<vscode.CompletionItem[]> {
+): vscode.CompletionItem[] {
   const items: vscode.CompletionItem[] = []
-  const { properties, methods } = extractViewModelMembers(tsFile)
+  const { properties, methods } = extractViewModelMembers(typescriptFilePath)
 
-  if (attributeName.startsWith('bind-') || attributeName === 'if' || attributeName === 'for-each') {
-    for (const name of properties) {
-      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
-      item.detail = 'Pelela ViewModel property'
-      item.sortText = `!0_${name}`
-      items.push(item)
-    }
-  } else if (attributeName === 'click') {
-    for (const name of methods) {
-      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Method)
-      item.detail = 'Pelela ViewModel method'
-      item.sortText = `!0_${name}`
-      items.push(item)
-    }
+  if (attributeName === 'click') {
+    methods.forEach((name) => {
+      items.push(createMethodCompletion(name))
+    })
+  } else {
+    properties.forEach((name) => {
+      items.push(createPropertyCompletion(name))
+    })
   }
 
   return items
+}
+
+function createMethodCompletion(name: string): vscode.CompletionItem {
+  const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Method)
+  item.detail = 'Pelela ViewModel method'
+  item.sortText = `!0_${name}`
+  return item
+}
+
+function createPropertyCompletion(name: string): vscode.CompletionItem {
+  const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
+  item.detail = 'Pelela ViewModel property'
+  item.sortText = `!0_${name}`
+  return item
 }
 
 async function provideNestedPropertyCompletions(
   document: vscode.TextDocument,
   position: vscode.Position,
-  tsFile: string,
+  typescriptFilePath: string,
   propertyPath: string[]
 ): Promise<vscode.CompletionItem[]> {
-  const items: vscode.CompletionItem[] = []
   const forEachInElement = findForEachInElement(document, position.line)
 
-  if (
-    forEachInElement &&
-    propertyPath[0] === forEachInElement.itemName &&
-    propertyPath.length === 1
-  ) {
-    const forEachLine = document.lineAt(forEachInElement.line).text
-    const forEachExpr = parseForEachExpression(forEachLine)
-
-    if (forEachExpr) {
-      const nestedProps = extractNestedProperties(tsFile, [forEachExpr.collectionName])
-      for (const name of nestedProps) {
-        const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
-        item.detail = 'Pelela ViewModel nested property'
-        item.sortText = `!0_${name}`
-        items.push(item)
-      }
-      return items
-    }
+  if (isIteratedItemProperty(forEachInElement, propertyPath)) {
+    return handleIteratedItemCompletions(document, forEachInElement!, typescriptFilePath)
   }
 
-  const nestedProps = extractNestedProperties(tsFile, propertyPath)
-  for (const name of nestedProps) {
+  return extractNestedProperties(typescriptFilePath, propertyPath).map((name) => {
     const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
     item.detail = 'Pelela ViewModel nested property'
     item.sortText = `!0_${name}`
-    items.push(item)
-  }
+    return item
+  })
+}
 
-  return items
+function isIteratedItemProperty(
+  forEachInElement: ForEachResult | null,
+  propertyPath: string[]
+): boolean {
+  return (
+    !!forEachInElement && propertyPath[0] === forEachInElement.itemName && propertyPath.length === 1
+  )
+}
+
+function handleIteratedItemCompletions(
+  document: vscode.TextDocument,
+  forEachInElement: ForEachResult,
+  typescriptFilePath: string
+): vscode.CompletionItem[] {
+  const forEachLine = document.lineAt(forEachInElement.line).text
+  const forEachExpr = parseForEachExpression(forEachLine)
+
+  if (!forEachExpr) return []
+
+  return extractNestedProperties(typescriptFilePath, [forEachExpr.collectionName]).map((name) => {
+    const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
+    item.detail = 'Pelela ViewModel nested property'
+    item.sortText = `!0_${name}`
+    return item
+  })
 }
 
 export function createCompletionProvider(): vscode.Disposable {
