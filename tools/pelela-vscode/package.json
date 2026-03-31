@@ -9,9 +9,6 @@
     "vscode": "^1.105.0"
   },
   "main": "./dist/extension.js",
-  "activationEvents": [
-    "onLanguage:pelela"
-  ],
   "categories": [
     "Programming Languages"
   ],

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 import {
-  ForEachExpression,
   type ForEachResult,
   findForEachInElement,
   getAttributeValueMatch,
@@ -66,15 +65,22 @@ function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
 
   const attributeSnippets: Record<string, { text: string; detail: string }> = {
     'view-model': {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'view-model="${1:App}"',
       detail: 'Pelela: view model asociado al template',
     },
     click: {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'click="${1:handler}"',
       detail: 'Pelela: ejecuta un método del view model al hacer click',
     },
-    if: { text: 'if="${1:condicion}"', detail: 'Pelela: renderizado condicional' },
+    if: {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
+      text: 'if="${1:condicion}"',
+      detail: 'Pelela: renderizado condicional',
+    },
     'for-each': {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'for-each="${1:item} of ${2:collection}"',
       detail: 'Pelela: itera sobre una colección del view model',
     },
@@ -164,8 +170,8 @@ async function provideNestedPropertyCompletions(
 ): Promise<vscode.CompletionItem[]> {
   const forEachInElement = findForEachInElement(document, position.line)
 
-  if (isIteratedItemProperty(forEachInElement, propertyPath)) {
-    return handleIteratedItemCompletions(document, forEachInElement!, typescriptFilePath)
+  if (isIteratedItemProperty(forEachInElement, propertyPath) && forEachInElement) {
+    return handleIteratedItemCompletions(document, forEachInElement, typescriptFilePath)
   }
 
   return extractNestedProperties(typescriptFilePath, propertyPath).map((name) => {

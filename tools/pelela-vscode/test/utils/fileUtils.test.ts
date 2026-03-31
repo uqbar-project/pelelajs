@@ -2,8 +2,8 @@ import * as assert from 'node:assert'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { after, before, describe, it } from 'mocha'
-import { findViewModelFile, readFileContent, readFileLines } from '../../src/utils/fileUtils'
 import type * as vscode from 'vscode'
+import { findViewModelFile, readFileContent, readFileLines } from '../../src/utils/fileUtils'
 
 describe('fileUtils', () => {
   const testFilesDir = path.join(__dirname, '../fixtures')

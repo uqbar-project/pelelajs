@@ -41,8 +41,7 @@ export interface MemberMatch {
  * Attempts to match a property, getter, or method on a given line.
  */
 export function findMemberMatch(line: string): MemberMatch | null {
-  const nameMatch =
-    findPropertyMatch(line) || findGetterMatch(line) || findMethodMatch(line)
+  const nameMatch = findPropertyMatch(line) || findGetterMatch(line) || findMethodMatch(line)
 
   if (!nameMatch) return null
 

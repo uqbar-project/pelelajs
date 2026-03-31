@@ -1,10 +1,6 @@
 import * as assert from 'node:assert'
 import { describe, it } from 'mocha'
-import {
-  getHtmlAttributes,
-  getHtmlElements,
-  getPelelaAttributes,
-} from '../../src/utils/htmlUtils'
+import { getHtmlAttributes, getHtmlElements, getPelelaAttributes } from '../../src/utils/htmlUtils'
 
 describe('htmlUtils', () => {
   describe('getHtmlElements', () => {

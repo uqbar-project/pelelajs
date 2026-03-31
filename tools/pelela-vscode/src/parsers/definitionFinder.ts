@@ -1,10 +1,6 @@
 import * as vscode from 'vscode'
 import { readFileLines } from '../utils/fileUtils'
-import {
-  calculateBraceDepth,
-  isClassDeclaration,
-  isObjectLiteralStart,
-} from '../utils/parsingUtils'
+import { calculateBraceDepth, isObjectLiteralStart } from '../utils/parsingUtils'
 
 export function findClassDefinition(
   typescriptFilePath: string,
