@@ -27,7 +27,7 @@ describe('parsingUtils', () => {
       assert.strictEqual(calculateBraceDepth('{ }}'), -1)
     })
 
-    it('debería retornar 0 si no hay llaces', () => {
+    it('debería retornar 0 si no hay llaves', () => {
       assert.strictEqual(calculateBraceDepth('export class MyClass'), 0)
     })
   })

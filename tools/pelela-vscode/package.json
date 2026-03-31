@@ -15,21 +15,19 @@
   "scripts": {
     "build": "tsup src/extension.ts --format cjs --external vscode --clean",
     "typecheck": "tsc --noEmit",
-    "test": "mocha --require tsx --require test/setup.cjs test/**/*.test.ts",
+    "test": "mocha --require tsx --require test/setup.ts test/**/*.test.ts",
     "package": "vsce package"
   },
   "devDependencies": {
-    "@types/chai": "5.2.3",
     "@types/mocha": "10.0.10",
     "@types/node": "24.10.1",
     "@types/vscode": "1.105.0",
     "@vscode/vsce": "3.7.1",
-    "chai": "4.3.10",
     "glob": "13.0.0",
     "mocha": "10.2.0",
     "tsup": "8.5.1",
     "tsx": "4.21.0",
-    "typescript": "6.0.2"
+    "typescript": "5.9.3"
   },
   "contributes": {
     "languages": [

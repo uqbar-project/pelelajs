@@ -18,17 +18,22 @@ npm install -g pnpm
 nvm use
 pnpm build
 pnpm install --frozen-lockfile
+```
+
 ### VSCode Extension
 
-To developer and test the Pelela VSCode extension:
+To develop and test the Pelela VSCode extension:
 
 #### 1. Debugging (Recommended)
+
 1. Open this monorepo in VSCode.
 2. Press **F5** (or go to **Run and Debug** -> **Launch Pelela Extension**).
 3. A new window will open with the extension active. You can test it using the `examples/hello-world` folder which is opened by default.
 
 #### 2. Manual Installation (.vsix)
+
 If you prefer to generate and install the extension manually:
+
 1. Build and package the extension:
    ```bash
    pnpm -C tools/pelela-vscode package

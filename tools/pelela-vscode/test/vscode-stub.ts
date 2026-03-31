@@ -1,30 +1,37 @@
-const vscodeStub = {
+export const vscodeStub = {
   Uri: class Uri {
-    constructor(fsPath) {
+    fsPath: string
+    constructor(fsPath: string) {
       this.fsPath = fsPath
     }
 
-    static file(pathStr) {
+    static file(pathStr: string) {
       return new vscodeStub.Uri(pathStr)
     }
   },
 
   Position: class Position {
-    constructor(line, character) {
+    line: number
+    character: number
+    constructor(line: number, character: number) {
       this.line = line
       this.character = character
     }
   },
 
   Range: class Range {
-    constructor(start, end) {
+    start: any
+    end: any
+    constructor(start: any, end: any) {
       this.start = start
       this.end = end
     }
   },
 
   Location: class Location {
-    constructor(uri, rangeOrPosition) {
+    uri: any
+    range: any
+    constructor(uri: any, rangeOrPosition: any) {
       this.uri = uri
       if (rangeOrPosition instanceof vscodeStub.Position) {
         this.range = new vscodeStub.Range(rangeOrPosition, rangeOrPosition)
@@ -35,7 +42,12 @@ const vscodeStub = {
   },
 
   CompletionItem: class CompletionItem {
-    constructor(label, kind) {
+    label: string
+    kind: number
+    detail: string
+    sortText: string
+    insertText: any
+    constructor(label: string, kind: number) {
       this.label = label
       this.kind = kind
       this.detail = ''
@@ -67,7 +79,8 @@ const vscodeStub = {
   },
 
   SnippetString: class SnippetString {
-    constructor(value) {
+    value: string
+    constructor(value: string) {
       this.value = value
     }
   },
@@ -91,5 +104,3 @@ const vscodeStub = {
     executeCommand: () => Promise.resolve(),
   },
 }
-
-module.exports = vscodeStub

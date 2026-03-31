@@ -60,57 +60,77 @@ function handleOuterContext(state: ParserState, line: string): ParserState {
   const isClass = isClassDeclaration(line)
 
   if (isInterface || isClass) {
-    state.braceDepth = calculateBraceDepth(line)
+    const braceDepth = calculateBraceDepth(line)
     const context = isInterface ? 'interface' : 'class'
-    state.context = state.braceDepth === 0 ? 'none' : context
-    return state
+
+    return {
+      ...state,
+      braceDepth,
+      context: braceDepth === 0 ? 'none' : context,
+    }
   }
 
   return state
 }
 
 function handleInterfaceContext(state: ParserState, line: string): ParserState {
-  state.braceDepth += calculateBraceDepth(line)
-  if (state.braceDepth === 0) {
-    state.context = 'none'
+  const newBraceDepth = state.braceDepth + calculateBraceDepth(line)
+
+  return {
+    ...state,
+    braceDepth: newBraceDepth,
+    context: newBraceDepth === 0 ? 'none' : state.context,
   }
-  return state
 }
 
 function handleClassContext(state: ParserState, line: string): ParserState {
   const previousBraceDepth = state.braceDepth
-  state.braceDepth += calculateBraceDepth(line)
+  const newBraceDepth = state.braceDepth + calculateBraceDepth(line)
+
+  let newInPropertyValue = state.inPropertyValue
+  let newPropertyBraceDepth = state.propertyBraceDepth
+  let newMethods = state.methods
+  let newProperties = state.properties
 
   if (state.inPropertyValue) {
-    state.propertyBraceDepth += calculateBraceDepth(line)
-    if (state.propertyBraceDepth === 0) {
-      state.inPropertyValue = false
+    newPropertyBraceDepth += calculateBraceDepth(line)
+    if (newPropertyBraceDepth === 0) {
+      newInPropertyValue = false
     }
   } else if (previousBraceDepth === 1) {
     const member = findMemberMatch(line)
     if (member) {
       if (member.type === 'method') {
-        state.methods.add(member.name)
+        newMethods = new Set(state.methods).add(member.name)
       } else {
-        state.properties.add(member.name)
+        newProperties = new Set(state.properties).add(member.name)
       }
     }
 
     if (isObjectLiteralStart(line)) {
-      state.inPropertyValue = true
-      state.propertyBraceDepth = calculateBraceDepth(line)
-      if (state.propertyBraceDepth === 0) {
-        state.inPropertyValue = false
+      newInPropertyValue = true
+      newPropertyBraceDepth = calculateBraceDepth(line)
+      if (newPropertyBraceDepth === 0) {
+        newInPropertyValue = false
       }
     }
   }
 
-  if (state.braceDepth === 0) {
-    state.context = 'none'
-    state.inPropertyValue = false
+  let newContext = state.context
+  if (newBraceDepth === 0) {
+    newContext = 'none'
+    newInPropertyValue = false
   }
 
-  return state
+  return {
+    ...state,
+    braceDepth: newBraceDepth,
+    inPropertyValue: newInPropertyValue,
+    propertyBraceDepth: newPropertyBraceDepth,
+    methods: newMethods,
+    properties: newProperties,
+    context: newContext,
+  }
 }
 
 export function extractNestedProperties(

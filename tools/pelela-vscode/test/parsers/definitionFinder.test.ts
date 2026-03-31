@@ -38,6 +38,8 @@ export class UserViewModel {
   handleLogin() {
     console.log("logging in");
   }
+  
+  public test_prop: number = 1;
 }
 `
     fs.writeFileSync(testVMPath, testVMContent)
@@ -88,6 +90,11 @@ export class UserViewModel {
 
     it('debería retornar null para una propiedad inexistente', () => {
       const location = findPropertyDefinition(testVMPath, 'nonExistent')
+      assert.strictEqual(location, null)
+    })
+
+    it('debería escapar caracteres especiales y retornar null de forma segura', () => {
+      const location = findPropertyDefinition(testVMPath, 'test.*prop')
       assert.strictEqual(location, null)
     })
   })

@@ -2,11 +2,19 @@ import * as vscode from 'vscode'
 import { readFileLines } from '../utils/fileUtils'
 import { calculateBraceDepth, isObjectLiteralStart } from '../utils/parsingUtils'
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export function findClassDefinition(
   typescriptFilePath: string,
   className: string
 ): vscode.Location | null {
-  const classDeclarationRegex = new RegExp(`^\\s*(?:export\\s+)?class\\s+${className}\\b`, 'm')
+  const escapedClassName = escapeRegex(className)
+  const classDeclarationRegex = new RegExp(
+    `^\\s*(?:export\\s+)?class\\s+${escapedClassName}\\b`,
+    'm'
+  )
   return findDefinitionInFile(typescriptFilePath, classDeclarationRegex, className)
 }
 
@@ -14,8 +22,9 @@ export function findPropertyDefinition(
   typescriptFilePath: string,
   propertyName: string
 ): vscode.Location | null {
+  const escapedPropertyName = escapeRegex(propertyName)
   const propertyOrGetterRegex = new RegExp(
-    `^\\s*(?:public\\s+|private\\s+|protected\\s+)?(?:get\\s+)?${propertyName}\\b`,
+    `^\\s*(?:public\\s+|private\\s+|protected\\s+)?(?:get\\s+)?${escapedPropertyName}\\b`,
     'm'
   )
   return findDefinitionInFile(typescriptFilePath, propertyOrGetterRegex, propertyName)
@@ -25,8 +34,9 @@ export function findMethodDefinition(
   typescriptFilePath: string,
   methodName: string
 ): vscode.Location | null {
+  const escapedMethodName = escapeRegex(methodName)
   const methodDeclarationRegex = new RegExp(
-    `^\\s*(?:public\\s+|private\\s+|protected\\s+)?${methodName}\\s*\\(`,
+    `^\\s*(?:public\\s+|private\\s+|protected\\s+)?${escapedMethodName}\\s*\\(`,
     'm'
   )
   return findDefinitionInFile(typescriptFilePath, methodDeclarationRegex, methodName)
@@ -63,10 +73,21 @@ function findDefinitionInFile(
 
   if (lineIndex === -1) return null
 
-  const characterIndex = lines[lineIndex].indexOf(targetName)
+  let characterIndex = lines[lineIndex].indexOf(targetName)
+
+  if (characterIndex === -1) {
+    const match = declarationRegex.exec(lines[lineIndex])
+    if (match) {
+      const innerIndex = match[0].indexOf(targetName)
+      characterIndex = innerIndex !== -1 ? match.index + innerIndex : 0
+    } else {
+      characterIndex = 0
+    }
+  }
+
   return new vscode.Location(
     vscode.Uri.file(typescriptFilePath),
-    new vscode.Position(lineIndex, characterIndex)
+    new vscode.Position(lineIndex, Math.max(0, characterIndex))
   )
 }
 
