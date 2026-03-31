@@ -1,25 +1,34 @@
-function getCurrentAttributeName(lineText, positionCharacter) {
+import type * as vscode from 'vscode'
+
+export function getCurrentAttributeName(lineText: string, positionCharacter: number): string | null {
   const textUpToCursor = lineText.slice(0, positionCharacter)
   const match = /(\b[\w-]+)\s*=\s*"[^"]*$/.exec(textUpToCursor)
   return match ? match[1] : null
 }
 
-function isInsideTag(textBeforeCursor) {
+export function isInsideTag(textBeforeCursor: string): boolean {
   return /<[^>]*$/.test(textBeforeCursor)
 }
 
-function isStartingTag(textBeforeCursor) {
+export function isStartingTag(textBeforeCursor: string): boolean {
   return /<\w*$/.test(textBeforeCursor)
 }
 
-function getAttributeValueMatch(textBeforeCursor) {
+export function getAttributeValueMatch(textBeforeCursor: string): string | null {
   const attrValueMatch = /=\s*"([^"]*)$/.exec(textBeforeCursor)
   return attrValueMatch ? attrValueMatch[1] : null
 }
 
-function findForEachInElement(document, currentLine) {
-  const forEachResults = []
+export interface ForEachResult {
+  itemName: string
+  line: number
+  itemPos: number
+}
 
+export function findForEachInElement(
+  document: vscode.TextDocument,
+  currentLine: number
+): ForEachResult | null {
   for (let i = currentLine; i >= 0; i--) {
     const lineText = document.lineAt(i).text
 
@@ -27,14 +36,19 @@ function findForEachInElement(document, currentLine) {
     if (forEachMatch) {
       const itemName = forEachMatch[1]
       const itemPos = lineText.indexOf(itemName, lineText.indexOf('for-each='))
-      forEachResults.push({ itemName, line: i, itemPos })
+      return { itemName, line: i, itemPos }
     }
   }
 
-  return forEachResults.length > 0 ? forEachResults[0] : null
+  return null
 }
 
-function parseForEachExpression(forEachLine) {
+export interface ForEachExpression {
+  itemName: string
+  collectionName: string
+}
+
+export function parseForEachExpression(forEachLine: string): ForEachExpression | null {
   const forEachExprMatch = /for-each=["'](\w+)\s+of\s+(\w+)["']/.exec(forEachLine)
   if (forEachExprMatch) {
     return {
@@ -45,17 +59,7 @@ function parseForEachExpression(forEachLine) {
   return null
 }
 
-function parsePropertyPath(valueBeforeCursor) {
+export function parsePropertyPath(valueBeforeCursor: string): string[] | null {
   const dotMatch = /(\w+(?:\.\w+)*)\.$/.exec(valueBeforeCursor)
   return dotMatch ? dotMatch[1].split('.') : null
-}
-
-module.exports = {
-  getCurrentAttributeName,
-  isInsideTag,
-  isStartingTag,
-  getAttributeValueMatch,
-  findForEachInElement,
-  parseForEachExpression,
-  parsePropertyPath,
 }

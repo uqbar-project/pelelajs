@@ -1,7 +1,7 @@
-const vscode = require('vscode')
-const { readFileLines } = require('../utils/fileUtils')
+import * as vscode from 'vscode'
+import { readFileLines } from '../utils/fileUtils'
 
-function findClassDefinition(tsFilePath, className) {
+export function findClassDefinition(tsFilePath: string, className: string): vscode.Location | null {
   const lines = readFileLines(tsFilePath)
   const classRegex = new RegExp(`^\\s*(?:export\\s+)?class\\s+${className}\\b`, 'm')
 
@@ -15,7 +15,10 @@ function findClassDefinition(tsFilePath, className) {
   return null
 }
 
-function findPropertyDefinition(tsFilePath, propertyName) {
+export function findPropertyDefinition(
+  tsFilePath: string,
+  propertyName: string
+): vscode.Location | null {
   const lines = readFileLines(tsFilePath)
   const propRegex = new RegExp(
     `^\\s*(?:public\\s+|private\\s+|protected\\s+)?${propertyName}\\??\\s*[=:]`,
@@ -36,7 +39,10 @@ function findPropertyDefinition(tsFilePath, propertyName) {
   return null
 }
 
-function findNestedPropertyDefinition(tsFilePath, propertyPath) {
+export function findNestedPropertyDefinition(
+  tsFilePath: string,
+  propertyPath: string[]
+): vscode.Location | null {
   if (propertyPath.length === 1) {
     return findPropertyDefinition(tsFilePath, propertyPath[0])
   }
@@ -57,7 +63,7 @@ function findNestedPropertyDefinition(tsFilePath, propertyPath) {
   return traverseNestedPath(lines, rootLineIndex, propertyPath.slice(1), tsFilePath)
 }
 
-function findLineWithRegex(lines, regex) {
+function findLineWithRegex(lines: string[], regex: RegExp): number {
   for (let i = 0; i < lines.length; i++) {
     if (regex.test(lines[i])) {
       return i
@@ -66,7 +72,12 @@ function findLineWithRegex(lines, regex) {
   return -1
 }
 
-function traverseNestedPath(lines, startIndex, remainingPath, tsFilePath) {
+function traverseNestedPath(
+  lines: string[],
+  startIndex: number,
+  remainingPath: string[],
+  tsFilePath: string
+): vscode.Location | null {
   let currentLineIndex = startIndex
   let braceDepth = 0
   let inObjectLiteral = false
@@ -117,17 +128,20 @@ function traverseNestedPath(lines, startIndex, remainingPath, tsFilePath) {
   return null
 }
 
-function calculateBraceDepth(line) {
+function calculateBraceDepth(line: string): number {
   const openBraces = (line.match(/{/g) || []).length
   const closeBraces = (line.match(/}/g) || []).length
   return openBraces - closeBraces
 }
 
-function updateBraceDepth(currentDepth, line) {
+function updateBraceDepth(currentDepth: number, line: string): number {
   return currentDepth + calculateBraceDepth(line)
 }
 
-function findMethodDefinition(tsFilePath, methodName) {
+export function findMethodDefinition(
+  tsFilePath: string,
+  methodName: string
+): vscode.Location | null {
   const lines = readFileLines(tsFilePath)
   const methodRegex = new RegExp(
     `^\\s*(?:public\\s+|private\\s+|protected\\s+)?${methodName}\\s*\\(`,
@@ -142,11 +156,4 @@ function findMethodDefinition(tsFilePath, methodName) {
   }
 
   return null
-}
-
-module.exports = {
-  findClassDefinition,
-  findPropertyDefinition,
-  findNestedPropertyDefinition,
-  findMethodDefinition,
 }

@@ -1,9 +1,14 @@
-const { readFileLines, readFileContent } = require('../utils/fileUtils')
+import { readFileContent, readFileLines } from '../utils/fileUtils'
 
-function extractViewModelMembers(tsFilePath) {
+export interface ViewModelMembers {
+  properties: string[]
+  methods: string[]
+}
+
+export function extractViewModelMembers(tsFilePath: string): ViewModelMembers {
   const lines = readFileLines(tsFilePath)
-  const properties = new Set()
-  const methods = new Set()
+  const properties = new Set<string>()
+  const methods = new Set<string>()
 
   let inInterface = false
   let inClass = false
@@ -75,25 +80,25 @@ function extractViewModelMembers(tsFilePath) {
   }
 }
 
-function isInterfaceDeclaration(line) {
+function isInterfaceDeclaration(line: string): boolean {
   return /^\s*(?:export\s+)?interface\s+\w+/.test(line)
 }
 
-function isClassDeclaration(line) {
+function isClassDeclaration(line: string): boolean {
   return /^\s*(?:export\s+)?class\s+\w+/.test(line)
 }
 
-function calculateBraceDepth(line) {
+function calculateBraceDepth(line: string): number {
   const openBraces = (line.match(/{/g) || []).length
   const closeBraces = (line.match(/}/g) || []).length
   return openBraces - closeBraces
 }
 
-function updateBraceDepth(currentDepth, line) {
+function updateBraceDepth(currentDepth: number, line: string): number {
   return currentDepth + calculateBraceDepth(line)
 }
 
-function extractClassMembers(line, properties, methods) {
+function extractClassMembers(line: string, properties: Set<string>, methods: Set<string>): void {
   const propMatch = /^\s*(?:public\s+|private\s+|protected\s+)?([a-zA-Z_]\w*)\s*(?::|=)\s*/.exec(
     line
   )
@@ -119,7 +124,7 @@ function extractClassMembers(line, properties, methods) {
   }
 }
 
-function extractNestedProperties(tsFilePath, propertyPath) {
+export function extractNestedProperties(tsFilePath: string, propertyPath: string[]): string[] {
   const lines = readFileLines(tsFilePath)
   const text = readFileContent(tsFilePath)
 
@@ -145,7 +150,7 @@ function extractNestedProperties(tsFilePath, propertyPath) {
   return extractPropertiesFromObjectPath(lines, rootLineIndex, propertyPath.slice(1))
 }
 
-function findPropertyLine(lines, propertyName) {
+function findPropertyLine(lines: string[], propertyName: string): number {
   const rootPropRegex = new RegExp(
     `^\\s*(?:public\\s+|private\\s+|protected\\s+)?${propertyName}\\??\\s*[=:]`,
     'm'
@@ -160,7 +165,11 @@ function findPropertyLine(lines, propertyName) {
   return -1
 }
 
-function extractPropertiesFromObjectPath(lines, startLineIndex, remainingPath) {
+function extractPropertiesFromObjectPath(
+  lines: string[],
+  startLineIndex: number,
+  remainingPath: string[]
+): string[] {
   let currentLineIndex = startLineIndex
   let braceDepth = 0
   let inObjectLiteral = false
@@ -189,8 +198,12 @@ function extractPropertiesFromObjectPath(lines, startLineIndex, remainingPath) {
   return findNestedProperty(lines, currentLineIndex, braceDepth, remainingPath)
 }
 
-function collectPropertiesAtDepth(lines, startIndex, initialBraceDepth) {
-  const nestedProps = new Set()
+function collectPropertiesAtDepth(
+  lines: string[],
+  startIndex: number,
+  initialBraceDepth: number
+): string[] {
+  const nestedProps = new Set<string>()
   let braceDepth = initialBraceDepth
 
   for (let i = startIndex; i < lines.length; i++) {
@@ -213,7 +226,12 @@ function collectPropertiesAtDepth(lines, startIndex, initialBraceDepth) {
   return Array.from(nestedProps)
 }
 
-function findNestedProperty(lines, startIndex, initialBraceDepth, remainingPath) {
+function findNestedProperty(
+  lines: string[],
+  startIndex: number,
+  initialBraceDepth: number,
+  remainingPath: string[]
+): string[] {
   const targetProperty = remainingPath[0]
   let braceDepth = initialBraceDepth
 
@@ -235,7 +253,7 @@ function findNestedProperty(lines, startIndex, initialBraceDepth, remainingPath)
   return []
 }
 
-function extractInterfaceProperties(text, interfaceName) {
+export function extractInterfaceProperties(text: string, interfaceName: string): string[] {
   const lines = text.split('\n')
   const interfaceRegex = new RegExp(`^\\s*interface\\s+${interfaceName}\\s*\\{?`, 'm')
 
@@ -248,7 +266,7 @@ function extractInterfaceProperties(text, interfaceName) {
   return collectInterfaceProperties(lines, interfaceLineIndex)
 }
 
-function findLineMatchingRegex(lines, regex) {
+function findLineMatchingRegex(lines: string[], regex: RegExp): number {
   for (let i = 0; i < lines.length; i++) {
     if (regex.test(lines[i])) {
       return i
@@ -257,8 +275,8 @@ function findLineMatchingRegex(lines, regex) {
   return -1
 }
 
-function collectInterfaceProperties(lines, startIndex) {
-  const properties = new Set()
+function collectInterfaceProperties(lines: string[], startIndex: number): string[] {
+  const properties = new Set<string>()
   let braceDepth = 0
   let inInterface = false
 
@@ -286,10 +304,4 @@ function collectInterfaceProperties(lines, startIndex) {
   }
 
   return Array.from(properties)
-}
-
-module.exports = {
-  extractViewModelMembers,
-  extractNestedProperties,
-  extractInterfaceProperties,
 }

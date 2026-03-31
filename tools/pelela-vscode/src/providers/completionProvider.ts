@@ -1,19 +1,24 @@
-const vscode = require('vscode')
-const { findViewModelFile } = require('../utils/fileUtils')
-const { getHtmlElements, getHtmlAttributes, getPelelaAttributes } = require('../utils/htmlUtils')
-const {
+import * as vscode from 'vscode'
+import {
+  getAttributeValueMatch,
   getCurrentAttributeName,
   isInsideTag,
   isStartingTag,
-  getAttributeValueMatch,
   findForEachInElement,
   parseForEachExpression,
   parsePropertyPath,
-} = require('../parsers/documentParser')
-const { extractViewModelMembers, extractNestedProperties } = require('../parsers/viewModelParser')
+} from '../parsers/documentParser'
+import { extractNestedProperties, extractViewModelMembers } from '../parsers/viewModelParser'
+import { findViewModelFile } from '../utils/fileUtils'
+import { getHtmlAttributes, getHtmlElements, getPelelaAttributes } from '../utils/htmlUtils'
 
-async function provideCompletionItems(document, position, _token, _context) {
-  const items = []
+async function provideCompletionItems(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  _token: vscode.CancellationToken,
+  _context: vscode.CompletionContext
+): Promise<vscode.CompletionItem[]> {
+  const items: vscode.CompletionItem[] = []
   const line = document.lineAt(position.line)
   const lineText = line.text
   const textBeforeCursor = lineText.slice(0, position.character)
@@ -44,7 +49,7 @@ async function provideCompletionItems(document, position, _token, _context) {
   return items
 }
 
-function addHtmlElementCompletions(items) {
+function addHtmlElementCompletions(items: vscode.CompletionItem[]): void {
   for (const tag of getHtmlElements()) {
     const item = new vscode.CompletionItem(tag, vscode.CompletionItemKind.Property)
     item.sortText = `z${tag}`
@@ -52,7 +57,7 @@ function addHtmlElementCompletions(items) {
   }
 }
 
-function addHtmlAttributeCompletions(items) {
+function addHtmlAttributeCompletions(items: vscode.CompletionItem[]): void {
   for (const attr of getHtmlAttributes()) {
     const item = new vscode.CompletionItem(attr, vscode.CompletionItemKind.Property)
     item.insertText = new vscode.SnippetString(`${attr}="\${1}"`)
@@ -61,25 +66,20 @@ function addHtmlAttributeCompletions(items) {
   }
 }
 
-function addPelelaAttributeCompletions(items) {
+function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
   const attrNames = getPelelaAttributes()
 
-  // VSCode snippet definitions use ${N:placeholder} syntax for tab stops
-  const snippets = {
+  const snippets: Record<string, { text: string; detail: string }> = {
     'view-model': {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
       text: 'view-model="${1:App}"',
       detail: 'Pelela: view model asociado al template',
     },
     click: {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
       text: 'click="${1:handler}"',
       detail: 'Pelela: ejecuta un método del view model al hacer click',
     },
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
     if: { text: 'if="${1:condicion}"', detail: 'Pelela: renderizado condicional' },
     'for-each': {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet placeholder
       text: 'for-each="${1:item} of ${2:collection}"',
       detail: 'Pelela: itera sobre una colección del view model',
     },
@@ -103,12 +103,12 @@ function addPelelaAttributeCompletions(items) {
 }
 
 async function provideAttributeValueCompletions(
-  document,
-  position,
-  attributeName,
-  textBeforeCursor
-) {
-  const items = []
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  attributeName: string,
+  textBeforeCursor: string
+): Promise<vscode.CompletionItem[]> {
+  const items: vscode.CompletionItem[] = []
   const isPelelaAttribute =
     attributeName.startsWith('bind-') ||
     attributeName === 'click' ||
@@ -137,8 +137,11 @@ async function provideAttributeValueCompletions(
   return await provideBasicViewModelCompletions(tsFile, attributeName)
 }
 
-async function provideBasicViewModelCompletions(tsFile, attributeName) {
-  const items = []
+async function provideBasicViewModelCompletions(
+  tsFile: string,
+  attributeName: string
+): Promise<vscode.CompletionItem[]> {
+  const items: vscode.CompletionItem[] = []
   const { properties, methods } = extractViewModelMembers(tsFile)
 
   if (attributeName.startsWith('bind-') || attributeName === 'if' || attributeName === 'for-each') {
@@ -160,8 +163,13 @@ async function provideBasicViewModelCompletions(tsFile, attributeName) {
   return items
 }
 
-async function provideNestedPropertyCompletions(document, position, tsFile, propertyPath) {
-  const items = []
+async function provideNestedPropertyCompletions(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  tsFile: string,
+  propertyPath: string[]
+): Promise<vscode.CompletionItem[]> {
+  const items: vscode.CompletionItem[] = []
   const forEachInElement = findForEachInElement(document, position.line)
 
   if (
@@ -195,7 +203,7 @@ async function provideNestedPropertyCompletions(document, position, tsFile, prop
   return items
 }
 
-function createCompletionProvider() {
+export function createCompletionProvider(): vscode.Disposable {
   return vscode.languages.registerCompletionItemProvider(
     { language: 'pelela', scheme: 'file' },
     { provideCompletionItems },
@@ -208,8 +216,4 @@ function createCompletionProvider() {
     '/',
     '.'
   )
-}
-
-module.exports = {
-  createCompletionProvider,
 }

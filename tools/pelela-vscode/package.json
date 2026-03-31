@@ -1,13 +1,14 @@
 {
   "name": "pelela-vscode",
   "version": "0.0.1",
+  "type": "commonjs",
   "publisher": "uqbar",
   "displayName": "Pelela Templates",
   "description": "Soporte básico para archivos .pelela (syntax highlighting y snippets).",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.105.0"
   },
-  "main": "./extension.js",
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:pelela"
   ],
@@ -15,12 +16,23 @@
     "Programming Languages"
   ],
   "scripts": {
-    "test": "mocha --require test/setup.cjs test/**/*.test.js"
+    "build": "tsup src/extension.ts --format cjs --external vscode --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "mocha --require tsx --require test/setup.cjs test/**/*.test.ts",
+    "package": "vsce package"
   },
   "devDependencies": {
+    "@types/chai": "5.2.3",
+    "@types/mocha": "10.0.10",
+    "@types/node": "24.10.1",
+    "@types/vscode": "1.105.0",
+    "@vscode/vsce": "3.7.1",
     "chai": "^4.3.10",
     "glob": "^13.0.0",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "tsup": "8.5.1",
+    "tsx": "4.21.0",
+    "typescript": "6.0.2"
   },
   "contributes": {
     "languages": [

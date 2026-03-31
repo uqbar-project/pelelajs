@@ -31,8 +31,10 @@ pelela-vscode/
 
 ## Technical Features
 
-- ✅ **CommonJS**: Code with `require`/`module.exports` (required by VSCode)
-- ✅ **pnpm**: Dependency management
+- ✅ **TypeScript 6**: Modern DX with static typing
+- ✅ **tsx**: Script execution and unit testing
+- ✅ **tsup**: Optimized CommonJS bundling (required by VSCode)
+- ✅ **CommonJS Compatibility**: Maintains compatibility with Chai 4 tests and VSCode runtime
 
 ## Development
 

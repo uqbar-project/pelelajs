@@ -1,4 +1,4 @@
-function getHtmlElements() {
+export function getHtmlElements() {
   return [
     'div',
     'span',
@@ -39,7 +39,7 @@ function getHtmlElements() {
   ]
 }
 
-function getHtmlAttributes() {
+export function getHtmlAttributes() {
   return [
     'id',
     'class',
@@ -67,7 +67,7 @@ function getHtmlAttributes() {
   ]
 }
 
-function getPelelaAttributes() {
+export function getPelelaAttributes() {
   return [
     'view-model',
     'bind-value',
@@ -78,10 +78,4 @@ function getPelelaAttributes() {
     'click',
     'for-each',
   ]
-}
-
-module.exports = {
-  getHtmlElements,
-  getHtmlAttributes,
-  getPelelaAttributes,
 }

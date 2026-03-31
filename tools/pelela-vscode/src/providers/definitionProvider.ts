@@ -1,18 +1,22 @@
-const vscode = require('vscode')
-const { findViewModelFile } = require('../utils/fileUtils')
-const { findForEachInElement } = require('../parsers/documentParser')
-const {
+import * as vscode from 'vscode'
+import { findForEachInElement } from '../parsers/documentParser'
+import {
   findClassDefinition,
-  findPropertyDefinition,
-  findNestedPropertyDefinition,
   findMethodDefinition,
-} = require('../parsers/definitionFinder')
+  findNestedPropertyDefinition,
+  findPropertyDefinition,
+} from '../parsers/definitionFinder'
+import { findViewModelFile } from '../utils/fileUtils'
 
 // Regex patterns for attribute matching
 const BIND_ATTRIBUTE_PATTERN = /(?:bind-[a-zA-Z0-9_-]+|if|for-each)=["']([^"']+)["']/g
 const CLICK_ATTRIBUTE_PATTERN = /click=["']([^"']+)["']/g
 
-function provideDefinition(document, position, _token) {
+function provideDefinition(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  _token: vscode.CancellationToken
+): vscode.ProviderResult<vscode.Definition> {
   const line = document.lineAt(position.line)
   const lineText = line.text
 
@@ -30,7 +34,11 @@ function provideDefinition(document, position, _token) {
   return null
 }
 
-function checkViewModelDefinition(document, position, lineText) {
+function checkViewModelDefinition(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  lineText: string
+): vscode.Location | null {
   const viewModelMatch = /view-model=["']([^"']+)["']/g.exec(lineText)
   if (
     viewModelMatch &&
@@ -46,7 +54,12 @@ function checkViewModelDefinition(document, position, lineText) {
   return null
 }
 
-function checkBindAttributeDefinitions(document, position, lineText, forEachInElement) {
+function checkBindAttributeDefinitions(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  lineText: string,
+  forEachInElement: any // Using any for ForEachResult as it's not exported, or I should export it
+): vscode.Location | null {
   for (const match of lineText.matchAll(BIND_ATTRIBUTE_PATTERN)) {
     const fullValue = match[1]
     const attrStartPos = match.index
@@ -58,7 +71,9 @@ function checkBindAttributeDefinitions(document, position, lineText, forEachInEl
       if (!tsFile) continue
 
       const cursorOffsetInValue = position.character - valueStartPos
-      const attrName = match[0].match(/^([^=]+)=/)[1]
+      const attrNameMatch = match[0].match(/^([^=]+)=/)
+      if (!attrNameMatch) continue
+      const attrName = attrNameMatch[1]
 
       if (attrName === 'for-each') {
         return handleForEachDefinition(fullValue, cursorOffsetInValue, tsFile)
@@ -77,7 +92,11 @@ function checkBindAttributeDefinitions(document, position, lineText, forEachInEl
   return null
 }
 
-function handleForEachDefinition(fullValue, cursorOffsetInValue, tsFile) {
+function handleForEachDefinition(
+  fullValue: string,
+  cursorOffsetInValue: number,
+  tsFile: string
+): vscode.Location | null {
   const forEachMatch = /^\s*(\w+)\s+of\s+(\w+)\s*$/.exec(fullValue)
   if (forEachMatch) {
     const collectionName = forEachMatch[2]
@@ -92,12 +111,12 @@ function handleForEachDefinition(fullValue, cursorOffsetInValue, tsFile) {
 }
 
 function handlePropertyPathDefinition(
-  document,
-  fullValue,
-  cursorOffsetInValue,
-  tsFile,
-  forEachInElement
-) {
+  document: vscode.TextDocument,
+  fullValue: string,
+  cursorOffsetInValue: number,
+  tsFile: string,
+  forEachInElement: any
+): vscode.Location | null {
   const parts = fullValue.split('.')
   let currentPos = 0
 
@@ -124,7 +143,11 @@ function handlePropertyPathDefinition(
   return null
 }
 
-function checkClickAttributeDefinition(document, position, lineText) {
+function checkClickAttributeDefinition(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  lineText: string
+): vscode.Location | null {
   for (const match of lineText.matchAll(CLICK_ATTRIBUTE_PATTERN)) {
     const methodName = match[1]
     const startPos = match.index + match[0].indexOf(methodName)
@@ -141,13 +164,9 @@ function checkClickAttributeDefinition(document, position, lineText) {
   return null
 }
 
-function createDefinitionProvider() {
+export function createDefinitionProvider(): vscode.Disposable {
   return vscode.languages.registerDefinitionProvider(
     { language: 'pelela', scheme: 'file' },
     { provideDefinition }
   )
-}
-
-module.exports = {
-  createDefinitionProvider,
 }
