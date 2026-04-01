@@ -1,3 +1,5 @@
+import { isObject } from '../commons/helpers'
+
 const ARRAY_MUTATION_METHODS = [
   'push',
   'pop',
@@ -8,25 +10,175 @@ const ARRAY_MUTATION_METHODS = [
   'reverse',
 ] as const
 
-const proxyCache = new WeakMap<object, any>()
-const rawObjectCache = new WeakMap<object, any>()
+/**
+ * Caches to keep track of proxies and their original objects.
+ * This prevents creating multiple proxies for the same object and
+ * allows retrieving the raw object from a proxy.
+ */
+const proxyCache = new WeakMap<object, object>()
+const rawObjectCache = new WeakMap<object, object>()
 
-function isObject(value: unknown): value is object {
-  return value !== null && typeof value === 'object'
+/**
+ * Handler for the reactive proxy.
+ * Encapsulates the logic for getting, setting, and deleting properties
+ * while maintaining deep reactivity and change tracking.
+ */
+class ReactiveHandler<T extends object> implements ProxyHandler<T> {
+  constructor(
+    private readonly onChange: (changedPath: string) => void,
+    private readonly parentPath = '',
+  ) {}
+
+  get(targetObject: T, propertyKey: string | symbol, receiver: unknown): unknown {
+    if (propertyKey === '$raw') {
+      return targetObject
+    }
+
+    if (propertyKey === '$set') {
+      return this.handleSetHelper()
+    }
+
+    if (propertyKey === '$delete') {
+      return this.handleDeleteHelper()
+    }
+
+    const value = Reflect.get(targetObject, propertyKey, receiver)
+
+    if (Array.isArray(targetObject) && this.isArrayMutationMethod(propertyKey)) {
+      return this.handleArrayMutation(targetObject, propertyKey)
+    }
+
+    // Deep reactivity: if the value is an object, wrap it in a proxy.
+    if (isObject(value)) {
+      const childPath = this.buildPath(String(propertyKey))
+      return makeReactive(value, this.onChange, new WeakSet([targetObject]), childPath)
+    }
+
+    return value
+  }
+
+  set(targetObject: T, propertyKey: string | symbol, value: unknown, receiver: unknown): boolean {
+    const oldValue = Reflect.get(targetObject, propertyKey, receiver)
+
+    if (oldValue === value) {
+      return true
+    }
+
+    const result = Reflect.set(targetObject, propertyKey, value, receiver)
+
+    if (result) {
+      this.notifyChange(propertyKey)
+    }
+
+    return result
+  }
+
+  deleteProperty(targetObject: T, propertyKey: string | symbol): boolean {
+    const hadProperty = Reflect.has(targetObject, propertyKey)
+    const result = Reflect.deleteProperty(targetObject, propertyKey)
+
+    if (result && hadProperty) {
+      this.notifyChange(propertyKey)
+    }
+
+    return result
+  }
+
+  /**
+   * Builds a full path string for nested properties.
+   */
+  private buildPath(property: string): string {
+    return this.parentPath ? `${this.parentPath}.${property}` : property
+  }
+
+  private isArrayMutationMethod(
+    propertyKey: PropertyKey,
+  ): propertyKey is (typeof ARRAY_MUTATION_METHODS)[number] {
+    return (
+      typeof propertyKey === 'string' &&
+      (ARRAY_MUTATION_METHODS as readonly string[]).includes(propertyKey)
+    )
+  }
+
+  private notifyChange(propertyKey: PropertyKey): void {
+    const fullPath = this.buildPath(String(propertyKey))
+    this.onChange(fullPath)
+  }
+
+  private handleSetHelper(): (target: object, key: PropertyKey, value: unknown) => void {
+    return (target: object, key: PropertyKey, value: unknown) => {
+      if (isProxy(target)) {
+        Reflect.set(target, key, value)
+        return
+      }
+
+      const result = Reflect.set(target, key, value)
+
+      if (result) {
+        this.notifyChange(key)
+      }
+    }
+  }
+
+  private handleDeleteHelper(): (target: object, key: PropertyKey) => void {
+    return (target: object, key: PropertyKey) => {
+      if (isProxy(target)) {
+        Reflect.deleteProperty(target, key)
+        return
+      }
+
+      const result = Reflect.deleteProperty(target, key)
+
+      if (result) {
+        this.notifyChange(key)
+      }
+    }
+  }
+
+  /**
+   * Wraps array mutation methods to track changes and make new elements reactive.
+   */
+  private handleArrayMutation<V>(
+    targetArray: V[],
+    methodName: (typeof ARRAY_MUTATION_METHODS)[number],
+  ): (...args: unknown[]) => unknown {
+    return (...args: unknown[]) => {
+      const method = Array.prototype[methodName] as (...args: unknown[]) => unknown
+      const result = method.apply(targetArray, args)
+      this.onChange(this.parentPath || 'root')
+      return result
+    }
+  }
 }
 
-function makeReactive(
-  target: any,
+/**
+ * Checks if a value is a reactive proxy.
+ */
+export function isProxy(value: unknown): boolean {
+  return isObject(value) && rawObjectCache.has(value)
+}
+
+/**
+ * Creates a reactive proxy for the given target object.
+ *
+ * Why we use WeakMap/WeakSet:
+ * - proxyCache: To avoid creating redundant proxies for the same object.
+ * - rawObjectCache: To map proxies back to their original objects if needed.
+ * - visited: To handle circular references and prevent infinite recursion.
+ */
+function makeReactive<T>(
+  target: T,
   onChange: (changedPath: string) => void,
   visited = new WeakSet<object>(),
   parentPath = '',
-): any {
+): T {
   if (!isObject(target)) {
     return target
   }
 
-  if (proxyCache.has(target)) {
-    return proxyCache.get(target)
+  const existingProxy = proxyCache.get(target) as T | undefined
+  if (existingProxy) {
+    return existingProxy
   }
 
   if (visited.has(target)) {
@@ -35,104 +187,24 @@ function makeReactive(
 
   visited.add(target)
 
-  const isArray = Array.isArray(target)
+  const handler = new ReactiveHandler<object>(onChange, parentPath)
+  const proxy = new Proxy(target, handler) as T & object
 
-  const handler: ProxyHandler<any> = {
-    get(obj, prop) {
-      if (prop === '$raw') {
-        return obj
-      }
-
-      if (prop === '$set') {
-        return (target: any, key: PropertyKey, value: any) => {
-          const reactive = makeReactive(value, onChange, new WeakSet(), parentPath)
-          target[key] = reactive
-          const fullPath = parentPath ? `${parentPath}.${String(key)}` : String(key)
-          onChange(fullPath)
-        }
-      }
-
-      if (prop === '$delete') {
-        return (target: any, key: PropertyKey) => {
-          delete target[key]
-          const fullPath = parentPath ? `${parentPath}.${String(key)}` : String(key)
-          onChange(fullPath)
-        }
-      }
-
-      const value = Reflect.get(obj, prop)
-
-      if (isArray && ARRAY_MUTATION_METHODS.includes(prop as any)) {
-        return function (this: any, ...args: any[]) {
-          const reactiveArgs = args.map((arg) =>
-            isObject(arg) ? makeReactive(arg, onChange, new WeakSet(), parentPath) : arg,
-          )
-          const result = Array.prototype[prop as any].apply(this, reactiveArgs)
-          onChange(parentPath || 'root')
-          return result
-        }
-      }
-
-      if (isObject(value)) {
-        const newVisited = new WeakSet<object>()
-        newVisited.add(target)
-        const childPath = parentPath ? `${parentPath}.${String(prop)}` : String(prop)
-        return makeReactive(value, onChange, newVisited, childPath)
-      }
-
-      return value
-    },
-
-    set(obj, prop, value) {
-      const oldValue = obj[prop]
-
-      if (oldValue === value) {
-        return true
-      }
-
-      const reactiveValue = isObject(value)
-        ? makeReactive(value, onChange, new WeakSet(), parentPath)
-        : value
-
-      const result = Reflect.set(obj, prop, reactiveValue)
-
-      if (result) {
-        const fullPath = parentPath ? `${parentPath}.${String(prop)}` : String(prop)
-        onChange(fullPath)
-      }
-
-      return result
-    },
-
-    deleteProperty(obj, prop) {
-      const hadProperty = prop in obj
-      const result = Reflect.deleteProperty(obj, prop)
-
-      if (result && hadProperty) {
-        const fullPath = parentPath ? `${parentPath}.${String(prop)}` : String(prop)
-        onChange(fullPath)
-      }
-
-      return result
-    },
-  }
-
-  const proxy = new Proxy(target, handler)
   proxyCache.set(target, proxy)
   rawObjectCache.set(proxy, target)
 
-  return proxy
+  return proxy as T
 }
 
 export type ReactiveViewModel<T extends object> = T & {
   $raw: T
-  $set: (target: any, key: PropertyKey, value: any) => void
-  $delete: (target: any, key: PropertyKey) => void
+  $set: (target: object, key: PropertyKey, value: unknown) => void
+  $delete: (target: object, key: PropertyKey) => void
 }
 
 export function createReactiveViewModel<T extends object>(
   target: T,
   onChange: (changedPath: string) => void,
 ): ReactiveViewModel<T> {
-  return makeReactive(target, onChange)
+  return makeReactive(target, onChange) as ReactiveViewModel<T>
 }

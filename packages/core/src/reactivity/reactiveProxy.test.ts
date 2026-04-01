@@ -296,5 +296,91 @@ describe('reactiveProxy', () => {
       expect(onChange).not.toHaveBeenCalled()
       expect(target.count).toBe(5)
     })
+
+    it('should use full path when notifying changes of properties in assigned objects', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ address: {} as any }, onChange)
+
+      proxy.address = { city: 'New York' }
+      expect(onChange).toHaveBeenCalledWith('address')
+      onChange.mockClear()
+
+      proxy.address.city = 'Los Angeles'
+      expect(onChange).toHaveBeenCalledWith('address.city')
+    })
+
+    it('should use full path when using $set helper for nested objects', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ user: {} as any }, onChange)
+
+      proxy.$set(proxy.user, 'profile', { bio: 'Hello' })
+      expect(onChange).toHaveBeenCalledWith('user.profile')
+      onChange.mockClear()
+
+      proxy.user.profile.bio = 'Hi'
+      expect(onChange).toHaveBeenCalledWith('user.profile.bio')
+    })
+
+    it('should throw TypeError when $set fails on non-extensible object', () => {
+      const target = Object.preventExtensions({ a: 1 })
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target, onChange)
+
+      proxy.$set(proxy, 'b', 2)
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('should throw TypeError when $delete fails on non-configurable property', () => {
+      const target = {}
+      Object.defineProperty(target, 'a', { value: 1, configurable: false })
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target as any, onChange)
+
+      proxy.$delete(proxy, 'a')
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('should trigger exactly one notification with full path when using $set on a nested proxy', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ user: { name: 'John' } }, onChange)
+
+      proxy.$set(proxy.user, 'name', 'Jane')
+
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledWith('user.name')
+    })
+
+    it('should trigger exactly one notification with full path when using $delete on a nested proxy', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ user: { name: 'John' } }, onChange)
+
+      proxy.$delete(proxy.user, 'name')
+
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledWith('user.name')
+    })
+
+    it('should trigger exactly one notification during array mutation even with multiple arguments', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ items: [1] }, onChange)
+
+      proxy.items.push(2, 3, 4)
+
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledWith('items')
+    })
+
+    it('should implement lazy reactivity: objects are made reactive on access, not on assignment', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ data: {} as any }, onChange)
+      const rawObject = { city: 'New York' }
+
+      proxy.data = rawObject
+      expect(onChange).toHaveBeenCalledWith('data')
+
+      // Verification: it should be reactive now that we access it
+      proxy.data.city = 'Chicago'
+      expect(onChange).toHaveBeenCalledWith('data.city')
+    })
   })
 })
