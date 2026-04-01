@@ -52,8 +52,9 @@ export function findNestedPropertyDefinition(
 
   const lines = readFileLines(typescriptFilePath)
   const rootPropertyName = propertyPath[0]
+  const escapedRootPropertyName = escapeRegex(rootPropertyName)
   const rootPropertyRegex = new RegExp(
-    `^\\s*(?:public\\s+|private\\s+|protected\\s+)?${rootPropertyName}\\??\\s*[=:]`,
+    `^\\s*(?:public\\s+|private\\s+|protected\\s+)?${escapedRootPropertyName}\\??\\s*[=:]`,
     'm'
   )
 
@@ -123,10 +124,31 @@ function traverseObjectPath(
 }
 
 function findObjectStartLineIndex(lines: string[], currentSearchIndex: number): number {
-  const searchSlice = lines.slice(currentSearchIndex)
-  const relativeIndex = searchSlice.findIndex((line) => isObjectLiteralStart(line))
+  const initialLine = lines[currentSearchIndex]
+  const assignIndex = Math.max(initialLine.indexOf('='), initialLine.indexOf(':'))
+  const braceIndex = initialLine.indexOf('{')
 
-  return relativeIndex === -1 ? -1 : currentSearchIndex + relativeIndex
+  const isObjectOpenedOnSameLine = assignIndex !== -1 && braceIndex > assignIndex
+  if (isObjectOpenedOnSameLine) {
+    return currentSearchIndex
+  }
+
+  for (let i = currentSearchIndex + 1; i < lines.length; i++) {
+    const line = lines[i]
+    const openBraceIdx = line.indexOf('{')
+
+    if (openBraceIdx !== -1) {
+      const lineAssignIdx = Math.max(line.indexOf('='), line.indexOf(':'))
+      
+      const containsAssignmentBeforeBrace = lineAssignIdx !== -1 && openBraceIdx > lineAssignIdx
+      const isBraceFirstNonWhitespaceChar = /^\s*\{/.test(line)
+      const isValidObjectStart = containsAssignmentBeforeBrace || isBraceFirstNonWhitespaceChar
+
+      return isValidObjectStart ? i : -1
+    }
+  }
+
+  return -1
 }
 
 function findLineOfPropertyForRoot(
@@ -134,7 +156,8 @@ function findLineOfPropertyForRoot(
   objectStartLineIndex: number,
   targetProperty: string
 ): number {
-  const propertyRegex = new RegExp(`^\\s*${targetProperty}\\s*[=:]`)
+  const escapedTargetProperty = escapeRegex(targetProperty)
+  const propertyRegex = new RegExp(`^\\s*${escapedTargetProperty}\\s*[=:]`)
   let currentBraceDepth = calculateBraceDepth(lines[objectStartLineIndex])
 
   for (let lineIndex = objectStartLineIndex + 1; lineIndex < lines.length; lineIndex++) {

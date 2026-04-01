@@ -35,6 +35,17 @@ export class UserViewModel {
     return this.username;
   }
   
+  public $store = {
+    $state: "active",
+    "some.property": "value"
+  };
+
+  brokenObject: any = null;
+  // some logic
+  if (true) {
+    console.log("test");
+  }
+  
   handleLogin() {
     console.log("logging in");
   }
@@ -123,6 +134,24 @@ export class UserViewModel {
 
     it('debería retornar null para un path inexistente', () => {
       const location = findNestedPropertyDefinition(testVMPath, ['profile', 'nonExistent'])
+      assert.strictEqual(location, null)
+    })
+
+    it('debería encontrar propiedades con caracteres especiales en rutas anidadas', () => {
+      // Test the escaped rootPropertyName ($store) and targetProperty ($state) functionality
+      const location = findNestedPropertyDefinition(testVMPath, ['$store', '$state'])
+
+      assert.ok(location instanceof vscode.Location)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
+
+      const quotedLocation = findNestedPropertyDefinition(testVMPath, ['$store', '"some.property"'])
+      assert.ok(quotedLocation instanceof vscode.Location)
+      assert.strictEqual(quotedLocation?.uri.fsPath, testVMPath)
+    })
+
+    it('debería retornar null y evitar saltos inválidos si el inicio del objeto está corrupto', () => {
+      // testea el "return -1" cuando un '{' desasociado se encuentra luego de la propiedad
+      const location = findNestedPropertyDefinition(testVMPath, ['brokenObject', 'prop'])
       assert.strictEqual(location, null)
     })
   })

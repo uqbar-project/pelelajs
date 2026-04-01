@@ -20,18 +20,18 @@ export const vscodeStub = {
   },
 
   Range: class Range {
-    start: any
-    end: any
-    constructor(start: any, end: any) {
+    start: unknown
+    end: unknown
+    constructor(start: unknown, end: unknown) {
       this.start = start
       this.end = end
     }
   },
 
   Location: class Location {
-    uri: any
-    range: any
-    constructor(uri: any, rangeOrPosition: any) {
+    uri: unknown
+    range: unknown
+    constructor(uri: unknown, rangeOrPosition: unknown) {
       this.uri = uri
       if (rangeOrPosition instanceof vscodeStub.Position) {
         this.range = new vscodeStub.Range(rangeOrPosition, rangeOrPosition)
