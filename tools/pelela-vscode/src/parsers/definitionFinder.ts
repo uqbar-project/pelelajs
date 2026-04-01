@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { readFileLines } from '../utils/fileUtils'
-import { calculateBraceDepth, isObjectLiteralStart } from '../utils/parsingUtils'
+import { calculateBraceDepth } from '../utils/parsingUtils'
 
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -139,7 +139,7 @@ function findObjectStartLineIndex(lines: string[], currentSearchIndex: number): 
 
     if (openBraceIdx !== -1) {
       const lineAssignIdx = Math.max(line.indexOf('='), line.indexOf(':'))
-      
+
       const containsAssignmentBeforeBrace = lineAssignIdx !== -1 && openBraceIdx > lineAssignIdx
       const isBraceFirstNonWhitespaceChar = /^\s*\{/.test(line)
       const isValidObjectStart = containsAssignmentBeforeBrace || isBraceFirstNonWhitespaceChar
