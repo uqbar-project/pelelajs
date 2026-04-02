@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Build output
+dist/
+
+# Test output
+coverage/
+
+# IDE
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Generated projects from CLI (testing)
+*project/
+example/
+my-app/
