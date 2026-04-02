@@ -23,7 +23,8 @@
     "install": "pnpm install",
     "dev": "pnpm dev",
     "newVersionAvailable": "🆕 A new version is available: {{version}}",
-    "updateCommand": "Run `pnpm add -g @pelelajs/cli` to update"
+    "updateCommand": "Run `pnpm add -g @pelelajs/cli` to update",
+    "versionCheckFailed": "Failed to check for updates: {{error}}"
   },
   "errors": {
     "prefix": "❌ Error:"

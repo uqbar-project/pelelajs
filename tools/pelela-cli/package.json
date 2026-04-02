@@ -2,7 +2,6 @@
   "name": "@pelelajs/cli",
   "version": "1.0.0",
   "description": "CLI tool to bootstrap new PelelaJS projects",
-  "type": "module",
   "bin": {
     "pelela": "./src/index.ts"
   },

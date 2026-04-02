@@ -1,6 +1,14 @@
+function getPackageVersion(): string {
+  const packageJson = require('../../package.json') as { version: string }
+  return packageJson.version
+}
+
+export function getCliVersion(): string {
+  return getPackageVersion()
+}
+
 export async function getLocalVersion(): Promise<string> {
-  const version = '1.0.0'
-  return version
+  return getCliVersion()
 }
 
 export async function checkNewVersion(): Promise<{
@@ -15,12 +23,12 @@ export async function checkNewVersion(): Promise<{
     const data = (await response.json()) as { 'dist-tags'?: { latest?: string } }
     const latest = data['dist-tags']?.latest
 
-    const hasUpdate = latest && latest !== current && compareVersions(latest, current) > 0
+    const hasUpdate = typeof latest === 'string' && latest !== current
 
     return {
       current,
       latest: latest || null,
-      hasUpdate: hasUpdate || false,
+      hasUpdate,
     }
   } catch {
     return {
@@ -29,20 +37,4 @@ export async function checkNewVersion(): Promise<{
       hasUpdate: false,
     }
   }
-}
-
-function compareVersions(v1: string, v2: string): number {
-  const parts1 = v1.split('.').map(Number)
-  const parts2 = v2.split('.').map(Number)
-
-  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-    const part1 = parts1[i] || 0
-    const part2 = parts2[i] || 0
-
-    if (part1 !== part2) {
-      return part1 - part2
-    }
-  }
-
-  return 0
 }

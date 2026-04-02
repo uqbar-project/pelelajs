@@ -17,6 +17,7 @@
 - **Comentarios significativos** - Comentá el "porqué" no el "qué", el código debe explicarse por sí mismo. ¡NO COMENTES TODO! No queremos comentarios inútiles que no aportan nada. El código claro es la mejor documentación. No comentes una sola línea de código dentro de una función o método. No uses JSDoc para funciones internas (no exportadas).
 - **Consistencia** - Mantené un estilo consistente en todo el código base
 - **Manejo de errores** - usá excepciones para casos excepcionales, no para control de flujo. Fail fast: fallar lo antes posible cuando el usuario haga algo que no debería hacer. Nunca dejar un catch vacío.
+- **Async/Await** - Usá siempre `async/await` en lugar de `.then()/.catch()`. Mantené consistencia con el estilo moderno y legible.
 - **Tipado estricto** - No usar `any`. Siempre usar `unknown` o buscar el tipo que corresponda: un tipo existente, genérico `T`, o `unknown` cuando no se pueda determinar el tipo.
 
 ## Arquitectura
@@ -37,4 +38,5 @@
 - **Package manager** - "Usa siempre pnpm, nunca npm. Este proyecto usa `pnpm-workspace.yaml` y requiere pnpm para gestionar dependencias."
 - **Tests** - "Corré los tests y `biome check` antes de dar por terminado un cambio. Usá `pnpm test --run` para ejecutar una sola vez y evitar que se quede esperando cambios."
 - **Idioma** - "Los comentarios y código en inglés y la documentación en español, así como los mensajes de error"
+- **Internacionalización (i18n)** - "Todos los mensajes hacia el usuario DEBEN estar internacionalizados. Nada de strings hardcodeados. Usar la función `t()` de i18n para todos los mensajes que vea el usuario."
 - **Siempre explicá los cambios importantes siguiendo estas directrices**
