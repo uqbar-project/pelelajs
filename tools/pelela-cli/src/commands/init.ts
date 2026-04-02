@@ -56,9 +56,10 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
 }
 
 function displaySuccessMessage(projectName: string): void {
-  const message = chalk.green.bold(t('messages.success', { projectName }))
-
-  const box = boxen(message)
+  const successMessage = t('messages.success', { projectName })
+  const message = chalk.green.bold(successMessage)
+  const visibleLength = successMessage.length
+  const box = boxen({ w: visibleLength + 4, h: 3 }, message)
 
   log(`\n${box}\n`)
 
