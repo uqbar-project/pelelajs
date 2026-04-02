@@ -1,13 +1,19 @@
 {
   "name": "@pelelajs/cli",
   "version": "1.0.0",
+  "type": "module",
   "description": "CLI tool to bootstrap new PelelaJS projects",
   "bin": {
-    "pelela": "./src/index.ts"
+    "pelela": "./dist/index.js"
   },
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "templates"
+  ],
   "scripts": {
     "dev": "tsx src/index.ts",
+    "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run"
@@ -28,6 +34,7 @@
   "devDependencies": {
     "@types/cli-box": "6.0.4",
     "@types/node": "24.10.1",
+    "tsup": "8.5.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.0.14"

@@ -1,6 +1,6 @@
 # Pelela CLI
 
-Command-line tool to bootstrap new PelelaJS projects quickly and easily.
+Command-line tool to work with PelelaJS projects quickly and easily.
 
 ## Installation
 
