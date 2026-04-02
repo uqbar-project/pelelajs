@@ -34,6 +34,7 @@
 - **Scope acotado** - "Hacé solo lo que se te pide, no refactorices código que no está relacionado con la tarea" (evita PRs gigantes con cambios no solicitados)
 - **Leé antes de modificar** - "Antes de cambiar código, leé el contexto completo para entender el diseño existente"
 - **Dependencias** - "No agregues nuevas dependencias sin consultar primero"
+- **Package manager** - "Usa siempre pnpm, nunca npm. Este proyecto usa `pnpm-workspace.yaml` y requiere pnpm para gestionar dependencias."
 - **Tests** - "Corré los tests y `biome check` antes de dar por terminado un cambio. Usá `pnpm test --run` para ejecutar una sola vez y evitar que se quede esperando cambios."
 - **Idioma** - "Los comentarios y código en inglés y la documentación en español, así como los mensajes de error"
 - **Siempre explicá los cambios importantes siguiendo estas directrices**
