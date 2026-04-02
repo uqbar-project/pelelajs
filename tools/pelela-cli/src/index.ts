@@ -4,48 +4,49 @@ import chalk from 'chalk'
 import { Command } from 'commander'
 import { initCommand } from './commands/init'
 import { initializeI18n, t } from './utils/i18n'
-import { checkNewVersion } from './utils/version'
+import { checkNewVersion, getCliVersion } from './utils/version'
+
+const { log, warn } = console
 
 async function main(): Promise<void> {
   await initializeI18n()
 
   const program = new Command()
 
-  program.name('pelela').description(t('cli.description')).version('1.0.0')
+  program.name('pelela').description(t('cli.description')).version(getCliVersion())
 
   program
     .command('init [projectName]')
     .description(t('commands.init.description'))
-    .action(async (projectName: unknown) => {
+    .action(async (projectName: string | undefined) => {
       try {
-        const name = typeof projectName === 'string' ? projectName : undefined
-        await initCommand({ projectName: name })
+        await initCommand({ projectName })
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        console.error(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))
+        warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))
         process.exit(1)
       }
     })
 
   program.parse()
 
-  checkNewVersion()
-    .then((versionInfo) => {
-      if (versionInfo.hasUpdate) {
-        console.log(
-          chalk.yellow.bold(
-            `\n${t('messages.newVersionAvailable', { version: versionInfo.latest })}`,
-          ),
-        )
-        console.log(chalk.dim(`  ${t('messages.updateCommand')}\n`))
-      }
-    })
-    .catch(() => {
-      // Silently ignore version check failures
-    })
+  try {
+    const versionInfo = await checkNewVersion()
+    if (versionInfo.hasUpdate) {
+      log(
+        chalk.yellow.bold(
+          `\n${t('messages.newVersionAvailable', { version: versionInfo.latest })}`,
+        ),
+      )
+      log(chalk.dim(`  ${t('messages.updateCommand')}\n`))
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    warn(chalk.dim(t('messages.versionCheckFailed', { error: errorMessage })))
+  }
 }
 
 main().catch((error) => {
-  console.error(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(String(error)))
+  warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(String(error)))
   process.exit(1)
 })

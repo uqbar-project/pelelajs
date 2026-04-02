@@ -1,6 +1,7 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { normalizeProjectName, validateProjectName } from '../src/commands/init'
 import { initializeI18n, t } from '../src/utils/i18n'
+import { checkNewVersion } from '../src/utils/version'
 
 beforeAll(async () => {
   await initializeI18n('en')
@@ -48,5 +49,33 @@ describe('Project name validation', () => {
         validateProjectName('my-valid-project')
       }).not.toThrow()
     })
+  })
+})
+
+describe('Version check', () => {
+  it('returns safe state when network fetch fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new Error('Network error'))),
+    )
+
+    const result = await checkNewVersion()
+
+    expect(result).toBeDefined()
+    expect(result.hasUpdate).toBe(false)
+    expect(result.latest).toBeNull()
+  })
+
+  it('returns safe state when NPM registry response is invalid', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}', { status: 200 }))),
+    )
+
+    const result = await checkNewVersion()
+
+    expect(result).toBeDefined()
+    expect(result.hasUpdate).toBe(false)
+    expect(result.latest).toBeNull()
   })
 })
