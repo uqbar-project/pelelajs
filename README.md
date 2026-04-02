@@ -18,12 +18,28 @@ npm install -g pnpm
 nvm use
 pnpm build
 pnpm install --frozen-lockfile
-pnpm run install:vscode
 ```
 
-Then go to `pelela-vscode-x.y.z.vsix` in `tools/pelela-vscode` folder, right click & select `Install extension VSIX` to install it into VSCode.
+### VSCode Extension
 
-Restart VSCode or reload window and you'll be able to test pelela examples in your VSCode.
+To develop and test the Pelela VSCode extension:
+
+#### 1. Debugging (Recommended)
+
+1. Open this monorepo in VSCode.
+2. Press **F5** (or go to **Run and Debug** -> **Launch Pelela Extension**).
+3. A new window will open with the extension active. You can test it using the `examples/hello-world` folder which is opened by default.
+
+#### 2. Manual Installation (.vsix)
+
+If you prefer to generate and install the extension manually:
+
+1. Build and package the extension:
+   ```bash
+   pnpm -C tools/pelela-vscode package
+   ```
+2. In VSCode, go to the **Extensions** view, click the `...` (Views and More Actions), and select **Install from VSIX...**.
+3. Select the generated `.vsix` file in `tools/pelela-vscode/`.
 
 ## Linting and Formatting
 

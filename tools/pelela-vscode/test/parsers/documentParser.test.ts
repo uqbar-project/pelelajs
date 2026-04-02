@@ -1,12 +1,13 @@
-const assert = require('node:assert')
-const {
+import * as assert from 'node:assert'
+import { describe, it } from 'mocha'
+import {
+  getAttributeValueMatch,
   getCurrentAttributeName,
   isInsideTag,
   isStartingTag,
-  getAttributeValueMatch,
   parseForEachExpression,
   parsePropertyPath,
-} = require('../../src/parsers/documentParser')
+} from '../../src/parsers/documentParser'
 
 describe('documentParser', () => {
   describe('getCurrentAttributeName', () => {

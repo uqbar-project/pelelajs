@@ -1,7 +1,9 @@
-const assert = require('node:assert')
-const path = require('node:path')
-const fs = require('node:fs')
-const { findViewModelFile, readFileLines, readFileContent } = require('../../src/utils/fileUtils')
+import * as assert from 'node:assert'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import { after, before, describe, it } from 'mocha'
+import type * as vscode from 'vscode'
+import { findViewModelFile, readFileContent, readFileLines } from '../../src/utils/fileUtils'
 
 describe('fileUtils', () => {
   const testFilesDir = path.join(__dirname, '../fixtures')
@@ -27,7 +29,7 @@ describe('fileUtils', () => {
 
   describe('findViewModelFile', () => {
     it('debería encontrar el archivo ViewModel correspondiente', () => {
-      const mockUri = { fsPath: testPelelaPath }
+      const mockUri = { fsPath: testPelelaPath } as vscode.Uri
       const result = findViewModelFile(mockUri)
 
       assert.strictEqual(result, testTsPath)
@@ -35,7 +37,7 @@ describe('fileUtils', () => {
 
     it('debería retornar null si no existe el archivo ViewModel', () => {
       const nonExistentPath = path.join(testFilesDir, 'nonexistent.pelela')
-      const mockUri = { fsPath: nonExistentPath }
+      const mockUri = { fsPath: nonExistentPath } as vscode.Uri
       const result = findViewModelFile(mockUri)
 
       assert.strictEqual(result, null)

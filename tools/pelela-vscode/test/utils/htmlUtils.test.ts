@@ -1,9 +1,6 @@
-const assert = require('node:assert')
-const {
-  getHtmlElements,
-  getHtmlAttributes,
-  getPelelaAttributes,
-} = require('../../src/utils/htmlUtils')
+import * as assert from 'node:assert'
+import { describe, it } from 'mocha'
+import { getHtmlAttributes, getHtmlElements, getPelelaAttributes } from '../../src/utils/htmlUtils'
 
 describe('htmlUtils', () => {
   describe('getHtmlElements', () => {
@@ -78,9 +75,9 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('for-each'))
     })
 
-    it('debería retornar exactamente 7 atributos', () => {
+    it('debería retornar exactamente 8 atributos', () => {
       const attributes = getPelelaAttributes()
-      assert.strictEqual(attributes.length, 7)
+      assert.strictEqual(attributes.length, 8)
     })
   })
 })

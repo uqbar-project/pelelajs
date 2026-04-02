@@ -1,8 +1,9 @@
-const vscode = require('vscode')
-const { createCompletionProvider } = require('./providers/completionProvider')
-const { createDefinitionProvider } = require('./providers/definitionProvider')
+import * as vscode from 'vscode'
+import { createCompletionProvider } from './providers/completionProvider'
+import { createDefinitionProvider } from './providers/definitionProvider'
 
-function activate(context) {
+export function activate(context: vscode.ExtensionContext) {
+  console.log('[Pelela Extension] Activated')
   enablePelelaContext()
   setupLanguageHandlers()
   configurePelelaLanguage()
@@ -39,9 +40,4 @@ function configurePelelaLanguage() {
   })
 }
 
-function deactivate() {}
-
-module.exports = {
-  activate,
-  deactivate,
-}
+export function deactivate() {}

@@ -1,13 +1,14 @@
-const assert = require('node:assert')
-const path = require('node:path')
-const fs = require('node:fs')
-const vscode = require('vscode')
-const {
+import * as assert from 'node:assert'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import { after, before, describe, it } from 'mocha'
+import * as vscode from 'vscode'
+import {
   findClassDefinition,
-  findPropertyDefinition,
-  findNestedPropertyDefinition,
   findMethodDefinition,
-} = require('../../src/parsers/definitionFinder')
+  findNestedPropertyDefinition,
+  findPropertyDefinition,
+} from '../../src/parsers/definitionFinder'
 
 describe('definitionFinder', () => {
   const testFilesDir = path.join(__dirname, '../fixtures')
@@ -34,9 +35,22 @@ export class UserViewModel {
     return this.username;
   }
   
+  public $store = {
+    $state: "active",
+    "some.property": "value"
+  };
+
+  brokenObject: any = null;
+  // some logic
+  if (true) {
+    console.log("test");
+  }
+  
   handleLogin() {
     console.log("logging in");
   }
+  
+  public test_prop: number = 1;
 }
 `
     fs.writeFileSync(testVMPath, testVMContent)
@@ -53,8 +67,8 @@ export class UserViewModel {
       const location = findClassDefinition(testVMPath, 'UserViewModel')
 
       assert.ok(location instanceof vscode.Location)
-      assert.strictEqual(location.uri.fsPath, testVMPath)
-      assert.strictEqual(location.range.start.line, 1)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
+      assert.strictEqual(location?.range.start.line, 1)
     })
 
     it('debería retornar null para una clase inexistente', () => {
@@ -68,25 +82,30 @@ export class UserViewModel {
       const location = findPropertyDefinition(testVMPath, 'username')
 
       assert.ok(location instanceof vscode.Location)
-      assert.strictEqual(location.uri.fsPath, testVMPath)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
     })
 
     it('debería encontrar la definición de una propiedad privada', () => {
       const location = findPropertyDefinition(testVMPath, 'password')
 
       assert.ok(location instanceof vscode.Location)
-      assert.strictEqual(location.uri.fsPath, testVMPath)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
     })
 
     it('debería encontrar la definición de un getter', () => {
       const location = findPropertyDefinition(testVMPath, 'displayName')
 
       assert.ok(location instanceof vscode.Location)
-      assert.strictEqual(location.uri.fsPath, testVMPath)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
     })
 
     it('debería retornar null para una propiedad inexistente', () => {
       const location = findPropertyDefinition(testVMPath, 'nonExistent')
+      assert.strictEqual(location, null)
+    })
+
+    it('debería escapar caracteres especiales y retornar null de forma segura', () => {
+      const location = findPropertyDefinition(testVMPath, 'test.*prop')
       assert.strictEqual(location, null)
     })
   })
@@ -96,25 +115,43 @@ export class UserViewModel {
       const location = findNestedPropertyDefinition(testVMPath, ['profile', 'bio'])
 
       assert.ok(location instanceof vscode.Location)
-      assert.strictEqual(location.uri.fsPath, testVMPath)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
     })
 
     it('debería encontrar una propiedad profundamente anidada', () => {
       const location = findNestedPropertyDefinition(testVMPath, ['profile', 'settings', 'theme'])
 
       assert.ok(location instanceof vscode.Location)
-      assert.strictEqual(location.uri.fsPath, testVMPath)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
     })
 
     it('debería retornar la definición simple si el path tiene un solo elemento', () => {
       const location = findNestedPropertyDefinition(testVMPath, ['username'])
 
       assert.ok(location instanceof vscode.Location)
-      assert.strictEqual(location.uri.fsPath, testVMPath)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
     })
 
     it('debería retornar null para un path inexistente', () => {
       const location = findNestedPropertyDefinition(testVMPath, ['profile', 'nonExistent'])
+      assert.strictEqual(location, null)
+    })
+
+    it('debería encontrar propiedades con caracteres especiales en rutas anidadas', () => {
+      // Test the escaped rootPropertyName ($store) and targetProperty ($state) functionality
+      const location = findNestedPropertyDefinition(testVMPath, ['$store', '$state'])
+
+      assert.ok(location instanceof vscode.Location)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
+
+      const quotedLocation = findNestedPropertyDefinition(testVMPath, ['$store', '"some.property"'])
+      assert.ok(quotedLocation instanceof vscode.Location)
+      assert.strictEqual(quotedLocation?.uri.fsPath, testVMPath)
+    })
+
+    it('debería retornar null y evitar saltos inválidos si el inicio del objeto está corrupto', () => {
+      // testea el "return -1" cuando un '{' desasociado se encuentra luego de la propiedad
+      const location = findNestedPropertyDefinition(testVMPath, ['brokenObject', 'prop'])
       assert.strictEqual(location, null)
     })
   })
@@ -124,7 +161,7 @@ export class UserViewModel {
       const location = findMethodDefinition(testVMPath, 'handleLogin')
 
       assert.ok(location instanceof vscode.Location)
-      assert.strictEqual(location.uri.fsPath, testVMPath)
+      assert.strictEqual(location?.uri.fsPath, testVMPath)
     })
 
     it('debería retornar null para un método inexistente', () => {

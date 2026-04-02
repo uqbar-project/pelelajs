@@ -1,11 +1,12 @@
-const assert = require('node:assert')
-const path = require('node:path')
-const fs = require('node:fs')
-const {
-  extractViewModelMembers,
-  extractNestedProperties,
+import * as assert from 'node:assert'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import { after, before, describe, it } from 'mocha'
+import {
   extractInterfaceProperties,
-} = require('../../src/parsers/viewModelParser')
+  extractNestedProperties,
+  extractViewModelMembers,
+} from '../../src/parsers/viewModelParser'
 
 describe('viewModelParser', () => {
   const testFilesDir = path.join(__dirname, '../fixtures')
