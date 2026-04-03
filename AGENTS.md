@@ -16,7 +16,8 @@
 
 - **Comentarios significativos** - Comentá el "porqué" no el "qué", el código debe explicarse por sí mismo. ¡NO COMENTES TODO! No queremos comentarios inútiles que no aportan nada. El código claro es la mejor documentación. No comentes una sola línea de código dentro de una función o método. No uses JSDoc para funciones internas (no exportadas).
 - **Consistencia** - Mantené un estilo consistente en todo el código base
-- **Manejo de errores** - usá excepciones para casos excepcionales, no para control de flujo. Fail fast: fallar lo antes posible cuando el usuario haga algo que no debería hacer. Nunca dejar un catch vacío.
+- **Manejo de errores** - usá excepciones para casos excepcionales, no para control de flujo. Fail fast: fallar lo antes posible cuando el usuario haga algo que no debería hacer. Nunca dejar un catch vacío o un catch que solo haga console.log/console.info. No perder el contexto de un error, ejemplo: hacer catch y tirar una excepción nueva sin adjuntar el error original como causa.
+- **Async/Await** - Usá siempre `async/await` en lugar de `.then()/.catch()`. Mantené consistencia con el estilo moderno y legible.
 - **Tipado estricto** - No usar `any`. Siempre usar `unknown` o buscar el tipo que corresponda: un tipo existente, genérico `T`, o `unknown` cuando no se pueda determinar el tipo.
 
 ## Arquitectura
@@ -34,6 +35,9 @@
 - **Scope acotado** - "Hacé solo lo que se te pide, no refactorices código que no está relacionado con la tarea" (evita PRs gigantes con cambios no solicitados)
 - **Leé antes de modificar** - "Antes de cambiar código, leé el contexto completo para entender el diseño existente"
 - **Dependencias** - "No agregues nuevas dependencias sin consultar primero"
+- **Package manager** - "Usa siempre pnpm, nunca npm. Este proyecto usa `pnpm-workspace.yaml` y requiere pnpm para gestionar dependencias."
 - **Tests** - "Corré los tests y `biome check` antes de dar por terminado un cambio. Usá `pnpm test --run` para ejecutar una sola vez y evitar que se quede esperando cambios."
-- **Idioma** - "Los comentarios y código en inglés y la documentación en español, así como los mensajes de error"
+- **Idioma** - "Código y comentarios en inglés, documentación en español. Los mensajes de error visibles al usuario deben estar en español mediante i18n (función `t()`)" SALVO por los ejemplos de Pelela que sí pueden estar en castellano (carpeta templates de pelela-cli, carpeta examples)
+- **Internacionalización (i18n)** - "Todos los mensajes hacia el usuario DEBEN estar internacionalizados. Nada de strings hardcodeados. Usar la función `t()` de i18n para todos los mensajes que vea el usuario."
 - **Siempre explicá los cambios importantes siguiendo estas directrices**
+- **No ignores errores del IDE** - Si el IDE muestra errores de TypeScript, linting o cualquier otra herramienta de análisis estático, deben resolverse. No es aceptable decir "funciona igual" o "es un falso positivo". Hay que investigar y solucionar la causa raíz para mantener un codebase limpio y profesional.
