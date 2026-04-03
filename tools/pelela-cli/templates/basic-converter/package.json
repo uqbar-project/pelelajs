@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "install": "echo \"Error: Please use 'pnpm install' instead of 'npm install'\" && exit 1"
   },
   "keywords": [],
   "author": "",
@@ -23,5 +24,8 @@
     "typescript-eslint": "8.0.0",
     "typescript": "5.9.3",
     "vite": "7.2.4"
+  },
+  "engines": {
+    "packageManager": "pnpm@>=10.0.0"
   }
 }
