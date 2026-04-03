@@ -1,4 +1,4 @@
-export class Conversor {
+export class Example {
   millas: number = 0
   kilometros: number | undefined = undefined
 
