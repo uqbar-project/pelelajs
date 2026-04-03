@@ -1,111 +1,111 @@
 # Pelela CLI
 
-Command-line tool to work with PelelaJS projects quickly and easily.
+Herramienta de línea de comandos para trabajar con proyectos PelelaJS de forma rápida y sencilla.
 
-## Installation
+## Instalación
 
-### Global installation (recommended)
+### Instalación global (recomendada)
 
 ```bash
 pnpm add -g @pelelajs/cli
 ```
 
-After installation, the `pelela` command will be available globally.
+Después de la instalación, el comando `pelela` estará disponible globalmente.
 
-### Development mode (within this workspace)
+### Modo desarrollo (dentro de este workspace)
 
 ```bash
 pnpm -C tools/pelela-cli build
 pnpm -C tools/pelela-cli dev
 ```
 
-## Usage
+## Uso
 
-### Initialize a new project
+### Inicializar un nuevo proyecto
 
-Create a new project with the default name "Example":
+Crear un nuevo proyecto con el nombre por defecto "Example":
 
 ```bash
 pelela init
 ```
 
-Create a new project with a custom name:
+Crear un nuevo proyecto con un nombre personalizado:
 
 ```bash
-pelela init MyProject
+pelela init MiProyecto
 ```
 
-This command will:
-1. Create a new directory with your project name
-2. Copy a minimal PelelaJS template (based on `basic-converter`)
-3. Update the project's `package.json` with your project name
-4. Display next steps for development
+Este comando realizará:
+1. Crear un nuevo directorio con el nombre de tu proyecto
+2. Copiar una plantilla mínima de PelelaJS (basada en `basic-converter`)
+3. Actualizar el `package.json` del proyecto con el nombre de tu proyecto
+4. Mostrar los siguientes pasos para el desarrollo
 
-### Available Commands
+### Comandos disponibles
 
 ```bash
-# Initialize a new project
+# Inicializar un nuevo proyecto
 pelela init [projectName]
 
-# Show version
+# Mostrar versión
 pelela --version
 
-# Show help
+# Mostrar ayuda
 pelela --help
 ```
 
-## Quick Start After Initialization
+## Inicio rápido después de la inicialización
 
-After running `pelela init MyProject`:
+Después de ejecutar `pelela init MiProyecto`:
 
 ```bash
-cd MyProject
+cd MiProyecto
 pnpm install
 pnpm dev
 ```
 
-Then open `http://localhost:5173` in your browser.
+Luego abre `http://localhost:5173` en tu navegador.
 
-## Development
+## Desarrollo
 
-### Build the CLI
+### Compilar el CLI
 
 ```bash
 pnpm -C tools/pelela-cli build
 ```
 
-### Watch mode
+### Modo watch
 
 ```bash
 pnpm -C tools/pelela-cli dev
 ```
 
-### Run tests
+### Ejecutar tests
 
 ```bash
 pnpm -C tools/pelela-cli test:run
 ```
 
-### Lint and format
+### Lint y format
 
 ```bash
 pnpm -C tools/pelela-cli biome:check:fix
 ```
 
-## Features
+## Características
 
-- **Project scaffolding** - Quickly create new PelelaJS projects from a template
-- **Automatic configuration** - Project name is automatically set in `package.json`
-- **Version management** - Checks for available updates from NPM registry
-- **Clear feedback** - Helpful messages guide you through the process
+- **Scaffolding de proyectos** - Crear rápidamente nuevos proyectos PelelaJS desde una plantilla
+- **Configuración automática** - El nombre del proyecto se establece automáticamente en `package.json`
+- **Gestión de versiones** - Verifica actualizaciones disponibles desde el registro NPM
+- **Retroalimentación clara** - Mensajes útiles te guían a través del proceso
 
-## Architecture
+## Arquitectura
 
-The CLI is organized into logical modules:
+El CLI está organizado en módulos lógicos:
 
-- **`commands/init.ts`** - Project initialization logic
-- **`utils/version.ts`** - Version checking against NPM registry
-- **`utils/shell.ts`** - Shell utilities (file operations, directory management)
-- **`utils/templates.ts`** - Template copying and project setup
+- **`commands/init.ts`** - Lógica de inicialización de proyectos
+- **`utils/version.ts`** - Verificación de versiones contra el registro NPM
+- **`utils/shell.ts`** - Utilidades de shell (operaciones de archivos, gestión de directorios)
+- **`utils/templates.ts`** - Copia de plantillas y configuración de proyectos
 
-Each module has a single responsibility and is independently testable.
+Cada módulo tiene una única responsabilidad y es independientemente testeable.

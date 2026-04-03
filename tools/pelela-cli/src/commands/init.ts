@@ -30,7 +30,7 @@ export function validateProjectName(projectName: string): void {
 }
 
 export async function initCommand(options: InitCommandOptions): Promise<void> {
-  const projectName = normalizeProjectName(options.projectName || DEFAULT_PROJECT_NAME)
+  const projectName = normalizeProjectName(options.projectName ?? DEFAULT_PROJECT_NAME)
 
   validateProjectName(projectName)
 
