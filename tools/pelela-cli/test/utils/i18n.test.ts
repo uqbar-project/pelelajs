@@ -17,6 +17,7 @@ describe('i18n', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllEnvs()
   })
 
   describe('initializeI18n', () => {
@@ -38,8 +39,6 @@ describe('i18n', () => {
       await initializeI18n()
 
       expect(getCurrentLanguage()).toBe('es')
-
-      vi.unstubAllEnvs()
     })
 
     it('detects language from environment variable with hyphen separator', async () => {
@@ -48,8 +47,6 @@ describe('i18n', () => {
       await initializeI18n()
 
       expect(getCurrentLanguage()).toBe('es')
-
-      vi.unstubAllEnvs()
     })
 
     it('detects language from environment variable with only hyphen', async () => {
@@ -58,8 +55,6 @@ describe('i18n', () => {
       await initializeI18n()
 
       expect(getCurrentLanguage()).toBe('en')
-
-      vi.unstubAllEnvs()
     })
 
     it('falls back to English for unsupported language with hyphen', async () => {
@@ -68,8 +63,6 @@ describe('i18n', () => {
       await initializeI18n()
 
       expect(getCurrentLanguage()).toBe('en')
-
-      vi.unstubAllEnvs()
     })
 
     it('falls back to English for unsupported language', async () => {
@@ -78,8 +71,6 @@ describe('i18n', () => {
       await initializeI18n()
 
       expect(getCurrentLanguage()).toBe('en')
-
-      vi.unstubAllEnvs()
     })
 
     it('falls back to English when no environment variable is set', async () => {
@@ -89,8 +80,6 @@ describe('i18n', () => {
       await initializeI18n()
 
       expect(getCurrentLanguage()).toBe('en')
-
-      vi.unstubAllEnvs()
     })
   })
 
