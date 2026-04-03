@@ -8,9 +8,5 @@
     "noUnusedParameters": true,
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*",
-    "main.ts",
-    "*.d.ts"
-  ]
+  "include": ["**/*.ts", "*.d.ts"]
 }
