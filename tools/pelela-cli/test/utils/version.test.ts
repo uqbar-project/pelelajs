@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import { checkNewVersion } from '../../src/utils/version'
 import { initializeI18n } from '../../src/utils/i18n'
+import { checkNewVersion } from '../../src/utils/version'
 
 beforeAll(async () => {
   await initializeI18n('en')
@@ -45,11 +45,7 @@ describe('checkNewVersion', () => {
     }
     vi.stubGlobal(
       'fetch',
-      vi.fn(() =>
-        Promise.resolve(
-          new Response(JSON.stringify(mockResponse), { status: 200 }),
-        ),
-      ),
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify(mockResponse), { status: 200 }))),
     )
 
     const result = await checkNewVersion()
@@ -65,11 +61,7 @@ describe('checkNewVersion', () => {
     }
     vi.stubGlobal(
       'fetch',
-      vi.fn(() =>
-        Promise.resolve(
-          new Response(JSON.stringify(mockResponse), { status: 200 }),
-        ),
-      ),
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify(mockResponse), { status: 200 }))),
     )
 
     const result = await checkNewVersion()

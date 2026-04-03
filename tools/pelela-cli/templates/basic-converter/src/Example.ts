@@ -3,7 +3,7 @@ export class Conversor {
   kilometros: number | undefined = undefined
 
   convertir(): void {
-    this.kilometros = this.millas * 1.609344;
+    this.kilometros = this.millas * 1.609344
   }
 
   get tieneKilometros(): boolean {
