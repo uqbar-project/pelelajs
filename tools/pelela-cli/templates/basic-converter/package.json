@@ -8,8 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint .",
-    "install": "echo \"Error: Please use 'pnpm install' instead of 'npm install'\" && exit 1"
+    "lint": "eslint ."
   },
   "keywords": [],
   "author": "",

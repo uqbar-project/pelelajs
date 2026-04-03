@@ -23,17 +23,21 @@ pnpm -C tools/pelela-cli dev
 
 ### Inicializar un nuevo proyecto
 
-Crear un nuevo proyecto con el nombre por defecto "Example":
+Crear un nuevo proyecto con el nombre por defecto "example":
 
 ```bash
 pelela init
 ```
+
+> **Nota:** El comando `init` normaliza automáticamente el nombre del proyecto a minúsculas y formato de paquete npm (sin espacios ni caracteres especiales).
 
 Crear un nuevo proyecto con un nombre personalizado:
 
 ```bash
 pelela init MiProyecto
 ```
+
+Esto creará un directorio llamado `miproyecto` (nombre normalizado).
 
 Este comando realizará:
 1. Crear un nuevo directorio con el nombre de tu proyecto
@@ -56,10 +60,10 @@ pelela --help
 
 ## Inicio rápido después de la inicialización
 
-Después de ejecutar `pelela init MiProyecto`:
+Después de ejecutar `pelela init MiProyecto` (que crea el directorio `miproyecto`):
 
 ```bash
-cd MiProyecto
+cd miproyecto
 pnpm install
 pnpm dev
 ```
