@@ -16,11 +16,7 @@ describe('templates', () => {
   })
 
   afterEach(() => {
-    try {
-      rmdirSync(tempDir, { recursive: true })
-    } catch {
-      // ignore cleanup errors
-    }
+    rmdirSync(tempDir, { recursive: true })
   })
 
   describe('getTemplatePath', () => {
