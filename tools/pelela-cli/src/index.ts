@@ -26,7 +26,7 @@ async function main(): Promise<void> {
       }
     })
 
-  program.parse()
+  await program.parseAsync(process.argv)
 
   try {
     const versionInfo = await checkNewVersion()

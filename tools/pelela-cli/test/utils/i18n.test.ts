@@ -42,6 +42,36 @@ describe('i18n', () => {
       vi.unstubAllEnvs()
     })
 
+    it('detects language from environment variable with hyphen separator', async () => {
+      vi.stubEnv('LANG', 'es-AR.UTF-8')
+
+      await initializeI18n()
+
+      expect(getCurrentLanguage()).toBe('es')
+
+      vi.unstubAllEnvs()
+    })
+
+    it('detects language from environment variable with only hyphen', async () => {
+      vi.stubEnv('LANG', 'en-GB')
+
+      await initializeI18n()
+
+      expect(getCurrentLanguage()).toBe('en')
+
+      vi.unstubAllEnvs()
+    })
+
+    it('falls back to English for unsupported language with hyphen', async () => {
+      vi.stubEnv('LANG', 'fr-CA.UTF-8')
+
+      await initializeI18n()
+
+      expect(getCurrentLanguage()).toBe('en')
+
+      vi.unstubAllEnvs()
+    })
+
     it('falls back to English for unsupported language', async () => {
       vi.stubEnv('LANG', 'fr_FR.UTF-8')
 

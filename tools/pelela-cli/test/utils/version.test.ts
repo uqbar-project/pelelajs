@@ -8,6 +8,7 @@ beforeAll(async () => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('checkNewVersion', () => {
@@ -17,6 +18,25 @@ describe('checkNewVersion', () => {
       vi.fn(() => Promise.reject(new Error('Network error'))),
     )
 
+    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+
+    const result = await checkNewVersion()
+
+    expect(result).toBeDefined()
+    expect(result.current).toBe('1.0.0')
+    expect(result.hasUpdate).toBe(false)
+    expect(result.latest).toBeNull()
+  })
+
+  it('returns safe state when fetch times out', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => {
+        const error = new Error('The operation was aborted')
+        error.name = 'AbortError'
+        return Promise.reject(error)
+      }),
+    )
     vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()

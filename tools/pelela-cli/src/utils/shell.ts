@@ -15,8 +15,8 @@ export function executeCommand(command: string, cwd?: string): string {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
     }).trim()
-  } catch (_error) {
-    throw new Error(`Command failed: ${command}`)
+  } catch (error) {
+    throw new Error(`Command failed: ${command}`, { cause: error })
   }
 }
 

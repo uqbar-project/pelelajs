@@ -7,7 +7,7 @@ type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
 function detectLanguage(): SupportedLanguage {
   const envLang = process.env.LANG || process.env.LC_ALL || ''
-  const langCode = envLang.split('_')[0]?.toLowerCase()
+  const langCode = envLang.split(/[-_.]/)[0]?.toLowerCase()
 
   if (langCode && (SUPPORTED_LANGUAGES as readonly string[]).includes(langCode)) {
     return langCode as SupportedLanguage
