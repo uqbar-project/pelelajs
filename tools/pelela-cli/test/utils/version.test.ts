@@ -115,7 +115,7 @@ describe('checkNewVersion', () => {
 
     expect(result.current).toBe('1.0.0')
     expect(result.latest).toBe('0.9.0')
-    expect(result.hasUpdate).toBe(true)
+    expect(result.hasUpdate).toBe(false)
   })
 
   it('returns safe state for non-200 response (404)', async () => {
@@ -151,7 +151,7 @@ describe('checkNewVersion', () => {
     expect(result.latest).toBeNull()
   })
 
-  it('handles string dist-tags.latest (non-semver)', async () => {
+  it('handles invalid semver in dist-tags.latest', async () => {
     const mockResponse = {
       'dist-tags': {
         latest: 'invalid-version-string',
@@ -166,7 +166,7 @@ describe('checkNewVersion', () => {
     const result = await checkNewVersion()
 
     expect(result.current).toBe('1.0.0')
-    expect(result.latest).toBe('invalid-version-string')
-    expect(result.hasUpdate).toBe(true)
+    expect(result.latest).toBeNull()
+    expect(result.hasUpdate).toBe(false)
   })
 })

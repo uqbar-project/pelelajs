@@ -1,3 +1,5 @@
+import { gt } from 'semver'
+
 function getPackageVersion(): string {
   const packageJson = require('../../package.json') as { version: string }
   return packageJson.version
@@ -20,10 +22,19 @@ export async function checkNewVersion(): Promise<{
 
   try {
     const response = await fetch('https://registry.npmjs.org/@pelelajs/cli')
+
+    if (!response.ok) {
+      return {
+        current,
+        latest: null,
+        hasUpdate: false,
+      }
+    }
+
     const data = (await response.json()) as { 'dist-tags'?: { latest?: string } }
     const latest = data['dist-tags']?.latest
 
-    const hasUpdate = typeof latest === 'string' && latest !== current
+    const hasUpdate = typeof latest === 'string' && gt(latest, current)
 
     return {
       current,

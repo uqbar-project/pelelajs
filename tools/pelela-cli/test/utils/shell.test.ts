@@ -1,6 +1,6 @@
 import { mkdtempSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { isAbsolute, join } from 'node:path'
+import { basename, isAbsolute, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createDirectory, executeCommand, pathExists, resolvePath } from '../../src/utils/shell'
 
@@ -92,9 +92,10 @@ describe('Shell utilities', () => {
     })
 
     it('executes command in specified cwd', () => {
-      const result = executeCommand('pwd', tempDir)
+      const command = process.platform === 'win32' ? 'cd' : 'pwd'
+      const result = executeCommand(command, tempDir)
 
-      expect(result).toContain(tempDir.split('/').pop()!)
+      expect(result).toContain(basename(tempDir))
     })
 
     it('throws error when command fails', () => {
