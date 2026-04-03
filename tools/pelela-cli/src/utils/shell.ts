@@ -24,6 +24,6 @@ export function resolvePath(...segments: string[]): string {
   return resolve(process.cwd(), ...segments)
 }
 
-export function directoryExists(dirPath: string): boolean {
+export function pathExists(dirPath: string): boolean {
   return existsSync(dirPath)
 }

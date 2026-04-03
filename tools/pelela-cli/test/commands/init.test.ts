@@ -66,7 +66,7 @@ describe('initCommand', () => {
     mockedTemplates.validateTemplatePath.mockReturnValue(true)
     mockedTemplates.copyTemplate.mockImplementation(() => undefined)
     mockedTemplates.updateProjectPackageJson.mockImplementation(() => undefined)
-    mockedShell.directoryExists.mockReturnValue(false)
+    mockedShell.pathExists.mockReturnValue(false)
     mockedShell.resolvePath.mockImplementation((name) => `/mock/path/${name}`)
   })
 
@@ -74,7 +74,7 @@ describe('initCommand', () => {
     await initCommand({ projectName: 'my-project' })
 
     expect(mockedTemplates.validateTemplatePath).toHaveBeenCalled()
-    expect(mockedShell.directoryExists).toHaveBeenCalledWith('/mock/path/my-project')
+    expect(mockedShell.pathExists).toHaveBeenCalledWith('/mock/path/my-project')
     expect(mockedTemplates.copyTemplate).toHaveBeenCalledWith('/mock/path/my-project')
     expect(mockedTemplates.updateProjectPackageJson).toHaveBeenCalledWith(
       '/mock/path/my-project',
@@ -101,7 +101,7 @@ describe('initCommand', () => {
   })
 
   it('throws error when directory already exists', async () => {
-    mockedShell.directoryExists.mockReturnValue(true)
+    mockedShell.pathExists.mockReturnValue(true)
 
     await expect(initCommand({ projectName: 'existing' })).rejects.toThrow(
       t('commands.init.error.directoryExists', { projectName: 'existing' }),

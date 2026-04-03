@@ -1,8 +1,7 @@
-import { rmSync } from 'node:fs'
 import chalk from 'chalk'
 import boxen from 'cli-box'
 import { t } from '../utils/i18n'
-import { directoryExists, resolvePath } from '../utils/shell'
+import { pathExists, resolvePath } from '../utils/shell'
 import { copyTemplate, updateProjectPackageJson, validateTemplatePath } from '../utils/templates'
 
 const { log } = console
@@ -41,7 +40,7 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
 
   const projectPath = resolvePath(projectName)
 
-  if (directoryExists(projectPath)) {
+  if (pathExists(projectPath)) {
     throw new Error(t('commands.init.error.directoryExists', { projectName }))
   }
 
@@ -51,39 +50,9 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
 
     displaySuccessMessage(projectName)
   } catch (error) {
-    // Rollback: cleanup project directory for filesystem errors only
-    if (error instanceof Error && isFileSystemError(error)) {
-      try {
-        rmSync(projectPath, { recursive: true, force: true })
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
-
     const errorMessage = error instanceof Error ? error.message : String(error)
     throw new Error(t('commands.init.error.initializationFailed', { error: errorMessage }))
   }
-}
-
-function isFileSystemError(error: Error): boolean {
-  const fileSystemErrorCodes = [
-    'ENOENT',
-    'EACCES',
-    'EPERM',
-    'EISDIR',
-    'ENOTEMPTY',
-    'EMFILE',
-    'ENOSPC',
-  ]
-  const nodeError = error as Error & { code?: string }
-  return (
-    fileSystemErrorCodes.includes(nodeError.code ?? '') ||
-    error.message.includes('ENOENT') ||
-    error.message.includes('EACCES') ||
-    error.message.includes('permission') ||
-    error.message.includes('read') ||
-    error.message.includes('write')
-  )
 }
 
 function displaySuccessMessage(projectName: string): void {
