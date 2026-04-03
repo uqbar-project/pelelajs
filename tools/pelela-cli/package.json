@@ -1,5 +1,8 @@
 {
   "name": "@pelelajs/cli",
+  "engines": {
+    "node": ">=22"
+  },
   "version": "1.0.0",
   "type": "module",
   "description": "CLI tool to bootstrap new PelelaJS projects",
@@ -16,7 +19,9 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "biome:check": "biome check .",
+    "biome:check:fix": "biome check --write ."
   },
   "keywords": [
     "pelelajs",

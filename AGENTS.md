@@ -40,3 +40,4 @@
 - **Idioma** - "Los comentarios y código en inglés y la documentación en español, así como los mensajes de error"
 - **Internacionalización (i18n)** - "Todos los mensajes hacia el usuario DEBEN estar internacionalizados. Nada de strings hardcodeados. Usar la función `t()` de i18n para todos los mensajes que vea el usuario."
 - **Siempre explicá los cambios importantes siguiendo estas directrices**
+- **No ignores errores del IDE** - Si el IDE muestra errores de TypeScript, linting o cualquier otra herramienta de análisis estático, deben resolverse. No es aceptable decir "funciona igual" o "es un falso positivo". Hay que investigar y solucionar la causa raíz para mantener un codebase limpio y profesional.
