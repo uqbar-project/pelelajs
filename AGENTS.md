@@ -37,7 +37,7 @@
 - **Dependencias** - "No agregues nuevas dependencias sin consultar primero"
 - **Package manager** - "Usa siempre pnpm, nunca npm. Este proyecto usa `pnpm-workspace.yaml` y requiere pnpm para gestionar dependencias."
 - **Tests** - "Corré los tests y `biome check` antes de dar por terminado un cambio. Usá `pnpm test --run` para ejecutar una sola vez y evitar que se quede esperando cambios."
-- **Idioma** - "Los comentarios y código en inglés y la documentación en español, así como los mensajes de error" SALVO por los ejemplos de Pelela que sí pueden estar en castellano (carpeta templates de pelela-cli, carpeta examples)
+- **Idioma** - "Código y comentarios en inglés, documentación en español. Los mensajes de error visibles al usuario deben estar en español mediante i18n (función `t()`)" SALVO por los ejemplos de Pelela que sí pueden estar en castellano (carpeta templates de pelela-cli, carpeta examples)
 - **Internacionalización (i18n)** - "Todos los mensajes hacia el usuario DEBEN estar internacionalizados. Nada de strings hardcodeados. Usar la función `t()` de i18n para todos los mensajes que vea el usuario."
 - **Siempre explicá los cambios importantes siguiendo estas directrices**
 - **No ignores errores del IDE** - Si el IDE muestra errores de TypeScript, linting o cualquier otra herramienta de análisis estático, deben resolverse. No es aceptable decir "funciona igual" o "es un falso positivo". Hay que investigar y solucionar la causa raíz para mantener un codebase limpio y profesional.

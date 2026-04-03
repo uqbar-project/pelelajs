@@ -12,11 +12,7 @@ describe('Shell utilities', () => {
   })
 
   afterEach(() => {
-    try {
-      rmdirSync(tempDir, { recursive: true })
-    } catch {
-      // ignore cleanup errors
-    }
+    rmdirSync(tempDir, { recursive: true })
   })
 
   describe('createDirectory', () => {
@@ -107,6 +103,7 @@ describe('Shell utilities', () => {
     it('preserves original error as cause when command fails', () => {
       try {
         executeCommand('exit 42')
+        throw new Error('Expected executeCommand to throw')
       } catch (error) {
         expect(error).toBeInstanceOf(Error)
         expect((error as Error).message).toContain('Command failed')
