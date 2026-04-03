@@ -1,7 +1,7 @@
 import './styles.css'
 import { defineViewModel, mountTemplate } from 'pelelajs'
-import template from './src/Example.pelela'
 import { Example } from './src/Example'
+import template from './src/Example.pelela'
 
 defineViewModel('Example', Example)
 
