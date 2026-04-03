@@ -16,7 +16,7 @@
 
 - **Comentarios significativos** - Comentá el "porqué" no el "qué", el código debe explicarse por sí mismo. ¡NO COMENTES TODO! No queremos comentarios inútiles que no aportan nada. El código claro es la mejor documentación. No comentes una sola línea de código dentro de una función o método. No uses JSDoc para funciones internas (no exportadas).
 - **Consistencia** - Mantené un estilo consistente en todo el código base
-- **Manejo de errores** - usá excepciones para casos excepcionales, no para control de flujo. Fail fast: fallar lo antes posible cuando el usuario haga algo que no debería hacer. Nunca dejar un catch vacío o un catch que solo haga console.log/console.info
+- **Manejo de errores** - usá excepciones para casos excepcionales, no para control de flujo. Fail fast: fallar lo antes posible cuando el usuario haga algo que no debería hacer. Nunca dejar un catch vacío o un catch que solo haga console.log/console.info. No perder el contexto de un error, ejemplo: hacer catch y tirar una excepción nueva sin adjuntar el error original como causa.
 - **Async/Await** - Usá siempre `async/await` en lugar de `.then()/.catch()`. Mantené consistencia con el estilo moderno y legible.
 - **Tipado estricto** - No usar `any`. Siempre usar `unknown` o buscar el tipo que corresponda: un tipo existente, genérico `T`, o `unknown` cuando no se pueda determinar el tipo.
 

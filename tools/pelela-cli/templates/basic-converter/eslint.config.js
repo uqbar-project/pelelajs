@@ -8,9 +8,7 @@ export default tseslint.config(
     files: ['**/*.ts'],
     rules: {
       // Suspicious rules (matching Biome)
-      '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
-      '@typescript-eslint/no-empty-block-statements': 'off',
 
       // Style rules (matching Biome)
       '@typescript-eslint/no-non-null-assertion': 'off',

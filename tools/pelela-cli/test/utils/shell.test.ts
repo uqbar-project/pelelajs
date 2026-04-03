@@ -104,6 +104,16 @@ describe('Shell utilities', () => {
       }).toThrow('Command failed')
     })
 
+    it('preserves original error as cause when command fails', () => {
+      try {
+        executeCommand('exit 42')
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error)
+        expect((error as Error).message).toContain('Command failed')
+        expect((error as Error).cause).toBeDefined()
+      }
+    })
+
     it('throws error for non-existent command', () => {
       expect(() => {
         executeCommand('thiscommanddoesnotexist')

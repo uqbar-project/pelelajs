@@ -1,7 +1,7 @@
 import { gt } from 'semver'
+import packageJson from '../../package.json' with { type: 'json' }
 
 function getPackageVersion(): string {
-  const packageJson = require('../../package.json') as { version: string }
   return packageJson.version
 }
 
@@ -19,16 +19,23 @@ export async function checkNewVersion(): Promise<{
   hasUpdate: boolean
 }> {
   const current = await getLocalVersion()
+  const failResponse = {
+    current,
+    latest: null as string | null,
+    hasUpdate: false,
+  }
 
   try {
-    const response = await fetch('https://registry.npmjs.org/@pelelajs/cli')
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+    const response = await fetch('https://registry.npmjs.org/@pelelajs/cli', {
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
-      return {
-        current,
-        latest: null,
-        hasUpdate: false,
-      }
+      return failResponse
     }
 
     const data = (await response.json()) as { 'dist-tags'?: { latest?: string } }
@@ -41,11 +48,8 @@ export async function checkNewVersion(): Promise<{
       latest: latest || null,
       hasUpdate,
     }
-  } catch {
-    return {
-      current,
-      latest: null,
-      hasUpdate: false,
-    }
+  } catch (error) {
+    console.error('Failed to check for new version:', error)
+    return failResponse
   }
 }
