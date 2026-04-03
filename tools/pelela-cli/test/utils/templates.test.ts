@@ -1,3 +1,6 @@
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmdirSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   copyTemplate,
@@ -5,9 +8,6 @@ import {
   updateProjectPackageJson,
   validateTemplatePath,
 } from '../../src/utils/templates'
-import { mkdtempSync, rmdirSync, writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 
 describe('templates', () => {
   let tempDir: string
@@ -46,7 +46,7 @@ describe('templates', () => {
     it('updates package.json name field', () => {
       const projectPath = join(tempDir, 'test-project')
       mkdirSync(projectPath, { recursive: true })
-      
+
       const packageJsonPath = join(projectPath, 'package.json')
       writeFileSync(packageJsonPath, JSON.stringify({ name: 'old-name', version: '1.0.0' }))
 

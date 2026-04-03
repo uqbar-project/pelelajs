@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { initializeI18n, t, getCurrentLanguage } from '../../src/utils/i18n'
 import i18next from 'i18next'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { getCurrentLanguage, initializeI18n, t } from '../../src/utils/i18n'
 
 describe('i18n', () => {
   beforeEach(async () => {

@@ -1,12 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  initCommand,
-  normalizeProjectName,
-  validateProjectName,
-} from '../../src/commands/init'
+import { initCommand, normalizeProjectName, validateProjectName } from '../../src/commands/init'
 import { initializeI18n, t } from '../../src/utils/i18n'
-import * as templates from '../../src/utils/templates'
 import * as shell from '../../src/utils/shell'
+import * as templates from '../../src/utils/templates'
 
 vi.mock('../../src/utils/templates')
 vi.mock('../../src/utils/shell')
@@ -80,14 +76,20 @@ describe('initCommand', () => {
     expect(mockedTemplates.validateTemplatePath).toHaveBeenCalled()
     expect(mockedShell.directoryExists).toHaveBeenCalledWith('/mock/path/my-project')
     expect(mockedTemplates.copyTemplate).toHaveBeenCalledWith('/mock/path/my-project')
-    expect(mockedTemplates.updateProjectPackageJson).toHaveBeenCalledWith('/mock/path/my-project', 'my-project')
+    expect(mockedTemplates.updateProjectPackageJson).toHaveBeenCalledWith(
+      '/mock/path/my-project',
+      'my-project',
+    )
   })
 
   it('initializes project with default name when no name provided', async () => {
     await initCommand({})
 
     expect(mockedTemplates.copyTemplate).toHaveBeenCalledWith('/mock/path/example')
-    expect(mockedTemplates.updateProjectPackageJson).toHaveBeenCalledWith('/mock/path/example', 'example')
+    expect(mockedTemplates.updateProjectPackageJson).toHaveBeenCalledWith(
+      '/mock/path/example',
+      'example',
+    )
   })
 
   it('throws error when template path is invalid', async () => {
