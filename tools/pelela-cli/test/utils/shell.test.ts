@@ -1,13 +1,8 @@
 import { mkdtempSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { isAbsolute, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import {
-  createDirectory,
-  directoryExists,
-  executeCommand,
-  resolvePath,
-} from '../../src/utils/shell'
+import { createDirectory, executeCommand, pathExists, resolvePath } from '../../src/utils/shell'
 
 describe('Shell utilities', () => {
   let tempDir: string
@@ -30,7 +25,7 @@ describe('Shell utilities', () => {
 
       createDirectory(newDir)
 
-      expect(directoryExists(newDir)).toBe(true)
+      expect(pathExists(newDir)).toBe(true)
     })
 
     it('does not throw when directory already exists', () => {
@@ -38,7 +33,7 @@ describe('Shell utilities', () => {
       createDirectory(existingDir)
 
       expect(() => createDirectory(existingDir)).not.toThrow()
-      expect(directoryExists(existingDir)).toBe(true)
+      expect(pathExists(existingDir)).toBe(true)
     })
 
     it('creates nested directories recursively', () => {
@@ -46,26 +41,26 @@ describe('Shell utilities', () => {
 
       createDirectory(nestedDir)
 
-      expect(directoryExists(nestedDir)).toBe(true)
+      expect(pathExists(nestedDir)).toBe(true)
     })
   })
 
-  describe('directoryExists', () => {
+  describe('pathExists', () => {
     it('returns true for existing directory', () => {
-      expect(directoryExists(tempDir)).toBe(true)
+      expect(pathExists(tempDir)).toBe(true)
     })
 
     it('returns false for non-existent directory', () => {
       const nonExistent = join(tempDir, 'does-not-exist')
 
-      expect(directoryExists(nonExistent)).toBe(false)
+      expect(pathExists(nonExistent)).toBe(false)
     })
 
     it('returns true for existing file or directory', () => {
       const filePath = join(tempDir, 'test-file.txt')
       writeFileSync(filePath, 'content')
 
-      expect(directoryExists(filePath)).toBe(true)
+      expect(pathExists(filePath)).toBe(true)
 
       unlinkSync(filePath)
     })
@@ -77,7 +72,7 @@ describe('Shell utilities', () => {
 
       expect(resolved).toContain('some')
       expect(resolved).toContain('path')
-      expect(resolved.startsWith('/')).toBe(true)
+      expect(isAbsolute(resolved)).toBe(true)
     })
 
     it('resolves multiple path segments', () => {
