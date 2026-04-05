@@ -1,3 +1,9 @@
+# Contexto del Proyecto y User Persona
+
+- **Quién soy:** Desarrollador senior y docente de la materia "Algoritmos 3" en la UNSAM.
+- **Misión de Pelela:** Crear un framework de UI que suavice la curva de aprendizaje de Programación Web. Es el primer acercamiento de los alumnos al desarrollo frontend.
+- **Criterio de Decisión:** Se trabaja sobre el concepto de MVC, Model-View-Controller. El modelo es la fuente de verdad, la vista es la representación del modelo y el controlador es el que orquesta la interacción entre el modelo y la vista. La performance es importante pero no es la prioridad, la claridad conceptual sí lo es.
+
 # Reglas de Programación para este Proyecto
 
 ## Principios Fundamentales
@@ -10,7 +16,7 @@
 - **Preferir composición sobre herencia** - cuando necesites reutilizar código, preferí composición sobre herencia.
 - **Declaratividad y orden superior antes que imperatividad** - cuando puedas, usá funciones de orden superior (map, filter, reduce) en lugar de loops, nada de for + if + break + continue.
 - **Polimorfismo** - cuando necesites reutilizar código, preferí polimorfismo sobre condicionales (a menos que no tengamos objetos). Evitar preguntar por la clase a menos de que sea necesario (por ejemplo en las excepciones que es un caso donde es válido).
-- **Linter** - respetá las reglas del linter Biome, que están en el archivo `biome.json` del raíz de este proyecto. Incluí siempre `biome check` como parte del plan de implementación y verificación.
+- **Linter** - respetá las reglas del linter Biome, que están en el archivo `biome.json` del raíz de este proyecto.
 
 ## Guías de Estilo
 
@@ -34,6 +40,8 @@
 - **Scope acotado** - "Hacé solo lo que se te pide, no refactorices código que no está relacionado con la tarea" (evita PRs gigantes con cambios no solicitados)
 - **Leé antes de modificar** - "Antes de cambiar código, leé el contexto completo para entender el diseño existente"
 - **Dependencias** - "No agregues nuevas dependencias sin consultar primero"
-- **Tests** - "Corré los tests y `biome check` antes de dar por terminado un cambio. Usá `pnpm test --run` para ejecutar una sola vez y evitar que se quede esperando cambios."
-- **Idioma** - "Los comentarios y código en inglés y la documentación en español, así como los mensajes de error"
+- **Package manager** - "Usa siempre pnpm, nunca npm. Este proyecto usa `pnpm-workspace.yaml` y requiere pnpm para gestionar dependencias."
+- **Tests** - No corras los tests ni el linter, pero sí pedí que el humano los ejecute antes de dar por terminado un cambio. Recordale que los comandos a ejecutar son `biome check` para el linter y `pnpm run test --run` para ejecutarlos una sola vez.
+- **Idioma** - "Código y comentarios en inglés, documentación en español. Los mensajes de error visibles al usuario deben estar en español mediante i18n (función `t()`)" SALVO por los ejemplos de Pelela que sí pueden estar en castellano (carpeta templates de pelela-cli, carpeta examples)
+- **Internacionalización (i18n)** - "Todos los mensajes hacia el usuario DEBEN estar internacionalizados. Nada de strings hardcodeados. Usar la función `t()` de i18n para todos los mensajes que vea el usuario."
 - **Siempre explicá los cambios importantes siguiendo estas directrices**
