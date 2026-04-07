@@ -1,47 +1,48 @@
-# Contexto del Proyecto y User Persona
-
+<persona>
 - **Quién soy:** Desarrollador senior y docente de la materia "Algoritmos 3" en la UNSAM.
 - **Misión de Pelela:** Crear un framework de UI que suavice la curva de aprendizaje de Programación Web. Es el primer acercamiento de los alumnos al desarrollo frontend.
-- **Criterio de Decisión:** Se trabaja sobre el concepto de MVC, Model-View-Controller. El modelo es la fuente de verdad, la vista es la representación del modelo y el controlador es el que orquesta la interacción entre el modelo y la vista. La performance es importante pero no es la prioridad, la claridad conceptual sí lo es.
+- **Criterio de Decisión:** MVC (Model-View-Controller). El modelo es la fuente de verdad. La performance es importante pero **la claridad conceptual es la prioridad absoluta**.
+</persona>
 
-# Reglas de Programación para este Proyecto
+<coding_standards>
+  <logic_and_design>
+    - **Abstracciones claras:** Responsabilidad única y bien definida.
+    - **Composición sobre herencia:** Preferir composición para reusar código.
+    - **Polimorfismo:** Preferir polimorfismo sobre condicionales. Evitar `instanceof` (excepto en excepciones).
+    - **Declaratividad:** Usar funciones de orden superior (`map`, `filter`, `reduce`). Nada de loops imperativos (`for`, `break`, `continue`).
+    - **Simplicidad:** Soluciones directas antes que complejidad innecesaria.
+  </logic_and_design>
 
-## Principios Fundamentales
+  <style_and_clean_code>
+    - **Nombres representativos:** Descriptivos y claros. No usar variables de una letra o nombres genéricos.
+    - **DRY (Don't Repeat Yourself):** No duplicar lógica. Reutilizar definiciones de otros archivos.
+    - **Cohesión:** Funciones cortas. Si es larga, dividir (divide y vencerás).
+    - **Comentarios:** Explicar el "porqué", no el "qué". No JSDoc en internas. Evitar comentarios inútiles.
+    - **Consistencia:** Mantener estilo uniforme en todo el proyecto.
+  </style_and_clean_code>
 
-- **Nombres representativos** - Usá nombres descriptivos que expliquen el propósito de variables, funciones y clases. Nada de variables de una sola letra, nombres abreviados o muy genéricos.
-- **Abstracciones claras** - Creá abstracciones cohesivas con una única responsabilidad bien definida
-- **Evitar código duplicado** - Aplicá el principio DRY (Don't Repeat Yourself). Si existe una definición en otro archivo, usala (DRY a nivel de archivos). No dupliques lógica común.
-- **Simplicidad primero** - Preferí soluciones simples y directas sobre complejidad innecesaria
-- **Cohesión** - cuando una función se vuelva muy larga partila en funciones más chicas (divide y vencerás). Mantené las funciones cortas y enfocadas en una sola tarea.
-- **Preferir composición sobre herencia** - cuando necesites reutilizar código, preferí composición sobre herencia.
-- **Declaratividad y orden superior antes que imperatividad** - cuando puedas, usá funciones de orden superior (map, filter, reduce) en lugar de loops, nada de for + if + break + continue.
-- **Polimorfismo** - cuando necesites reutilizar código, preferí polimorfismo sobre condicionales (a menos que no tengamos objetos). Evitar preguntar por la clase a menos de que sea necesario (por ejemplo en las excepciones que es un caso donde es válido).
-- **Linter** - respetá las reglas del linter Biome, que están en el archivo `biome.json` del raíz de este proyecto.
+  <type_safety_and_errors>
+    - **Tipado estricto:** Prohibido usar `any`. Usar `unknown` o tipos específicos/genéricos.
+    - **Manejo de errores:** Usar excepciones solo para casos excepcionales. "Fail fast": fallar lo antes posible. **Nunca dejar catch vacío**.
+  </type_safety_and_errors>
+</coding_standards>
 
-## Guías de Estilo
+<project_infrastructure>
+  - **Linter:** Respetar estrictamente las reglas de **Biome** definidas en `biome.json`.
+  - **Package Manager:** Usar exclusivamente **pnpm**. Existe un `pnpm-workspace.yaml`.
+  - **Arquitectura:** Separación estricta entre lógica de negocio, presentación y datos. Mantener acoplamiento bajo y evitar dependencias circulares.
+</project_infrastructure>
 
-- **Comentarios significativos** - Comentá el "porqué" no el "qué", el código debe explicarse por sí mismo. ¡NO COMENTES TODO! No queremos comentarios inútiles que no aportan nada. El código claro es la mejor documentación. No comentes una sola línea de código dentro de una función o método. No uses JSDoc para funciones internas (no exportadas).
-- **Consistencia** - Mantené un estilo consistente en todo el código base
-- **Manejo de errores** - usá excepciones para casos excepcionales, no para control de flujo. Fail fast: fallar lo antes posible cuando el usuario haga algo que no debería hacer. Nunca dejar un catch vacío.
-- **Tipado estricto** - No usar `any`. Siempre usar `unknown` o buscar el tipo que corresponda: un tipo existente, genérico `T`, o `unknown` cuando no se pueda determinar el tipo.
+<workflow_constraints>
+  - **Idioma:** Código y comentarios en **Inglés**. Documentación en **Español**.
+  - **i18n:** Todos los mensajes de cara al usuario DEBEN usar la función `t()` de internacionalización. Nada de strings hardcodeados en español.
+  - **Testing:** Cobertura > 90%. Primero caso feliz, luego casos borde. Los tests son documentación. Ante un bug: primero escribir el test que lo reproduce.
+  - **Protocolo de ejecución:** NO corras tests ni linter por tu cuenta. Pedí al humano que lo haga: `biome:check` y `pnpm run test --run`.
+</workflow_constraints>
 
-## Arquitectura
-
-- **Separación de responsabilidades** - Mantené lógica de negocio separada de presentación y datos
-- **Dependencias claras** - Evitá dependencias circulares y mantiene acoplamiento bajo
-- **Testing** - Importante mantener arriba de un 90% de cobertura, pensando primero en el caso feliz, luego en los casos borde. Los tests son parte de la documentación. Cuando encontremos un error, primero escribí un test que lo reproduzca, luego corregí el código.
-- **Documentación** - Documentá APIs y componentes complejos. La documentación no debe ser exhaustiva, sino útil. Documentar lo más importante, lo esencial, cosas de alto nivel, arquitectural.
-
-## Notas para Asistentes de IA
-
-- **Estas reglas deben aplicarse consistentemente en todo el código**
-- **Priorizá la mantenibilidad y legibilidad sobre optimizaciones prematuras**
-- **Ante la duda o conflicto de reglas, preguntá** - "Si no estás seguro de cómo resolver algo o hay varias alternativas posibles, preguntá antes de implementar. No tomes decisiones de diseño o arquitectura por tu cuenta."
-- **Scope acotado** - "Hacé solo lo que se te pide, no refactorices código que no está relacionado con la tarea" (evita PRs gigantes con cambios no solicitados)
-- **Leé antes de modificar** - "Antes de cambiar código, leé el contexto completo para entender el diseño existente"
-- **Dependencias** - "No agregues nuevas dependencias sin consultar primero"
-- **Package manager** - "Usa siempre pnpm, nunca npm. Este proyecto usa `pnpm-workspace.yaml` y requiere pnpm para gestionar dependencias."
-- **Tests** - No corras los tests ni el linter, pero sí pedí que el humano los ejecute antes de dar por terminado un cambio. Recordale que los comandos a ejecutar son `biome:check` para el linter y `pnpm run test --run` para ejecutarlos una sola vez.
-- **Idioma** - "Código y comentarios en inglés, documentación en español. Los mensajes de error visibles al usuario deben estar en español mediante i18n (función `t()`)" SALVO por los ejemplos de Pelela que sí pueden estar en castellano (carpeta templates de pelela-cli, carpeta examples)
-- **Internacionalización (i18n)** - "Todos los mensajes hacia el usuario DEBEN estar internacionalizados. Nada de strings hardcodeados. Usar la función `t()` de i18n para todos los mensajes que vea el usuario."
-- **Siempre explicá los cambios importantes siguiendo estas directrices**
+<ai_interaction_protocol>
+  - **Scope acotado:** Hacé solo lo que se te pide. No refactorices código no relacionado.
+  - **Leé antes de actuar:** Entendé el contexto y el diseño existente antes de modificar.
+  - **Ante la duda, preguntá:** No tomes decisiones de diseño o arquitectura por tu cuenta.
+  - **Explicación:** Siempre explicá los cambios importantes siguiendo estas directrices.
+</ai_interaction_protocol>
