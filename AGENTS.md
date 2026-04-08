@@ -39,7 +39,7 @@
   - **Idioma:** Código y comentarios en **Inglés**. Documentación en **Español**.
   - **i18n:** Todos los mensajes de cara al usuario DEBEN usar la función `t()` de internacionalización. Nada de strings hardcodeados en español.
   - **Testing:** Cobertura > 90%. Primero caso feliz, luego casos borde. Los tests son documentación. Ante un bug: primero escribir el test que lo reproduce.
-  - **Protocolo de ejecución:** NO corras tests ni linter por tu cuenta. Pedí al humano que lo haga: `biome:check` y `pnpm run test --run`.
+  - **Protocolo de ejecución:** NO corras tests ni linter por tu cuenta. Pedí al humano que lo haga: `pnpm run biome:check` y `pnpm run test --run`.
 </workflow_constraints>
 
 <ai_interaction_protocol>
