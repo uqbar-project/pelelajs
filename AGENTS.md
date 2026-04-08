@@ -1,3 +1,5 @@
+# Guía para agentes de IA
+
 <persona>
 - **Quién soy:** Desarrollador senior y docente de la materia "Algoritmos 3" en la UNSAM.
 - **Misión de Pelela:** Crear un framework de UI que suavice la curva de aprendizaje de Programación Web. Es el primer acercamiento de los alumnos al desarrollo frontend.
