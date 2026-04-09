@@ -15,6 +15,12 @@
     - **Simplicidad:** Soluciones directas antes que complejidad innecesaria.
   </logic_and_design>
 
+  <performance_and_lifecycle>
+    - **Optimización:** Evitar optimizaciones prematuras, pero garantizar que la infraestructura no introduzca overhead innecesario.
+    - **Renderizado:** Los mecanismos de reactividad y binding deben minimizar los re-renders.
+    - **Memoria:** Se prohíbe el uso de deep clones en el estado del modelo a menos que sea estrictamente necesario por requerimientos de inmutabilidad.
+  </performance_and_lifecycle>
+
   <style_and_clean_code>
     - **Nombres representativos:** Descriptivos y claros. No usar variables de una letra o nombres genéricos.
     - **DRY (Don't Repeat Yourself):** No duplicar lógica. Reutilizar definiciones de otros archivos.
@@ -27,6 +33,12 @@
     - **Tipado estricto:** Prohibido usar `any`. Usar `unknown` o tipos específicos/genéricos.
     - **Manejo de errores:** Usar excepciones solo para casos excepcionales. "Fail fast": fallar lo antes posible. **Nunca dejar catch vacío**.
   </type_safety_and_errors>
+
+  <security_owasp>
+    - **Sanitización Obligatoria (Anti-XSS):** Todo contenido dinámico que se inyecte en el DOM mediante innerHTML, outerHTML o similares debe ser sanitizado previamente. El objetivo es mitigar ataques de XSS (Stored/Reflected) eliminando scripts maliciosos y atributos de eventos (ej. onclick) no autorizados.
+    - **Context-Aware Escaping (OWASP Top 10):** Siguiendo los lineamientos de OWASP, el framework debe aplicar el escape correspondiente al contexto (HTML, Atributos, CSS o JavaScript). No basta con limpiar etiquetas; hay que validar que los datos no rompan el contexto de ejecución.
+    - **Integridad de Datos (Anti-Inyección):** Cualquier entrada que deba persistirse o procesarse en el Modelo debe ser validada y sanitizada en la frontera de entrada. Se deben evitar las inyecciones de código mediante la neutralización de caracteres especiales que puedan ser interpretados por el motor de renderizado o capas subyacentes.
+  </security_owasp>
 </coding_standards>
 
 <project_infrastructure>
