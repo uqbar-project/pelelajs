@@ -1,0 +1,32 @@
+{
+  "cli": {
+    "description": "🚀 CLI tool to work with PelelaJS projects",
+    "version": "output the version number",
+    "help": "display help for command"
+  },
+  "commands": {
+    "init": {
+      "description": "📦 Initialize a new PelelaJS project",
+      "error": {
+        "nameEmpty": "Project name cannot be empty",
+        "nameTooLong": "Project name is too long (max 100 characters)",
+        "templateNotFound": "Template not found. The basic-converter example is missing.",
+        "directoryExists": "Directory \"{{projectName}}\" already exists",
+        "initializationFailed": "Failed to initialize project: {{error}}"
+      }
+    }
+  },
+  "messages": {
+    "success": "🎉 Project \"{{projectName}}\" created successfully!",
+    "nextSteps": "Next steps:",
+    "cdProject": "cd {{projectName}}",
+    "install": "pnpm install",
+    "dev": "pnpm dev",
+    "newVersionAvailable": "🆕 A new version is available: {{version}}",
+    "updateCommand": "Run `pnpm add -g @pelelajs/cli` to update",
+    "versionCheckFailed": "Failed to check for updates: {{error}}"
+  },
+  "errors": {
+    "prefix": "❌ Error:"
+  }
+}
