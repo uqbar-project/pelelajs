@@ -1,3 +1,4 @@
+import { t } from '../commons/i18n'
 import type { BindingKind } from '.'
 import { PelelaError } from './PelelaError'
 
@@ -9,7 +10,11 @@ export class InvalidBindingSyntaxError extends PelelaError {
     options?: ErrorOptions,
   ) {
     super(
-      `[pelela] Invalid ${bindingKind} expression: "${expression}". Expected format: ${expectedFormat}`,
+      t('errors.bindings.invalidSyntax', {
+        kind: bindingKind,
+        expression,
+        format: expectedFormat,
+      }),
       options,
     )
   }

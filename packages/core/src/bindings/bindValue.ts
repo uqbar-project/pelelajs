@@ -1,3 +1,4 @@
+import { t } from '../commons/i18n'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
 import type { ValueBinding, ViewModel } from './types'
@@ -12,14 +13,15 @@ function setupSingleValueBinding<T extends object>(
   assertViewModelProperty(viewModel, propertyName, 'bind-value', element)
 
   const isInput =
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement ||
-    element instanceof HTMLSelectElement
+    element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT'
 
   if (!isInput) {
     const snippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
     throw new Error(
-      `bind-value can only be used on input, textarea, or select elements. Found on <${element.tagName.toLowerCase()}>. Use bind-content for display elements.\nElement: ${snippet}`,
+      t('errors.bindings.value.invalidElement', {
+        tagName: element.tagName.toLowerCase(),
+        snippet,
+      }),
     )
   }
 

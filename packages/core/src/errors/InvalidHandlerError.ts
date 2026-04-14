@@ -1,3 +1,4 @@
+import { t } from '../commons/i18n'
 import { PelelaError } from './PelelaError'
 
 export type EventType = 'click' | 'submit' | 'change' | 'input' | 'keypress' | (string & {})
@@ -11,8 +12,11 @@ export class InvalidHandlerError extends PelelaError {
   ) {
     const eventInfo = eventType ? `${eventType}="..."` : 'an event handler'
     super(
-      `[pelela] Handler "${handlerName}" defined in ${eventInfo} is not a function ` +
-        `of view model "${viewModelName}".`,
+      t('errors.handlers.invalid', {
+        name: handlerName,
+        eventInfo,
+        viewModel: viewModelName,
+      }),
       options,
     )
   }

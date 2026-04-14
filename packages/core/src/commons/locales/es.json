@@ -1,0 +1,26 @@
+{
+  "errors": {
+    "bindings": {
+      "invalidSyntax": "[pelela] Expresión {{kind}} inválida: \"{{expression}}\". Formato esperado: {{format}}",
+      "value": {
+        "invalidElement": "bind-value solo puede usarse en elementos input, textarea o select. Se encontró en <{{tagName}}>. Usá bind-content para elementos de visualización.\nElemento: {{snippet}}"
+      }
+    },
+    "dom": {
+      "invalidStructure": "[pelela] {{kind}}: No se pudo configurar el binding, {{issue}}"
+    },
+    "handlers": {
+      "invalid": "[pelela] El handler \"{{name}}\" definido en {{eventInfo}} no es una función del view model \"{{viewModel}}\"."
+    },
+    "properties": {
+      "invalidType": "[pelela] La propiedad \"{{name}}\" usada en {{kind}} debe ser {{expected}}, pero se encontró un tipo diferente en el view model \"{{viewModel}}\". Elemento: {{snippet}}",
+      "validation": "[pelela] Propiedad desconocida \"{{name}}\" usada en {{kind}} en: {{snippet}}. Asegurate de que el view model \"{{viewModel}}\" la defina."
+    },
+    "viewmodel": {
+      "registration": {
+        "duplicate": "[pelela] El view model \"{{name}}\" ya está registrado",
+        "missing": "[pelela] El view model \"{{name}}\" no está registrado. ¿Llamaste a defineViewModel?"
+      }
+    }
+  }
+}

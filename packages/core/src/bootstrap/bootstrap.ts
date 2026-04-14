@@ -1,10 +1,12 @@
 import { setupBindings } from '../bindings/setupBindings'
+import { initializeI18n } from '../commons/i18n'
 import { ViewModelRegistrationError } from '../errors/index'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getViewModel } from '../registry/viewModelRegistry'
 import type { PelelaOptions } from '../types'
 
 export function bootstrap(options: PelelaOptions = {}): void {
+  initializeI18n()
   const doc = options.document ?? window.document
   const searchRoot: ParentNode = options.root ?? doc
 

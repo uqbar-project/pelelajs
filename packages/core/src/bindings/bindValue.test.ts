@@ -33,7 +33,7 @@ describe('bindValue', () => {
 
       expect(() => {
         setupValueBindings(container, viewModel)
-      }).toThrow('bind-value can only be used on input, textarea, or select elements')
+      }).toThrow(/bind-value can only be used on input, textarea, or select elements/)
     })
 
     it('should throw error for div elements', () => {
@@ -42,7 +42,7 @@ describe('bindValue', () => {
 
       expect(() => {
         setupValueBindings(container, viewModel)
-      }).toThrow('Use bind-content for display elements')
+      }).toThrow(/Use bind-content for display elements/)
     })
 
     it('should throw error for p elements', () => {
@@ -51,7 +51,7 @@ describe('bindValue', () => {
 
       expect(() => {
         setupValueBindings(container, viewModel)
-      }).toThrow('bind-value can only be used on input, textarea, or select elements')
+      }).toThrow(/bind-value can only be used on input, textarea, or select elements/)
     })
 
     it('should setup event listeners on inputs', () => {
