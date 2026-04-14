@@ -157,4 +157,50 @@ describe('mountTemplate', () => {
 
     expect(span.innerHTML).toBe('42')
   })
+
+  describe('security', () => {
+    it('should strip malicious scripts from templates', () => {
+      const malicious = `
+        <pelela view-model="TestVM">
+          <script>alert('pwned')</script>
+          <div bind-content="message"></div>
+        </pelela>
+      `
+
+      registerViewModel('TestVM', TestViewModel)
+      mountTemplate(container, malicious)
+
+      expect(container.querySelectorAll('script')).toHaveLength(0)
+      expect(container.querySelector('div')?.textContent).toBe('Hello from template')
+    })
+
+    it('should strip event handlers from templates', () => {
+      const malicious = `
+        <pelela view-model="TestVM">
+          <button onclick="alert('pwned')" bind-content="message"></button>
+        </pelela>
+      `
+
+      registerViewModel('TestVM', TestViewModel)
+      mountTemplate(container, malicious)
+
+      const button = container.querySelector('button')!
+      expect(button.hasAttribute('onclick')).toBe(false)
+      expect(button.textContent).toBe('Hello from template')
+    })
+
+    it('should strip javascript pseudo-protocol from attributes', () => {
+      const malicious = `
+        <pelela view-model="TestVM">
+          <a href="javascript:alert('pwned')">Click me</a>
+        </pelela>
+      `
+
+      registerViewModel('TestVM', TestViewModel)
+      mountTemplate(container, malicious)
+
+      const link = container.querySelector('a')!
+      expect(link.hasAttribute('href')).toBe(false)
+    })
+  })
 })
