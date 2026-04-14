@@ -68,6 +68,19 @@ describe('bindValue', () => {
       expect(viewModel.name).toBe('updated')
     })
 
+    it('should sanitize user input before updating view model', () => {
+      container.innerHTML = '<input bind-value="name" />'
+      const viewModel = { name: '' }
+
+      setupValueBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      input.value = '<script>alert(1)</script>'
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.name).toBe('&lt;script&gt;alert(1)&lt;&#x2F;script&gt;')
+    })
+
     it('should convert numeric values in inputs', () => {
       container.innerHTML = '<input bind-value="count" />'
       const viewModel = { count: 0 }
