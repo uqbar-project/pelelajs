@@ -74,6 +74,15 @@ describe('i18n', () => {
         expect(getCurrentLanguage()).toBe('en')
       })
     })
+
+    it('should detect language from LC_ALL when LANG is empty', async () => {
+      await withMockedNavigator(undefined, () => {
+        vi.stubEnv('LANG', '')
+        vi.stubEnv('LC_ALL', 'es_AR.UTF-8')
+        initializeI18n()
+        expect(getCurrentLanguage()).toBe('es')
+      })
+    })
   })
 
   describe('t', () => {

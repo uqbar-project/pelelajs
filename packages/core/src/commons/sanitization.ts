@@ -1,6 +1,6 @@
 /**
- * Utility for sanitizing strings to prevent XSS and other injection attacks.
- * Follows OWASP recommendations for basic HTML escaping.
+ * Utilities for sanitizing and escaping untrusted content
+ * before injecting it into the DOM or other sensitive contexts
  */
 
 /**
@@ -26,22 +26,25 @@ export function escapeHTML(text: string): string {
  * Class instances will lose their methods.
  */
 export function sanitize<T>(value: T): T {
-  if (typeof value === 'string') {
-    return escapeHTML(value) as unknown as T
-  }
+  return sanitizeInternal(value, new WeakSet()) as T
+}
 
-  if (value === null || typeof value !== 'object') {
-    return value
+function sanitizeInternal(value: unknown, seen: WeakSet<object>): unknown {
+  if (typeof value === 'string') return escapeHTML(value)
+  if (value === null || typeof value !== 'object') return value
+
+  if (seen.has(value)) {
+    throw new TypeError('Cannot sanitize circular references')
   }
+  seen.add(value)
 
   if (Array.isArray(value)) {
-    return value.map((item) => sanitize(item)) as unknown as T
+    return value.map((item) => sanitizeInternal(item, seen))
   }
 
   const result = {} as Record<string, unknown>
   Object.entries(value).forEach(([key, val]) => {
-    result[key] = sanitize(val)
+    result[key] = sanitizeInternal(val, seen)
   })
-
-  return result as unknown as T
+  return result
 }

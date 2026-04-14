@@ -8,6 +8,13 @@ describe('nestedProperties', () => {
       expect(getNestedProperty(obj, 'a.b.c')).toBe(42)
     })
 
+    it('should return undefined for blacklisted keys', () => {
+      const obj = {}
+      expect(getNestedProperty(obj, '__proto__')).toBeUndefined()
+      expect(getNestedProperty(obj, 'constructor')).toBeUndefined()
+      expect(getNestedProperty(obj, 'prototype')).toBeUndefined()
+    })
+
     it('should return undefined if path does not exist', () => {
       const obj = { a: { b: {} } }
       expect(getNestedProperty(obj, 'a.b.c')).toBeUndefined()
@@ -32,6 +39,28 @@ describe('nestedProperties', () => {
       expect(obj.a.b.c).toBe(42)
     })
 
+    it('should return false for blacklisted keys', () => {
+      const obj = {}
+      expect(setNestedProperty(obj, '__proto__', { polluted: 'yes' })).toBe(false)
+      expect(setNestedProperty(obj, 'constructor', { polluted: 'yes' })).toBe(false)
+      expect(setNestedProperty(obj, 'prototype', { polluted: 'yes' })).toBe(false)
+    })
+
+    it('should return false for paths containing blacklisted keys', () => {
+      const obj = { a: {} }
+      expect(setNestedProperty(obj, 'a.__proto__.polluted', 'yes')).toBe(false)
+      expect(setNestedProperty(obj, 'a.constructor.polluted', 'yes')).toBe(false)
+    })
+
+    it('should not allow prototype pollution', () => {
+      const obj: any = {}
+      setNestedProperty(obj, '__proto__.polluted', 'yes')
+      expect((Object.prototype as any).polluted).toBeUndefined()
+
+      setNestedProperty(obj, 'constructor.prototype.polluted', 'yes')
+      expect((Object.prototype as any).polluted).toBeUndefined()
+    })
+
     it('should return false if intermediate node is null', () => {
       const obj = { a: { b: null } }
       const success = setNestedProperty(obj, 'a.b.c', 42)
@@ -39,7 +68,7 @@ describe('nestedProperties', () => {
     })
 
     it('should return false if intermediate node is undefined', () => {
-      const obj: any = { a: {} }
+      const obj: { a: Record<string, unknown> } = { a: {} }
       const success = setNestedProperty(obj, 'a.b.c', 42)
       expect(success).toBe(false)
     })
@@ -64,7 +93,7 @@ describe('nestedProperties', () => {
     })
 
     it('should set property on top-level object', () => {
-      const obj: any = {}
+      const obj: { id?: number } = {}
       const success = setNestedProperty(obj, 'id', 1)
       expect(success).toBe(true)
       expect(obj.id).toBe(1)

@@ -58,5 +58,11 @@ describe('sanitization', () => {
       expect(sanitize(null)).toBe(null)
       expect(sanitize(undefined)).toBe(undefined)
     })
+
+    it('should fail fast on circular references', () => {
+      const input: Record<string, unknown> = {}
+      input.self = input
+      expect(() => sanitize(input)).toThrow(/circular/i)
+    })
   })
 })

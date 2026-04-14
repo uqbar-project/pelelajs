@@ -26,6 +26,7 @@
     - **DRY (Don't Repeat Yourself):** No duplicar lógica. Reutilizar definiciones de otros archivos.
     - **Cohesión:** Funciones cortas. Si es larga, dividir (divide y vencerás).
     - **Comentarios:** Explicar el "porqué", no el "qué". No JSDoc en internas. Evitar comentarios inútiles.
+    - **Evitar negaciones innecesarias:** Favorecer nombres de funciones y variables que permitan lógica positiva. Evitar la doble negación (ej: facilitar `isValid` o `isUnsafe` para evitar `!isInvalid` o `!isSafe`).
     - **Consistencia:** Mantener estilo uniforme en todo el proyecto.
   </style_and_clean_code>
 
@@ -38,6 +39,7 @@
     - **Sanitización Obligatoria (Anti-XSS):** Todo contenido dinámico que se inyecte en el DOM mediante innerHTML, outerHTML o similares debe ser sanitizado previamente. El objetivo es mitigar ataques de XSS (Stored/Reflected) eliminando scripts maliciosos y atributos de eventos (ej. onclick) no autorizados.
     - **Context-Aware Escaping (OWASP Top 10):** Siguiendo los lineamientos de OWASP, el framework debe aplicar el escape correspondiente al contexto (HTML, Atributos, CSS o JavaScript). No basta con limpiar etiquetas; hay que validar que los datos no rompan el contexto de ejecución.
     - **Integridad de Datos (Anti-Inyección):** Cualquier entrada que deba persistirse o procesarse en el Modelo debe ser validada y sanitizada en la frontera de entrada. Se deben evitar las inyecciones de código mediante la neutralización de caracteres especiales que puedan ser interpretados por el motor de renderizado o capas subyacentes.
+    - **Defensa contra Prototype Pollution:** Al manipular objetos mediante claves dinámicas (especialmente en logic de binding), se deben rechazar explícitamente las claves `__proto__`, `constructor` y `prototype`. Se debe usar `Object.prototype.hasOwnProperty.call()` para validar propiedades propias y evitar la manipulación no autorizada de prototipos globales.
   </security_owasp>
 </coding_standards>
 

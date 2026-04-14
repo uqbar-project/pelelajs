@@ -108,6 +108,20 @@ describe('bindValue', () => {
       expect(viewModel.price).toBe(10.5)
     })
 
+    it('should handle thousands separators in Spanish', () => {
+      initializeI18n('es')
+      container.innerHTML = '<input bind-value="price" />'
+      const viewModel = { price: 0 }
+
+      setupValueBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      input.value = '1.234,56'
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.price).toBe(1234.56)
+    })
+
     it('should accept dots as decimal separator in English', () => {
       initializeI18n('en')
       container.innerHTML = '<input bind-value="price" />'
@@ -120,6 +134,34 @@ describe('bindValue', () => {
       input.dispatchEvent(new Event('input'))
 
       expect(viewModel.price).toBe(10.5)
+    })
+
+    it('should handle thousands separators in English', () => {
+      initializeI18n('en')
+      container.innerHTML = '<input bind-value="price" />'
+      const viewModel = { price: 0 }
+
+      setupValueBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      input.value = '1,234.56'
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.price).toBe(1234.56)
+    })
+
+    it('should handle spaces in numeric input', () => {
+      initializeI18n('en')
+      container.innerHTML = '<input bind-value="price" />'
+      const viewModel = { price: 0 }
+
+      setupValueBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      input.value = ' 1 234 . 56 '
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.price).toBe(1234.56)
     })
 
     it('should throw error if property does not exist', () => {

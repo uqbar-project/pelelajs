@@ -79,3 +79,23 @@ export function getDecimalSeparator(): string {
   const parts = new Intl.NumberFormat(locale).formatToParts(numberWithDecimal)
   return parts.find((part) => part.type === 'decimal')?.value || '.'
 }
+
+/**
+ * Returns the thousands separator for the current language.
+ * Uses Intl.NumberFormat for robust detection.
+ */
+export function getThousandsSeparator(): string {
+  const locale = getCurrentLanguage()
+  const numberWithThousands = 1234567.89
+  const parts = new Intl.NumberFormat(locale, { useGrouping: true }).formatToParts(
+    numberWithThousands,
+  )
+  const groupPart = parts.find((part) => part.type === 'group')
+
+  if (groupPart) {
+    return groupPart.value
+  }
+
+  // Robust fallback: return the opposite of the decimal separator
+  return getDecimalSeparator() === ',' ? '.' : ','
+}

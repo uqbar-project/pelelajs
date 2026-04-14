@@ -1,4 +1,4 @@
-import { getDecimalSeparator, t } from '../commons/i18n'
+import { getDecimalSeparator, getThousandsSeparator, t } from '../commons/i18n'
 import { sanitize } from '../commons/sanitization'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
@@ -34,7 +34,14 @@ function setupSingleValueBinding<T extends object>(
 
     if (typeof currentValue === 'number') {
       const separator = getDecimalSeparator()
-      const normalizedValue = inputValue.replace(separator, '.')
+      const thousandsSeparator = getThousandsSeparator()
+
+      const normalizedValue = inputValue
+        .replace(/\s/g, '')
+        .split(thousandsSeparator)
+        .join('')
+        .replace(separator, '.')
+
       const numeric = Number(normalizedValue)
       setNestedProperty(viewModel, propertyName, Number.isNaN(numeric) ? 0 : numeric)
     } else {
