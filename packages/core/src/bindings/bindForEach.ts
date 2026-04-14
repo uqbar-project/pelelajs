@@ -1,3 +1,4 @@
+import { sanitize } from '../commons/sanitization'
 import {
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
@@ -223,7 +224,7 @@ function setupSingleForEachBinding<T extends object>(
       bindingKind: 'for-each',
       expectedType: 'an array',
       viewModelName: viewModel.constructor?.name ?? 'Unknown',
-      elementSnippet: element.outerHTML.substring(0, 50),
+      elementSnippet: sanitize(element.outerHTML.substring(0, 50)) as string,
     })
   }
 

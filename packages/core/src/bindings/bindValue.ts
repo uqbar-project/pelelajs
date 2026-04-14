@@ -1,4 +1,5 @@
 import { t } from '../commons/i18n'
+import { sanitize } from '../commons/sanitization'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
 import type { ValueBinding, ViewModel } from './types'
@@ -17,10 +18,11 @@ function setupSingleValueBinding<T extends object>(
 
   if (!isInput) {
     const snippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
+    const sanitizedSnippet = sanitize(snippet) as string
     throw new Error(
       t('errors.bindings.value.invalidElement', {
         tagName: element.tagName.toLowerCase(),
-        snippet,
+        snippet: sanitizedSnippet,
       }),
     )
   }
@@ -28,12 +30,13 @@ function setupSingleValueBinding<T extends object>(
   element.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     const currentValue = getNestedProperty(viewModel, propertyName)
+    const sanitizedValue = sanitize(target.value)
 
     if (typeof currentValue === 'number') {
-      const numeric = Number(target.value.replace(',', '.'))
+      const numeric = Number(String(sanitizedValue).replace(',', '.'))
       setNestedProperty(viewModel, propertyName, Number.isNaN(numeric) ? 0 : numeric)
     } else {
-      setNestedProperty(viewModel, propertyName, target.value)
+      setNestedProperty(viewModel, propertyName, sanitizedValue)
     }
   })
 
