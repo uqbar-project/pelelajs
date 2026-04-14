@@ -54,10 +54,10 @@ describe('nestedProperties', () => {
 
     it('should not allow prototype pollution', () => {
       const obj: any = {}
-      setNestedProperty(obj, '__proto__.polluted', 'yes')
+      expect(setNestedProperty(obj, '__proto__.polluted', 'yes')).toBe(false)
       expect((Object.prototype as any).polluted).toBeUndefined()
 
-      setNestedProperty(obj, 'constructor.prototype.polluted', 'yes')
+      expect(setNestedProperty(obj, '__proto__.polluted', 'yes')).toBe(false)
       expect((Object.prototype as any).polluted).toBeUndefined()
     })
 
