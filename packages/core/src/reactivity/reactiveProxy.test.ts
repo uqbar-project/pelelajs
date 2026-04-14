@@ -254,7 +254,7 @@ describe('reactiveProxy', () => {
     })
 
     it('should handle $set helper method', () => {
-      const target = { items: ['a', 'b', 'c'] }
+      const target: Record<string, unknown> = { items: ['a', 'b', 'c'] }
       const onChange = vi.fn()
       const proxy = createReactiveViewModel(target, onChange)
 
