@@ -73,8 +73,8 @@ describe('assertViewModelProperty', () => {
 
     try {
       assertViewModelProperty(viewModel, 'missing', 'bind-value', element)
-    } catch (error: any) {
-      expect(error.message.length).toBeLessThan(300)
+    } catch (error: unknown) {
+      expect((error as Error).message.length).toBeLessThan(300)
     }
   })
 
@@ -126,7 +126,7 @@ describe('assertViewModelProperty', () => {
   })
 
   it('should throw error if intermediate property is null', () => {
-    const viewModel = { user: null as any }
+    const viewModel = { user: null as unknown as object }
     const element = document.createElement('div')
 
     expect(() => {

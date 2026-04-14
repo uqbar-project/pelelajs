@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { getCurrentLanguage, initializeI18n, t } from './i18n'
 
 describe('i18n', () => {

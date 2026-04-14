@@ -10,8 +10,11 @@ function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
 
     let descriptor = Object.getOwnPropertyDescriptor(currentObj, part)
 
-    if (!descriptor && currentObj.constructor && currentObj.constructor.prototype) {
-      descriptor = Object.getOwnPropertyDescriptor(currentObj.constructor.prototype, part)
+    if (!descriptor) {
+      const proto = Object.getPrototypeOf(currentObj)
+      if (proto) {
+        descriptor = Object.getOwnPropertyDescriptor(proto, part)
+      }
     }
 
     return !!descriptor?.get
@@ -33,20 +36,13 @@ function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
   })
 }
 
-export type FilteredBindings = {
-  valueBindings: Array<any>
-  contentBindings: Array<any>
-  ifBindings: Array<any>
-  classBindings: Array<any>
-  styleBindings: Array<any>
-  forEachBindings: Array<any>
-}
+type Binding = BindingsCollection[keyof BindingsCollection][number]
 
 export class DependencyTracker {
-  private dependencies = new Map<any, Set<string>>()
-  private getterBindings = new Set<any>()
+  private dependencies = new Map<Binding, Set<string>>()
+  private getterBindings = new Set<Binding>()
 
-  registerDependency(binding: any, propertyPath: string, viewModel?: any): void {
+  registerDependency(binding: Binding, propertyPath: string, viewModel?: unknown): void {
     if (!this.dependencies.has(binding)) {
       this.dependencies.set(binding, new Set())
     }
@@ -57,29 +53,30 @@ export class DependencyTracker {
     }
   }
 
-  markAsGetterBinding(binding: any): void {
+  markAsGetterBinding(binding: Binding): void {
     this.getterBindings.add(binding)
   }
 
-  isGetterBinding(binding: any): boolean {
+  isGetterBinding(binding: Binding): boolean {
     return this.getterBindings.has(binding)
   }
 
-  getDependentBindings(changedPath: string, allBindings: BindingsCollection): FilteredBindings {
-    const bindingKeys = Object.keys(allBindings) as (keyof FilteredBindings)[]
+  getDependentBindings(changedPath: string, allBindings: BindingsCollection): BindingsCollection {
+    const bindingKeys = Object.keys(allBindings) as (keyof BindingsCollection)[]
 
     return bindingKeys.reduce((result, key) => {
-      result[key] = allBindings[key].filter((binding) =>
-        this.isAffectedByChange(binding, changedPath),
-      )
+      // Use unknown as bridge to avoid any
+      const bindings = allBindings[key] as unknown as Binding[]
+      // @ts-expect-error - dynamic key access in a Typed object
+      result[key] = bindings.filter((binding) => this.isAffectedByChange(binding, changedPath))
       return result
-    }, {} as FilteredBindings)
+    }, {} as BindingsCollection)
   }
 
   getDependentBindingsWithGetterSupport(
     changedPath: string,
     allBindings: BindingsCollection,
-  ): FilteredBindings {
+  ): BindingsCollection {
     const result = this.getDependentBindings(changedPath, allBindings)
 
     const addGetterBindings = <T extends object>(
@@ -89,7 +86,8 @@ export class DependencyTracker {
       return [
         ...currentResult,
         ...bindings.filter(
-          (binding) => !currentResult.includes(binding) && this.isGetterBinding(binding),
+          (binding) =>
+            !currentResult.includes(binding) && this.isGetterBinding(binding as unknown as Binding),
         ),
       ]
     }
@@ -103,7 +101,7 @@ export class DependencyTracker {
     }
   }
 
-  private isAffectedByChange(binding: any, changedPath: string): boolean {
+  private isAffectedByChange(binding: Binding, changedPath: string): boolean {
     const bindingPaths = this.dependencies.get(binding)
     if (!bindingPaths) {
       return false

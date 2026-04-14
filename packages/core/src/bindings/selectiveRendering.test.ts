@@ -152,7 +152,7 @@ describe('Selective Rendering Performance', () => {
     }
     container.innerHTML = bindingsHtml.join('')
 
-    const viewModel: any = {}
+    const viewModel: Record<string, unknown> = {}
     for (let i = 0; i < 50; i++) {
       viewModel[`prop${i}`] = `value${i}`
     }

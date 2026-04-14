@@ -34,7 +34,7 @@ export function initializeI18n(language?: SupportedLanguage): void {
   const detectedLanguage = language || detectLanguage()
 
   if (i18next.isInitialized && !language) {
-    // If already initialized and no specific language requested, we might want to 
+    // If already initialized and no specific language requested, we might want to
     // change language if detection would result in a different one (mostly for tests)
     if (i18next.language !== detectedLanguage) {
       i18next.changeLanguage(detectedLanguage)
