@@ -16,9 +16,9 @@ export function bootstrap(options: PelelaOptions = {}): void {
     console.warn('[pelela] No <pelela view-model="..."> elements found')
   }
 
-  for (const root of roots) {
+  roots.forEach((root) => {
     const name = root.getAttribute('view-model')
-    if (!name) continue
+    if (!name) return
 
     const ctor = getViewModel(name)
     if (!ctor) {
@@ -36,10 +36,11 @@ export function bootstrap(options: PelelaOptions = {}): void {
       },
     )
 
-    ;(root as HTMLElement & { __pelelaViewModel: unknown }).__pelelaViewModel = reactiveInstance
+    ;(root as HTMLElement & { __pelelaViewModel: unknown }).__pelelaViewModel =
+      reactiveInstance
 
     render = setupBindings(root, reactiveInstance)
 
     console.log(`[pelela] View model "${name}" instantiated and bound`, reactiveInstance)
-  }
+  })
 }

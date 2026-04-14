@@ -49,7 +49,7 @@ function buildDynamicClasses(value: unknown): string {
   if (Array.isArray(value)) {
     return value
       .filter((item) => typeof item === 'string' && item.trim() !== '')
-      .map((s) => s.trim())
+      .map((className) => className.trim())
       .join(' ')
   }
 

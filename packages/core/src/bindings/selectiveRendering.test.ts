@@ -147,15 +147,15 @@ describe('Selective Rendering Performance', () => {
 
   it('should demonstrate performance improvement with many bindings', () => {
     const bindingsHtml: string[] = []
-    for (let i = 0; i < 50; i++) {
-      bindingsHtml.push(`<span bind-content="prop${i}"></span>`)
-    }
+    Array.from({ length: 50 }).forEach((_, index) => {
+      bindingsHtml.push(`<span bind-content="prop${index}"></span>`)
+    })
     container.innerHTML = bindingsHtml.join('')
 
     const viewModel: Record<string, unknown> = {}
-    for (let i = 0; i < 50; i++) {
-      viewModel[`prop${i}`] = `value${i}`
-    }
+    Array.from({ length: 50 }).forEach((_, index) => {
+      viewModel[`prop${index}`] = `value${index}`
+    })
 
     let renderCount = 0
     const reactiveViewModel = createReactiveViewModel(viewModel, (changedPath) => {
