@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { initializeI18n } from '../commons/i18n'
 import { PropertyValidationError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { renderValueBindings, setupValueBindings } from './bindValue'
@@ -106,7 +107,8 @@ describe('bindValue', () => {
       expect(viewModel.count).toBe(0)
     })
 
-    it('should accept commas as decimal separator', () => {
+    it('should accept commas as decimal separator in Spanish', () => {
+      initializeI18n('es')
       container.innerHTML = '<input bind-value="price" />'
       const viewModel = { price: 0 }
 
@@ -114,6 +116,20 @@ describe('bindValue', () => {
 
       const input = container.querySelector('input')!
       input.value = '10,5'
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.price).toBe(10.5)
+    })
+
+    it('should accept dots as decimal separator in English', () => {
+      initializeI18n('en')
+      container.innerHTML = '<input bind-value="price" />'
+      const viewModel = { price: 0 }
+
+      setupValueBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      input.value = '10.5'
       input.dispatchEvent(new Event('input'))
 
       expect(viewModel.price).toBe(10.5)

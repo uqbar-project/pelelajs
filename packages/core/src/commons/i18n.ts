@@ -68,3 +68,14 @@ export function getCurrentLanguage(): SupportedLanguage {
     ? (current as SupportedLanguage)
     : 'en'
 }
+
+/**
+ * Returns the decimal separator for the current language.
+ * Uses Intl.NumberFormat for robust detection.
+ */
+export function getDecimalSeparator(): string {
+  const locale = getCurrentLanguage()
+  const numberWithDecimal = 1.1
+  const parts = new Intl.NumberFormat(locale).formatToParts(numberWithDecimal)
+  return parts.find((part) => part.type === 'decimal')?.value || '.'
+}
