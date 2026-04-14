@@ -30,15 +30,15 @@ function setupSingleValueBinding<T extends object>(
   element.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     const currentValue = getNestedProperty(viewModel, propertyName)
-    const sanitizedValue = sanitize(target.value)
+    const inputValue = target.value
 
     if (typeof currentValue === 'number') {
       const separator = getDecimalSeparator()
-      const normalizedValue = String(sanitizedValue).replace(separator, '.')
+      const normalizedValue = inputValue.replace(separator, '.')
       const numeric = Number(normalizedValue)
       setNestedProperty(viewModel, propertyName, Number.isNaN(numeric) ? 0 : numeric)
     } else {
-      setNestedProperty(viewModel, propertyName, sanitizedValue)
+      setNestedProperty(viewModel, propertyName, inputValue)
     }
   })
 

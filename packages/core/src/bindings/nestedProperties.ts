@@ -13,12 +13,12 @@ export function setNestedProperty(obj: unknown, path: string, value: unknown): b
 
   let current: unknown = obj
   for (const part of parts) {
-    if (current === null || current === undefined) return false
-    if (!(part in (current as object))) return false
+    if (current === null || current === undefined || typeof current !== 'object') return false
+    if (!(part in current)) return false
     current = (current as Record<string, unknown>)[part]
   }
 
-  if (current === null || current === undefined) return false
+  if (current === null || current === undefined || typeof current !== 'object') return false
 
   ;(current as Record<string, unknown>)[lastPart] = value
   return true

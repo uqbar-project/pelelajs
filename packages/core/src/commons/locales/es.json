@@ -10,7 +10,8 @@
       "invalidStructure": "[pelela] {{kind}}: No se pudo configurar el binding, {{issue}}"
     },
     "handlers": {
-      "invalid": "[pelela] El handler \"{{name}}\" definido en {{eventInfo}} no es una función del view model \"{{viewModel}}\"."
+      "invalid": "[pelela] El handler \"{{name}}\" definido en {{eventInfo}} no es una función del view model \"{{viewModel}}\".",
+      "unknownEvent": "un manejador de eventos"
     },
     "properties": {
       "invalidType": "[pelela] La propiedad \"{{name}}\" usada en {{kind}} debe ser {{expected}}, pero se encontró un tipo diferente en el view model \"{{viewModel}}\". Elemento: {{snippet}}",

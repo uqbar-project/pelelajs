@@ -7,6 +7,23 @@ describe('i18n', () => {
     vi.unstubAllEnvs()
   })
 
+  /**
+   * Helper to mock global.navigator during a test.
+   */
+  async function withMockedNavigator(
+    language: string | undefined,
+    callback: () => void | Promise<void>,
+  ) {
+    const originalNavigator = global.navigator
+    // @ts-expect-error mocks navigator
+    global.navigator = language ? { language } : undefined
+    try {
+      await callback()
+    } finally {
+      global.navigator = originalNavigator
+    }
+  }
+
   describe('initializeI18n', () => {
     it('should initialize with default language (en)', () => {
       initializeI18n('en')
@@ -18,65 +35,44 @@ describe('i18n', () => {
       expect(getCurrentLanguage()).toBe('es')
     })
 
-    it('should detect language from navigator in browser environment', () => {
-      const originalNavigator = global.navigator
-      // @ts-expect-error
-      global.navigator = { language: 'es-ES' }
-
-      initializeI18n()
-      expect(getCurrentLanguage()).toBe('es')
-
-      global.navigator = originalNavigator
+    it('should detect language from navigator in browser environment', async () => {
+      await withMockedNavigator('es-ES', () => {
+        initializeI18n()
+        expect(getCurrentLanguage()).toBe('es')
+      })
     })
 
-    it('should detect language from process.env in node environment', () => {
-      const originalNavigator = global.navigator
-      // Force node detection by removing navigator
-      // @ts-expect-error
-      global.navigator = undefined
-      vi.stubEnv('LANG', 'es_ES.UTF-8')
-
-      initializeI18n()
-      expect(getCurrentLanguage()).toBe('es')
-
-      global.navigator = originalNavigator
+    it('should detect language from process.env in node environment', async () => {
+      await withMockedNavigator(undefined, () => {
+        vi.stubEnv('LANG', 'es_ES.UTF-8')
+        initializeI18n()
+        expect(getCurrentLanguage()).toBe('es')
+      })
     })
 
-    it('should detect language with hyphen separator (es-AR)', () => {
-      const originalNavigator = global.navigator
-      // @ts-expect-error
-      global.navigator = undefined
-      vi.stubEnv('LANG', 'es-AR.UTF-8')
-
-      initializeI18n()
-      expect(getCurrentLanguage()).toBe('es')
-
-      global.navigator = originalNavigator
+    it('should detect language with hyphen separator (es-AR)', async () => {
+      await withMockedNavigator(undefined, () => {
+        vi.stubEnv('LANG', 'es-AR.UTF-8')
+        initializeI18n()
+        expect(getCurrentLanguage()).toBe('es')
+      })
     })
 
-    it('should fallback to en for unsupported language', () => {
-      const originalNavigator = global.navigator
-      // @ts-expect-error
-      global.navigator = undefined
-      vi.stubEnv('LANG', 'fr_FR.UTF-8')
-
-      initializeI18n()
-      expect(getCurrentLanguage()).toBe('en')
-
-      global.navigator = originalNavigator
+    it('should fallback to en for unsupported language', async () => {
+      await withMockedNavigator(undefined, () => {
+        vi.stubEnv('LANG', 'fr_FR.UTF-8')
+        initializeI18n()
+        expect(getCurrentLanguage()).toBe('en')
+      })
     })
 
-    it('should fallback to en when no environment variable is set', () => {
-      const originalNavigator = global.navigator
-      // @ts-expect-error
-      global.navigator = undefined
-      vi.stubEnv('LANG', '')
-      vi.stubEnv('LC_ALL', '')
-
-      initializeI18n()
-      expect(getCurrentLanguage()).toBe('en')
-
-      global.navigator = originalNavigator
+    it('should fallback to en when no environment variable is set', async () => {
+      await withMockedNavigator(undefined, () => {
+        vi.stubEnv('LANG', '')
+        vi.stubEnv('LC_ALL', '')
+        initializeI18n()
+        expect(getCurrentLanguage()).toBe('en')
+      })
     })
   })
 
@@ -93,7 +89,7 @@ describe('i18n', () => {
       expect(result).toBe('[pelela] El view model "MyVM" ya está registrado')
     })
 
-    it('should supports interpolation with double curly braces', () => {
+    it('should support interpolation with double curly braces', () => {
       initializeI18n('en')
       const result = t('errors.bindings.value.invalidElement', {
         tagName: 'div',

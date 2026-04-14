@@ -22,6 +22,8 @@ export function escapeHTML(text: string): string {
 /**
  * Sanitizes any value. If it's a string, it's escaped.
  * If it's an object/array, it recurses (safely).
+ * Note: For objects, returns a plain object without preserving the prototype.
+ * Class instances will lose their methods.
  */
 export function sanitize<T>(value: T): T {
   if (typeof value === 'string') {

@@ -26,6 +26,12 @@ describe('sanitization', () => {
       expect(sanitize(input)).toEqual(expected)
     })
 
+    it('should preserve non-string values in arrays', () => {
+      const input = ['<script>', 42, true, null]
+      const expected = ['&lt;script&gt;', 42, true, null]
+      expect(sanitize(input)).toEqual(expected)
+    })
+
     it('should sanitize nested objects', () => {
       const input = {
         name: '<script>',

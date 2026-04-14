@@ -10,7 +10,8 @@
       "invalidStructure": "[pelela] {{kind}}: Cannot setup binding, {{issue}}"
     },
     "handlers": {
-      "invalid": "[pelela] Handler \"{{name}}\" defined in {{eventInfo}} is not a function of view model \"{{viewModel}}\"."
+      "invalid": "[pelela] Handler \"{{name}}\" defined in {{eventInfo}} is not a function of view model \"{{viewModel}}\".",
+      "unknownEvent": "an event handler"
     },
     "properties": {
       "invalidType": "[pelela] Property \"{{name}}\" used in {{kind}} must be {{expected}}, but found different type on view model \"{{viewModel}}\". Element: {{snippet}}",
