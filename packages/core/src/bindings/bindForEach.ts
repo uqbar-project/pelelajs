@@ -28,7 +28,7 @@ function parseForEachExpression(expression: string): {
 function createExtendedViewModel<T extends object>(
   parentViewModel: ViewModel<T>,
   itemName: string,
-  itemRef: { current: any },
+  itemRef: { current: unknown },
 ): ViewModel {
   return new Proxy(
     {},
@@ -275,7 +275,7 @@ export function setupForEachBindings<T extends object>(
 function createNewElement<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
-  item: any,
+  item: unknown,
   index: number,
 ): void {
   const element = binding.template.cloneNode(true) as HTMLElement
@@ -327,12 +327,12 @@ function createNewElement<T extends object>(
 function addNewElements<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
-  collection: any[],
+  collection: unknown[],
   previousLength: number,
 ): void {
-  for (let i = previousLength; i < collection.length; i++) {
-    createNewElement(binding, viewModel, collection[i], i)
-  }
+  collection.slice(previousLength).forEach((item, i) => {
+    createNewElement(binding, viewModel, item, previousLength + i)
+  })
 }
 
 function removeExtraElements(binding: ForEachBinding, currentLength: number): void {
@@ -342,7 +342,7 @@ function removeExtraElements(binding: ForEachBinding, currentLength: number): vo
   })
 }
 
-function updateExistingElements(binding: ForEachBinding, collection: any[]): void {
+function updateExistingElements(binding: ForEachBinding, collection: unknown[]): void {
   binding.renderedElements.forEach((rendered, i) => {
     const item = collection[i]
     rendered.itemRef.current = item
