@@ -36,7 +36,8 @@ export function bootstrap(options: PelelaOptions = {}): void {
       },
     )
 
-    ;(root as HTMLElement & { __pelelaViewModel: unknown }).__pelelaViewModel = reactiveInstance
+    ;(root as HTMLElement & { __pelelaViewModel: unknown }).__pelelaViewModel =
+      reactiveInstance
 
     render = setupBindings(root, reactiveInstance)
 
