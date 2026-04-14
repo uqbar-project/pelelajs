@@ -254,7 +254,7 @@ describe('reactiveProxy', () => {
     })
 
     it('should handle $set helper method', () => {
-      const target: Record<string, unknown> = { items: ['a', 'b', 'c'] }
+      const target = { items: ['a', 'b', 'c'] }
       const onChange = vi.fn()
       const proxy = createReactiveViewModel(target, onChange)
 
@@ -313,11 +313,12 @@ describe('reactiveProxy', () => {
       const onChange = vi.fn()
       const proxy = createReactiveViewModel({ user: {} as Record<string, unknown> }, onChange)
 
-      proxy.$set(proxy.user, 'profile', { bio: 'Hello' })
+      proxy.$set(proxy.user as object, 'profile', { bio: 'Hello' })
       expect(onChange).toHaveBeenCalledWith('user.profile')
       onChange.mockClear()
 
-      proxy.user.profile.bio = 'Hi'
+      // Access nested property added via $set
+      ;(proxy.user as Record<string, Record<string, string>>).profile.bio = 'Hi'
       expect(onChange).toHaveBeenCalledWith('user.profile.bio')
     })
 
