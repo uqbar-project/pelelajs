@@ -4,5 +4,6 @@ export default defineProject({
   test: {
     name: 'core',
     environment: 'jsdom',
+    setupFiles: ['./test-setup.ts'],
   },
 })

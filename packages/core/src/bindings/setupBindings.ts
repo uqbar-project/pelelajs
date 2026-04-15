@@ -28,7 +28,7 @@ type AnyBinding =
 function registerAllBindingDependencies(
   bindings: BindingsCollection,
   tracker: DependencyTracker,
-  viewModel: ViewModel<any>,
+  viewModel: ViewModel<object>,
 ): void {
   const bindingConfigurations: Array<{
     list: AnyBinding[]

@@ -1,3 +1,4 @@
+import { t } from '../commons/i18n'
 import type { BindingKind } from '.'
 import { PelelaError } from './PelelaError'
 
@@ -21,8 +22,13 @@ export class InvalidPropertyTypeError extends PelelaError {
 
   constructor(params: InvalidPropertyTypeErrorParams) {
     super(
-      `[pelela] Property "${params.propertyName}" used in ${params.bindingKind} must be ${params.expectedType}, ` +
-        `but found different type on view model "${params.viewModelName}". Element: ${params.elementSnippet}`,
+      t('errors.properties.invalidType', {
+        name: params.propertyName,
+        kind: params.bindingKind,
+        expected: params.expectedType,
+        viewModel: params.viewModelName,
+        snippet: params.elementSnippet,
+      }),
       params.options,
     )
 

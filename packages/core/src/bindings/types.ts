@@ -37,7 +37,7 @@ export type ForEachBinding = {
   renderedElements: {
     element: HTMLElement
     viewModel: ViewModel
-    itemRef: { current: any }
+    itemRef: { current: unknown }
     render: () => void
   }[]
   previousLength: number

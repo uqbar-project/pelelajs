@@ -1,10 +1,12 @@
 import { setupBindings } from '../bindings/setupBindings'
+import { initializeI18n } from '../commons/i18n'
 import { ViewModelRegistrationError } from '../errors/index'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getViewModel } from '../registry/viewModelRegistry'
 import type { PelelaOptions } from '../types'
 
 export function bootstrap(options: PelelaOptions = {}): void {
+  initializeI18n()
   const doc = options.document ?? window.document
   const searchRoot: ParentNode = options.root ?? doc
 
@@ -14,9 +16,9 @@ export function bootstrap(options: PelelaOptions = {}): void {
     console.warn('[pelela] No <pelela view-model="..."> elements found')
   }
 
-  for (const root of roots) {
+  roots.forEach((root) => {
     const name = root.getAttribute('view-model')
-    if (!name) continue
+    if (!name) return
 
     const ctor = getViewModel(name)
     if (!ctor) {
@@ -34,10 +36,10 @@ export function bootstrap(options: PelelaOptions = {}): void {
       },
     )
 
-    ;(root as any).__pelelaViewModel = reactiveInstance
+    ;(root as HTMLElement & { __pelelaViewModel: unknown }).__pelelaViewModel = reactiveInstance
 
     render = setupBindings(root, reactiveInstance)
 
     console.log(`[pelela] View model "${name}" instantiated and bound`, reactiveInstance)
-  }
+  })
 }

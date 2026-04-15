@@ -1,3 +1,4 @@
+import { t } from '../commons/i18n'
 import { PelelaError } from './PelelaError'
 
 export type BindingKind =
@@ -24,8 +25,12 @@ export class PropertyValidationError extends PelelaError {
 
   constructor(params: PropertyValidationErrorParams) {
     super(
-      `[pelela] Unknown property "${params.propertyName}" used in ${params.bindingKind} on: ${params.elementSnippet}. ` +
-        `Make sure your view model "${params.viewModelName}" defines it.`,
+      t('errors.properties.validation', {
+        name: params.propertyName,
+        kind: params.bindingKind,
+        snippet: params.elementSnippet,
+        viewModel: params.viewModelName,
+      }),
       params.options,
     )
 

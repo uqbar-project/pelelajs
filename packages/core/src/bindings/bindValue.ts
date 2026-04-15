@@ -1,3 +1,5 @@
+import { getDecimalSeparator, getThousandsSeparator, t } from '../commons/i18n'
+import { sanitize } from '../commons/sanitization'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
 import type { ValueBinding, ViewModel } from './types'
@@ -12,26 +14,38 @@ function setupSingleValueBinding<T extends object>(
   assertViewModelProperty(viewModel, propertyName, 'bind-value', element)
 
   const isInput =
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement ||
-    element instanceof HTMLSelectElement
+    element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT'
 
   if (!isInput) {
     const snippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
+    const sanitizedSnippet = sanitize(snippet) as string
     throw new Error(
-      `bind-value can only be used on input, textarea, or select elements. Found on <${element.tagName.toLowerCase()}>. Use bind-content for display elements.\nElement: ${snippet}`,
+      t('errors.bindings.value.invalidElement', {
+        tagName: element.tagName.toLowerCase(),
+        snippet: sanitizedSnippet,
+      }),
     )
   }
 
   element.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     const currentValue = getNestedProperty(viewModel, propertyName)
+    const inputValue = target.value
 
     if (typeof currentValue === 'number') {
-      const numeric = Number(target.value.replace(',', '.'))
+      const separator = getDecimalSeparator()
+      const thousandsSeparator = getThousandsSeparator()
+
+      const normalizedValue = inputValue
+        .replace(/\s/g, '')
+        .split(thousandsSeparator)
+        .join('')
+        .replace(separator, '.')
+
+      const numeric = Number(normalizedValue)
       setNestedProperty(viewModel, propertyName, Number.isNaN(numeric) ? 0 : numeric)
     } else {
-      setNestedProperty(viewModel, propertyName, target.value)
+      setNestedProperty(viewModel, propertyName, inputValue)
     }
   })
 

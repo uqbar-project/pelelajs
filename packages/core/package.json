@@ -13,6 +13,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "i18next": "^23.7.6"
+  },
   "devDependencies": {
     "@types/node": "24.10.1",
     "@vitest/coverage-v8": "4.0.14",

@@ -73,8 +73,8 @@ describe('assertViewModelProperty', () => {
 
     try {
       assertViewModelProperty(viewModel, 'missing', 'bind-value', element)
-    } catch (error: any) {
-      expect(error.message.length).toBeLessThan(300)
+    } catch (error: unknown) {
+      expect((error as Error).message.length).toBeLessThan(300)
     }
   })
 
@@ -122,16 +122,16 @@ describe('assertViewModelProperty', () => {
 
     expect(() => {
       assertViewModelProperty(viewModel, 'user.missing', 'bind-value', element)
-    }).toThrow('[pelela] Unknown property "user.missing"')
+    }).toThrow(/Unknown property "user.missing"/)
   })
 
   it('should throw error if intermediate property is null', () => {
-    const viewModel = { user: null as any }
+    const viewModel = { user: null as unknown as object }
     const element = document.createElement('div')
 
     expect(() => {
       assertViewModelProperty(viewModel, 'user.name', 'bind-value', element)
-    }).toThrow('[pelela] Unknown property "user.name"')
+    }).toThrow(/Unknown property "user.name"/)
   })
 
   it('should not use fast path for dotted properties that exist as literal keys: eg. "user.name" when user does not exist', () => {
@@ -140,6 +140,6 @@ describe('assertViewModelProperty', () => {
 
     expect(() => {
       assertViewModelProperty(viewModel, 'user.name', 'bind-value', element)
-    }).toThrow('[pelela] Unknown property "user.name"')
+    }).toThrow(/Unknown property "user.name"/)
   })
 })

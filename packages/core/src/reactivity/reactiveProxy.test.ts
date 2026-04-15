@@ -36,7 +36,7 @@ describe('reactiveProxy', () => {
     })
 
     it('should allow adding new properties', () => {
-      const target: any = { count: 0 }
+      const target: Record<string, unknown> = { count: 0 }
       const onChange = vi.fn()
       const proxy = createReactiveViewModel(target, onChange)
 
@@ -214,7 +214,7 @@ describe('reactiveProxy', () => {
     })
 
     it('should handle property deletion', () => {
-      const target: any = { a: 1, b: 2 }
+      const target: Record<string, unknown> = { a: 1, b: 2 }
       const onChange = vi.fn()
       const proxy = createReactiveViewModel(target, onChange)
 
@@ -222,11 +222,11 @@ describe('reactiveProxy', () => {
 
       expect(onChange).toHaveBeenCalled()
       expect(proxy.b).toBeUndefined()
-      expect('b' in proxy).toBe(false)
+      expect('b' in (proxy as object)).toBe(false)
     })
 
     it('should handle circular references without stack overflow', () => {
-      const target: any = { name: 'root' }
+      const target: Record<string, unknown> = { name: 'root' }
       target.self = target
 
       const onChange = vi.fn()
@@ -254,7 +254,7 @@ describe('reactiveProxy', () => {
     })
 
     it('should handle $set helper method', () => {
-      const target: any = { items: ['a', 'b', 'c'] }
+      const target = { items: ['a', 'b', 'c'] }
       const onChange = vi.fn()
       const proxy = createReactiveViewModel(target, onChange)
 
@@ -265,7 +265,7 @@ describe('reactiveProxy', () => {
     })
 
     it('should handle $delete helper method', () => {
-      const target: any = { a: 1, b: 2 }
+      const target: Record<string, unknown> = { a: 1, b: 2 }
       const onChange = vi.fn()
       const proxy = createReactiveViewModel(target, onChange)
 
@@ -299,7 +299,7 @@ describe('reactiveProxy', () => {
 
     it('should use full path when notifying changes of properties in assigned objects', () => {
       const onChange = vi.fn()
-      const proxy = createReactiveViewModel({ address: {} as any }, onChange)
+      const proxy = createReactiveViewModel({ address: {} as Record<string, unknown> }, onChange)
 
       proxy.address = { city: 'New York' }
       expect(onChange).toHaveBeenCalledWith('address')
@@ -311,13 +311,14 @@ describe('reactiveProxy', () => {
 
     it('should use full path when using $set helper for nested objects', () => {
       const onChange = vi.fn()
-      const proxy = createReactiveViewModel({ user: {} as any }, onChange)
+      const proxy = createReactiveViewModel({ user: {} as Record<string, unknown> }, onChange)
 
-      proxy.$set(proxy.user, 'profile', { bio: 'Hello' })
+      proxy.$set(proxy.user as object, 'profile', { bio: 'Hello' })
       expect(onChange).toHaveBeenCalledWith('user.profile')
       onChange.mockClear()
 
-      proxy.user.profile.bio = 'Hi'
+      // Access nested property added via $set
+      ;(proxy.user as Record<string, Record<string, string>>).profile.bio = 'Hi'
       expect(onChange).toHaveBeenCalledWith('user.profile.bio')
     })
 
@@ -334,7 +335,7 @@ describe('reactiveProxy', () => {
       const target = {}
       Object.defineProperty(target, 'a', { value: 1, configurable: false })
       const onChange = vi.fn()
-      const proxy = createReactiveViewModel(target as any, onChange)
+      const proxy = createReactiveViewModel(target as Record<string, unknown>, onChange)
 
       proxy.$delete(proxy, 'a')
       expect(onChange).not.toHaveBeenCalled()
@@ -372,7 +373,7 @@ describe('reactiveProxy', () => {
 
     it('should implement lazy reactivity: objects are made reactive on access, not on assignment', () => {
       const onChange = vi.fn()
-      const proxy = createReactiveViewModel({ data: {} as any }, onChange)
+      const proxy = createReactiveViewModel({ data: {} as Record<string, unknown> }, onChange)
       const rawObject = { city: 'New York' }
 
       proxy.data = rawObject

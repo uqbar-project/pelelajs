@@ -1,25 +1,45 @@
-export function getNestedProperty(obj: any, path: string): any {
-  return path.split('.').reduce((current, part) => {
-    if (current === null || current === undefined) return undefined
-    return current[part]
+const BLACKLISTED_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+function isUnsafeKey(key: string): boolean {
+  return BLACKLISTED_KEYS.has(key)
+}
+
+function hasProperty(obj: object, key: string): boolean {
+  return Object.hasOwn(obj, key)
+}
+
+export function getNestedProperty(obj: unknown, path: string): unknown {
+  return path.split('.').reduce((current: unknown, part) => {
+    if (current === null || current === undefined || isUnsafeKey(part)) return undefined
+    return (current as Record<string, unknown>)[part]
   }, obj)
 }
 
-export function setNestedProperty(obj: any, path: string, value: any): boolean {
+export function setNestedProperty(obj: unknown, path: string, value: unknown): boolean {
   const parts = path.split('.')
   const lastPart = parts.pop()
 
-  if (!lastPart) return false
+  if (!lastPart || isUnsafeKey(lastPart)) return false
 
-  let current = obj
+  let current: unknown = obj
   for (const part of parts) {
-    if (current === null || current === undefined) return false
-    if (!(part in current)) return false
-    current = current[part]
+    if (
+      current === null ||
+      current === undefined ||
+      typeof current !== 'object' ||
+      isUnsafeKey(part)
+    ) {
+      return false
+    }
+
+    if (!hasProperty(current as object, part)) return false
+    current = (current as Record<string, unknown>)[part]
   }
 
-  if (current === null || current === undefined) return false
+  if (current === null || current === undefined || typeof current !== 'object') {
+    return false
+  }
 
-  current[lastPart] = value
+  ;(current as Record<string, unknown>)[lastPart] = value
   return true
 }
