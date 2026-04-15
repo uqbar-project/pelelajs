@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { escapeHTML, sanitize } from './sanitization'
+import { escapeHTML, sanitize, sanitizeHTML } from './sanitization'
 
 describe('sanitization', () => {
   describe('escapeHTML', () => {
@@ -63,6 +63,34 @@ describe('sanitization', () => {
       const input: Record<string, unknown> = {}
       input.self = input
       expect(() => sanitize(input)).toThrow(/circular/i)
+    })
+  })
+
+  describe('sanitizeHTML', () => {
+    it('should strip malicious tags and attributes', () => {
+      const input =
+        '<div>Safe</div><script>alert(1)</script><button onclick="alert(2)">Click</button>'
+      const output = sanitizeHTML(input)
+      expect(output).toContain('<div>Safe</div>')
+      expect(output).not.toContain('<script>')
+      expect(output).not.toContain('onclick')
+    })
+
+    it('should throw error when DOM environment is missing', () => {
+      const originalDocument = global.document
+      const originalDOMParser = global.DOMParser
+
+      try {
+        // @ts-expect-error - simulating environment without DOM
+        global.document = undefined
+        // @ts-expect-error - simulating environment without DOM
+        global.DOMParser = undefined
+
+        expect(() => sanitizeHTML('<div></div>')).toThrow(/DOM environment/i)
+      } finally {
+        global.document = originalDocument
+        global.DOMParser = originalDOMParser
+      }
     })
   })
 })

@@ -16,7 +16,7 @@ function detectLanguage(): SupportedLanguage {
 
   // Node detection (for tests)
   if (typeof process !== 'undefined' && process.env) {
-    const envLang = process.env.LANG || process.env.LC_ALL || ''
+    const envLang = process.env.LC_ALL || process.env.LANG || ''
     const langCode = envLang.split(/[-_.]/)[0]?.toLowerCase()
 
     if (langCode && (SUPPORTED_LANGUAGES as readonly string[]).includes(langCode)) {

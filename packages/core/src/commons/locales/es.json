@@ -22,6 +22,9 @@
         "duplicate": "[pelela] El view model \"{{name}}\" ya está registrado",
         "missing": "[pelela] El view model \"{{name}}\" no está registrado. ¿Llamaste a defineViewModel?"
       }
+    },
+    "security": {
+      "domEnvironmentRequired": "sanitizeHTML requiere un entorno DOM (document y DOMParser)"
     }
   }
 }

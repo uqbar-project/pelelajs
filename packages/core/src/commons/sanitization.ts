@@ -1,3 +1,5 @@
+import { t } from './i18n'
+
 /**
  * Utilities for sanitizing and escaping untrusted content
  * before injecting it into the DOM or other sensitive contexts
@@ -79,7 +81,9 @@ function isUnsafeAttribute(name: string, value: string): boolean {
  * Useful for templates.
  */
 export function sanitizeHTML(html: string): string {
-  if (typeof document === 'undefined') return html // Fallback for environments without DOM
+  if (typeof document === 'undefined' || typeof DOMParser === 'undefined') {
+    throw new Error(t('errors.security.domEnvironmentRequired'))
+  }
 
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')
