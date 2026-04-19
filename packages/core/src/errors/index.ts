@@ -8,5 +8,7 @@ export { PelelaError } from './PelelaError'
 
 export type { BindingKind } from './PropertyValidationError'
 export { PropertyValidationError } from './PropertyValidationError'
+export type { RoutingErrorType } from './RoutingError'
+export { RoutingError } from './RoutingError'
 export type { RegistrationType } from './ViewModelRegistrationError'
 export { ViewModelRegistrationError } from './ViewModelRegistrationError'
