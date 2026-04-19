@@ -62,6 +62,24 @@ describe('assertViewModelProperty', () => {
     }).toThrow(PropertyValidationError)
   })
 
+  it('should include raw HTML snippet in error (not escaped for console visibility)', () => {
+    const viewModel = new TestViewModel()
+    const element = document.createElement('button')
+    element.setAttribute('click', 'missingAction')
+    element.innerHTML = '<span>Click</span>'
+
+    try {
+      assertViewModelProperty(viewModel, 'missingProperty', 'bind-content', element)
+    } catch (err: unknown) {
+      if (err instanceof PropertyValidationError) {
+        // We expect raw HTML characters, not encoded entities like &lt;
+        expect(err.message).toContain('<button click="missingAction"><span>Click</span></button>')
+      } else {
+        throw err
+      }
+    }
+  })
+
   it('should truncate snippet if too long', () => {
     const viewModel = new TestViewModel()
     const element = document.createElement('div')
