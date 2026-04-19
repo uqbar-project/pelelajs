@@ -9,8 +9,7 @@ let routes: RouteDefinition[] = []
 let currentMatch: MatchedRoute | null = null
 let popstateHandler: (() => void) | null = null
 
-function resolveAndRender(): void {
-  const { pathname, search } = window.location
+function renderPath(pathname: string, search: string, nextPath?: string): void {
   const match = matchRoute(pathname, search, routes)
 
   const entry = getComponentEntry(match.route.component)
@@ -20,6 +19,15 @@ function resolveAndRender(): void {
 
   currentMatch = match
   mountTemplate(container!, entry.template)
+
+  if (nextPath) {
+    history.pushState(null, '', nextPath)
+  }
+}
+
+function resolveAndRender(): void {
+  const { pathname, search } = window.location
+  renderPath(pathname, search)
 }
 
 function validateRoutesHaveTemplates(routeDefs: RouteDefinition[]): void {
@@ -38,6 +46,10 @@ export const router = {
   start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
     validateRoutesHaveTemplates(routeDefs)
 
+    if (popstateHandler) {
+      window.removeEventListener('popstate', popstateHandler)
+    }
+
     container = rootContainer
     routes = routeDefs
 
@@ -46,7 +58,12 @@ export const router = {
     }
     window.addEventListener('popstate', popstateHandler)
 
-    resolveAndRender()
+    try {
+      resolveAndRender()
+    } catch (error) {
+      resetRouter()
+      throw error
+    }
   },
 
   /**
@@ -57,8 +74,8 @@ export const router = {
       throw new RoutingError('/', 'route-not-found')
     }
 
-    history.pushState(null, '', path)
-    resolveAndRender()
+    const url = new URL(path, window.location.origin)
+    renderPath(url.pathname, url.search, path)
   },
 
   /**

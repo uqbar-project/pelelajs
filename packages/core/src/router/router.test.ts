@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RoutingError } from '../errors/index'
 import { clearRegistry } from '../registry/viewModelRegistry'
 import { clearComponentRegistry, defineComponent } from './componentRegistry'
@@ -74,13 +74,39 @@ describe('router', () => {
       }).toThrow(RoutingError)
     })
 
-    it('should throw RoutingError when no route matches the current URL', () => {
+    it('should NOT add duplicate popstate listeners on multiple starts', () => {
+      registerTestComponents()
+      const addSpy = vi.spyOn(window, 'addEventListener')
+      const removeSpy = vi.spyOn(window, 'removeEventListener')
+
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      // Should have tried to remove the previous one during the second start
+      expect(removeSpy).toHaveBeenCalledWith('popstate', expect.any(Function))
+      // Total adds: one for each start
+      expect(addSpy).toHaveBeenCalledTimes(2)
+
+      addSpy.mockRestore()
+      removeSpy.mockRestore()
+    })
+
+    it('should clean up state if initial resolveAndRender fails', () => {
       registerTestComponents()
       window.history.replaceState(null, '', '/nonexistent')
 
-      expect(() => {
+      // This start will fail because /nonexistent doesn't match and no catch-all exists
+      try {
         router.start(container, [{ path: '/', component: ProductCatalog }])
-      }).toThrow(RoutingError)
+      } catch {
+        // Expected
+      }
+
+      // Verify cleanup: should not have a container or routes set internally
+      // We check this indirectly by seeing if navigateTo fails as if start() was never called
+      expect(() => {
+        router.navigateTo('/')
+      }).toThrow(RoutingError) // Should throw saying container is null (the root path mismatch)
     })
   })
 
@@ -117,6 +143,21 @@ describe('router', () => {
       expect(() => {
         router.navigateTo('/unknown')
       }).toThrow(RoutingError)
+    })
+
+    it('should NOT update the browser URL when navigation fails (atomicity)', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      const initialPath = window.location.pathname
+
+      try {
+        router.navigateTo('/unknown')
+      } catch {
+        // Ignored, we want to check the URL
+      }
+
+      expect(window.location.pathname).toBe(initialPath)
     })
   })
 

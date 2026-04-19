@@ -10,6 +10,10 @@ export function registerViewModel(name: string, ctor: ViewModelConstructor): voi
   viewModelRegistry.set(name, ctor)
 }
 
+export function replaceViewModel(name: string, ctor: ViewModelConstructor): void {
+  viewModelRegistry.set(name, ctor)
+}
+
 export function getViewModel(name: string): ViewModelConstructor | undefined {
   return viewModelRegistry.get(name)
 }
