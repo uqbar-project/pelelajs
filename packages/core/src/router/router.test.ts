@@ -152,6 +152,35 @@ describe('router', () => {
 
       expect(router.urlParameters()).toEqual({ id: '99' })
     })
+
+    it('should provide parameters during ViewModel construction (constructor check)', () => {
+      registerTestComponents()
+      let capturedId: string | undefined
+      let capturedDetail: string | undefined
+
+      class ConstructorParaCheck {
+        constructor() {
+          capturedId = router.urlParameters().id
+          capturedDetail = router.searchParameters().detail
+        }
+      }
+
+      defineComponent(
+        'ConstructorCheck',
+        ConstructorParaCheck,
+        '<pelela view-model="ConstructorCheck"></pelela>',
+      )
+
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: '/check/:id', component: ConstructorParaCheck },
+      ])
+
+      router.navigateTo('/check/123?detail=enabled')
+
+      expect(capturedId).toBe('123')
+      expect(capturedDetail).toBe('enabled')
+    })
   })
 
   describe('searchParameters', () => {
