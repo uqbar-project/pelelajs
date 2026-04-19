@@ -14,7 +14,7 @@
   <h3>Opciones del select activas:</h3>
   <div class="options-container">
     <span for-each="tipo of tiposApuesta" 
-          if="tipo.active" 
+          if="tipo.active"
           bind-content="tipo.descripcion"></span>
   </div>
 
