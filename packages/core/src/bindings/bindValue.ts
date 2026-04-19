@@ -1,5 +1,5 @@
-import { getDecimalSeparator, getThousandsSeparator, t } from '../commons/i18n'
 import { extractElementSnippet } from '../commons/helpers'
+import { getDecimalSeparator, getThousandsSeparator, t } from '../commons/i18n'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
 import type { ValueBinding, ViewModel } from './types'
