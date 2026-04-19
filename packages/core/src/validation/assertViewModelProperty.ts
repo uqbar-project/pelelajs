@@ -1,4 +1,4 @@
-import { isObject } from '../commons/helpers'
+import { extractElementSnippet, isObject } from '../commons/helpers'
 import { type BindingKind, PropertyValidationError } from '../errors'
 
 function hasNestedProperty(targetObject: unknown, path: string): boolean {
@@ -39,7 +39,7 @@ export function assertViewModelProperty<T extends object>(
   element: Element,
 ): void {
   if (!hasNestedProperty(viewModel, propertyName)) {
-    const elementSnippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
+    const elementSnippet = extractElementSnippet(element)
 
     throw new PropertyValidationError({
       propertyName,

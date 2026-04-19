@@ -1,4 +1,4 @@
-import { getViewModel, registerViewModel } from '../registry/viewModelRegistry'
+import { getViewModel, registerViewModel, replaceViewModel } from '../registry/viewModelRegistry'
 import type { ViewModelConstructor } from '../types'
 
 type ComponentEntry = {
@@ -11,17 +11,16 @@ const templatesByConstructor = new Map<ViewModelConstructor, ComponentEntry>()
 /**
  * Registers a ViewModel with its associated template for routing.
  * Combines ViewModel registration with template association in a single call.
- * Idempotent when called with the same name and constructor.
+ * Safe for HMR: overwrites existing registration with a warning.
  */
 export function defineComponent(name: string, ctor: ViewModelConstructor, template: string): void {
   const existingCtor = getViewModel(name)
 
   if (existingCtor && existingCtor !== ctor) {
-    // A different constructor is already registered under this name
-    registerViewModel(name, ctor) // will throw ViewModelRegistrationError('duplicate')
-  }
-
-  if (!existingCtor) {
+    console.warn(`[pelela] Component "${name}" re-evaluated. Replacing old constructor.`)
+    templatesByConstructor.delete(existingCtor)
+    replaceViewModel(name, ctor)
+  } else if (!existingCtor) {
     registerViewModel(name, ctor)
   }
 

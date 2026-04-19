@@ -15,7 +15,7 @@ function setupSingleClickBinding<T extends object>(
       throw new InvalidHandlerError(handlerName, viewModel.constructor?.name ?? 'Unknown', 'click')
     }
 
-    handler.call(viewModel, event)
+    handler.call(viewModel, viewModel, event)
   })
 }
 

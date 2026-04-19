@@ -27,8 +27,13 @@ class NotFoundPage {
   message = 'Page not found'
 }
 
+class AboutPage {
+  message = 'About us'
+}
+
 const ROUTES: RouteDefinition[] = [
   { path: '/', component: ProductCatalog },
+  { path: '/about', component: AboutPage },
   { path: '/product/:id', component: ProductDetail },
   { path: '/product/:id/city/:cityId', component: CityGuide },
   { path: '*', component: NotFoundPage },
@@ -43,16 +48,29 @@ describe('routeMatcher', () => {
       expect(result.urlParameters).toEqual({})
     })
 
-    it('should match root path with trailing slash', () => {
-      const result = matchRoute('/', '', ROUTES)
+    it('should match a non-root static route with trailing slash', () => {
+      const result = matchRoute('/about/', '', ROUTES)
 
-      expect(result.route.component).toBe(ProductCatalog)
+      expect(result.route.component).toBe(AboutPage)
     })
 
     it('should default empty pathname to root', () => {
       const result = matchRoute('', '', ROUTES)
 
       expect(result.route.component).toBe(ProductCatalog)
+    })
+
+    it('should escape regex metacharacters in static routes', () => {
+      const staticWithMeta: RouteDefinition[] = [
+        { path: '/static.html', component: AboutPage },
+        { path: '*', component: NotFoundPage },
+      ]
+
+      // Should match exactly
+      expect(matchRoute('/static.html', '', staticWithMeta).route.component).toBe(AboutPage)
+
+      // Should NOT match /static-html (if . was a wildcard it would match)
+      expect(matchRoute('/static-html', '', staticWithMeta).route.component).toBe(NotFoundPage)
     })
   })
 

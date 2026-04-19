@@ -1,5 +1,5 @@
 import { getDecimalSeparator, getThousandsSeparator, t } from '../commons/i18n'
-import { sanitize } from '../commons/sanitization'
+import { extractElementSnippet } from '../commons/helpers'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
 import type { ValueBinding, ViewModel } from './types'
@@ -13,16 +13,14 @@ function setupSingleValueBinding<T extends object>(
 
   assertViewModelProperty(viewModel, propertyName, 'bind-value', element)
 
-  const isInput =
-    element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT'
+  const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName)
 
   if (!isInput) {
-    const snippet = element.outerHTML.replace(/\s+/g, ' ').trim().slice(0, 100)
-    const sanitizedSnippet = sanitize(snippet) as string
+    const snippet = extractElementSnippet(element)
     throw new Error(
       t('errors.bindings.value.invalidElement', {
         tagName: element.tagName.toLowerCase(),
-        snippet: sanitizedSnippet,
+        snippet,
       }),
     )
   }

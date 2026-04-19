@@ -38,7 +38,7 @@ describe('bindClick', () => {
       const button = container.querySelector('button')!
       button.click()
 
-      expect(handleClick).toHaveBeenCalledWith(expect.any(MouseEvent))
+      expect(handleClick).toHaveBeenCalledWith(viewModel, expect.any(MouseEvent))
     })
 
     it('should execute handler in viewModel context', () => {

@@ -7,17 +7,26 @@ type CompiledRoute = {
   paramNames: string[]
 }
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function mapSegmentToRegex(segment: string, paramNames: string[]): string {
+  if (segment.startsWith(':')) {
+    paramNames.push(segment.substring(1))
+    return '([^/]+)'
+  }
+  return escapeRegex(segment)
+}
+
 function compileRoute(route: RouteDefinition): CompiledRoute {
   if (route.path === '*') {
     return { route, regex: /^.*$/, paramNames: [] }
   }
 
   const paramNames: string[] = []
-
-  const regexSource = route.path.replace(/:(\w+)/g, (_match, paramName: string) => {
-    paramNames.push(paramName)
-    return '([^/]+)'
-  })
+  const segments = route.path.split(/(:\w+)/g)
+  const regexSource = segments.map((segment) => mapSegmentToRegex(segment, paramNames)).join('')
 
   return {
     route,
@@ -31,7 +40,12 @@ function extractUrlParameters(
   paramNames: string[],
 ): Record<string, string> {
   return paramNames.reduce<Record<string, string>>((params, name, index) => {
-    params[name] = regexMatch[index + 1] ?? ''
+    const rawValue = regexMatch[index + 1] ?? ''
+    try {
+      params[name] = decodeURIComponent(rawValue)
+    } catch {
+      params[name] = rawValue
+    }
     return params
   }, {})
 }

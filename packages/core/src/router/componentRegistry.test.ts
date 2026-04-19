@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { ViewModelRegistrationError } from '../errors/index'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearRegistry, getViewModel } from '../registry/viewModelRegistry'
 import { clearComponentRegistry, defineComponent, getComponentEntry } from './componentRegistry'
 
@@ -49,12 +48,28 @@ describe('componentRegistry', () => {
       }).not.toThrow()
     })
 
-    it('should throw when registering a different constructor under the same name', () => {
+    it('should NOT throw when registering a different constructor (HMR support)', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       defineComponent('Shared', TodoList, '<pelela view-model="Shared"></pelela>')
 
       expect(() => {
         defineComponent('Shared', UserProfile, '<pelela view-model="Shared"></pelela>')
-      }).toThrow(ViewModelRegistrationError)
+      }).not.toThrow()
+
+      expect(getViewModel('Shared')).toBe(UserProfile)
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[pelela] Component "Shared" re-evaluated'),
+      )
+      warnSpy.mockRestore()
+    })
+
+    it('should clean up old constructor mapping when replaced (HMR support)', () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      defineComponent('Shared', TodoList, '<template1></template1>')
+      defineComponent('Shared', UserProfile, '<template2></template2>')
+
+      expect(getComponentEntry(TodoList)).toBeUndefined()
+      expect(getComponentEntry(UserProfile)).toBeDefined()
     })
 
     it('should allow registering multiple components with different names', () => {
