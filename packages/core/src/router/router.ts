@@ -18,8 +18,8 @@ function resolveAndRender(): void {
     throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
   }
 
-  mountTemplate(container!, entry.template)
   currentMatch = match
+  mountTemplate(container!, entry.template)
 }
 
 function validateRoutesHaveTemplates(routeDefs: RouteDefinition[]): void {
