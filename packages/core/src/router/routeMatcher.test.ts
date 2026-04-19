@@ -95,9 +95,7 @@ describe('routeMatcher', () => {
 
   describe('route not found', () => {
     it('should throw RoutingError when no route matches and no catch-all exists', () => {
-      const routesWithoutCatchAll: RouteDefinition[] = [
-        { path: '/', component: ProductCatalog },
-      ]
+      const routesWithoutCatchAll: RouteDefinition[] = [{ path: '/', component: ProductCatalog }]
 
       expect(() => {
         matchRoute('/unknown', '', routesWithoutCatchAll)
@@ -105,9 +103,7 @@ describe('routeMatcher', () => {
     })
 
     it('should include the path in the error', () => {
-      const routesWithoutCatchAll: RouteDefinition[] = [
-        { path: '/', component: ProductCatalog },
-      ]
+      const routesWithoutCatchAll: RouteDefinition[] = [{ path: '/', component: ProductCatalog }]
 
       expect(() => {
         matchRoute('/not-found', '', routesWithoutCatchAll)

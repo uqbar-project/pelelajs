@@ -1,8 +1,0 @@
-{
-  "errors": {
-    "routing": {
-      "routeNotFound": "[pelela] No route defined for \"{{path}}\"",
-      "componentNotRegistered": "[pelela] Component \"{{name}}\" has no template registered. Did you call defineComponent?"
-    }
-  }
-}

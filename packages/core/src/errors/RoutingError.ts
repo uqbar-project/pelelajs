@@ -1,4 +1,4 @@
-import { t } from '../router/i18n'
+import { t } from '../commons/i18n'
 import { PelelaError } from './PelelaError'
 
 export type RoutingErrorType = 'route-not-found' | 'component-not-registered'

@@ -25,6 +25,10 @@
     },
     "security": {
       "domEnvironmentRequired": "sanitizeHTML requiere un entorno DOM (document y DOMParser)"
+    },
+    "routing": {
+      "routeNotFound": "[pelela] No hay una ruta definida para \"{{path}}\"",
+      "componentNotRegistered": "[pelela] El componente \"{{name}}\" no tiene un template registrado. ¿Llamaste a defineComponent?"
     }
   }
 }

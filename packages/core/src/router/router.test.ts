@@ -26,8 +26,7 @@ class NotFoundPage {
 
 const CATALOG_TEMPLATE =
   '<pelela view-model="ProductCatalog"><h1 bind-content="count"></h1></pelela>'
-const DETAIL_TEMPLATE =
-  '<pelela view-model="ProductDetail"><p bind-content="name"></p></pelela>'
+const DETAIL_TEMPLATE = '<pelela view-model="ProductDetail"><p bind-content="name"></p></pelela>'
 const NOT_FOUND_TEMPLATE =
   '<pelela view-model="NotFoundPage"><p bind-content="message"></p></pelela>'
 

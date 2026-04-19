@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ViewModelRegistrationError } from '../errors/index'
 import { clearRegistry, getViewModel } from '../registry/viewModelRegistry'
-import {
-  clearComponentRegistry,
-  defineComponent,
-  getComponentEntry,
-} from './componentRegistry'
+import { clearComponentRegistry, defineComponent, getComponentEntry } from './componentRegistry'
 
 class TodoList {
   items: string[] = []
