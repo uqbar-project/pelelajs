@@ -1,0 +1,9 @@
+<pelela view-model="Home">
+  <h1 bind-content="title"></h1>
+  <p>Seleccioná un usuario para ver su detalle:</p>
+  <ul>
+    <li for-each="user of users">
+      <button click="viewUserDetails" bind-content="user.name"></button>
+    </li>
+  </ul>
+</pelela>
