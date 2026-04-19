@@ -189,5 +189,17 @@ describe('bindClick', () => {
 
       expect(() => clickListener(mockEvent)).toThrow(InvalidHandlerError)
     })
+
+    it('should setup event listener even if the root element itself has the click attribute', () => {
+      const button = document.createElement('button')
+      button.setAttribute('click', 'handleClick')
+      const handleClick = vi.fn()
+      const viewModel = { handleClick }
+
+      setupClickBindings(button, viewModel)
+      button.click()
+
+      expect(handleClick).toHaveBeenCalledTimes(1)
+    })
   })
 })

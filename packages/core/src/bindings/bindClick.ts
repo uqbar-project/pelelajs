@@ -23,6 +23,10 @@ export function setupClickBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): void {
+  // Check the root element itself
+  setupSingleClickBinding(root, viewModel)
+
+  // Check descendants
   const elements = root.querySelectorAll<HTMLElement>('[click]')
 
   elements.forEach((element) => {

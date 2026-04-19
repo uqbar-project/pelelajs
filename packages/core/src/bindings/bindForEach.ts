@@ -102,7 +102,7 @@ function setupBindingsForElement<T extends object>(
     tempBindings.styleBindings.length,
   )
 
-  setupClickBindings(wrapper, viewModel)
+  setupClickBindings(element, viewModel)
 
   const bindings = {
     valueBindings: tempBindings.valueBindings.map((binding) =>
