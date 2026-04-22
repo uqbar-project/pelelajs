@@ -1,6 +1,9 @@
 export class Home {
   indiceSeleccionado = 1;
-  totalPersonas = 3;
+  
+  get totalPersonas() {
+    return this.personas.length;
+  }
 
   personas = [
     { id: 1, name: "Ana García" },
