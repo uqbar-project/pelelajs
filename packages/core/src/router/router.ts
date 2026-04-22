@@ -1,6 +1,6 @@
 import { mountTemplate } from '../bootstrap/mountTemplate'
 import { RoutingError } from '../errors/RoutingError'
-import { getComponentEntry } from './componentRegistry'
+import { getComponentEntry } from '../registry/componentRegistry'
 import { matchRoute } from './routeMatcher'
 import type { MatchedRoute, RouteDefinition } from './types'
 

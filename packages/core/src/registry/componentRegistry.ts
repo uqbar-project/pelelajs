@@ -1,5 +1,5 @@
-import { getViewModel, registerViewModel, replaceViewModel } from '../registry/viewModelRegistry'
 import type { ViewModelConstructor } from '../types'
+import { getViewModel, registerViewModel, replaceViewModel } from './viewModelRegistry'
 
 type ComponentEntry = {
   name: string
@@ -7,6 +7,11 @@ type ComponentEntry = {
 }
 
 const templatesByConstructor = new Map<ViewModelConstructor, ComponentEntry>()
+const componentsByTag = new Map<string, { ctor: ViewModelConstructor; entry: ComponentEntry }>()
+
+function toKebabCase(str: string): string {
+  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+}
 
 /**
  * Registers a ViewModel with its associated template for routing.
@@ -24,13 +29,28 @@ export function defineComponent(name: string, ctor: ViewModelConstructor, templa
     registerViewModel(name, ctor)
   }
 
-  templatesByConstructor.set(ctor, { name, template })
+  const entry = { name, template }
+  templatesByConstructor.set(ctor, entry)
+
+  const tag = toKebabCase(name)
+  componentsByTag.set(tag, { ctor, entry })
 }
 
 export function getComponentEntry(ctor: ViewModelConstructor): ComponentEntry | undefined {
   return templatesByConstructor.get(ctor)
 }
 
+export function getComponentByTag(
+  tag: string,
+): { ctor: ViewModelConstructor; entry: ComponentEntry } | undefined {
+  return componentsByTag.get(tag)
+}
+
+export function getRegisteredTags(): string[] {
+  return Array.from(componentsByTag.keys())
+}
+
 export function clearComponentRegistry(): void {
   templatesByConstructor.clear()
+  componentsByTag.clear()
 }

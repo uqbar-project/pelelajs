@@ -1,4 +1,4 @@
-import { extractElementSnippet } from '../commons/helpers'
+import { extractElementSnippet, filterOwnElements } from '../commons/helpers'
 import {
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
@@ -7,6 +7,7 @@ import {
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
+import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
@@ -70,6 +71,8 @@ function setupBindingsForElement<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): () => void {
+  const componentBindings = setupComponentBindings(element, viewModel)
+
   const wrapper = document.createElement('div')
   const clonedForSearch = element.cloneNode(true) as HTMLElement
   wrapper.appendChild(clonedForSearch)
@@ -139,6 +142,7 @@ function setupBindingsForElement<T extends object>(
     renderIfBindings(bindings.ifBindings, viewModel)
     renderClassBindings(bindings.classBindings, viewModel)
     renderStyleBindings(bindings.styleBindings, viewModel)
+    renderComponentBindings(componentBindings, viewModel)
   }
 
   return render
@@ -244,6 +248,9 @@ function setupSingleForEachBinding<T extends object>(
 
   const placeholder = document.createComment(`for-each: ${itemName} of ${collectionName}`)
   element.parentNode.insertBefore(placeholder, element)
+
+  const extraDependencies = extractExtraDependencies(element, itemName, collectionName)
+
   element.remove()
 
   return {
@@ -253,7 +260,35 @@ function setupSingleForEachBinding<T extends object>(
     placeholder,
     renderedElements: [],
     previousLength: 0,
+    extraDependencies,
   }
+}
+
+function extractExtraDependencies(
+  element: HTMLElement,
+  itemName: string,
+  collectionName: string,
+): string[] {
+  const deps = new Set<string>()
+  const allElements = [element, ...Array.from(element.querySelectorAll('*'))]
+
+  for (const el of allElements) {
+    for (const attr of Array.from(el.attributes)) {
+      if (
+        attr.name.startsWith('bind-') ||
+        attr.name === 'click' ||
+        attr.name.startsWith('link-') ||
+        attr.name.includes('-') // Component props
+      ) {
+        const prop = attr.value
+        if (!prop.startsWith(`${itemName}.`) && prop !== itemName && prop !== collectionName) {
+          deps.add(prop.split('.')[0])
+        }
+      }
+    }
+  }
+
+  return Array.from(deps)
 }
 
 export function setupForEachBindings<T extends object>(
@@ -261,8 +296,9 @@ export function setupForEachBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): ForEachBinding[] {
   const elements = root.querySelectorAll<HTMLElement>('[for-each]')
+  const ownElements = filterOwnElements(elements, root)
 
-  return Array.from(elements)
+  return ownElements
     .map((element) => setupSingleForEachBinding(element, viewModel))
     .filter((binding): binding is ForEachBinding => binding !== null)
 }

@@ -1,4 +1,4 @@
-import { extractElementSnippet } from '../commons/helpers'
+import { extractElementSnippet, filterOwnElements } from '../commons/helpers'
 import { getDecimalSeparator, getThousandsSeparator, t } from '../commons/i18n'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
@@ -55,8 +55,9 @@ export function setupValueBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): ValueBinding[] {
   const elements = root.querySelectorAll<HTMLElement>('[bind-value]')
+  const ownElements = filterOwnElements(elements, root)
 
-  return Array.from(elements)
+  return ownElements
     .map((element) => setupSingleValueBinding(element, viewModel))
     .filter((binding): binding is ValueBinding => binding !== null)
 }

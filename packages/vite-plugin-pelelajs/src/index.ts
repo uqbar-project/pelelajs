@@ -1,5 +1,6 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
+import { initializeI18n, t } from 'pelelajs'
 import type { Plugin } from 'vite'
 
 function escapeTemplateForLiteral(html: string): string {
@@ -20,25 +21,67 @@ function validatePelelaStructure(
   filePath: string,
   errorFn: (message: string) => void,
 ): void {
-  const openTags = sourceCode.match(/<pelela\b[^>]*>/g) || []
-  const closeTags = sourceCode.match(/<\/pelela>/g) || []
+  const openTags = sourceCode.match(/<(?:pelela|component)\b[^>]*>/g) || []
+  const closeTags = sourceCode.match(/<\/(?:pelela|component)>/g) || []
 
   if (openTags.length === 0) {
-    errorFn(`Pelela template "${filePath}" debe contener exactamente un <pelela ...> como raíz.`)
+    errorFn(t('compiler.missingRoot', { filePath }))
   }
 
   if (openTags.length > 1) {
-    errorFn(
-      `Pelela template "${filePath}" tiene ${openTags.length} etiquetas <pelela>. Solo se permite una raíz.`,
-    )
+    errorFn(t('compiler.multipleRoots', { filePath, count: openTags.length }))
   }
 
   if (closeTags.length === 0) {
-    errorFn(`Pelela template "${filePath}" no tiene etiqueta de cierre </pelela>.`)
+    errorFn(t('compiler.missingClosingTag', { filePath }))
   }
 
   if (closeTags.length !== openTags.length) {
-    errorFn(`Pelela template "${filePath}" tiene un número desbalanceado de <pelela> y </pelela>.`)
+    errorFn(t('compiler.unbalancedTags', { filePath }))
+  }
+}
+
+function validateNoForeignSyntax(
+  sourceCode: string,
+  filePath: string,
+  errorFn: (message: string) => void,
+): void {
+  if (/\{\{.*?\}\}/.test(sourceCode)) {
+    errorFn(t('compiler.foreignInterpolation', { filePath }))
+  }
+
+  if (/<[^>]+ \[[^\]]+\]\s*=.*/.test(sourceCode)) {
+    errorFn(t('compiler.foreignPropertyBinding', { filePath }))
+  }
+}
+
+function validateNoForbiddenRootAttributes(
+  sourceCode: string,
+  filePath: string,
+  errorFn: (message: string) => void,
+): void {
+  const rootTagMatch = sourceCode.match(/<(pelela|component)\b([^>]*)>/i)
+  if (!rootTagMatch) return
+
+  const attributes = rootTagMatch[2]
+  const forbiddenPatterns = [
+    /\blink-[a-zA-Z0-9_-]+/,
+    /\bbind-[a-zA-Z0-9_-]+/,
+    /\bif\s*=/,
+    /\bfor-each\s*=/,
+    /\bclick\s*=/,
+  ]
+
+  const foundPattern = forbiddenPatterns.find((pattern) => pattern.test(attributes))
+
+  if (foundPattern && rootTagMatch[1].toLowerCase() === 'pelela') {
+    errorFn(
+      t('compiler.forbiddenRootAttribute', {
+        filePath,
+        tagName: rootTagMatch[1],
+        attr: attributes.match(foundPattern)?.[0],
+      }),
+    )
   }
 }
 
@@ -47,11 +90,11 @@ function extractViewModelName(
   filePath: string,
   errorFn: (message: string) => void,
 ): string {
-  const viewModelMatch = sourceCode.match(/<pelela[^>]*view-model\s*=\s*"([^"]+)"/)
+  const viewModelMatch = sourceCode.match(/<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/)
   const viewModelName = viewModelMatch ? viewModelMatch[1] : null
 
   if (!viewModelName) {
-    errorFn(`Pelela template "${filePath}" debe contener <pelela view-model="...">`)
+    errorFn(t('compiler.missingViewModel', { filePath }))
     return ''
   }
 
@@ -71,6 +114,8 @@ export default template;
 }
 
 export function pelelajsPlugin(): Plugin {
+  initializeI18n()
+
   return {
     name: 'vite-plugin-pelelajs',
     enforce: 'pre',
@@ -85,6 +130,8 @@ export function pelelajsPlugin(): Plugin {
 
       const errorHandler = this.error.bind(this)
       validatePelelaStructure(sourceCode, filePath, errorHandler)
+      validateNoForbiddenRootAttributes(sourceCode, filePath, errorHandler)
+      validateNoForeignSyntax(sourceCode, filePath, errorHandler)
       const viewModelName = extractViewModelName(sourceCode, filePath, errorHandler)
 
       const escapedTemplate = escapeTemplateForLiteral(sourceCode)

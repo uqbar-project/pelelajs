@@ -8,16 +8,16 @@ function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
   const hasGetter = (currentObj: unknown, part: string): boolean => {
     if (typeof currentObj !== 'object' || currentObj === null) return false
 
-    let descriptor = Object.getOwnPropertyDescriptor(currentObj, part)
-
-    if (!descriptor) {
-      const proto = Object.getPrototypeOf(currentObj)
-      if (proto) {
-        descriptor = Object.getOwnPropertyDescriptor(proto, part)
+    let proto = currentObj
+    while (proto) {
+      const descriptor = Object.getOwnPropertyDescriptor(proto, part)
+      if (descriptor?.get) {
+        return true
       }
+      proto = Object.getPrototypeOf(proto)
     }
 
-    return !!descriptor?.get
+    return false
   }
 
   let currentObj: unknown = obj
@@ -98,6 +98,9 @@ export class DependencyTracker {
       classBindings: addGetterBindings(allBindings.classBindings, result.classBindings),
       styleBindings: addGetterBindings(allBindings.styleBindings, result.styleBindings),
       contentBindings: addGetterBindings(allBindings.contentBindings, result.contentBindings),
+      forEachBindings: addGetterBindings(allBindings.forEachBindings, result.forEachBindings),
+      componentBindings: addGetterBindings(allBindings.componentBindings, result.componentBindings),
+      valueBindings: addGetterBindings(allBindings.valueBindings, result.valueBindings),
     }
   }
 

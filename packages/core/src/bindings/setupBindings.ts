@@ -1,5 +1,6 @@
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
+import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderIfBindings, setupIfBindings } from './bindIf'
@@ -9,6 +10,7 @@ import { DependencyTracker } from './dependencyTracker'
 import type {
   BindingsCollection,
   ClassBinding,
+  ComponentBinding,
   ContentBinding,
   ForEachBinding,
   IfBinding,
@@ -24,6 +26,7 @@ type AnyBinding =
   | IfBinding
   | ClassBinding
   | StyleBinding
+  | ComponentBinding
 
 function registerAllBindingDependencies(
   bindings: BindingsCollection,
@@ -32,12 +35,16 @@ function registerAllBindingDependencies(
 ): void {
   const bindingConfigurations: Array<{
     list: AnyBinding[]
-    getPath: (binding: AnyBinding) => string
+    getPath: (binding: AnyBinding) => string | string[]
   }> = [
     {
       list: bindings.forEachBindings,
-      getPath: (binding) => (binding as ForEachBinding).collectionName,
+      getPath: (binding) => [
+        (binding as ForEachBinding).collectionName,
+        ...(binding as ForEachBinding).extraDependencies,
+      ],
     },
+
     {
       list: bindings.valueBindings,
       getPath: (binding) => (binding as ValueBinding).propertyName,
@@ -58,11 +65,20 @@ function registerAllBindingDependencies(
       list: bindings.styleBindings,
       getPath: (binding) => (binding as StyleBinding).propertyName,
     },
+    {
+      list: bindings.componentBindings,
+      getPath: (binding) =>
+        (binding as ComponentBinding).mappings.map((mapping) => mapping.parentKey),
+    },
   ]
 
   bindingConfigurations.forEach((config) => {
     config.list.forEach((binding) => {
-      tracker.registerDependency(binding, config.getPath(binding), viewModel)
+      const paths = config.getPath(binding)
+      const pathArray = Array.isArray(paths) ? paths : [paths]
+      pathArray.forEach((path) => {
+        tracker.registerDependency(binding, path, viewModel)
+      })
     })
   })
 }
@@ -99,6 +115,10 @@ function executeRenderPipeline<T extends object>(
       condition: () => targetBindings.styleBindings.length > 0,
       render: () => renderStyleBindings(targetBindings.styleBindings, viewModel),
     },
+    {
+      condition: () => targetBindings.componentBindings.length > 0,
+      render: () => renderComponentBindings(targetBindings.componentBindings, viewModel),
+    },
   ]
 
   renderActions
@@ -113,6 +133,7 @@ export function setupBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): (changedPath?: string) => void {
   const bindings: BindingsCollection = {
+    componentBindings: setupComponentBindings(root, viewModel),
     forEachBindings: setupForEachBindings(root, viewModel),
     valueBindings: setupValueBindings(root, viewModel),
     contentBindings: setupContentBindings(root, viewModel),

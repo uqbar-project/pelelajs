@@ -1,7 +1,10 @@
 import { setupBindings } from '../bindings/setupBindings'
+import { unwrapTemplate } from '../commons/helpers'
 import { initializeI18n } from '../commons/i18n'
+import { sanitizeHTML } from '../commons/sanitization'
 import { ViewModelRegistrationError } from '../errors/index'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
+import { getComponentEntry } from '../registry/componentRegistry'
 import { getViewModel } from '../registry/viewModelRegistry'
 import type { PelelaOptions } from '../types'
 
@@ -23,6 +26,12 @@ export function bootstrap(options: PelelaOptions = {}): void {
     const ctor = getViewModel(name)
     if (!ctor) {
       throw new ViewModelRegistrationError(name, 'missing')
+    }
+
+    const componentEntry = getComponentEntry(ctor)
+    if (componentEntry && root.innerHTML.trim() === '') {
+      const sanitized = sanitizeHTML(componentEntry.template)
+      root.innerHTML = unwrapTemplate(sanitized)
     }
 
     const instance = new ctor()

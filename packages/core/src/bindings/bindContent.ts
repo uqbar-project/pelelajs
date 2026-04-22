@@ -1,3 +1,4 @@
+import { filterOwnElements } from '../commons/helpers'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { ContentBinding, ViewModel } from './types'
@@ -19,8 +20,9 @@ export function setupContentBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): ContentBinding[] {
   const elements = root.querySelectorAll<HTMLElement>('[bind-content]')
+  const ownElements = filterOwnElements(elements, root)
 
-  return Array.from(elements)
+  return ownElements
     .map((element) => setupSingleContentBinding(element, viewModel))
     .filter((binding): binding is ContentBinding => binding !== null)
 }

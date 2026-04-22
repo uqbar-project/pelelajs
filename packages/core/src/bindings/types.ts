@@ -41,6 +41,12 @@ export type ForEachBinding = {
     render: () => void
   }[]
   previousLength: number
+  extraDependencies: string[]
+}
+
+export type ComponentBinding = {
+  childViewModel: ViewModel
+  mappings: Array<{ parentKey: string; childKey: string }>
 }
 
 export type BindingsCollection = {
@@ -50,4 +56,5 @@ export type BindingsCollection = {
   classBindings: ClassBinding[]
   styleBindings: StyleBinding[]
   forEachBindings: ForEachBinding[]
+  componentBindings: ComponentBinding[]
 }

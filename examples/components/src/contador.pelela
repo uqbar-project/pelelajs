@@ -1,0 +1,7 @@
+<component view-model="Contador">
+  <div class="contador-widget">
+    <button click="decrementar">-</button>
+    <span class="visor" bind-content="valor"></span>
+    <button click="incrementar">+</button>
+  </div>
+</component>

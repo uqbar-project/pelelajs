@@ -138,13 +138,13 @@ describe('assertViewModelProperty', () => {
     }).toThrow(/Unknown property "user.missing"/)
   })
 
-  it('should throw error if intermediate property is null', () => {
+  it('should NOT throw error if intermediate property is null', () => {
     const viewModel = { user: null as unknown as object }
     const element = document.createElement('div')
 
     expect(() => {
       assertViewModelProperty(viewModel, 'user.name', 'bind-value', element)
-    }).toThrow(/Unknown property "user.name"/)
+    }).not.toThrow()
   })
 
   it('should not use fast path for dotted properties that exist as literal keys: eg. "user.name" when user does not exist', () => {

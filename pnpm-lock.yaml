@@ -43,6 +43,22 @@ importers:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(tsx@4.21.0)
 
+  examples/components:
+    dependencies:
+      pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/core
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 7.2.4
+        version: 7.2.4(@types/node@24.10.1)(tsx@4.21.0)
+
   examples/for-each:
     dependencies:
       pelelajs:
@@ -118,6 +134,9 @@ importers:
 
   packages/vite-plugin-pelelajs:
     dependencies:
+      pelelajs:
+        specifier: workspace:*
+        version: link:../core
       vite:
         specifier: ^7.2.4
         version: 7.2.4(@types/node@24.10.1)(tsx@4.21.0)

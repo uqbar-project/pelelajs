@@ -1,3 +1,4 @@
+import { filterOwnElements } from '../commons/helpers'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { IfBinding, ViewModel } from './types'
@@ -23,8 +24,9 @@ export function setupIfBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): IfBinding[] {
   const elements = root.querySelectorAll<HTMLElement>('[if]')
+  const ownElements = filterOwnElements(elements, root)
 
-  return Array.from(elements)
+  return ownElements
     .map((element) => setupSingleIfBinding(element, viewModel))
     .filter((binding): binding is IfBinding => binding !== null)
 }

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearRegistry, getViewModel } from '../registry/viewModelRegistry'
 import { clearComponentRegistry, defineComponent, getComponentEntry } from './componentRegistry'
+import { clearRegistry, getViewModel } from './viewModelRegistry'
 
 class TodoList {
   items: string[] = []
