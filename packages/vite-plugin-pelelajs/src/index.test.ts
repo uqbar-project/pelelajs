@@ -1,11 +1,12 @@
 import * as fs from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
+import type { PelelaVitePlugin } from '../index'
 import { pelelajsPlugin } from './index'
 
 vi.mock('node:fs')
 
 describe('pelelajsPlugin', () => {
-  const plugin = pelelajsPlugin() as any
+  const plugin = pelelajsPlugin() as PelelaVitePlugin
 
   it('should identify itself correctly', () => {
     expect(plugin.name).toBe('vite-plugin-pelelajs')
@@ -13,7 +14,7 @@ describe('pelelajsPlugin', () => {
 
   describe('load', () => {
     it('should return null for non-pelela files', () => {
-      expect(plugin.load('test.ts')).toBeNull()
+      expect(plugin.load?.('test.ts')).toBeNull()
     })
 
     it('should process a valid <pelela> template', () => {
@@ -23,7 +24,8 @@ describe('pelelajsPlugin', () => {
 
       const errorSpy = vi.fn()
       const context = { error: errorSpy }
-      const result = plugin.load.call(context, 'test.pelela')
+      const load = plugin.load as (this: unknown, id: string) => string
+      const result = load.call(context, 'test.pelela')
       expect(result).toContain('export const viewModelName = "TestVM"')
       expect(result).toContain(
         'const template = `<pelela view-model="TestVM"><div>Hello</div></pelela>`',
@@ -36,7 +38,8 @@ describe('pelelajsPlugin', () => {
 
       const errorSpy = vi.fn()
       const context = { error: errorSpy }
-      const result = plugin.load.call(context, 'test.pelela')
+      const load = plugin.load as (this: unknown, id: string) => string
+      const result = load.call(context, 'test.pelela')
       expect(result).toContain('export const viewModelName = "MyComp"')
     })
 
@@ -46,8 +49,9 @@ describe('pelelajsPlugin', () => {
 
       const errorSpy = vi.fn()
       const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
 
-      plugin.load.call(context, 'test.pelela')
+      load.call(context, 'test.pelela')
       expect(errorSpy).toHaveBeenCalled()
     })
 
@@ -57,8 +61,9 @@ describe('pelelajsPlugin', () => {
 
       const errorSpy = vi.fn()
       const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
 
-      plugin.load.call(context, 'test.pelela')
+      load.call(context, 'test.pelela')
       expect(errorSpy).toHaveBeenCalled()
     })
 
@@ -68,8 +73,9 @@ describe('pelelajsPlugin', () => {
 
       const errorSpy = vi.fn()
       const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
 
-      plugin.load.call(context, 'test.pelela')
+      load.call(context, 'test.pelela')
       expect(errorSpy).toHaveBeenCalled()
     })
 
@@ -79,8 +85,9 @@ describe('pelelajsPlugin', () => {
 
       const errorSpy = vi.fn()
       const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
 
-      plugin.load.call(context, 'test.pelela')
+      load.call(context, 'test.pelela')
       expect(errorSpy).toHaveBeenCalled()
       const lastError = errorSpy.mock.calls[0][0]
       expect(lastError.includes('link-value') || lastError.includes('forbiddenRootAttribute')).toBe(
@@ -94,8 +101,9 @@ describe('pelelajsPlugin', () => {
 
       const errorSpy = vi.fn()
       const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
 
-      plugin.load.call(context, 'test.pelela')
+      load.call(context, 'test.pelela')
       expect(errorSpy).not.toHaveBeenCalled()
     })
   })

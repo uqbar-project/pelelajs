@@ -493,7 +493,7 @@ describe('bindForEach', () => {
       }
       defineComponent(
         'list-item',
-        ItemVM as any,
+        ItemVM,
         '<component view-model="ItemVM"><span bind-content="name"></span></component>',
       )
 
@@ -531,7 +531,7 @@ describe('bindForEach', () => {
       }
       defineComponent(
         'list-item-reactive',
-        ItemVM as any,
+        ItemVM,
         `
         <component view-model="ItemVM">
           <span bind-class="itemClasses" bind-content="name"></span>

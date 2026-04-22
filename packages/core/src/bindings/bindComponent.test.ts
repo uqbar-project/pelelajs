@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
+import type { PelelaElement } from '../types'
 import { setupBindings } from './setupBindings'
 
 describe('bindComponent', () => {
@@ -18,7 +19,7 @@ describe('bindComponent', () => {
     }
     defineComponent(
       'child-comp',
-      ChildVM as any,
+      ChildVM,
       '<component view-model="ChildVM"><span bind-content="message"></span></component>',
     )
 
@@ -43,7 +44,7 @@ describe('bindComponent', () => {
     }
     defineComponent(
       'counter-child',
-      ChildVM as any,
+      ChildVM,
       '<component view-model="ChildVM"><span bind-content="count"></span></component>',
     )
 
@@ -75,7 +76,7 @@ describe('bindComponent', () => {
         this.val = newVal
       }
     }
-    defineComponent('input-child', ChildVM as any, '<component view-model="ChildVM"></component>')
+    defineComponent('input-child', ChildVM, '<component view-model="ChildVM"></component>')
 
     container.innerHTML = '<input-child link-val="parentVal"></input-child>'
 
@@ -90,7 +91,7 @@ describe('bindComponent', () => {
 
     const render = setupBindings(container, parentVM)
 
-    const childEl = container.querySelector('input-child') as any
+    const childEl = container.querySelector('input-child') as PelelaElement<ChildVM>
     const childVM = childEl.__pelelaViewModel
 
     childVM.val = 'changed'

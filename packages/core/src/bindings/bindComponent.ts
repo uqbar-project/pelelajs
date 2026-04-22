@@ -3,6 +3,7 @@ import { sanitizeHTML } from '../commons/sanitization'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
 import { setupBindings } from './setupBindings'
+import type { PelelaElement } from '../types'
 import type { ComponentBinding, ViewModel } from './types'
 
 const LINK_PREFIX = 'link-'
@@ -56,7 +57,7 @@ export function setupComponentBindings<T extends object>(
 
     allMappings.forEach(({ parentKey, childKey }) => {
       if (parentKey in parentViewModel) {
-        instance[childKey] = (parentViewModel as any)[parentKey]
+        instance[childKey] = (parentViewModel as Record<string, unknown>)[parentKey]
       }
     })
 
@@ -64,7 +65,8 @@ export function setupComponentBindings<T extends object>(
     const reactiveInstance = createReactiveViewModel(instance, (changedPath: string) => {
       const linkBinding = linkBindings.find((binding) => binding.childKey === changedPath)
       if (linkBinding) {
-        ;(parentViewModel as any)[linkBinding.parentKey] = reactiveInstance[changedPath]
+        ;(parentViewModel as Record<string, unknown>)[linkBinding.parentKey] =
+          reactiveInstance[changedPath]
       }
 
       renderChild(changedPath)
@@ -73,7 +75,7 @@ export function setupComponentBindings<T extends object>(
     const sanitizedHtml = sanitizeHTML(componentDef.entry.template)
     element.innerHTML = unwrapTemplate(sanitizedHtml)
     renderChild = setupBindings(element, reactiveInstance)
-    ;(element as any).__pelelaViewModel = reactiveInstance
+    ;(element as PelelaElement<Record<string, unknown>>).__pelelaViewModel = reactiveInstance
 
     bindings.push({
       childViewModel: reactiveInstance,
@@ -90,11 +92,11 @@ export function renderComponentBindings<T extends object>(
 ): void {
   bindings.forEach((binding) => {
     binding.mappings.forEach(({ parentKey, childKey }) => {
-      const parentValue = (parentViewModel as any)[parentKey]
-      const childValue = (binding.childViewModel as any)[childKey]
+      const parentValue = (parentViewModel as Record<string, unknown>)[parentKey]
+      const childValue = (binding.childViewModel as Record<string, unknown>)[childKey]
 
       if (parentValue !== childValue) {
-        ;(binding.childViewModel as any)[childKey] = parentValue
+        ;(binding.childViewModel as Record<string, unknown>)[childKey] = parentValue
       }
     })
   })

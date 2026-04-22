@@ -118,7 +118,7 @@ describe('helpers', () => {
 
     it('should exclude elements inside a registered custom tag', () => {
       class MockVM {}
-      defineComponent('CustomTag', MockVM as any, '<component view-model="CustomTag"></component>')
+      defineComponent('CustomTag', MockVM, '<component view-model="CustomTag"></component>')
 
       const root = document.createElement('div')
       root.innerHTML = `

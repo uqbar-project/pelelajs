@@ -5,7 +5,7 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noExplicitAny": "off",
+        "noExplicitAny": "error",
         "noConsole": "off",
         "noEmptyBlockStatements": "off"
       },
