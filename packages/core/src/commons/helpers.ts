@@ -37,3 +37,7 @@ export function filterOwnElements(
 export function toCamelCase(str: string): string {
   return str.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase())
 }
+
+export function isNestedPropertyPath(prop: string | symbol, root: string): boolean {
+  return typeof prop === 'string' && (prop === root || prop.startsWith(`${root}.`))
+}

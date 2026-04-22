@@ -1,4 +1,4 @@
-import { extractElementSnippet, filterOwnElements } from '../commons/helpers'
+import { extractElementSnippet, filterOwnElements, isNestedPropertyPath } from '../commons/helpers'
 import {
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
@@ -15,16 +15,12 @@ import { renderValueBindings, setupValueBindings } from './bindValue'
 import { getNestedProperty } from './nestedProperties'
 import type { ForEachBinding, ViewModel } from './types'
 
-function parseForEachExpression(expression: string): {
-  itemName: string
-  collectionName: string
-} | null {
+function parseForEachExpression(
+  expression: string,
+): { itemName: string; collectionName: string } | null {
   const match = expression.trim().match(/^(\w+)\s+of\s+(\w+)$/)
   if (!match) return null
-  return {
-    itemName: match[1],
-    collectionName: match[2],
-  }
+  return { itemName: match[1], collectionName: match[2] }
 }
 
 function createExtendedViewModel<T extends object>(
@@ -36,18 +32,13 @@ function createExtendedViewModel<T extends object>(
     {},
     {
       has(_target, prop) {
-        if (prop === itemName) return true
-        if (typeof prop === 'string' && prop.startsWith(`${itemName}.`)) {
-          return true
-        }
+        if (isNestedPropertyPath(prop, itemName)) return true
         return prop in parentViewModel
       },
       get(_target, prop) {
-        if (prop === itemName) {
-          return itemRef.current
-        }
-        if (typeof prop === 'string' && prop.startsWith(`${itemName}.`)) {
-          const itemProp = prop.substring(itemName.length + 1)
+        if (prop === itemName) return itemRef.current
+        if (isNestedPropertyPath(prop, itemName)) {
+          const itemProp = (prop as string).substring(itemName.length + 1)
           return getNestedProperty(itemRef.current, itemProp)
         }
         return parentViewModel[prop as string]
@@ -57,9 +48,7 @@ function createExtendedViewModel<T extends object>(
           itemRef.current = value
           return true
         }
-        if (typeof prop === 'string' && prop.startsWith(`${itemName}.`)) {
-          return true
-        }
+        if (isNestedPropertyPath(prop, itemName)) return true
         ;(parentViewModel as Record<string, unknown>)[prop as string] = value
         return true
       },
@@ -72,18 +61,9 @@ function setupBindingsForElement<T extends object>(
   viewModel: ViewModel<T>,
 ): () => void {
   const componentBindings = setupComponentBindings(element, viewModel)
-
   const wrapper = document.createElement('div')
   const clonedForSearch = element.cloneNode(true) as HTMLElement
   wrapper.appendChild(clonedForSearch)
-
-  console.log(
-    '[pelela] setupBindingsForElement:',
-    element.tagName,
-    'cloned:',
-    clonedForSearch.outerHTML,
-  )
-
   const tempBindings = {
     valueBindings: setupValueBindings(wrapper, viewModel),
     contentBindings: setupContentBindings(wrapper, viewModel),
@@ -91,22 +71,7 @@ function setupBindingsForElement<T extends object>(
     classBindings: setupClassBindings(wrapper, viewModel),
     styleBindings: setupStyleBindings(wrapper, viewModel),
   }
-
-  console.log(
-    '[pelela] Found bindings - value:',
-    tempBindings.valueBindings.length,
-    'content:',
-    tempBindings.contentBindings.length,
-    'if:',
-    tempBindings.ifBindings.length,
-    'class:',
-    tempBindings.classBindings.length,
-    'style:',
-    tempBindings.styleBindings.length,
-  )
-
   setupClickBindings(element, viewModel)
-
   const bindings = {
     valueBindings: tempBindings.valueBindings.map((binding) =>
       mapBindingToRealElement(binding, clonedForSearch, element),
@@ -124,19 +89,7 @@ function setupBindingsForElement<T extends object>(
       mapBindingToRealElement(binding, clonedForSearch, element),
     ),
   }
-
-  console.log(
-    '[pelela] Mapped bindings to real element:',
-    element.tagName,
-    'value bindings:',
-    bindings.valueBindings.map((binding) => ({
-      el: binding.element.tagName,
-      prop: binding.propertyName,
-      same: binding.element === element,
-    })),
-  )
-
-  const render = () => {
+  return () => {
     renderValueBindings(bindings.valueBindings, viewModel)
     renderContentBindings(bindings.contentBindings, viewModel)
     renderIfBindings(bindings.ifBindings, viewModel)
@@ -144,8 +97,6 @@ function setupBindingsForElement<T extends object>(
     renderStyleBindings(bindings.styleBindings, viewModel)
     renderComponentBindings(componentBindings, viewModel)
   }
-
-  return render
 }
 
 function mapBindingToRealElement<T extends { element: HTMLElement }>(
@@ -153,10 +104,7 @@ function mapBindingToRealElement<T extends { element: HTMLElement }>(
   clonedRoot: HTMLElement,
   realRoot: HTMLElement,
 ): T {
-  return {
-    ...binding,
-    element: mapElementPath(binding.element, clonedRoot, realRoot),
-  }
+  return { ...binding, element: mapElementPath(binding.element, clonedRoot, realRoot) }
 }
 
 function mapElementPath(
@@ -164,45 +112,20 @@ function mapElementPath(
   sourceRoot: HTMLElement,
   targetRoot: HTMLElement,
 ): HTMLElement {
-  if (sourceElement === sourceRoot) {
-    console.log(
-      '[pelela] mapElementPath: source === root, returning target',
-      sourceRoot.tagName,
-      '->',
-      targetRoot.tagName,
-    )
-    return targetRoot
-  }
-
+  if (sourceElement === sourceRoot) return targetRoot
   const buildPath = (element: HTMLElement, root: HTMLElement): number[] => {
     const parent = element.parentElement
     if (!parent || element === root) return []
-
     const index = Array.from(parent.children).indexOf(element)
     return [...buildPath(parent, root), index]
   }
-
   const path = buildPath(sourceElement, sourceRoot)
-
-  console.log(
-    '[pelela] mapElementPath: following path',
-    path,
-    'from',
-    sourceRoot.tagName,
-    'to child',
-    sourceElement.tagName,
-  )
-
-  const target = path.reduce((currentElement: HTMLElement, index) => {
+  return path.reduce((currentElement: HTMLElement, index) => {
     const children = currentElement.children
     if (index >= children.length) return currentElement
     const nextElement = children[index] as HTMLElement
     return nextElement || currentElement
   }, targetRoot)
-
-  console.log('[pelela] mapElementPath: result', target.tagName)
-
-  return target
 }
 
 function setupSingleForEachBinding<T extends object>(
@@ -211,16 +134,10 @@ function setupSingleForEachBinding<T extends object>(
 ): ForEachBinding | null {
   const expression = element.getAttribute('for-each')
   if (!expression?.trim()) return null
-
   const parsed = parseForEachExpression(expression)
-  if (!parsed) {
-    throw new InvalidBindingSyntaxError('for-each', expression, 'item of collection')
-  }
-
+  if (!parsed) throw new InvalidBindingSyntaxError('for-each', expression, 'item of collection')
   const { itemName, collectionName } = parsed
-
   assertViewModelProperty(viewModel, collectionName, 'for-each', element)
-
   const collection = viewModel[collectionName]
   if (!Array.isArray(collection)) {
     throw new InvalidPropertyTypeError({
@@ -231,28 +148,14 @@ function setupSingleForEachBinding<T extends object>(
       elementSnippet: extractElementSnippet(element),
     })
   }
-
   const template = element.cloneNode(true) as HTMLElement
   template.removeAttribute('for-each')
-
-  console.log(
-    `[pelela] for-each setup: ${itemName} of ${collectionName}, element:`,
-    element.tagName,
-    'parent:',
-    element.parentNode?.nodeName,
-  )
-
-  if (!element.parentNode) {
+  if (!element.parentNode)
     throw new InvalidDOMStructureError('for-each', 'element has no parent node')
-  }
-
   const placeholder = document.createComment(`for-each: ${itemName} of ${collectionName}`)
   element.parentNode.insertBefore(placeholder, element)
-
   const extraDependencies = extractExtraDependencies(element, itemName, collectionName)
-
   element.remove()
-
   return {
     collectionName,
     itemName,
@@ -264,6 +167,19 @@ function setupSingleForEachBinding<T extends object>(
   }
 }
 
+function isBindingAttribute(attrName: string): boolean {
+  return (
+    attrName.startsWith('bind-') ||
+    attrName.startsWith('link-') ||
+    attrName === 'click' ||
+    attrName.includes('-')
+  )
+}
+
+function isExternalDependency(propPath: string, itemName: string, collectionName: string): boolean {
+  return !isNestedPropertyPath(propPath, itemName) && propPath !== collectionName
+}
+
 function extractExtraDependencies(
   element: HTMLElement,
   itemName: string,
@@ -271,23 +187,16 @@ function extractExtraDependencies(
 ): string[] {
   const deps = new Set<string>()
   const allElements = [element, ...Array.from(element.querySelectorAll('*'))]
-
   for (const el of allElements) {
     for (const attr of Array.from(el.attributes)) {
-      if (
-        attr.name.startsWith('bind-') ||
-        attr.name === 'click' ||
-        attr.name.startsWith('link-') ||
-        attr.name.includes('-') // Component props
-      ) {
-        const prop = attr.value
-        if (!prop.startsWith(`${itemName}.`) && prop !== itemName && prop !== collectionName) {
-          deps.add(prop.split('.')[0])
+      if (isBindingAttribute(attr.name)) {
+        const propPath = attr.value
+        if (isExternalDependency(propPath, itemName, collectionName)) {
+          deps.add(propPath.split('.')[0])
         }
       }
     }
   }
-
   return Array.from(deps)
 }
 
@@ -297,7 +206,6 @@ export function setupForEachBindings<T extends object>(
 ): ForEachBinding[] {
   const elements = root.querySelectorAll<HTMLElement>('[for-each]')
   const ownElements = filterOwnElements(elements, root)
-
   return ownElements
     .map((element) => setupSingleForEachBinding(element, viewModel))
     .filter((binding): binding is ForEachBinding => binding !== null)
@@ -307,51 +215,17 @@ function createNewElement<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
   item: unknown,
-  index: number,
 ): void {
   const element = binding.template.cloneNode(true) as HTMLElement
-
-  console.log(
-    `[pelela] for-each creating element #${index}:`,
-    element.tagName,
-    'template:',
-    binding.template.outerHTML,
-  )
-
   const itemRef = { current: item }
   const extendedViewModel = createExtendedViewModel(viewModel, binding.itemName, itemRef)
-
   const render = setupBindingsForElement(element, extendedViewModel)
-
-  binding.renderedElements.push({
-    element,
-    viewModel: extendedViewModel,
-    itemRef,
-    render,
-  })
-
   const lastElement =
-    binding.renderedElements[binding.renderedElements.length - 2]?.element || binding.placeholder
-
-  console.log(
-    `[pelela] for-each inserting:`,
-    element.tagName,
-    'after:',
-    lastElement.nodeName,
-    'parent:',
-    lastElement.parentNode?.nodeName,
-  )
-
+    binding.renderedElements[binding.renderedElements.length - 1]?.element || binding.placeholder
+  binding.renderedElements.push({ element, viewModel: extendedViewModel, itemRef, render })
   if (lastElement.parentNode) {
     lastElement.parentNode.insertBefore(element, lastElement.nextSibling)
-    console.log(
-      `[pelela] for-each inserted successfully, element in DOM:`,
-      element.parentNode?.nodeName,
-    )
     render()
-    console.log(`[pelela] for-each render called for element #${index}`)
-  } else {
-    console.warn('[pelela] for-each: Could not insert element, parent node not found')
   }
 }
 
@@ -361,22 +235,20 @@ function addNewElements<T extends object>(
   collection: unknown[],
   previousLength: number,
 ): void {
-  collection.slice(previousLength).forEach((item, index) => {
-    createNewElement(binding, viewModel, item, previousLength + index)
+  collection.slice(previousLength).forEach((item) => {
+    createNewElement(binding, viewModel, item)
   })
 }
 
 function removeExtraElements(binding: ForEachBinding, currentLength: number): void {
-  const toRemove = binding.renderedElements.splice(currentLength)
-  toRemove.forEach(({ element }) => {
+  binding.renderedElements.splice(currentLength).forEach(({ element }) => {
     element.remove()
   })
 }
 
 function updateExistingElements(binding: ForEachBinding, collection: unknown[]): void {
   binding.renderedElements.forEach((rendered, index) => {
-    const item = collection[index]
-    rendered.itemRef.current = item
+    rendered.itemRef.current = collection[index]
     rendered.render()
   })
 }
@@ -386,29 +258,12 @@ function renderSingleForEachBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   const collection = viewModel[binding.collectionName]
-
-  if (!Array.isArray(collection)) {
-    console.warn(
-      `[pelela] for-each render: Property "${binding.collectionName}" is not an array, skipping render`,
-    )
-    return
-  }
-
+  if (!Array.isArray(collection)) return
   const currentLength = collection.length
   const previousLength = binding.previousLength
-
-  console.log(
-    `[pelela] for-each render: ${binding.itemName} of ${binding.collectionName}, items: ${currentLength}, prev: ${previousLength}`,
-  )
-
-  if (currentLength > previousLength) {
-    addNewElements(binding, viewModel, collection, previousLength)
-  } else if (currentLength < previousLength) {
-    removeExtraElements(binding, currentLength)
-  }
-
+  if (currentLength > previousLength) addNewElements(binding, viewModel, collection, previousLength)
+  else if (currentLength < previousLength) removeExtraElements(binding, currentLength)
   updateExistingElements(binding, collection)
-
   binding.previousLength = currentLength
 }
 
