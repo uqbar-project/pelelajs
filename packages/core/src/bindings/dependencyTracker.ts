@@ -1,3 +1,4 @@
+import { isObject } from '../commons/helpers'
 import type { BindingsCollection } from './types'
 
 interface ViewModelWithRaw {
@@ -6,7 +7,7 @@ interface ViewModelWithRaw {
 
 function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
   const hasGetter = (currentObj: unknown, part: string): boolean => {
-    if (typeof currentObj !== 'object' || currentObj === null) return false
+    if (!isObject(currentObj)) return false
 
     let proto = currentObj
     while (proto) {
@@ -23,12 +24,10 @@ function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
   let currentObj: unknown = obj
 
   return propertyPath.split('.').some((part) => {
-    if (typeof currentObj !== 'object' || currentObj === null) return false
-
+    if (!isObject(currentObj)) return false
     const viewModel = currentObj as ViewModelWithRaw
     const rawObj = viewModel.$raw ?? currentObj
-    if (!rawObj || typeof rawObj !== 'object') return false
-
+    if (!isObject(rawObj)) return false
     if (hasGetter(rawObj, part)) return true
 
     currentObj = (rawObj as Record<string, unknown>)[part]

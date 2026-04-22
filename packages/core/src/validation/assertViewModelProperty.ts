@@ -23,6 +23,15 @@ function hasNestedProperty(targetObject: unknown, path: string): boolean {
   })
 }
 
+/**
+ * Asserts that a property exists in the view model.
+ * If the property is missing, it throws a PropertyValidationError.
+ *
+ * Why we do this:
+ * This is a Developer Experience (DX) feature to catch binding typos or
+ * missing view model properties early in the development cycle, providing
+ * clear, fail-fast feedback with the exact HTML element causing the issue.
+ */
 export function assertViewModelProperty<T extends object>(
   viewModel: T,
   propertyName: string,

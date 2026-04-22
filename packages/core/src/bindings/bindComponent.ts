@@ -49,8 +49,7 @@ export function setupComponentBindings<T extends object>(
     const tagName = element.tagName.toLowerCase()
     const componentDef = getComponentByTag(tagName)
     if (!componentDef) return
-
-    const instance = new componentDef.ctor() as Record<string, unknown>
+    const instance = new componentDef.creator() as Record<string, unknown>
     const linkBindings = extractLinkBindings(element.attributes)
     const oneWayBindings = extractOneWayBindings(element.attributes)
     const allMappings = [...linkBindings, ...oneWayBindings]

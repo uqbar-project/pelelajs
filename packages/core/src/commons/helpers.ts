@@ -20,17 +20,10 @@ export function filterOwnElements(
   root: HTMLElement,
 ): HTMLElement[] {
   const registeredTags = getRegisteredTags()
-  const componentSelector = ['[view-model]', ...registeredTags].join(',')
-
+  const selector = ['[view-model]', ...registeredTags].join(',')
   return Array.from(elements).filter((element) => {
-    let parent = element.parentElement
-    while (parent && parent !== root) {
-      if (parent.matches(componentSelector)) {
-        return false
-      }
-      parent = parent.parentElement
-    }
-    return true
+    const nearest = element.parentElement?.closest(selector)
+    return nearest === root || !nearest
   })
 }
 
@@ -38,6 +31,10 @@ export function toCamelCase(str: string): string {
   return str.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase())
 }
 
-export function isNestedPropertyPath(prop: string | symbol, root: string): boolean {
-  return typeof prop === 'string' && (prop === root || prop.startsWith(`${root}.`))
+export function toKebabCase(str: string): string {
+  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+}
+
+export function isNestedPropertyPath(property: string | symbol, root: string): boolean {
+  return typeof property === 'string' && (property === root || property.startsWith(`${root}.`))
 }

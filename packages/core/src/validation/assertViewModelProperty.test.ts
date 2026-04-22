@@ -138,7 +138,12 @@ describe('assertViewModelProperty', () => {
     }).toThrow(/Unknown property "user.missing"/)
   })
 
-  it('should NOT throw error if intermediate property is null', () => {
+  /**
+   * Pelela is resilient and allows partial data/async loading.
+   * If an intermediate property is null, we don't throw a validation error,
+   * as the data might be populated later (e.g. from an API).
+   */
+  it('should allow partial data (null intermediate properties) to support async loading states', () => {
     const viewModel = { user: null as unknown as object }
     const element = document.createElement('div')
 

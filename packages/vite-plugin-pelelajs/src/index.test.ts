@@ -67,6 +67,43 @@ describe('pelelajsPlugin', () => {
       expect(errorSpy).toHaveBeenCalled()
     })
 
+    it('should fail if nested pelela elements are present', () => {
+      const source = '<pelela view-model="Outer"><pelela view-model="Inner"></pelela></pelela>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
+    it('should fail if nested component elements are present', () => {
+      const source =
+        '<component view-model="Outer"><component view-model="Inner"></component></component>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
+    it('should fail if mixed pelela and component elements are present', () => {
+      const source = '<pelela view-model="A"></pelela><component view-model="B"></component>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
     it('should fail if foreign syntax {{}} is detected', () => {
       const source = '<pelela view-model="A"><div>{{ wrong }}</div></pelela>'
       vi.mocked(fs.readFileSync).mockReturnValue(source)

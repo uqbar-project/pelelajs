@@ -3,15 +3,15 @@ import type { ViewModelConstructor } from '../types'
 
 const viewModelRegistry = new Map<string, ViewModelConstructor>()
 
-export function registerViewModel(name: string, ctor: ViewModelConstructor): void {
+export function registerViewModel(name: string, creator: ViewModelConstructor): void {
   if (viewModelRegistry.has(name)) {
     throw new ViewModelRegistrationError(name, 'duplicate')
   }
-  viewModelRegistry.set(name, ctor)
+  viewModelRegistry.set(name, creator)
 }
 
-export function replaceViewModel(name: string, ctor: ViewModelConstructor): void {
-  viewModelRegistry.set(name, ctor)
+export function replaceViewModel(name: string, creator: ViewModelConstructor): void {
+  viewModelRegistry.set(name, creator)
 }
 
 export function getViewModel(name: string): ViewModelConstructor | undefined {
