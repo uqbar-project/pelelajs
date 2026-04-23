@@ -85,7 +85,7 @@ handler.call(viewModel, event);
 class ViewModel {
   count = 0;
   
-  increment() {
+  increment(viewModel: unknown, event?: Event) {
     this.count++;  // 'this' es el ViewModel
   }
 }
@@ -94,7 +94,7 @@ class ViewModel {
 Sin `.call(viewModel)`:
 
 ```typescript
-handler(event);
+handler(viewModel, event);
 ```
 
 `this` sería `undefined` en strict mode.
@@ -102,14 +102,14 @@ handler(event);
 ### Event Parameter
 
 ```typescript
-handler.call(viewModel, event);
+handler.call(viewModel, viewModel, event);
 ```
 
 El handler recibe el evento DOM original:
 
 ```typescript
 class ViewModel {
-  handleClick(event: MouseEvent) {
+  handleClick(viewModel: unknown, event: MouseEvent) {
     console.log("Clicked at:", event.clientX, event.clientY);
     event.preventDefault();
     event.stopPropagation();
@@ -182,15 +182,15 @@ Error: [pelela] Handler "handler" definido en click="..." no es una función...
 class CounterViewModel {
   count = 0;
   
-  increment() {
+  increment(viewModel: unknown, event?: Event) {
     this.count++;
   }
   
-  decrement() {
+  decrement(viewModel: unknown, event?: Event) {
     this.count--;
   }
   
-  reset() {
+  reset(viewModel: unknown, event?: Event) {
     this.count = 0;
   }
 }
@@ -211,7 +211,7 @@ class CounterViewModel {
 class ViewModel {
   lastClick = "";
   
-  handleClick(event: MouseEvent) {
+  handleClick(viewModel: unknown, event: MouseEvent) {
     const target = event.target as HTMLElement;
     this.lastClick = `Clicked ${target.textContent} at (${event.clientX}, ${event.clientY})`;
   }
@@ -232,9 +232,9 @@ class ViewModel {
 class FormViewModel {
   email = "";
   
-  handleSubmit(event: Event) {
-    event.preventDefault();
-    console.log("Email:", this.email);
+  handleSubmit(viewModel: unknown, event?: Event) {
+    event?.preventDefault();
+    console.log("Email:", (viewModel as any).email);
   }
 }
 ```
@@ -250,12 +250,14 @@ class FormViewModel {
 
 ```typescript
 class ViewModel {
-  handleInner(event: MouseEvent) {
-    event.stopPropagation();
+  message = "";
+  
+  handleInner(viewModel: unknown, event?: Event) {
+    event?.stopPropagation();
     console.log("Inner clicked");
   }
   
-  handleOuter() {
+  handleOuter(viewModel: unknown, event?: Event) {
     console.log("Outer clicked");
   }
 }
@@ -268,53 +270,28 @@ class ViewModel {
 </div>
 ```
 
-Click en botón: Solo "Inner clicked"
-Click en div: "Outer clicked"
+## Nueva Firma (viewModel, event)
 
-## Arrow Functions y This
-
-### Problema con Arrow Functions
+Los handlers ahora deben declarar explícitamente la firma `(viewModel, event)`:
 
 ```typescript
 class ViewModel {
-  count = 0;
-  
-  increment = () => {
-    this.count++;
+  handleClick(viewModel: unknown, event?: Event) {
+    // viewModel es la instancia del ViewModel
+    // event es el evento DOM original
   }
 }
 ```
 
-```html
-<button click="increment">+</button>
-```
-
-**Esto funciona** porque arrow functions capturan `this` del contexto.
-
-Pero el `.call(viewModel, event)` es redundante en este caso.
-
-### Métodos Normales (Recomendado)
+### Destructuring del Primer Parámetro
 
 ```typescript
 class ViewModel {
-  count = 0;
-  
-  increment() {
-    this.count++;
+  handleClick({ count }: { count: number }, event: MouseEvent) {
+    // Destructuring del viewModel
+    this.count = count + 1;
   }
 }
-```
-
-Más idiomático y compatible.
-
-## Múltiples Handlers en un Elemento
-
-```html
-<!-- NO soportado directamente -->
-<button click="handler1" click="handler2">Click</button>
-```
-
-Solo el último atributo `click` se aplica.
 
 **Solución:** Crear un handler que llame a ambos:
 

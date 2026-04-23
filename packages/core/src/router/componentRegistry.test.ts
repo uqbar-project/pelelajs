@@ -64,12 +64,13 @@ describe('componentRegistry', () => {
     })
 
     it('should clean up old constructor mapping when replaced (HMR support)', () => {
-      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       defineComponent('Shared', TodoList, '<template1></template1>')
       defineComponent('Shared', UserProfile, '<template2></template2>')
 
       expect(getComponentEntry(TodoList)).toBeUndefined()
       expect(getComponentEntry(UserProfile)).toBeDefined()
+      warnSpy.mockRestore()
     })
 
     it('should allow registering multiple components with different names', () => {

@@ -1,5 +1,5 @@
 import { InvalidHandlerError } from '../errors/index'
-import type { ViewModel } from './types'
+import type { ClickHandler, ViewModel } from './types'
 
 function setupSingleClickBinding<T extends object>(
   element: HTMLElement,
@@ -15,7 +15,7 @@ function setupSingleClickBinding<T extends object>(
       throw new InvalidHandlerError(handlerName, viewModel.constructor?.name ?? 'Unknown', 'click')
     }
 
-    handler.call(viewModel, viewModel, event)
+    ;(handler as ClickHandler)(viewModel, event)
   })
 }
 

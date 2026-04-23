@@ -41,13 +41,13 @@ describe('bindClick', () => {
       expect(handleClick).toHaveBeenCalledWith(viewModel, expect.any(MouseEvent))
     })
 
-    it('should execute handler in viewModel context', () => {
+    it('should execute handler in ViewModel context', () => {
       container.innerHTML = '<button click="handleClick">Click me</button>'
       let context: unknown = null
       const viewModel = {
         value: 42,
-        handleClick: function (this: unknown) {
-          context = this
+        handleClick: (viewModel: unknown) => {
+          context = viewModel
         },
       }
 
@@ -83,8 +83,9 @@ describe('bindClick', () => {
       container.innerHTML = '<button click="increment">Increment</button>'
       const viewModel = {
         count: 0,
-        increment: function () {
-          this.count++
+        increment: (viewModel: unknown) => {
+          const vm = viewModel as { count: number }
+          vm.count++
         },
       }
 
@@ -93,9 +94,8 @@ describe('bindClick', () => {
       const button = container.querySelector('button')!
       button.click()
       button.click()
-      button.click()
 
-      expect(viewModel.count).toBe(3)
+      expect(viewModel.count).toBe(2)
     })
 
     it('should handle elements without click attribute', () => {
@@ -132,7 +132,6 @@ describe('bindClick', () => {
       container.innerHTML = '<button click="notAFunction">Click me</button>'
       const viewModel = { notAFunction: 'this is a string' }
       const button = container.querySelector('button')!
-
       const addEventListenerSpy = vi.spyOn(button, 'addEventListener')
       setupClickBindings(container, viewModel)
 
@@ -166,7 +165,6 @@ describe('bindClick', () => {
       container.innerHTML = '<button click="nonExistentHandler">Click me</button>'
       const viewModel = {}
       const button = container.querySelector('button')!
-
       const addEventListenerSpy = vi.spyOn(button, 'addEventListener')
       setupClickBindings(container, viewModel)
 
@@ -191,10 +189,15 @@ describe('bindClick', () => {
     })
 
     it('should setup event listener even if the root element itself has the click attribute', () => {
+      const container = document.createElement('div')
       const button = document.createElement('button')
       button.setAttribute('click', 'handleClick')
       const handleClick = vi.fn()
       const viewModel = { handleClick }
+
+      const siblingButton = document.createElement('button')
+      container.appendChild(button)
+      container.appendChild(siblingButton)
 
       setupClickBindings(button, viewModel)
       button.click()

@@ -468,7 +468,10 @@ describe('bindForEach', () => {
         </ul>
       `
 
-      const handleItemClick = vi.fn()
+      const handleItemClick = vi.fn((viewModel: unknown) => {
+        const vm = viewModel as { items: unknown }
+        return vm.items
+      })
       const viewModel = {
         items: [{ name: 'Item 1' }, { name: 'Item 2' }],
         handleItemClick,
@@ -482,6 +485,7 @@ describe('bindForEach', () => {
       buttons[1].click()
 
       expect(handleItemClick).toHaveBeenCalledTimes(2)
+      expect(handleItemClick).toHaveReturnedWith(viewModel.items)
     })
   })
 })

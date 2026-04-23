@@ -3,14 +3,18 @@ import { PelelaError } from './PelelaError'
 
 export type RoutingErrorType = 'route-not-found' | 'component-not-registered'
 
-const ROUTING_I18N_KEYS: Record<RoutingErrorType, string> = {
-  'route-not-found': 'errors.routing.routeNotFound',
-  'component-not-registered': 'errors.routing.componentNotRegistered',
-}
-
-const ROUTING_INTERPOLATION_KEYS: Record<RoutingErrorType, string> = {
-  'route-not-found': 'path',
-  'component-not-registered': 'name',
+const ROUTING_ERROR_METADATA: Record<
+  RoutingErrorType,
+  { messageKey: string; interpolationKey: string }
+> = {
+  'route-not-found': {
+    messageKey: 'errors.routing.routeNotFound',
+    interpolationKey: 'path',
+  },
+  'component-not-registered': {
+    messageKey: 'errors.routing.componentNotRegistered',
+    interpolationKey: 'name',
+  },
 }
 
 export class RoutingError extends PelelaError {
@@ -19,7 +23,7 @@ export class RoutingError extends PelelaError {
     public readonly type: RoutingErrorType,
     options?: ErrorOptions,
   ) {
-    const interpolationKey = ROUTING_INTERPOLATION_KEYS[type]
-    super(t(ROUTING_I18N_KEYS[type], { [interpolationKey]: detail }), options)
+    const { messageKey, interpolationKey } = ROUTING_ERROR_METADATA[type]
+    super(t(messageKey, { [interpolationKey]: detail }), options)
   }
 }

@@ -141,7 +141,7 @@ describe('routeMatcher', () => {
       expect(result.route.component).toBe(ProductDetail)
     })
 
-    it('should return catch-all only if no other route matches first', () => {
+    it('should prefer first-declared route (first-match wins) even if a later route is more specific', () => {
       const overlappingRoutes: RouteDefinition[] = [
         { path: '*', component: NotFoundPage },
         { path: '/product/:id', component: ProductDetail },
@@ -149,7 +149,7 @@ describe('routeMatcher', () => {
 
       const result = matchRoute('/product/42', '', overlappingRoutes)
 
-      // catch-all defined first wins
+      // first-declared route wins
       expect(result.route.component).toBe(NotFoundPage)
     })
   })
