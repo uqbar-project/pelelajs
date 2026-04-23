@@ -16,6 +16,70 @@ function getCssImport(pelelaFilePath: string): string {
   return ''
 }
 
+function isStandardHtmlTag(tagName: string): boolean {
+  // biome-ignore format: <line length exceeds 100 due to comprehensive HTML tags list>
+  const standardHtmlTags = [
+    'html', 'head', 'title', 'body', 'div', 'span', 'p', 'br', 'hr',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+    'a', 'img', 'script', 'style', 'link', 'meta', 'base', 'form', 'input',
+    'button', 'select', 'option', 'textarea', 'label', 'table', 'tr', 'td',
+    'th', 'thead', 'tbody', 'tfoot', 'caption', 'col', 'colgroup', 'section',
+    'article', 'nav', 'aside', 'header', 'footer', 'main', 'figure', 'figcaption',
+    'iframe', 'canvas', 'svg', 'math', 'video', 'audio', 'source', 'track',
+    'map', 'area', 'object', 'param', 'embed', 'details', 'summary', 'dialog',
+    'template', 'slot', 'time', 'data', 'code', 'pre', 'blockquote', 'q',
+    'cite', 'abbr', 'address', 'bdo', 'ins', 'del', 'small', 'strong', 'em',
+    'mark', 'sub', 'sup', 'var', 'samp', 'kbd', 'output', 'progress', 'meter',
+    'fieldset', 'legend', 'optgroup', 'datalist', 'keygen', 'textarea', 'label',
+  ]
+  return standardHtmlTags.includes(tagName.toLowerCase())
+}
+
+function isRootPelelaOrComponent(tagName: string): boolean {
+  return tagName.toLowerCase() === 'pelela' || tagName.toLowerCase() === 'component'
+}
+
+function extractLinkAttributeMatches(
+  sourceCode: string,
+): Array<{ tagName: string; attributeName: string }> {
+  const linkAttributePattern = /<(\w+)[^>]*\b(link-[a-zA-Z0-9_-]+)[^>]*>/g
+  const matches: Array<{ tagName: string; attributeName: string }> = []
+  let match: RegExpExecArray | null
+
+  match = linkAttributePattern.exec(sourceCode)
+  while (match !== null) {
+    matches.push({
+      tagName: match[1].toLowerCase(),
+      attributeName: match[2],
+    })
+    match = linkAttributePattern.exec(sourceCode)
+  }
+
+  return matches
+}
+
+function validateNoForbiddenHtmlAttributes(
+  sourceCode: string,
+  filePath: string,
+  errorFn: (message: string) => void,
+): void {
+  const linkMatches = extractLinkAttributeMatches(sourceCode)
+
+  const invalidMatches = linkMatches.filter(
+    (match) => !isRootPelelaOrComponent(match.tagName) && isStandardHtmlTag(match.tagName),
+  )
+
+  invalidMatches.forEach((match) => {
+    errorFn(
+      t('compiler.forbiddenRootAttribute', {
+        filePath,
+        tagName: match.tagName,
+        attr: match.attributeName,
+      }),
+    )
+  })
+}
+
 function validatePelelaStructure(
   sourceCode: string,
   filePath: string,
@@ -74,7 +138,7 @@ function validateNoForbiddenRootAttributes(
 
   const foundPattern = forbiddenPatterns.find((pattern) => pattern.test(attributes))
 
-  if (foundPattern && rootTagMatch[1].toLowerCase() === 'pelela') {
+  if (foundPattern && ['pelela', 'component'].includes(rootTagMatch[1].toLowerCase())) {
     errorFn(
       t('compiler.forbiddenRootAttribute', {
         filePath,
@@ -131,6 +195,7 @@ export function pelelajsPlugin(): Plugin {
       const errorHandler = this.error.bind(this)
       validatePelelaStructure(sourceCode, filePath, errorHandler)
       validateNoForbiddenRootAttributes(sourceCode, filePath, errorHandler)
+      validateNoForbiddenHtmlAttributes(sourceCode, filePath, errorHandler)
       validateNoForeignSyntax(sourceCode, filePath, errorHandler)
       const viewModelName = extractViewModelName(sourceCode, filePath, errorHandler)
 

@@ -132,7 +132,7 @@ describe('pelelajsPlugin', () => {
       )
     })
 
-    it('should NOT fail if link-* is on the <component> tag', () => {
+    it('should fail if link-* is on the <component> root tag', () => {
       const source = '<component view-model="A" link-value="B"></component>'
       vi.mocked(fs.readFileSync).mockReturnValue(source)
 
@@ -141,7 +141,39 @@ describe('pelelajsPlugin', () => {
       const load = plugin.load as (this: unknown, id: string) => string
 
       load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+      const lastError = errorSpy.mock.calls[0][0]
+      expect(lastError.includes('link-value') || lastError.includes('forbiddenRootAttribute')).toBe(
+        true,
+      )
+    })
+
+    it('should NOT fail if link-* is on custom component tag (non-root)', () => {
+      const source = '<pelela view-model="Parent"><contador link-value="B"></contador></pelela>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
       expect(errorSpy).not.toHaveBeenCalled()
+    })
+
+    it('should fail if link-* is on HTML standard tag (non-root)', () => {
+      const source = '<pelela view-model="Parent"><div link-value="B">content</div></pelela>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+      const lastError = errorSpy.mock.calls[0][0]
+      expect(lastError.includes('link-value') || lastError.includes('forbiddenRootAttribute')).toBe(
+        true,
+      )
     })
   })
 })

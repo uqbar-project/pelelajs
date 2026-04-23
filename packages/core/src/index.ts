@@ -1,5 +1,6 @@
 export { bootstrap } from './bootstrap/bootstrap'
 export { mountTemplate } from './bootstrap/mountTemplate'
+export { isStandardHtmlTag } from './commons/helpers'
 export { initializeI18n, t } from './commons/i18n'
 export type { BindingKind, EventType, RegistrationType, RoutingErrorType } from './errors/index'
 export {
