@@ -1,0 +1,30 @@
+{
+  "errors": {
+    "bindings": {
+      "invalidSyntax": "[pelela] Invalid {{kind}} expression: \"{{expression}}\". Expected format: {{format}}",
+      "value": {
+        "invalidElement": "bind-value can only be used on input, textarea, or select elements. Found on <{{tagName}}>. Use bind-content for display elements.\nElement: {{snippet}}"
+      }
+    },
+    "dom": {
+      "invalidStructure": "[pelela] {{kind}}: Cannot setup binding, {{issue}}"
+    },
+    "handlers": {
+      "invalid": "[pelela] Handler \"{{name}}\" defined in {{eventInfo}} is not a function of view model \"{{viewModel}}\".",
+      "unknownEvent": "an event handler"
+    },
+    "properties": {
+      "invalidType": "[pelela] Property \"{{name}}\" used in {{kind}} must be {{expected}}, but found different type on view model \"{{viewModel}}\". Element: {{snippet}}",
+      "validation": "[pelela] Unknown property \"{{name}}\" used in {{kind}} on: {{snippet}}. Make sure your view model \"{{viewModel}}\" defines it."
+    },
+    "viewmodel": {
+      "registration": {
+        "duplicate": "[pelela] View model \"{{name}}\" is already registered",
+        "missing": "[pelela] View model \"{{name}}\" is not registered. Did you call defineViewModel?"
+      }
+    },
+    "security": {
+      "domEnvironmentRequired": "sanitizeHTML requires a DOM environment (document and DOMParser)"
+    }
+  }
+}

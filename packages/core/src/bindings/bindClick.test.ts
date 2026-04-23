@@ -43,10 +43,10 @@ describe('bindClick', () => {
 
     it('should execute handler in viewModel context', () => {
       container.innerHTML = '<button click="handleClick">Click me</button>'
-      let context: any = null
+      let context: unknown = null
       const viewModel = {
         value: 42,
-        handleClick: function () {
+        handleClick: function (this: unknown) {
           context = this
         },
       }
@@ -57,7 +57,7 @@ describe('bindClick', () => {
       button.click()
 
       expect(context).toBe(viewModel)
-      expect(context.value).toBe(42)
+      expect((context as Record<string, unknown>).value).toBe(42)
     })
 
     it('should handle multiple elements with click', () => {

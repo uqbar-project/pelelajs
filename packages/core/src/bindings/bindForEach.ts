@@ -1,3 +1,4 @@
+import { sanitize } from '../commons/sanitization'
 import {
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
@@ -28,7 +29,7 @@ function parseForEachExpression(expression: string): {
 function createExtendedViewModel<T extends object>(
   parentViewModel: ViewModel<T>,
   itemName: string,
-  itemRef: { current: any },
+  itemRef: { current: unknown },
 ): ViewModel {
   return new Proxy(
     {},
@@ -104,20 +105,20 @@ function setupBindingsForElement<T extends object>(
   setupClickBindings(wrapper, viewModel)
 
   const bindings = {
-    valueBindings: tempBindings.valueBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
+    valueBindings: tempBindings.valueBindings.map((binding) =>
+      mapBindingToRealElement(binding, clonedForSearch, element),
     ),
-    contentBindings: tempBindings.contentBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
+    contentBindings: tempBindings.contentBindings.map((binding) =>
+      mapBindingToRealElement(binding, clonedForSearch, element),
     ),
-    ifBindings: tempBindings.ifBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
+    ifBindings: tempBindings.ifBindings.map((binding) =>
+      mapBindingToRealElement(binding, clonedForSearch, element),
     ),
-    classBindings: tempBindings.classBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
+    classBindings: tempBindings.classBindings.map((binding) =>
+      mapBindingToRealElement(binding, clonedForSearch, element),
     ),
-    styleBindings: tempBindings.styleBindings.map((b) =>
-      mapBindingToRealElement(b, clonedForSearch, element),
+    styleBindings: tempBindings.styleBindings.map((binding) =>
+      mapBindingToRealElement(binding, clonedForSearch, element),
     ),
   }
 
@@ -125,10 +126,10 @@ function setupBindingsForElement<T extends object>(
     '[pelela] Mapped bindings to real element:',
     element.tagName,
     'value bindings:',
-    bindings.valueBindings.map((b) => ({
-      el: b.element.tagName,
-      prop: b.propertyName,
-      same: b.element === element,
+    bindings.valueBindings.map((binding) => ({
+      el: binding.element.tagName,
+      prop: binding.propertyName,
+      same: binding.element === element,
     })),
   )
 
@@ -170,17 +171,11 @@ function mapElementPath(
   }
 
   const buildPath = (element: HTMLElement, root: HTMLElement): number[] => {
-    const path: number[] = []
-    let current: HTMLElement | null = element
+    const parent = element.parentElement
+    if (!parent || element === root) return []
 
-    while (current && current !== root) {
-      const parent = current.parentElement
-      if (!parent) return path
-      path.unshift(Array.from(parent.children).indexOf(current))
-      current = parent as HTMLElement
-    }
-
-    return path
+    const index = Array.from(parent.children).indexOf(element)
+    return [...buildPath(parent, root), index]
   }
 
   const path = buildPath(sourceElement, sourceRoot)
@@ -229,7 +224,7 @@ function setupSingleForEachBinding<T extends object>(
       bindingKind: 'for-each',
       expectedType: 'an array',
       viewModelName: viewModel.constructor?.name ?? 'Unknown',
-      elementSnippet: element.outerHTML.substring(0, 50),
+      elementSnippet: sanitize(element.outerHTML.substring(0, 50)) as string,
     })
   }
 
@@ -275,7 +270,7 @@ export function setupForEachBindings<T extends object>(
 function createNewElement<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
-  item: any,
+  item: unknown,
   index: number,
 ): void {
   const element = binding.template.cloneNode(true) as HTMLElement
@@ -327,12 +322,12 @@ function createNewElement<T extends object>(
 function addNewElements<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
-  collection: any[],
+  collection: unknown[],
   previousLength: number,
 ): void {
-  for (let i = previousLength; i < collection.length; i++) {
-    createNewElement(binding, viewModel, collection[i], i)
-  }
+  collection.slice(previousLength).forEach((item, index) => {
+    createNewElement(binding, viewModel, item, previousLength + index)
+  })
 }
 
 function removeExtraElements(binding: ForEachBinding, currentLength: number): void {
@@ -342,9 +337,9 @@ function removeExtraElements(binding: ForEachBinding, currentLength: number): vo
   })
 }
 
-function updateExistingElements(binding: ForEachBinding, collection: any[]): void {
-  binding.renderedElements.forEach((rendered, i) => {
-    const item = collection[i]
+function updateExistingElements(binding: ForEachBinding, collection: unknown[]): void {
+  binding.renderedElements.forEach((rendered, index) => {
+    const item = collection[index]
     rendered.itemRef.current = item
     rendered.render()
   })
