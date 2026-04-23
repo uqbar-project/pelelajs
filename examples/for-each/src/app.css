@@ -157,7 +157,7 @@ label {
   font-weight: 500;
 }
 
-input[type="text"] {
+input {
   padding: 0.875rem 1.25rem;
   font-size: 0.95rem;
   background: var(--card-bg);

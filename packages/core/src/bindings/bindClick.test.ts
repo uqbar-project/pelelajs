@@ -38,7 +38,7 @@ describe('bindClick', () => {
       const button = container.querySelector('button')!
       button.click()
 
-      expect(handleClick).toHaveBeenCalledWith(expect.any(MouseEvent))
+      expect(handleClick).toHaveBeenCalledWith(viewModel, expect.any(MouseEvent))
     })
 
     it('should execute handler in viewModel context', () => {
@@ -188,6 +188,18 @@ describe('bindClick', () => {
       const mockEvent = new MouseEvent('click')
 
       expect(() => clickListener(mockEvent)).toThrow(InvalidHandlerError)
+    })
+
+    it('should setup event listener even if the root element itself has the click attribute', () => {
+      const button = document.createElement('button')
+      button.setAttribute('click', 'handleClick')
+      const handleClick = vi.fn()
+      const viewModel = { handleClick }
+
+      setupClickBindings(button, viewModel)
+      button.click()
+
+      expect(handleClick).toHaveBeenCalledTimes(1)
     })
   })
 })
