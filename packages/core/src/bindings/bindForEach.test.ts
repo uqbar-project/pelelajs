@@ -4,7 +4,10 @@ import {
   InvalidPropertyTypeError,
   PropertyValidationError,
 } from '../errors/index'
+import { createReactiveViewModel } from '../reactivity/reactiveProxy'
+import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
+import { setupBindings } from './setupBindings'
 
 describe('bindForEach', () => {
   let container: HTMLElement
@@ -482,6 +485,88 @@ describe('bindForEach', () => {
       buttons[1].click()
 
       expect(handleItemClick).toHaveBeenCalledTimes(2)
+    })
+
+    it('should initialize components inside for-each loop', () => {
+      class ItemVM {
+        name = ''
+      }
+      defineComponent(
+        'list-item',
+        ItemVM,
+        '<component view-model="ItemVM"><span bind-content="name"></span></component>',
+      )
+
+      container.innerHTML = `
+        <div for-each="item of items">
+          <list-item name="item.name"></list-item>
+        </div>
+      `
+
+      const viewModel = {
+        items: [{ name: 'Item A' }, { name: 'Item B' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+      expect(spans[0].innerHTML).toBe('Item A')
+      expect(spans[1].innerHTML).toBe('Item B')
+
+      clearComponentRegistry()
+    })
+
+    it('should be reactive for components inside for-each loop when parent property changes', () => {
+      class ItemVM {
+        name = ''
+        selectedId = -1
+        get isSelected() {
+          return this.name === `Item ${this.selectedId}`
+        }
+        get itemClasses() {
+          return { active: this.isSelected }
+        }
+      }
+      defineComponent(
+        'list-item-reactive',
+        ItemVM,
+        `
+        <component view-model="ItemVM">
+          <span bind-class="itemClasses" bind-content="name"></span>
+        </component>
+      `,
+      )
+
+      container.innerHTML = `
+        <div for-each="item of items">
+          <list-item-reactive name="item.name" selected-id="parentSelectedId"></list-item-reactive>
+        </div>
+      `
+
+      const parentVM = createReactiveViewModel(
+        {
+          items: [{ name: 'Item 1' }, { name: 'Item 2' }],
+          parentSelectedId: 1,
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans[0].classList.contains('active')).toBe(true)
+      expect(spans[1].classList.contains('active')).toBe(false)
+
+      parentVM.parentSelectedId = 2
+
+      expect(spans[0].classList.contains('active')).toBe(false)
+      expect(spans[1].classList.contains('active')).toBe(true)
+
+      clearComponentRegistry()
     })
   })
 })

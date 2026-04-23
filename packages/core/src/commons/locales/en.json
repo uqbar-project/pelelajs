@@ -29,6 +29,16 @@
     "routing": {
       "routeNotFound": "[pelela] No route defined for \"{{path}}\"",
       "componentNotRegistered": "[pelela] Component \"{{name}}\" has no template registered. Did you call defineComponent?"
+    },
+    "compiler": {
+      "missingRoot": "Pelela template \"{{filePath}}\" must contain exactly one <pelela ...> or <component ...> as root.",
+      "multipleRoots": "Pelela template \"{{filePath}}\" has {{count}} root tags. Only one is allowed.",
+      "missingClosingTag": "Pelela template \"{{filePath}}\" has no corresponding closing tag.",
+      "unbalancedTags": "Pelela template \"{{filePath}}\" has an unbalanced number of root tags.",
+      "foreignInterpolation": "Pelela template \"{{filePath}}\" contains unsupported \"{{...}}\" syntax. PelelaJS does not allow expressions in views. Use regular quotes (\"\") instead.",
+      "foreignPropertyBinding": "Pelela template \"{{filePath}}\" contains Angular-like property binding (\"[...]=...\"). PelelaJS does not support JS constructs in HTML. Pass static attributes and delegate logic to the ViewModel.",
+      "missingViewModel": "Pelela template \"{{filePath}}\" must contain view-model=\"...\" attribute",
+      "forbiddenRootAttribute": "Pelela template \"{{filePath}}\": Attribute \"{{attr}}\" is not allowed on root tag <{{tagName}}>. Logic and binding attributes can only be used on internal elements or component invocations."
     }
   }
 }

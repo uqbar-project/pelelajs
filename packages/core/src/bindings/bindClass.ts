@@ -1,3 +1,4 @@
+import { filterOwnElements } from '../commons/helpers'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { ClassBinding, ViewModel } from './types'
@@ -22,9 +23,10 @@ export function setupClassBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): ClassBinding[] {
-  const elementsWithBindClass = root.querySelectorAll<HTMLElement>('[bind-class]')
+  const elements = root.querySelectorAll<HTMLElement>('[bind-class]')
+  const ownElements = filterOwnElements(elements, root)
 
-  return Array.from(elementsWithBindClass)
+  return ownElements
     .map((element) => setupSingleClassBinding(element, viewModel))
     .filter((binding): binding is ClassBinding => binding !== null)
 }

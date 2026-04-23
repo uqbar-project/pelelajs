@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RoutingError } from '../errors/index'
+import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import { clearRegistry } from '../registry/viewModelRegistry'
-import { clearComponentRegistry, defineComponent } from './componentRegistry'
 import { resetRouter, router } from './router'
 
 class ProductCatalog {

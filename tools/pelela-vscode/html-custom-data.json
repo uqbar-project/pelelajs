@@ -10,6 +10,16 @@
           "description": "Specifies the ViewModel class to bind to this template"
         }
       ]
+    },
+    {
+      "name": "component",
+      "description": "Pelela reusable component root tag",
+      "attributes": [
+        {
+          "name": "view-model",
+          "description": "Specifies the ViewModel class to bind to this component"
+        }
+      ]
     }
   ],
   "globalAttributes": [

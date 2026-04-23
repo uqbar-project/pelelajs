@@ -20,6 +20,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -43,6 +44,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affectedByUser = tracker.getDependentBindings('user', bindings)
@@ -76,6 +78,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -100,6 +103,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users.0.name', bindings)
@@ -123,6 +127,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -151,6 +156,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('newUserName', bindings)
@@ -186,6 +192,7 @@ describe('DependencyTracker', () => {
         classBindings: [classBinding],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affectedByMessage = tracker.getDependentBindings('message', bindings)
@@ -208,6 +215,7 @@ describe('DependencyTracker', () => {
         placeholder: document.createComment(''),
         renderedElements: [],
         previousLength: 0,
+        extraDependencies: [],
       }
 
       tracker.registerDependency(forEachBinding, 'users')
@@ -219,6 +227,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [forEachBinding],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -243,6 +252,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affectedByUser = tracker.getDependentBindings('user', bindings)
@@ -270,6 +280,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affectedByName = tracker.getDependentBindings('user.name', bindings)
@@ -301,6 +312,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       // Cambio en prueba.nombre → solo debe afectar binding1

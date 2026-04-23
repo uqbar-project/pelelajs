@@ -1,0 +1,20 @@
+<pelela view-model="Home">
+  <h2>Ejemplo de Componentización Bidireccional</h2>
+  <div class="layout">
+    <div class="list">
+      <div for-each="persona of personas">
+        <persona-row persona="persona" indice-seleccionado="indiceSeleccionado"></persona-row>
+      </div>
+
+    </div>
+    
+    <div class="sidebar">
+      <p>Persona actualmente seleccionada: <strong bind-content="selectedPersonName"></strong></p>
+      
+      <div class="counter-box">
+        <h3>Selector por índice</h3>
+        <contador link-valor="indiceSeleccionado" total="totalPersonas"></contador>
+      </div>
+    </div>
+  </div>
+</pelela>

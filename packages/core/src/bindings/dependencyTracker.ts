@@ -1,3 +1,4 @@
+import { isObject } from '../commons/helpers'
 import type { BindingsCollection } from './types'
 
 interface ViewModelWithRaw {
@@ -6,29 +7,27 @@ interface ViewModelWithRaw {
 
 function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
   const hasGetter = (currentObj: unknown, part: string): boolean => {
-    if (typeof currentObj !== 'object' || currentObj === null) return false
+    if (!isObject(currentObj)) return false
 
-    let descriptor = Object.getOwnPropertyDescriptor(currentObj, part)
-
-    if (!descriptor) {
-      const proto = Object.getPrototypeOf(currentObj)
-      if (proto) {
-        descriptor = Object.getOwnPropertyDescriptor(proto, part)
+    let proto = currentObj
+    while (proto) {
+      const descriptor = Object.getOwnPropertyDescriptor(proto, part)
+      if (descriptor?.get) {
+        return true
       }
+      proto = Object.getPrototypeOf(proto)
     }
 
-    return !!descriptor?.get
+    return false
   }
 
   let currentObj: unknown = obj
 
   return propertyPath.split('.').some((part) => {
-    if (typeof currentObj !== 'object' || currentObj === null) return false
-
+    if (!isObject(currentObj)) return false
     const viewModel = currentObj as ViewModelWithRaw
     const rawObj = viewModel.$raw ?? currentObj
-    if (!rawObj || typeof rawObj !== 'object') return false
-
+    if (!isObject(rawObj)) return false
     if (hasGetter(rawObj, part)) return true
 
     currentObj = (rawObj as Record<string, unknown>)[part]
@@ -98,6 +97,9 @@ export class DependencyTracker {
       classBindings: addGetterBindings(allBindings.classBindings, result.classBindings),
       styleBindings: addGetterBindings(allBindings.styleBindings, result.styleBindings),
       contentBindings: addGetterBindings(allBindings.contentBindings, result.contentBindings),
+      forEachBindings: addGetterBindings(allBindings.forEachBindings, result.forEachBindings),
+      componentBindings: addGetterBindings(allBindings.componentBindings, result.componentBindings),
+      valueBindings: addGetterBindings(allBindings.valueBindings, result.valueBindings),
     }
   }
 

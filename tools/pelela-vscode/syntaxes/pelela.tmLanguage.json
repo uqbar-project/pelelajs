@@ -44,8 +44,31 @@
     "pelela-tag": {
       "patterns": [
         {
-          "name": "meta.tag.pelela",
+          "name": "meta.tag.pelela.root",
           "begin": "(<)(pelela)\\b",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.pelela.custom"
+            }
+          },
+          "end": "(/?>)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#viewmodel-attribute"
+            }
+          ]
+        },
+        {
+          "name": "meta.tag.pelela.component",
+          "begin": "(<)(component)\\b",
           "beginCaptures": {
             "1": {
               "name": "punctuation.definition.tag.begin.html"
@@ -67,8 +90,26 @@
           ]
         },
         {
-          "name": "meta.tag.pelela",
+          "name": "meta.tag.pelela.root",
           "begin": "(<\\/)(pelela)\\b",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.pelela.custom"
+            }
+          },
+          "end": "(>)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          }
+        },
+        {
+          "name": "meta.tag.pelela.component",
+          "begin": "(<\\/)(component)\\b",
           "beginCaptures": {
             "1": {
               "name": "punctuation.definition.tag.begin.html"
@@ -134,6 +175,9 @@
     "tag-stuff": {
       "patterns": [
         {
+          "include": "#viewmodel-attribute"
+        },
+        {
           "include": "#pelela-attributes"
         },
         {
@@ -141,11 +185,52 @@
         }
       ]
     },
+    "viewmodel-attribute": {
+      "patterns": [
+        {
+          "name": "meta.attribute.pelela.viewmodel",
+          "match": "\\b(view-model)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
+          "captures": {
+            "1": {
+              "name": "entity.other.attribute-name.pelela.viewmodel"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "3": {
+              "name": "meta.attribute-value.pelela"
+            },
+            "4": {
+              "name": "support.type.pelela"
+            },
+            "5": {
+              "name": "support.type.pelela"
+            }
+          }
+        }
+      ]
+    },
     "pelela-attributes": {
       "patterns": [
         {
+          "include": "#foreach-attribute"
+        },
+        {
+          "include": "#binding-attribute"
+        },
+        {
+          "include": "#click-attribute"
+        },
+        {
+          "include": "#if-attribute"
+        }
+      ]
+    },
+    "foreach-attribute": {
+      "patterns": [
+        {
           "name": "meta.attribute.pelela.foreach",
-          "begin": "\\b(for-each)\\s*(=)\\s*([\"'])",
+          "begin": "\\b(for-each)\\s*(=)\\s*(\"|')",
           "beginCaptures": {
             "1": {
               "name": "entity.other.attribute-name.pelela.foreach"
@@ -157,7 +242,7 @@
               "name": "punctuation.definition.string.begin.html"
             }
           },
-          "end": "([\"'])",
+          "end": "(\"|')",
           "endCaptures": {
             "1": {
               "name": "punctuation.definition.string.end.html"
@@ -179,31 +264,14 @@
               }
             }
           ]
-        },
-        {
-          "name": "meta.attribute.pelela.viewmodel",
-          "match": "\\b(view-model)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
-          "captures": {
-            "1": {
-              "name": "entity.other.attribute-name.pelela.viewmodel"
-            },
-            "2": {
-              "name": "punctuation.separator.key-value.html"
-            },
-            "3": {
-              "name": "meta.attribute-value.pelela"
-            },
-            "4": {
-              "name": "support.type.pelela"
-            },
-            "5": {
-              "name": "support.type.pelela"
-            }
-          }
-        },
+        }
+      ]
+    },
+    "binding-attribute": {
+      "patterns": [
         {
           "name": "meta.attribute.pelela.binding",
-          "match": "\\b(bind-[a-zA-Z0-9_-]+)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
+          "match": "\\b(bind-[a-zA-Z0-9_-]+|link-[a-zA-Z0-9_-]+)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
           "captures": {
             "1": {
               "name": "entity.other.attribute-name.pelela.binding"
@@ -221,7 +289,11 @@
               "name": "variable.language.pelela"
             }
           }
-        },
+        }
+      ]
+    },
+    "click-attribute": {
+      "patterns": [
         {
           "name": "meta.attribute.pelela.click",
           "match": "\\b(click)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
@@ -242,7 +314,11 @@
               "name": "support.function.pelela"
             }
           }
-        },
+        }
+      ]
+    },
+    "if-attribute": {
+      "patterns": [
         {
           "name": "meta.attribute.pelela.if",
           "match": "\\b(if)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",

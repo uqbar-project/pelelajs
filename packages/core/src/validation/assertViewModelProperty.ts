@@ -6,19 +6,19 @@ function hasNestedProperty(targetObject: unknown, path: string): boolean {
     return false
   }
 
-  // Optimize for simple property access or full path matches.
-  if (!path.includes('.') && path in targetObject) {
-    return true
-  }
-
   const pathSegments = path.split('.')
   let currentValue: unknown = targetObject
 
-  return pathSegments.every((segment) => {
+  return pathSegments.every((segment, index) => {
     if (isObject(currentValue) && segment in currentValue) {
       currentValue = currentValue[segment]
       return true
     }
+
+    if (index > 0 && (currentValue === null || currentValue === undefined)) {
+      return true
+    }
+
     return false
   })
 }
