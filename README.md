@@ -41,6 +41,24 @@ If you prefer to generate and install the extension manually:
 2. In VSCode, go to the **Extensions** view, click the `...` (Views and More Actions), and select **Install from VSIX...**.
 3. Select the generated `.vsix` file in `tools/pelela-vscode/`.
 
+## Getting Started with CLI
+
+The `pelela` CLI helps you bootstrap new PelelaJS projects quickly.
+
+### Initialize a new project
+
+```bash
+# Create a new project with default name "Example"
+pelela init
+
+# Or specify a custom project name
+pelela init MyAwesomeApp
+```
+
+This command creates a new directory with a minimal PelelaJS project structure based on the `basic-converter` template.
+
+For detailed CLI documentation, see [tools/pelela-cli](./tools/pelela-cli/README.md).
+
 ## Linting and Formatting
 
 This project uses [Biome](https://biomejs.dev/) for linting, formatting, and import organization.
