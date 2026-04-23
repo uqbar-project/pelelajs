@@ -1,3 +1,4 @@
+import { escapeHTML } from '../commons/sanitization'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { ContentBinding, ViewModel } from './types'
@@ -40,7 +41,8 @@ function renderSingleContentBinding<T extends object>(
     value,
   )
 
-  binding.element.textContent = value === undefined || value === null ? '' : String(value)
+  binding.element.textContent =
+    value === undefined || value === null ? '' : escapeHTML(String(value))
 }
 
 export function renderContentBindings<T extends object>(

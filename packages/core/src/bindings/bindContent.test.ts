@@ -176,5 +176,64 @@ describe('bindContent', () => {
       expect(container.querySelector('span')!.textContent).toBe('First')
       expect(container.querySelector('div')!.textContent).toBe('Second')
     })
+
+    it('should escape HTML to prevent XSS attacks', () => {
+      container.innerHTML = '<span bind-content="message"></span>'
+
+      const viewModel = { message: '<script>alert("XSS")</script>' }
+      const bindings = setupContentBindings(container, viewModel)
+
+      renderContentBindings(bindings, viewModel)
+
+      // Should be escaped, not executed
+      expect(container.querySelector('span')!.textContent).toBe(
+        '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#x2F;script&gt;',
+      )
+
+      // Verify no script element was created
+      expect(container.querySelector('script')).toBeNull()
+    })
+
+    it('should escape multiple XSS vectors', () => {
+      container.innerHTML = '<div bind-content="content"></div>'
+
+      const viewModel = {
+        content: '<img src="x" onerror="alert(1)"><iframe src="javascript:alert(2)"></iframe>',
+      }
+      const bindings = setupContentBindings(container, viewModel)
+
+      renderContentBindings(bindings, viewModel)
+
+      // Should be escaped
+      const div = container.querySelector('div')!
+      expect(div.textContent).toContain('&lt;img')
+      expect(div.textContent).toContain('onerror')
+      expect(div.textContent).toContain('&lt;iframe')
+      expect(div.textContent).toContain('javascript:')
+
+      // Verify no dangerous elements were created
+      expect(div.querySelector('img')).toBeNull()
+      expect(div.querySelector('iframe')).toBeNull()
+    })
+
+    it('should handle complex nested XSS attempts', () => {
+      container.innerHTML = '<span bind-content="data"></span>'
+
+      const viewModel = {
+        data: '<div><script>fetch("/steal").then(r=>r.text().then(d=>eval(d)))</script></div>',
+      }
+      const bindings = setupContentBindings(container, viewModel)
+
+      renderContentBindings(bindings, viewModel)
+
+      // Should be completely escaped
+      expect(container.querySelector('span')!.textContent).toBe(
+        '&lt;div&gt;&lt;script&gt;fetch(&quot;&#x2F;steal&quot;).then(r=&gt;r.text().then(d=&gt;eval(d)))&lt;&#x2F;script&gt;&lt;&#x2F;div&gt;',
+      )
+
+      // Verify no script execution
+      expect(container.querySelector('script')).toBeNull()
+      expect(container.querySelector('div')).toBeNull()
+    })
   })
 })
