@@ -1,0 +1,49 @@
+{
+  "name": "@pelelajs/cli",
+  "engines": {
+    "node": ">=22"
+  },
+  "version": "1.0.0",
+  "type": "module",
+  "description": "CLI tool to bootstrap new PelelaJS projects",
+  "bin": {
+    "pelela": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "biome:check": "biome check .",
+    "biome:check:fix": "biome check --write ."
+  },
+  "keywords": [
+    "pelelajs",
+    "cli",
+    "framework"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "5.6.2",
+    "cli-box": "6.0.11",
+    "commander": "12.1.0",
+    "i18next": "23.7.6",
+    "semver": "7.7.0"
+  },
+  "devDependencies": {
+    "@types/cli-box": "6.0.4",
+    "@types/node": "24.10.1",
+    "@types/semver": "7.7.0",
+    "tsup": "8.5.1",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "4.0.14"
+  }
+}
