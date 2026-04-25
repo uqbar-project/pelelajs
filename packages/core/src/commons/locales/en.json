@@ -28,7 +28,10 @@
     },
     "routing": {
       "routeNotFound": "[pelela] No route defined for \"{{path}}\"",
-      "componentNotRegistered": "[pelela] Component \"{{name}}\" has no template registered. Did you call defineComponent?"
+      "componentNotRegistered": "[pelela] Component \"{{name}}\" has no template registered. Did you call defineComponent?",
+      "componentClassNotFound": "[pelela] Component class for \"{{name}}\" not found in the expected file.",
+      "templateNotFound": "[pelela] Template for component \"{{name}}\" not found in the expected file.",
+      "autoRegistrationFailed": "[pelela] Auto-registration failed for component \"{{name}}\": {{cause}}"
     }
   }
 }

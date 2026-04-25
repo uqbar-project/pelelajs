@@ -49,55 +49,58 @@ describe('router', () => {
   })
 
   describe('start', () => {
-    it('should mount the route matching the current URL', () => {
+    it('should mount the route matching the current URL', async () => {
       registerTestComponents()
 
-      router.start(container, [{ path: '/', component: ProductCatalog }])
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      expect(container.querySelector('pelela')).toBeDefined()
-      expect(container.querySelector('h1')).toBeDefined()
+      expect(container.querySelector('pelela')).not.toBeNull()
+      expect(container.querySelector('h1')).not.toBeNull()
     })
 
-    it('should render the initial route content with bindings', () => {
+    it('should render the initial route content with bindings', async () => {
       registerTestComponents()
 
-      router.start(container, [{ path: '/', component: ProductCatalog }])
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
 
       const heading = container.querySelector('h1')
 
       expect(heading!.innerHTML).toBe('3')
     })
 
-    it('should throw RoutingError when a component has no template', () => {
-      expect(() => {
-        router.start(container, [{ path: '/', component: ProductCatalog }])
-      }).toThrow(RoutingError)
+    it('should throw RoutingError when a component has no template', async () => {
+      await expect(async () => {
+        await router.start(container, [{ path: '/', component: ProductCatalog }])
+      }).rejects.toThrow(RoutingError)
     })
 
-    it('should NOT add duplicate popstate listeners on multiple starts', () => {
+    it('should NOT add duplicate popstate listeners on multiple starts', async () => {
       registerTestComponents()
       const addSpy = vi.spyOn(window, 'addEventListener')
       const removeSpy = vi.spyOn(window, 'removeEventListener')
 
-      router.start(container, [{ path: '/', component: ProductCatalog }])
-      router.start(container, [{ path: '/', component: ProductCatalog }])
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      const popstateAddCalls = addSpy.mock.calls.filter((call) => call[0] === 'popstate')
+      const popstateRemoveCalls = removeSpy.mock.calls.filter((call) => call[0] === 'popstate')
 
       // Should have tried to remove the previous one during the second start
-      expect(removeSpy).toHaveBeenCalledWith('popstate', expect.any(Function))
+      expect(popstateRemoveCalls).toHaveLength(1)
       // Total adds: one for each start
-      expect(addSpy).toHaveBeenCalledTimes(2)
+      expect(popstateAddCalls).toHaveLength(2)
 
       addSpy.mockRestore()
       removeSpy.mockRestore()
     })
 
-    it('should clean up state if initial resolveAndRender fails', () => {
+    it('should clean up state if initial resolveAndRender fails', async () => {
       registerTestComponents()
       window.history.replaceState(null, '', '/nonexistent')
 
       // This start will fail because /nonexistent doesn't match and no catch-all exists
       try {
-        router.start(container, [{ path: '/', component: ProductCatalog }])
+        await router.start(container, [{ path: '/', component: ProductCatalog }])
       } catch {
         // Expected
       }
@@ -106,14 +109,14 @@ describe('router', () => {
       // We check this indirectly by seeing if navigateTo fails as if start() was never called
       expect(() => {
         router.navigateTo('/')
-      }).toThrow(RoutingError) // Should throw saying container is null (the root path mismatch)
+      }).toThrow(RoutingError)
     })
   })
 
   describe('navigateTo', () => {
-    it('should replace the container content with the new route', () => {
+    it('should replace the container content with the new route', async () => {
       registerTestComponents()
-      router.start(container, [
+      await router.start(container, [
         { path: '/', component: ProductCatalog },
         { path: '/product/:id', component: ProductDetail },
       ])
@@ -121,12 +124,12 @@ describe('router', () => {
       router.navigateTo('/product/42')
 
       expect(container.querySelector('h1')).toBeNull()
-      expect(container.querySelector('p')).toBeDefined()
+      expect(container.querySelector('p')).not.toBeNull()
     })
 
-    it('should update the browser URL', () => {
+    it('should update the browser URL', async () => {
       registerTestComponents()
-      router.start(container, [
+      await router.start(container, [
         { path: '/', component: ProductCatalog },
         { path: '/product/:id', component: ProductDetail },
       ])
@@ -136,18 +139,18 @@ describe('router', () => {
       expect(window.location.pathname).toBe('/product/42')
     })
 
-    it('should throw RoutingError when navigating to an undefined route', () => {
+    it('should throw RoutingError when navigating to an undefined route', async () => {
       registerTestComponents()
-      router.start(container, [{ path: '/', component: ProductCatalog }])
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
 
       expect(() => {
         router.navigateTo('/unknown')
       }).toThrow(RoutingError)
     })
 
-    it('should NOT update the browser URL when navigation fails (atomicity)', () => {
+    it('should NOT update the browser URL when navigation fails (atomicity)', async () => {
       registerTestComponents()
-      router.start(container, [{ path: '/', component: ProductCatalog }])
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
 
       const initialPath = window.location.pathname
 
@@ -162,16 +165,16 @@ describe('router', () => {
   })
 
   describe('urlParameters', () => {
-    it('should return empty object when route has no dynamic segments', () => {
+    it('should return empty object when route has no dynamic segments', async () => {
       registerTestComponents()
-      router.start(container, [{ path: '/', component: ProductCatalog }])
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
 
       expect(router.urlParameters()).toEqual({})
     })
 
-    it('should return dynamic segments after navigation', () => {
+    it('should return dynamic segments after navigation', async () => {
       registerTestComponents()
-      router.start(container, [
+      await router.start(container, [
         { path: '/', component: ProductCatalog },
         { path: '/product/:id', component: ProductDetail },
       ])
@@ -181,9 +184,9 @@ describe('router', () => {
       expect(router.urlParameters()).toEqual({ id: '42' })
     })
 
-    it('should update parameters when navigating to a different route', () => {
+    it('should update parameters when navigating to a different route', async () => {
       registerTestComponents()
-      router.start(container, [
+      await router.start(container, [
         { path: '/', component: ProductCatalog },
         { path: '/product/:id', component: ProductDetail },
       ])
@@ -194,7 +197,7 @@ describe('router', () => {
       expect(router.urlParameters()).toEqual({ id: '99' })
     })
 
-    it('should provide parameters during ViewModel construction (constructor check)', () => {
+    it('should provide parameters during ViewModel construction (constructor check)', async () => {
       registerTestComponents()
       let capturedId: string | undefined
       let capturedDetail: string | undefined
@@ -212,7 +215,7 @@ describe('router', () => {
         '<pelela view-model="ConstructorCheck"></pelela>',
       )
 
-      router.start(container, [
+      await router.start(container, [
         { path: '/', component: ProductCatalog },
         { path: '/check/:id', component: ConstructorParaCheck },
       ])
@@ -225,11 +228,11 @@ describe('router', () => {
   })
 
   describe('searchParameters', () => {
-    it('should return query parameters from the URL', () => {
+    it('should return query parameters from the URL', async () => {
       registerTestComponents()
       window.history.replaceState(null, '', '/?name=Juan&surname=Cont')
 
-      router.start(container, [{ path: '/', component: ProductCatalog }])
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
 
       expect(router.searchParameters()).toEqual({
         name: 'Juan',
@@ -237,16 +240,16 @@ describe('router', () => {
       })
     })
 
-    it('should return empty object when no query parameters exist', () => {
+    it('should return empty object when no query parameters exist', async () => {
       registerTestComponents()
-      router.start(container, [{ path: '/', component: ProductCatalog }])
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
 
       expect(router.searchParameters()).toEqual({})
     })
 
-    it('should return query parameters after navigateTo', () => {
+    it('should return query parameters after navigateTo', async () => {
       registerTestComponents()
-      router.start(container, [
+      await router.start(container, [
         { path: '/', component: ProductCatalog },
         { path: '/product/:id', component: ProductDetail },
       ])
@@ -258,27 +261,27 @@ describe('router', () => {
   })
 
   describe('popstate (browser back)', () => {
-    it('should re-render the previous route when popstate fires', () => {
+    it('should re-render the previous route when popstate fires', async () => {
       registerTestComponents()
-      router.start(container, [
+      await router.start(container, [
         { path: '/', component: ProductCatalog },
         { path: '/product/:id', component: ProductDetail },
       ])
 
       router.navigateTo('/product/42')
-      expect(container.querySelector('p')).toBeDefined()
+      expect(container.querySelector('p')).not.toBeNull()
 
       // Simulate browser back: change URL then fire popstate
       window.history.replaceState(null, '', '/')
       window.dispatchEvent(new PopStateEvent('popstate'))
 
-      expect(container.querySelector('h1')).toBeDefined()
+      expect(container.querySelector('h1')).not.toBeNull()
       expect(container.querySelector('h1')!.innerHTML).toBe('3')
     })
 
-    it('should update urlParameters after popstate', () => {
+    it('should update urlParameters after popstate', async () => {
       registerTestComponents()
-      router.start(container, [
+      await router.start(container, [
         { path: '/', component: ProductCatalog },
         { path: '/product/:id', component: ProductDetail },
       ])
@@ -294,11 +297,11 @@ describe('router', () => {
   })
 
   describe('catch-all route', () => {
-    it('should fallback to the catch-all route for unknown paths', () => {
+    it('should fallback to the catch-all route for unknown paths', async () => {
       registerTestComponents()
       window.history.replaceState(null, '', '/anything/here')
 
-      router.start(container, [
+      await router.start(container, [
         { path: '/', component: ProductCatalog },
         { path: '*', component: NotFoundPage },
       ])

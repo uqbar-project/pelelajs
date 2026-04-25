@@ -24,21 +24,21 @@ function validatePelelaStructure(
   const closeTags = sourceCode.match(/<\/pelela>/g) || []
 
   if (openTags.length === 0) {
-    errorFn(`Pelela template "${filePath}" debe contener exactamente un <pelela ...> como raíz.`)
+    errorFn(`Pelela template "${filePath}" must contain exactly one <pelela ...> as root.`)
   }
 
   if (openTags.length > 1) {
     errorFn(
-      `Pelela template "${filePath}" tiene ${openTags.length} etiquetas <pelela>. Solo se permite una raíz.`,
+      `Pelela template "${filePath}" has ${openTags.length} <pelela> tags. Only one root is allowed.`,
     )
   }
 
   if (closeTags.length === 0) {
-    errorFn(`Pelela template "${filePath}" no tiene etiqueta de cierre </pelela>.`)
+    errorFn(`Pelela template "${filePath}" is missing closing tag </pelela>.`)
   }
 
   if (closeTags.length !== openTags.length) {
-    errorFn(`Pelela template "${filePath}" tiene un número desbalanceado de <pelela> y </pelela>.`)
+    errorFn(`Pelela template "${filePath}" has unbalanced <pelela> and </pelela> tags.`)
   }
 }
 
@@ -51,7 +51,7 @@ function extractViewModelName(
   const viewModelName = viewModelMatch ? viewModelMatch[1] : null
 
   if (!viewModelName) {
-    errorFn(`Pelela template "${filePath}" debe contener <pelela view-model="...">`)
+    errorFn(`Pelela template "${filePath}" must contain <pelela view-model="...">`)
     return ''
   }
 
@@ -70,22 +70,102 @@ export default template;
 `
 }
 
+function findComponentFiles(
+  srcDir: string,
+): Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }> {
+  if (!fs.existsSync(srcDir)) return []
+
+  return fs
+    .readdirSync(srcDir)
+    .filter((file) => file.endsWith('.ts'))
+    .map((tsFile) => {
+      const componentName = tsFile.replace('.ts', '')
+      const pelelaFile = `${componentName}.pelela`
+      const pelelaPath = path.join(srcDir, pelelaFile)
+
+      return {
+        componentName,
+        tsFile,
+        pelelaFile,
+        pelelaPath,
+      }
+    })
+    .filter(({ pelelaPath }) => fs.existsSync(pelelaPath))
+    .map(({ componentName, tsFile, pelelaFile, pelelaPath }) => {
+      const templateContent = fs.readFileSync(pelelaPath, 'utf-8')
+      const viewModelMatch = templateContent.match(/<pelela[^>]*view-model\s*=\s*"([^"]+)"/)?.[1]
+      const viewModelName = viewModelMatch || componentName
+
+      return {
+        name: componentName,
+        tsPath: `./src/${tsFile}`,
+        pelelaPath: `./src/${pelelaFile}`,
+        viewModelName,
+      }
+    })
+}
+
+function generateAutoRegistrationCode(
+  components: Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }>,
+): string {
+  const componentImports = components
+    .map(({ tsPath, viewModelName }) => `import { ${viewModelName} } from "${tsPath}";`)
+    .join('\n')
+
+  const templateImports = components
+    .map(({ name, pelelaPath }) => `import ${name}Template from "${pelelaPath}";`)
+    .join('\n')
+
+  const registrations = components
+    .map(
+      ({ viewModelName, name }) =>
+        `defineComponent("${viewModelName}", ${viewModelName}, ${name}Template);`,
+    )
+    .join('\n')
+
+  return `
+${componentImports}
+${templateImports}
+import { defineComponent } from "pelelajs";
+
+${registrations}
+`
+}
+
 export function pelelajsPlugin(): Plugin {
   return {
     name: 'vite-plugin-pelelajs',
     enforce: 'pre',
 
-    load(filePath) {
-      if (!filePath.endsWith('.pelela')) {
+    resolveId(id) {
+      if (id === 'virtual:pelela-auto-register') {
+        return '\0virtual:pelela-auto-register'
+      }
+      return null
+    },
+
+    load(id) {
+      if (id === '\0virtual:pelela-auto-register') {
+        const srcDir = path.join(process.cwd(), 'src')
+        const components = findComponentFiles(srcDir)
+
+        if (components.length === 0) {
+          return 'export {}'
+        }
+
+        return generateAutoRegistrationCode(components)
+      }
+
+      if (!id.endsWith('.pelela')) {
         return null
       }
 
-      const sourceCode = fs.readFileSync(filePath, 'utf-8')
-      const cssImport = getCssImport(filePath)
+      const sourceCode = fs.readFileSync(id, 'utf-8')
+      const cssImport = getCssImport(id)
 
       const errorHandler = this.error.bind(this)
-      validatePelelaStructure(sourceCode, filePath, errorHandler)
-      const viewModelName = extractViewModelName(sourceCode, filePath, errorHandler)
+      validatePelelaStructure(sourceCode, id, errorHandler)
+      const viewModelName = extractViewModelName(sourceCode, id, errorHandler)
 
       const escapedTemplate = escapeTemplateForLiteral(sourceCode)
 

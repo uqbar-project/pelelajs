@@ -34,3 +34,32 @@ export function getComponentEntry(ctor: ViewModelConstructor): ComponentEntry | 
 export function clearComponentRegistry(): void {
   templatesByConstructor.clear()
 }
+
+/**
+ * Converts a camelCase class name to kebab-case filename.
+ * Example: Home -> home, UserProfile -> user-profile
+ */
+function camelToKebab(name: string): string {
+  return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+}
+
+/**
+ * Infers the component name from a ViewModel constructor.
+ * Uses the constructor name and converts it to kebab-case.
+ */
+export function inferComponentName(ctor: ViewModelConstructor): string {
+  return camelToKebab(ctor.name)
+}
+
+/**
+ * Automatically registers a component with its template.
+ * The component class and template must be provided by the caller.
+ *
+ * @param ctor - The ViewModel constructor to register
+ * @param template - The template string for the component
+ * @throws RoutingError if registration fails
+ */
+export function autoRegisterComponent(ctor: ViewModelConstructor, template: string): void {
+  const componentName = inferComponentName(ctor)
+  defineComponent(componentName, ctor, template)
+}

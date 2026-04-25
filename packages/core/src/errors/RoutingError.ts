@@ -1,7 +1,12 @@
 import { t } from '../commons/i18n'
 import { PelelaError } from './PelelaError'
 
-export type RoutingErrorType = 'route-not-found' | 'component-not-registered'
+export type RoutingErrorType =
+  | 'route-not-found'
+  | 'component-not-registered'
+  | 'component-class-not-found'
+  | 'template-not-found'
+  | 'auto-registration-failed'
 
 const ROUTING_ERROR_METADATA: Record<
   RoutingErrorType,
@@ -13,6 +18,18 @@ const ROUTING_ERROR_METADATA: Record<
   },
   'component-not-registered': {
     messageKey: 'errors.routing.componentNotRegistered',
+    interpolationKey: 'name',
+  },
+  'component-class-not-found': {
+    messageKey: 'errors.routing.componentClassNotFound',
+    interpolationKey: 'name',
+  },
+  'template-not-found': {
+    messageKey: 'errors.routing.templateNotFound',
+    interpolationKey: 'name',
+  },
+  'auto-registration-failed': {
+    messageKey: 'errors.routing.autoRegistrationFailed',
     interpolationKey: 'name',
   },
 }
