@@ -2,20 +2,20 @@
   <h1>Ejemplos for-each</h1>
 
   <h2>Select</h2>
-  <select bind-value="tipoApuesta">
-    <option for-each="tipo of tiposApuesta" bind-content="tipo.descripcion"></option>
+  <select bind-value="selectedBetType">
+    <option for-each="betType of betTypes" bind-content="betType.description"></option>
   </select>
 
-  <p>Valor seleccionado: <span bind-content="tipoApuesta"></span></p>
+  <p>Valor seleccionado: <span bind-content="selectedBetType"></span></p>
 
-  <input bind-value="prueba.nombre">
-  <span bind-content="prueba.nombre" style="color: white;"></span>
+  <input bind-value="testObject.name">
+  <span bind-content="testObject.name" style="color: white;"></span>
 
   <h3>Opciones del select activas:</h3>
   <div class="options-container">
-    <span for-each="tipo of tiposApuesta" 
-          if="tipo.active" 
-          bind-content="tipo.descripcion"></span>
+    <span for-each="betType of betTypes"
+          if="betType.active"
+          bind-content="betType.description"></span>
   </div>
 
   <h2>Lista de Ítems</h2>
@@ -52,8 +52,8 @@
   <button click="addUser">Add User</button>
 
   <h3>Dirección</h3>
-  <input type="text" bind-value="prueba.direccion.calle.nombre" />
-  <span bind-content="prueba.direccion.calle.nombre" style="color: white;"></span>
+  <input type="text" bind-value="testObject.address.street.name" />
+  <span bind-content="testObject.address.street.name" style="color: white;"></span>
 
   <h3>Buscar usuario por ID</h3>
   <input bind-value="userSearch" placeholder="Buscar por nombre o email"/>

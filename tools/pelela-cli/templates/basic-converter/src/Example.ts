@@ -1,16 +1,16 @@
 export class Example {
-  millas: number = 0
-  kilometros: number | undefined = undefined
+  miles: number = 0
+  kilometers: number | undefined = undefined
 
-  convertir(): void {
-    this.kilometros = this.millas * 1.609344
+  convert(): void {
+    this.kilometers = this.miles * 1.609344
   }
 
-  get tieneKilometros(): boolean {
-    return this.kilometros !== undefined
+  get hasKilometers(): boolean {
+    return this.kilometers !== undefined
   }
 
-  get claseKilometros(): string {
-    return (this.kilometros ?? 0) > 100 ? 'big' : 'small'
+  get kilometersClass(): string {
+    return (this.kilometers ?? 0) > 100 ? 'big' : 'small'
   }
 }

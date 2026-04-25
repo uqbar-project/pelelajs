@@ -9,8 +9,8 @@ interface User {
   email: string;
 }
 
-interface TipoApuesta {
-  descripcion: string;
+interface BetType {
+  description: string;
   active?: boolean;
 }
 
@@ -27,25 +27,25 @@ export class App {
     { id: 3, name: "Charlie", email: "charlie@example.com" },
   ];
 
-  tiposApuesta: TipoApuesta[] = [
-    { descripcion: "Ganador", active: true },
-    { descripcion: "Segundo Puesto", active: true },
-    { descripcion: "Tercero" },
+  betTypes: BetType[] = [
+    { description: "Ganador", active: true },
+    { description: "Segundo Puesto", active: true },
+    { description: "Tercero" },
   ];
 
-  tipoApuesta: string = this.tiposApuesta[0].descripcion;
+  selectedBetType: string = this.betTypes[0].description;
   newUserName: string = "";
   newUserEmail: string = "";
   userSearch: string = "";
   userSearched: string = "";
 
-  prueba: object = {
-    nombre: "Nicolas",
-    edad: 30,
-    direccion: {
-      calle: {
-        nombre: "Calle Falsa",
-        numero: 123,
+  testObject: object = {
+    name: "Nicolas",
+    age: 30,
+    address: {
+      street: {
+        name: "Calle Falsa",
+        number: 123,
       }
     }
   }
