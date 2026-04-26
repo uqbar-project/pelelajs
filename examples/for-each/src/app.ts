@@ -68,7 +68,7 @@ export class App {
   searchUser() {
     const foundUser = this.users.find((user) => user.id.toString() === this.userSearch)
     this.userSearched = foundUser
-      ? `Found: ${foundUser.name} (${foundUser.email})`
-      : 'No user found'
+      ? `Encontrado: ${foundUser.name} (${foundUser.email})`
+      : 'Usuario no encontrado'
   }
 }
