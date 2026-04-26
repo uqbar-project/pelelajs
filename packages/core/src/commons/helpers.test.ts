@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
-import { extractElementSnippet, filterOwnElements, isObject, unwrapTemplate } from './helpers'
+import {
+  extractElementSnippet,
+  filterOwnElements,
+  isNestedPropertyPath,
+  isObject,
+  toCamelCase,
+  toKebabCase,
+  unwrapTemplate,
+} from './helpers'
 
 describe('helpers', () => {
   describe('isObject', () => {
@@ -132,6 +140,61 @@ describe('helpers', () => {
       expect(filtered).not.toContain(nested)
 
       clearComponentRegistry()
+    })
+  })
+
+  describe('toCamelCase', () => {
+    it('should convert kebab-case to camelCase', () => {
+      expect(toCamelCase('my-component')).toBe('myComponent')
+      expect(toCamelCase('foo-bar')).toBe('fooBar')
+      expect(toCamelCase('test-case')).toBe('testCase')
+    })
+
+    it('should handle single word', () => {
+      expect(toCamelCase('hello')).toBe('hello')
+    })
+
+    it('should handle multiple hyphens', () => {
+      expect(toCamelCase('my-long-component-name')).toBe('myLongComponentName')
+    })
+  })
+
+  describe('toKebabCase', () => {
+    it('should convert camelCase to kebab-case', () => {
+      expect(toKebabCase('myComponent')).toBe('my-component')
+      expect(toKebabCase('fooBar')).toBe('foo-bar')
+      expect(toKebabCase('testCase')).toBe('test-case')
+    })
+
+    it('should handle single word', () => {
+      expect(toKebabCase('hello')).toBe('hello')
+    })
+
+    it('should handle multiple words', () => {
+      expect(toKebabCase('myLongComponentName')).toBe('my-long-component-name')
+    })
+  })
+
+  describe('isNestedPropertyPath', () => {
+    it('should return true for property matching root', () => {
+      expect(isNestedPropertyPath('item', 'item')).toBe(true)
+    })
+
+    it('should return true for property starting with root and dot', () => {
+      expect(isNestedPropertyPath('item.name', 'item')).toBe(true)
+      expect(isNestedPropertyPath('item.value', 'item')).toBe(true)
+    })
+
+    it('should return false for different property', () => {
+      expect(isNestedPropertyPath('other', 'item')).toBe(false)
+    })
+
+    it('should return false for property without dot separator', () => {
+      expect(isNestedPropertyPath('itemname', 'item')).toBe(false)
+    })
+
+    it('should return false for symbol properties', () => {
+      expect(isNestedPropertyPath(Symbol('test'), 'item')).toBe(false)
     })
   })
 })

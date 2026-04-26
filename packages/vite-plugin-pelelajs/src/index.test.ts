@@ -6,7 +6,6 @@ import {
   escapeTemplateForLiteral,
   extractLinkAttributeMatches,
   isRootPelelaOrComponent,
-  isStandardHtmlTag,
   kebabToCamelCase,
   pelelajsPlugin,
 } from './index'
@@ -349,13 +348,6 @@ describe('pelelajsPlugin', () => {
   })
 
   describe('helper functions', () => {
-    describe('isStandardHtmlTag', () => {
-      it('returns true for standard HTML tags and false for custom components', () => {
-        expect(isStandardHtmlTag('div')).toBe(true)
-        expect(isStandardHtmlTag('my-component')).toBe(false)
-      })
-    })
-
     describe('isRootPelelaOrComponent', () => {
       it('returns true for pelela tag', () => {
         expect(isRootPelelaOrComponent('pelela')).toBe(true)

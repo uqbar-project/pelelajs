@@ -16,7 +16,7 @@ function getCssImport(pelelaFilePath: string): string {
   return ''
 }
 
-export function isStandardHtmlTag(tagName: string): boolean {
+function isStandardHtmlTag(tagName: string): boolean {
   // biome-ignore format: <line length exceeds 100 due to comprehensive HTML tags list>
   const standardHtmlTags = [
     'html', 'head', 'title', 'body', 'div', 'span', 'p', 'br', 'hr',
