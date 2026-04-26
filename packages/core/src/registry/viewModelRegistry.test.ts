@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ViewModelRegistrationError } from '../errors'
-import { clearRegistry, getViewModel, hasViewModel, registerViewModel } from './viewModelRegistry'
+import {
+  clearRegistry,
+  getViewModel,
+  hasViewModel,
+  registerViewModel,
+  replaceViewModel,
+} from './viewModelRegistry'
 
 class TestViewModel {
   value = 0
@@ -36,6 +42,21 @@ describe('viewModelRegistry', () => {
 
       expect(hasViewModel('First')).toBe(true)
       expect(hasViewModel('Second')).toBe(true)
+    })
+  })
+
+  describe('replaceViewModel', () => {
+    it('should replace an existing view model without throwing', () => {
+      registerViewModel('ReplaceMe', TestViewModel)
+      replaceViewModel('ReplaceMe', AnotherViewModel)
+
+      expect(getViewModel('ReplaceMe')).toBe(AnotherViewModel)
+    })
+
+    it('should work even if the view model was not previously registered', () => {
+      replaceViewModel('NewOne', TestViewModel)
+
+      expect(getViewModel('NewOne')).toBe(TestViewModel)
     })
   })
 

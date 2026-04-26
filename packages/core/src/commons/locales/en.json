@@ -25,6 +25,15 @@
     },
     "security": {
       "domEnvironmentRequired": "sanitizeHTML requires a DOM environment (document and DOMParser)"
+    },
+    "routing": {
+      "routeNotFound": "[pelela] No route defined for \"{{path}}\"",
+      "routeNotAbsolute": "[pelela] Navigation path must be absolute (start with '/'). Got: \"{{path}}\"",
+      "routerNotStarted": "[pelela] Router has not been started. Call router.start() before using {{method}}().",
+      "componentNotRegistered": "[pelela] Component \"{{name}}\" has no template registered. Did you call defineComponent?",
+      "componentClassNotFound": "[pelela] Component class for \"{{name}}\" not found in the expected file.",
+      "templateNotFound": "[pelela] Template for component \"{{name}}\" not found in the expected file.",
+      "autoRegistrationFailed": "[pelela] Auto-registration failed for component \"{{name}}\": {{cause}}"
     }
   }
 }

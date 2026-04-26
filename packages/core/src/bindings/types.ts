@@ -2,6 +2,10 @@ export type ViewModel<T extends object = object> = T & {
   [key: string]: unknown
 }
 
+export type EventHandler<E extends Event = Event> = (viewModel: unknown, event?: E) => void
+
+export type ClickHandler = EventHandler<MouseEvent>
+
 export type ValueBinding = {
   element: HTMLElement
   propertyName: string

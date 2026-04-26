@@ -176,5 +176,73 @@ describe('bindContent', () => {
       expect(container.querySelector('span')!.textContent).toBe('First')
       expect(container.querySelector('div')!.textContent).toBe('Second')
     })
+
+    it('should escape HTML to prevent XSS attacks', () => {
+      container.innerHTML = '<span bind-content="message"></span>'
+
+      const viewModel = { message: '<script>alert("XSS")</script>' }
+      const bindings = setupContentBindings(container, viewModel)
+
+      renderContentBindings(bindings, viewModel)
+
+      // textContent should contain the raw string (browser handles escaping)
+      expect(container.querySelector('span')!.textContent).toBe('<script>alert("XSS")</script>')
+
+      // Verify no script element was created
+      expect(container.querySelector('script')).toBeNull()
+    })
+
+    it('should escape multiple XSS vectors', () => {
+      container.innerHTML = '<div bind-content="content"></div>'
+
+      const viewModel = {
+        content: '<img src="x" onerror="alert(1)"><iframe src="javascript:alert(2)"></iframe>',
+      }
+      const bindings = setupContentBindings(container, viewModel)
+
+      renderContentBindings(bindings, viewModel)
+
+      // textContent should contain the raw string
+      const div = container.querySelector('div')!
+      expect(div.textContent).toBe(
+        '<img src="x" onerror="alert(1)"><iframe src="javascript:alert(2)"></iframe>',
+      )
+
+      // Verify no dangerous elements were created
+      expect(div.querySelector('img')).toBeNull()
+      expect(div.querySelector('iframe')).toBeNull()
+    })
+
+    it('should handle complex nested XSS attempts', () => {
+      container.innerHTML = '<span bind-content="data"></span>'
+
+      const viewModel = {
+        data: '<div><script>fetch("/steal").then(r=>r.text().then(d=>eval(d)))</script></div>',
+      }
+      const bindings = setupContentBindings(container, viewModel)
+
+      renderContentBindings(bindings, viewModel)
+
+      // textContent should contain the raw string
+      expect(container.querySelector('span')!.textContent).toBe(
+        '<div><script>fetch("/steal").then(r=>r.text().then(d=>eval(d)))</script></div>',
+      )
+
+      // Verify no script execution
+      expect(container.querySelector('script')).toBeNull()
+      expect(container.querySelector('div')).toBeNull()
+    })
+
+    it('should display special characters verbatim (no double-escape)', () => {
+      container.innerHTML = '<span bind-content="text"></span>'
+
+      const viewModel = { text: 'Tom & Jerry said "3/4 of the pie"' }
+      const bindings = setupContentBindings(container, viewModel)
+
+      renderContentBindings(bindings, viewModel)
+
+      // Special characters should display as-is in textContent
+      expect(container.querySelector('span')!.textContent).toBe('Tom & Jerry said "3/4 of the pie"')
+    })
   })
 })

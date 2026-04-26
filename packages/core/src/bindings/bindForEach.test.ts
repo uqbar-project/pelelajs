@@ -458,5 +458,34 @@ describe('bindForEach', () => {
       expect(options?.[1].innerHTML).toBe('Opción 2')
       expect(options?.[2].innerHTML).toBe('Opción 3')
     })
+
+    it('should setup event listeners for elements inside for-each loop', () => {
+      container.innerHTML = `
+        <ul>
+          <li for-each="item of items">
+            <button click="handleItemClick" bind-content="item.name"></button>
+          </li>
+        </ul>
+      `
+
+      const handleItemClick = vi.fn((viewModel: unknown) => {
+        const vm = viewModel as { items: unknown }
+        return vm.items
+      })
+      const viewModel = {
+        items: [{ name: 'Item 1' }, { name: 'Item 2' }],
+        handleItemClick,
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const buttons = container.querySelectorAll('button')
+      buttons[0].click()
+      buttons[1].click()
+
+      expect(handleItemClick).toHaveBeenCalledTimes(2)
+      expect(handleItemClick).toHaveReturnedWith(viewModel.items)
+    })
   })
 })

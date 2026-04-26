@@ -30,7 +30,7 @@ export class App {
   betTypes: BetType[] = [
     { description: "Ganador", active: true },
     { description: "Segundo Puesto", active: true },
-    { description: "Tercero" },
+    { description: "Tercero", active: false },
   ];
 
   selectedBetType: string = this.betTypes[0].description;
