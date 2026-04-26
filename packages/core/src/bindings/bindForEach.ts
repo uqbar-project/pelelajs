@@ -23,7 +23,7 @@ function parseForEachExpression(
   return { itemName: match[1], collectionName: match[2] }
 }
 
-function createExtendedViewModel<T extends object>(
+export function createExtendedViewModel<T extends object>(
   parentViewModel: ViewModel<T>,
   itemName: string,
   itemRef: { current: unknown },
@@ -128,7 +128,7 @@ function mapElementPath(
   }, targetRoot)
 }
 
-function setupSingleForEachBinding<T extends object>(
+export function setupSingleForEachBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): ForEachBinding | null {

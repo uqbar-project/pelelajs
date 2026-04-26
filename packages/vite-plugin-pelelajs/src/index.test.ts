@@ -2,7 +2,14 @@ import * as fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { pelelajsPlugin } from './index'
+import {
+  escapeTemplateForLiteral,
+  extractLinkAttributeMatches,
+  isRootPelelaOrComponent,
+  isStandardHtmlTag,
+  kebabToCamelCase,
+  pelelajsPlugin,
+} from './index'
 
 const VIRTUAL_MODULE_ID = 'virtual:pelela-auto-register'
 const RESOLVED_VIRTUAL_ID = '\0virtual:pelela-auto-register'
@@ -257,6 +264,209 @@ describe('pelelajsPlugin', () => {
       const result = handler.call(mockContext as never, pelelaPath, {} as never) as string
 
       expect(result).toContain('import "./styled.css"')
+    })
+
+    it('reports error when multiple root tags exist', () => {
+      const pelelaPath = path.join(tempDir, 'multiple.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"></pelela><pelela view-model="Other"></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('multipleRoots'))).toBe(true)
+    })
+
+    it('reports error when foreign interpolation syntax is used', () => {
+      const pelelaPath = path.join(tempDir, 'foreign.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><h1>{{value}}</h1></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('foreignInterpolation'))).toBe(true)
+    })
+
+    it('reports error when foreign property binding syntax is used', () => {
+      const pelelaPath = path.join(tempDir, 'foreign-prop.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><div [value]="x"></div></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('foreignPropertyBinding'))).toBe(true)
+    })
+
+    it('reports error when forbidden attributes are on root tag', () => {
+      const pelelaPath = path.join(tempDir, 'forbidden.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home" link-value="x"></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('forbiddenRootAttribute'))).toBe(true)
+    })
+
+    it('reports error when link attributes are on standard HTML tags', () => {
+      const pelelaPath = path.join(tempDir, 'html-link.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div link-value="x">Test</div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('forbiddenRootAttribute'))).toBe(true)
+    })
+  })
+
+  describe('helper functions', () => {
+    describe('isStandardHtmlTag', () => {
+      it('returns true for standard HTML tags and false for custom components', () => {
+        expect(isStandardHtmlTag('div')).toBe(true)
+        expect(isStandardHtmlTag('my-component')).toBe(false)
+      })
+    })
+
+    describe('isRootPelelaOrComponent', () => {
+      it('returns true for pelela tag', () => {
+        expect(isRootPelelaOrComponent('pelela')).toBe(true)
+        expect(isRootPelelaOrComponent('PELELA')).toBe(true)
+        expect(isRootPelelaOrComponent('Pelela')).toBe(true)
+      })
+
+      it('returns true for component tag', () => {
+        expect(isRootPelelaOrComponent('component')).toBe(true)
+        expect(isRootPelelaOrComponent('COMPONENT')).toBe(true)
+        expect(isRootPelelaOrComponent('Component')).toBe(true)
+      })
+
+      it('returns false for other tags', () => {
+        expect(isRootPelelaOrComponent('div')).toBe(false)
+        expect(isRootPelelaOrComponent('span')).toBe(false)
+        expect(isRootPelelaOrComponent('my-component')).toBe(false)
+      })
+    })
+
+    describe('extractLinkAttributeMatches', () => {
+      it('extracts link attributes from HTML', () => {
+        const html = '<div link-value="x"></div><span link-content="y"></span>'
+        const matches = extractLinkAttributeMatches(html)
+
+        expect(matches).toHaveLength(2)
+        expect(matches[0]).toEqual({ tagName: 'div', attributeName: 'link-value' })
+        expect(matches[1]).toEqual({ tagName: 'span', attributeName: 'link-content' })
+      })
+
+      it('handles multiple link attributes on same tag', () => {
+        const html = '<div link-value="x" link-content="y"></div>'
+        const matches = extractLinkAttributeMatches(html)
+
+        // The function captures one link attribute per tag match
+        expect(matches).toHaveLength(1)
+        expect(matches[0].tagName).toBe('div')
+        expect(matches[0].attributeName).toMatch(/^link-/)
+      })
+
+      it('converts tag names to lowercase', () => {
+        const html = '<DIV link-value="x"></DIV>'
+        const matches = extractLinkAttributeMatches(html)
+
+        expect(matches[0].tagName).toBe('div')
+      })
+
+      it('returns empty array when no link attributes found', () => {
+        const html = '<div class="x"></div>'
+        const matches = extractLinkAttributeMatches(html)
+
+        expect(matches).toHaveLength(0)
+      })
+
+      it('handles complex HTML with nested tags', () => {
+        const html = '<div><span link-value="x"></span></div>'
+        const matches = extractLinkAttributeMatches(html)
+
+        expect(matches).toHaveLength(1)
+        expect(matches[0]).toEqual({ tagName: 'span', attributeName: 'link-value' })
+      })
+    })
+
+    describe('kebabToCamelCase', () => {
+      it('converts kebab-case to camelCase', () => {
+        expect(kebabToCamelCase('my-component')).toBe('myComponent')
+        expect(kebabToCamelCase('person-row')).toBe('personRow')
+        expect(kebabToCamelCase('detail-special')).toBe('detailSpecial')
+      })
+
+      it('handles single word', () => {
+        expect(kebabToCamelCase('home')).toBe('home')
+        expect(kebabToCamelCase('counter')).toBe('counter')
+      })
+
+      it('handles multiple hyphens', () => {
+        expect(kebabToCamelCase('my-long-component-name')).toBe('myLongComponentName')
+      })
+
+      it('handles dots as separators', () => {
+        expect(kebabToCamelCase('foo.bar')).toBe('fooBar')
+      })
+
+      it('handles mixed separators', () => {
+        expect(kebabToCamelCase('my-component.name')).toBe('myComponentName')
+      })
+    })
+
+    describe('escapeTemplateForLiteral', () => {
+      it('escapes backticks', () => {
+        expect(escapeTemplateForLiteral('`hello`')).toBe('\\`hello\\`')
+        expect(escapeTemplateForLiteral('test `code` here')).toBe('test \\`code\\` here')
+      })
+
+      it('escapes template literal expressions', () => {
+        expect(escapeTemplateForLiteral('${' + 'value' + '}')).toBe('\\${' + 'value' + '}')
+        expect(escapeTemplateForLiteral('test ${' + 'x' + '} here')).toBe(
+          'test \\${' + 'x' + '} here',
+        )
+      })
+
+      it('escapes both backticks and expressions', () => {
+        expect(escapeTemplateForLiteral('`test ${' + 'x' + '}`')).toBe(
+          '\\`test \\${' + 'x' + '}\\`',
+        )
+      })
+
+      it('leaves normal text unchanged', () => {
+        expect(escapeTemplateForLiteral('hello world')).toBe('hello world')
+        expect(escapeTemplateForLiteral('<div>test</div>')).toBe('<div>test</div>')
+      })
     })
   })
 })

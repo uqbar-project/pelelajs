@@ -3,7 +3,7 @@ import path from 'node:path'
 import { initializeI18n, t } from 'pelelajs'
 import type { Plugin } from 'vite'
 
-function escapeTemplateForLiteral(html: string): string {
+export function escapeTemplateForLiteral(html: string): string {
   return html.replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
 }
 
@@ -16,7 +16,7 @@ function getCssImport(pelelaFilePath: string): string {
   return ''
 }
 
-function isStandardHtmlTag(tagName: string): boolean {
+export function isStandardHtmlTag(tagName: string): boolean {
   // biome-ignore format: <line length exceeds 100 due to comprehensive HTML tags list>
   const standardHtmlTags = [
     'html', 'head', 'title', 'body', 'div', 'span', 'p', 'br', 'hr',
@@ -35,11 +35,11 @@ function isStandardHtmlTag(tagName: string): boolean {
   return standardHtmlTags.includes(tagName.toLowerCase())
 }
 
-function isRootPelelaOrComponent(tagName: string): boolean {
+export function isRootPelelaOrComponent(tagName: string): boolean {
   return tagName.toLowerCase() === 'pelela' || tagName.toLowerCase() === 'component'
 }
 
-function extractLinkAttributeMatches(
+export function extractLinkAttributeMatches(
   sourceCode: string,
 ): Array<{ tagName: string; attributeName: string }> {
   const linkAttributePattern = /<(\w+)[^>]*\b(link-[a-zA-Z0-9_-]+)[^>]*>/g
@@ -214,7 +214,7 @@ function findComponentFiles(
     })
 }
 
-function kebabToCamelCase(name: string): string {
+export function kebabToCamelCase(name: string): string {
   return name.replace(/[-.]([a-z])/g, (_, letter) => letter.toUpperCase())
 }
 

@@ -6,7 +6,7 @@ import {
 } from '../errors/index'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
-import { renderForEachBindings, setupForEachBindings } from './bindForEach'
+import { createExtendedViewModel, renderForEachBindings, setupForEachBindings, setupSingleForEachBinding } from './bindForEach'
 import { setupBindings } from './setupBindings'
 
 describe('bindForEach', () => {
@@ -107,19 +107,76 @@ describe('bindForEach', () => {
       expect(bindings).toHaveLength(0)
     })
 
-    it('should handle element without parent node', () => {
+    it('should throw InvalidDOMStructureError when element has no parent node', () => {
       const element = document.createElement('div')
       element.setAttribute('for-each', 'item of items')
 
-      const tempContainer = document.createElement('div')
-      tempContainer.appendChild(element)
-
       const viewModel = { items: [] }
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      setupForEachBindings(tempContainer, viewModel)
+      expect(() => {
+        setupSingleForEachBinding(element, viewModel)
+      }).toThrow('element has no parent node')
+    })
 
-      consoleSpy.mockRestore()
+    it('should set item value through proxy', () => {
+      const itemRef = { current: 'initial' }
+      const viewModel = { items: ['initial'] }
+      const extendedViewModel = createExtendedViewModel(viewModel, 'item', itemRef)
+
+      // Test proxy set handler for item (lines 47-49)
+      extendedViewModel.item = 'updated'
+      expect(itemRef.current).toBe('updated')
+    })
+
+    it('should handle setting nested properties through proxy', () => {
+      const itemRef = { current: { name: 'initial' } }
+      const viewModel = { items: [{ name: 'initial' }] }
+      const extendedViewModel = createExtendedViewModel(viewModel, 'item', itemRef)
+
+      // Test proxy set handler for nested property (line 51)
+      extendedViewModel['item.name'] = 'updated'
+      // The proxy should return true for nested property paths without modifying itemRef
+      expect(itemRef.current).toEqual({ name: 'initial' })
+    })
+
+    it('should handle setting parent viewModel properties through proxy', () => {
+      const itemRef = { current: 1 }
+      const viewModel = { items: [1], parentProp: 'initial' }
+      const extendedViewModel = createExtendedViewModel(viewModel, 'item', itemRef)
+
+      // Test proxy set handler for parent property (lines 52-53)
+      extendedViewModel.parentProp = 'updated'
+      expect(viewModel.parentProp).toBe('updated')
+    })
+
+    it('should map value bindings to real elements', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <input bind-value="item.value">
+        </div>
+      `
+
+      const viewModel = { items: [{ value: 'test' }] }
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const input = container.querySelector('input')
+      expect(input?.value).toBe('test')
+    })
+
+    it('should map style bindings to real elements', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span bind-style="item.style">Text</span>
+        </div>
+      `
+
+      const viewModel = { items: [{ style: { color: 'red' } }] }
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const span = container.querySelector('span')
+      expect(span?.style.color).toBe('red')
     })
   })
 
