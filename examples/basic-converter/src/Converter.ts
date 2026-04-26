@@ -1,12 +1,12 @@
-export class Example {
+export class Converter {
   miles: number = 0
   kilometers: number | undefined = undefined
 
-  convert(): void {
+  convert() {
     this.kilometers = this.miles * 1.609344
   }
 
-  get hasKilometers(): boolean {
+  get hasResult(): boolean {
     return this.kilometers !== undefined
   }
 

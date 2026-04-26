@@ -1,9 +1,9 @@
-import "./src/styles.css";
-import { router } from "pelelajs";
+import './src/styles.css'
+import { router } from 'pelelajs'
 
-import { routes } from "./routes";
-import "virtual:pelela-auto-register";
+import { routes } from './routes'
+import 'virtual:pelela-auto-register'
 
-const root = document.getElementById("app") ?? document.body;
+const root = document.getElementById('app') ?? document.body
 
-router.start(root, routes);
+router.start(root, routes)

@@ -1,10 +1,9 @@
-import "./styles.css";
-import { defineViewModel, mountTemplate } from "pelelajs";
-import { Conversor } from "./src/Conversor";
-import template from "./src/Conversor.pelela";
+import './styles.css'
+import { defineViewModel, mountTemplate } from 'pelelajs'
+import { Converter } from './src/Converter'
+import template from './src/Converter.pelela'
 
-defineViewModel("Conversor", Conversor);
+defineViewModel('Converter', Converter)
 
-const root =
-  document.getElementById("app") ?? document.body;
-mountTemplate(root, template);
+const root = document.getElementById('app') ?? document.body
+mountTemplate(root, template)
