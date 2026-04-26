@@ -1,11 +1,11 @@
 export class Home {
-  indiceSeleccionado = 1;
+  selectedIndex = 1;
   
-  get totalPersonas() {
-    return this.personas.length;
+  get totalPeople() {
+    return this.people.length;
   }
 
-  personas = [
+  people = [
     { id: 1, name: "Ana García" },
     { id: 2, name: "Carlos López" },
     { id: 3, name: "María Martínez" }
@@ -13,7 +13,7 @@ export class Home {
 
 
   get selectedPersonName() {
-    const selected = this.personas.find(persona => persona.id === this.indiceSeleccionado);
+    const selected = this.people.find(person => person.id === this.selectedIndex);
     return selected ? selected.name : 'Ninguna';
   }
 }

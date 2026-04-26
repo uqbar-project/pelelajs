@@ -1,12 +1,12 @@
-export class PersonaRow {
-  persona: { id: number, name: string } | null = null;
-  indiceSeleccionado: number = -1;
+export class PersonRow {
+  person: { id: number, name: string } | null = null;
+  selectedIndex: number = -1;
 
   get isSelected() {
-    return this.persona?.id === this.indiceSeleccionado;
+    return this.person?.id === this.selectedIndex;
   }
 
-  get personaClasses() {
+  get personClasses() {
     return { selected: this.isSelected };
   }
 }

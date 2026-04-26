@@ -1,20 +1,20 @@
-export class Contador {
-  valor: number = 0;
+export class Counter {
+  value: number = 0;
   total: number = 0;
 
-  incrementar() {
-    if (this.valor < this.total) {
-      this.valor++;
+  increment() {
+    if (this.value < this.total) {
+      this.value++;
     } else {
-      this.valor = 1;
+      this.value = 1;
     }
   }
 
-  decrementar() {
-    if (this.valor > 1) {
-      this.valor--;
+  decrement() {
+    if (this.value > 1) {
+      this.value--;
     } else {
-      this.valor = this.total;
+      this.value = this.total;
     }
   }
 }

@@ -2,8 +2,8 @@
   <h2>Ejemplo de Componentización Bidireccional</h2>
   <div class="layout">
     <div class="list">
-      <div for-each="persona of personas">
-        <persona-row persona="persona" indice-seleccionado="indiceSeleccionado"></persona-row>
+      <div for-each="person of people">
+        <persona-row person="person" selected-index="selectedIndex"></persona-row>
       </div>
 
     </div>
@@ -13,7 +13,7 @@
       
       <div class="counter-box">
         <h3>Selector por índice</h3>
-        <contador link-valor="indiceSeleccionado" total="totalPersonas"></contador>
+        <contador link-value="selectedIndex" total="totalPeople"></contador>
       </div>
     </div>
   </div>
