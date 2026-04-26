@@ -57,6 +57,7 @@
 </workflow_constraints>
 
 <ai_interaction_protocol>
+  - **No ejecutar scripts sin preguntar**: no ejecutar comandos de git, ni pnpm. Preguntar ANTES para este tipo de comandos. Sí podés hacer `ls` o `cat` para explorar el código.
   - **Prioridad LSP:** Priorizar el uso de herramientas de Language Server Protocol (LSP) para búsquedas semánticas y navegación sobre el uso de `grep` (búsqueda de texto plano).
   - **Scope acotado:** Hacé solo lo que se te pide. No refactorices código no relacionado.
   - **Leé antes de actuar:** Entendé el contexto y el diseño existente antes de modificar.
