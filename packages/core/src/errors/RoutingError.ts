@@ -3,6 +3,8 @@ import { PelelaError } from './PelelaError'
 
 export type RoutingErrorType =
   | 'route-not-found'
+  | 'route-not-absolute'
+  | 'router-not-started'
   | 'component-not-registered'
   | 'component-class-not-found'
   | 'template-not-found'
@@ -15,6 +17,14 @@ const ROUTING_ERROR_METADATA: Record<
   'route-not-found': {
     messageKey: 'errors.routing.routeNotFound',
     interpolationKey: 'path',
+  },
+  'route-not-absolute': {
+    messageKey: 'errors.routing.routeNotAbsolute',
+    interpolationKey: 'path',
+  },
+  'router-not-started': {
+    messageKey: 'errors.routing.routerNotStarted',
+    interpolationKey: 'method',
   },
   'component-not-registered': {
     messageKey: 'errors.routing.componentNotRegistered',

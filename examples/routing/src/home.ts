@@ -15,4 +15,8 @@ export class Home {
   viewUserDetails({ user }: { user: User }) {
     router.navigateTo(`/users/${user.id}?name=${encodeURIComponent(user.name)}`)
   }
+
+  viewSpecialUserDetails() {
+    router.navigateTo(`/special-users/99?name=Usuario%20Especial`)
+  }
 }

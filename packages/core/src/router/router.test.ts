@@ -114,6 +114,44 @@ describe('router', () => {
   })
 
   describe('navigateTo', () => {
+    it('should throw router-not-started error when called before start', () => {
+      expect(() => {
+        router.navigateTo('/')
+      }).toThrow(RoutingError)
+    })
+
+    it('should throw router-not-started error with correct type', () => {
+      try {
+        router.navigateTo('/')
+        throw new Error('Expected RoutingError to be thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(RoutingError)
+        expect((error as RoutingError).type).toBe('router-not-started')
+      }
+    })
+
+    it('should throw route-not-absolute error for relative paths', async () => {
+      registerTestComponents()
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      expect(() => {
+        router.navigateTo('product/42')
+      }).toThrow(RoutingError)
+    })
+
+    it('should throw route-not-absolute error with correct type', async () => {
+      registerTestComponents()
+      await router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      try {
+        router.navigateTo('product/42')
+        throw new Error('Expected RoutingError to be thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(RoutingError)
+        expect((error as RoutingError).type).toBe('route-not-absolute')
+      }
+    })
+
     it('should replace the container content with the new route', async () => {
       registerTestComponents()
       await router.start(container, [

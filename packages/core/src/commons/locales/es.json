@@ -28,6 +28,8 @@
     },
     "routing": {
       "routeNotFound": "[pelela] No hay una ruta definida para \"{{path}}\"",
+      "routeNotAbsolute": "[pelela] El path de navegación debe ser absoluto (empezar con '/'). Se recibió: \"{{path}}\"",
+      "routerNotStarted": "[pelela] El router no se inició. Llamá a router.start() antes de usar {{method}}().",
       "componentNotRegistered": "[pelela] El componente \"{{name}}\" no tiene un template registrado. ¿Llamaste a defineComponent?",
       "componentClassNotFound": "[pelela] No se encontró la clase del componente \"{{name}}\" en el archivo esperado.",
       "templateNotFound": "[pelela] No se encontró el template para el componente \"{{name}}\" en el archivo esperado.",

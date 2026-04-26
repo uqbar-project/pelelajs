@@ -105,6 +105,10 @@ function findComponentFiles(
     })
 }
 
+function kebabToCamelCase(name: string): string {
+  return name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+}
+
 function generateAutoRegistrationCode(
   components: Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }>,
 ): string {
@@ -113,14 +117,17 @@ function generateAutoRegistrationCode(
     .join('\n')
 
   const templateImports = components
-    .map(({ name, pelelaPath }) => `import ${name}Template from "${pelelaPath}";`)
+    .map(({ name, pelelaPath }) => {
+      const templateVar = `${kebabToCamelCase(name)}Template`
+      return `import ${templateVar} from "${pelelaPath}";`
+    })
     .join('\n')
 
   const registrations = components
-    .map(
-      ({ viewModelName, name }) =>
-        `defineComponent("${viewModelName}", ${viewModelName}, ${name}Template);`,
-    )
+    .map(({ viewModelName, name }) => {
+      const templateVar = `${kebabToCamelCase(name)}Template`
+      return `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar});`
+    })
     .join('\n')
 
   return `

@@ -6,4 +6,5 @@
       <button click="viewUserDetails" bind-content="user.name"></button>
     </li>
   </ul>
+  <button class="secondary" click="viewSpecialUserDetails">Ver detalle especial</button>
 </pelela>

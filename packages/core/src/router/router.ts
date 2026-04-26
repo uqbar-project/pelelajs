@@ -68,10 +68,15 @@ export const router = {
 
   /**
    * Programmatic navigation. Updates the URL and mounts the matching route.
+   * @param path - Absolute path (must start with '/')
    */
   navigateTo(path: string): void {
     if (!container) {
-      throw new RoutingError('/', 'route-not-found')
+      throw new RoutingError('navigateTo', 'router-not-started')
+    }
+
+    if (!path.startsWith('/')) {
+      throw new RoutingError(path, 'route-not-absolute')
     }
 
     const url = new URL(path, window.location.origin)

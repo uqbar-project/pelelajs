@@ -33,3 +33,13 @@ button {
 button:hover {
   background-color: #1d4ed8;
 }
+
+button.secondary {
+  background-color: #f3f4f6;
+  color: #0284c7;
+  border: 1px solid #0284c7;
+}
+
+button.secondary:hover {
+  background-color: #e5e7eb;
+}
