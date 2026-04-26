@@ -8,8 +8,9 @@ class TestViewModel {
   message = 'Hello'
   count = 0
 
-  increment() {
-    this.count++
+  increment(viewModel: unknown) {
+    const vm = viewModel as TestViewModel
+    vm.count++
   }
 }
 

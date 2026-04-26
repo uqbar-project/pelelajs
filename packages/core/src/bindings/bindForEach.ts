@@ -1,4 +1,4 @@
-import { sanitize } from '../commons/sanitization'
+import { extractElementSnippet } from '../commons/helpers'
 import {
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
@@ -102,7 +102,7 @@ function setupBindingsForElement<T extends object>(
     tempBindings.styleBindings.length,
   )
 
-  setupClickBindings(wrapper, viewModel)
+  setupClickBindings(element, viewModel)
 
   const bindings = {
     valueBindings: tempBindings.valueBindings.map((binding) =>
@@ -224,7 +224,7 @@ function setupSingleForEachBinding<T extends object>(
       bindingKind: 'for-each',
       expectedType: 'an array',
       viewModelName: viewModel.constructor?.name ?? 'Unknown',
-      elementSnippet: sanitize(element.outerHTML.substring(0, 50)) as string,
+      elementSnippet: extractElementSnippet(element),
     })
   }
 

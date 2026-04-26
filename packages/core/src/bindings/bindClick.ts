@@ -1,5 +1,5 @@
 import { InvalidHandlerError } from '../errors/index'
-import type { ViewModel } from './types'
+import type { ClickHandler, ViewModel } from './types'
 
 function setupSingleClickBinding<T extends object>(
   element: HTMLElement,
@@ -15,7 +15,7 @@ function setupSingleClickBinding<T extends object>(
       throw new InvalidHandlerError(handlerName, viewModel.constructor?.name ?? 'Unknown', 'click')
     }
 
-    handler.call(viewModel, event)
+    ;(handler as ClickHandler)(viewModel, event)
   })
 }
 
@@ -23,6 +23,10 @@ export function setupClickBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): void {
+  // Check the root element itself
+  setupSingleClickBinding(root, viewModel)
+
+  // Check descendants
   const elements = root.querySelectorAll<HTMLElement>('[click]')
 
   elements.forEach((element) => {

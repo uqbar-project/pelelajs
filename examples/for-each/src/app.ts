@@ -30,7 +30,7 @@ export class App {
   tiposApuesta: TipoApuesta[] = [
     { descripcion: "Ganador", active: true },
     { descripcion: "Segundo Puesto", active: true },
-    { descripcion: "Tercero" },
+    { descripcion: "Tercero", active: false },
   ];
 
   tipoApuesta: string = this.tiposApuesta[0].descripcion;
