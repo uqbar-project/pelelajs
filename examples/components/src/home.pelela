@@ -3,17 +3,17 @@
   <div class="layout">
     <div class="list">
       <div for-each="person of people">
-        <persona-row person="person" selected-index="selectedIndex"></persona-row>
+        <person-row person="person" selected-index="selectedIndex"></person-row>
       </div>
 
     </div>
-    
+
     <div class="sidebar">
       <p>Persona actualmente seleccionada: <strong bind-content="selectedPersonName"></strong></p>
-      
+
       <div class="counter-box">
         <h3>Selector por índice</h3>
-        <contador link-value="selectedIndex" total="totalPeople"></contador>
+        <counter link-value="selectedIndex" total="totalPeople"></counter>
       </div>
     </div>
   </div>

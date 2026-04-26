@@ -177,6 +177,77 @@ export default template;
 `
 }
 
+function findComponentFiles(
+  srcDir: string,
+): Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }> {
+  if (!fs.existsSync(srcDir)) return []
+
+  return fs
+    .readdirSync(srcDir)
+    .filter((file) => file.endsWith('.ts'))
+    .map((tsFile) => {
+      const componentName = tsFile.replace(/\.ts$/, '')
+      const pelelaFile = `${componentName}.pelela`
+      const pelelaPath = path.join(srcDir, pelelaFile)
+
+      return {
+        componentName,
+        tsFile,
+        pelelaFile,
+        pelelaPath,
+      }
+    })
+    .filter(({ pelelaPath }) => fs.existsSync(pelelaPath))
+    .map(({ componentName, tsFile, pelelaFile, pelelaPath }) => {
+      const templateContent = fs.readFileSync(pelelaPath, 'utf-8')
+      const viewModelMatch = templateContent.match(
+        /<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/,
+      )?.[1]
+      const viewModelName = viewModelMatch || componentName
+
+      return {
+        name: componentName,
+        tsPath: `./src/${tsFile}`,
+        pelelaPath: `./src/${pelelaFile}`,
+        viewModelName,
+      }
+    })
+}
+
+function kebabToCamelCase(name: string): string {
+  return name.replace(/[-.]([a-z])/g, (_, letter) => letter.toUpperCase())
+}
+
+function generateAutoRegistrationCode(
+  components: Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }>,
+): string {
+  const componentImports = components
+    .map(({ tsPath, viewModelName }) => `import { ${viewModelName} } from "${tsPath}";`)
+    .join('\n')
+
+  const templateImports = components
+    .map(({ name, pelelaPath }) => {
+      const templateVar = `${kebabToCamelCase(name)}Template`
+      return `import ${templateVar} from "${pelelaPath}";`
+    })
+    .join('\n')
+
+  const registrations = components
+    .map(({ viewModelName, name }) => {
+      const templateVar = `${kebabToCamelCase(name)}Template`
+      return `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar});`
+    })
+    .join('\n')
+
+  return `
+${componentImports}
+${templateImports}
+import { defineComponent } from "pelelajs";
+
+${registrations}
+`
+}
+
 export function pelelajsPlugin(): Plugin {
   initializeI18n()
 
@@ -184,7 +255,25 @@ export function pelelajsPlugin(): Plugin {
     name: 'vite-plugin-pelelajs',
     enforce: 'pre',
 
+    resolveId(id) {
+      if (id === 'virtual:pelela-auto-register') {
+        return '\0virtual:pelela-auto-register'
+      }
+      return null
+    },
+
     load(filePath) {
+      if (filePath === '\0virtual:pelela-auto-register') {
+        const srcDir = path.join(process.cwd(), 'src')
+        const components = findComponentFiles(srcDir)
+
+        if (components.length === 0) {
+          return 'export {}'
+        }
+
+        return generateAutoRegistrationCode(components)
+      }
+
       if (!filePath.endsWith('.pelela')) {
         return null
       }
