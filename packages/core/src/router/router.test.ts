@@ -68,7 +68,7 @@ describe('router', () => {
       expect(heading!.innerHTML).toBe('3')
     })
 
-    it('should throw RoutingError when a component has no template', async () => {
+    it('should throw RoutingError when a component is not registered', async () => {
       await expect(async () => {
         await router.start(container, [{ path: '/', component: ProductCatalog }])
       }).rejects.toThrow(RoutingError)

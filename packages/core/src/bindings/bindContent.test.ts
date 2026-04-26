@@ -185,10 +185,8 @@ describe('bindContent', () => {
 
       renderContentBindings(bindings, viewModel)
 
-      // Should be escaped, not executed
-      expect(container.querySelector('span')!.textContent).toBe(
-        '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#x2F;script&gt;',
-      )
+      // textContent should contain the raw string (browser handles escaping)
+      expect(container.querySelector('span')!.textContent).toBe('<script>alert("XSS")</script>')
 
       // Verify no script element was created
       expect(container.querySelector('script')).toBeNull()
@@ -204,12 +202,11 @@ describe('bindContent', () => {
 
       renderContentBindings(bindings, viewModel)
 
-      // Should be escaped
+      // textContent should contain the raw string
       const div = container.querySelector('div')!
-      expect(div.textContent).toContain('&lt;img')
-      expect(div.textContent).toContain('onerror')
-      expect(div.textContent).toContain('&lt;iframe')
-      expect(div.textContent).toContain('javascript:')
+      expect(div.textContent).toBe(
+        '<img src="x" onerror="alert(1)"><iframe src="javascript:alert(2)"></iframe>',
+      )
 
       // Verify no dangerous elements were created
       expect(div.querySelector('img')).toBeNull()
@@ -226,14 +223,26 @@ describe('bindContent', () => {
 
       renderContentBindings(bindings, viewModel)
 
-      // Should be completely escaped
+      // textContent should contain the raw string
       expect(container.querySelector('span')!.textContent).toBe(
-        '&lt;div&gt;&lt;script&gt;fetch(&quot;&#x2F;steal&quot;).then(r=&gt;r.text().then(d=&gt;eval(d)))&lt;&#x2F;script&gt;&lt;&#x2F;div&gt;',
+        '<div><script>fetch("/steal").then(r=>r.text().then(d=>eval(d)))</script></div>',
       )
 
       // Verify no script execution
       expect(container.querySelector('script')).toBeNull()
       expect(container.querySelector('div')).toBeNull()
+    })
+
+    it('should display special characters verbatim (no double-escape)', () => {
+      container.innerHTML = '<span bind-content="text"></span>'
+
+      const viewModel = { text: 'Tom & Jerry said "3/4 of the pie"' }
+      const bindings = setupContentBindings(container, viewModel)
+
+      renderContentBindings(bindings, viewModel)
+
+      // Special characters should display as-is in textContent
+      expect(container.querySelector('span')!.textContent).toBe('Tom & Jerry said "3/4 of the pie"')
     })
   })
 })

@@ -48,9 +48,13 @@ export class RoutingError extends PelelaError {
   constructor(
     public readonly detail: string,
     public readonly type: RoutingErrorType,
-    options?: ErrorOptions,
+    options?: ErrorOptions & { interpolations?: Record<string, unknown> },
   ) {
     const { messageKey, interpolationKey } = ROUTING_ERROR_METADATA[type]
-    super(t(messageKey, { [interpolationKey]: detail }), options)
+    const interpolations = {
+      [interpolationKey]: detail,
+      ...options?.interpolations,
+    }
+    super(t(messageKey, interpolations), options)
   }
 }

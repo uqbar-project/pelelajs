@@ -137,6 +137,34 @@ describe('pelelajsPlugin', () => {
 
       process.cwd = originalCwd
     })
+
+    it('handles component names with .ts in the middle', () => {
+      const srcDir = path.join(tempDir, 'src')
+      fs.writeFileSync(
+        path.join(srcDir, 'foo.tsfile.ts'),
+        'export class FooTsfile {}',
+      )
+      fs.writeFileSync(
+        path.join(srcDir, 'foo.tsfile.pelela'),
+        '<pelela view-model="FooTsfile"><h1>Test</h1></pelela>',
+      )
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+
+      process.cwd = () => tempDir
+
+      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+
+      expect(result).toContain('import { FooTsfile } from "./src/foo.tsfile.ts"')
+      expect(result).toContain('import fooTsfileTemplate from "./src/foo.tsfile.pelela"')
+      expect(result).toContain(
+        'defineComponent("FooTsfile", FooTsfile, fooTsfileTemplate)',
+      )
+
+      process.cwd = originalCwd
+    })
   })
 
   describe('load - pelela files', () => {

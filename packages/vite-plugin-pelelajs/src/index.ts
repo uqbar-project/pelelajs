@@ -79,7 +79,7 @@ function findComponentFiles(
     .readdirSync(srcDir)
     .filter((file) => file.endsWith('.ts'))
     .map((tsFile) => {
-      const componentName = tsFile.replace('.ts', '')
+      const componentName = tsFile.replace(/\.ts$/, '')
       const pelelaFile = `${componentName}.pelela`
       const pelelaPath = path.join(srcDir, pelelaFile)
 
