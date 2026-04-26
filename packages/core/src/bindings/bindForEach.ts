@@ -1,4 +1,8 @@
-import { extractElementSnippet, filterOwnElements, isNestedPropertyPath } from '../commons/helpers'
+import {
+  extractElementSnippet,
+  filterOwnElements,
+  isPropertyOrNestedPath,
+} from '../commons/helpers'
 import {
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
@@ -33,12 +37,12 @@ export function createExtendedViewModel<T extends object>(
     {},
     {
       has(_target, prop) {
-        if (isNestedPropertyPath(prop, itemName)) return true
+        if (isPropertyOrNestedPath(prop, itemName)) return true
         return prop in parentViewModel
       },
       get(_target, prop) {
         if (prop === itemName) return itemRef.current
-        if (isNestedPropertyPath(prop, itemName)) {
+        if (isPropertyOrNestedPath(prop, itemName)) {
           const itemProp = (prop as string).substring(itemName.length + 1)
           return getNestedProperty(itemRef.current, itemProp)
         }
@@ -49,7 +53,7 @@ export function createExtendedViewModel<T extends object>(
           itemRef.current = value
           return true
         }
-        if (isNestedPropertyPath(prop, itemName)) return true
+        if (isPropertyOrNestedPath(prop, itemName)) return true
         ;(parentViewModel as Record<string, unknown>)[prop as string] = value
         return true
       },
@@ -193,7 +197,7 @@ export function isCustomComponent(element: HTMLElement): boolean {
 }
 
 function isExternalDependency(propPath: string, itemName: string, collectionName: string): boolean {
-  return !isNestedPropertyPath(propPath, itemName) && propPath !== collectionName
+  return !isPropertyOrNestedPath(propPath, itemName) && propPath !== collectionName
 }
 
 function extractExtraDependencies(

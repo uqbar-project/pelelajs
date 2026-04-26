@@ -152,6 +152,15 @@ describe('assertViewModelProperty', () => {
     }).not.toThrow()
   })
 
+  it('should allow null at level 2 (user.profile = null) to support async loading states', () => {
+    const viewModel = { user: { profile: null as unknown as object } }
+    const element = document.createElement('div')
+
+    expect(() => {
+      assertViewModelProperty(viewModel, 'user.profile.bio', 'bind-value', element)
+    }).not.toThrow()
+  })
+
   it('should not use fast path for dotted properties that exist as literal keys: eg. "user.name" when user does not exist', () => {
     const viewModel = { 'user.name': 'literal value' }
     const element = document.createElement('div')

@@ -16,23 +16,24 @@ function getCssImport(pelelaFilePath: string): string {
   return ''
 }
 
+// biome-ignore format: <line length exceeds 100 due to comprehensive HTML tags list>
+const STANDARD_HTML_TAGS = [
+  'html', 'head', 'title', 'body', 'div', 'span', 'p', 'br', 'hr',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+  'a', 'img', 'script', 'style', 'link', 'meta', 'base', 'form', 'input',
+  'button', 'select', 'option', 'textarea', 'label', 'table', 'tr', 'td',
+  'th', 'thead', 'tbody', 'tfoot', 'caption', 'col', 'colgroup', 'section',
+  'article', 'nav', 'aside', 'header', 'footer', 'main', 'figure', 'figcaption',
+  'iframe', 'canvas', 'svg', 'math', 'video', 'audio', 'source', 'track',
+  'map', 'area', 'object', 'param', 'embed', 'details', 'summary', 'dialog',
+  'template', 'slot', 'time', 'data', 'code', 'pre', 'blockquote', 'q',
+  'cite', 'abbr', 'address', 'bdo', 'ins', 'del', 'small', 'strong', 'em',
+  'mark', 'sub', 'sup', 'var', 'samp', 'kbd', 'output', 'progress', 'meter',
+  'fieldset', 'legend', 'optgroup', 'datalist',
+] as const
+
 function isStandardHtmlTag(tagName: string): boolean {
-  // biome-ignore format: <line length exceeds 100 due to comprehensive HTML tags list>
-  const standardHtmlTags = [
-    'html', 'head', 'title', 'body', 'div', 'span', 'p', 'br', 'hr',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'dl', 'dt', 'dd',
-    'a', 'img', 'script', 'style', 'link', 'meta', 'base', 'form', 'input',
-    'button', 'select', 'option', 'textarea', 'label', 'table', 'tr', 'td',
-    'th', 'thead', 'tbody', 'tfoot', 'caption', 'col', 'colgroup', 'section',
-    'article', 'nav', 'aside', 'header', 'footer', 'main', 'figure', 'figcaption',
-    'iframe', 'canvas', 'svg', 'math', 'video', 'audio', 'source', 'track',
-    'map', 'area', 'object', 'param', 'embed', 'details', 'summary', 'dialog',
-    'template', 'slot', 'time', 'data', 'code', 'pre', 'blockquote', 'q',
-    'cite', 'abbr', 'address', 'bdo', 'ins', 'del', 'small', 'strong', 'em',
-    'mark', 'sub', 'sup', 'var', 'samp', 'kbd', 'output', 'progress', 'meter',
-    'fieldset', 'legend', 'optgroup', 'datalist', 'keygen', 'textarea', 'label',
-  ]
-  return standardHtmlTags.includes(tagName.toLowerCase())
+  return STANDARD_HTML_TAGS.includes(tagName.toLowerCase() as (typeof STANDARD_HTML_TAGS)[number])
 }
 
 export function isRootPelelaOrComponent(tagName: string): boolean {
@@ -43,19 +44,10 @@ export function extractLinkAttributeMatches(
   sourceCode: string,
 ): Array<{ tagName: string; attributeName: string }> {
   const linkAttributePattern = /<(\w+)[^>]*\b(link-[a-zA-Z0-9_-]+)[^>]*>/g
-  const matches: Array<{ tagName: string; attributeName: string }> = []
-  let match: RegExpExecArray | null
-
-  match = linkAttributePattern.exec(sourceCode)
-  while (match !== null) {
-    matches.push({
-      tagName: match[1].toLowerCase(),
-      attributeName: match[2],
-    })
-    match = linkAttributePattern.exec(sourceCode)
-  }
-
-  return matches
+  return Array.from(sourceCode.matchAll(linkAttributePattern), (match) => ({
+    tagName: match[1].toLowerCase(),
+    attributeName: match[2],
+  }))
 }
 
 function validateNoForbiddenHtmlAttributes(
@@ -138,7 +130,7 @@ function validateNoForbiddenRootAttributes(
 
   const foundPattern = forbiddenPatterns.find((pattern) => pattern.test(attributes))
 
-  if (foundPattern && ['pelela', 'component'].includes(rootTagMatch[1].toLowerCase())) {
+  if (foundPattern) {
     errorFn(
       t('compiler.forbiddenRootAttribute', {
         filePath,

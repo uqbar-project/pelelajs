@@ -54,8 +54,8 @@ describe('router', () => {
 
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      expect(container.querySelector('pelela')).toBeDefined()
-      expect(container.querySelector('h1')).toBeDefined()
+      expect(container.querySelector('pelela')).toBeInstanceOf(HTMLElement)
+      expect(container.querySelector('h1')).toBeInstanceOf(HTMLHeadingElement)
     })
 
     it('should render the initial route content with bindings', () => {
@@ -121,7 +121,7 @@ describe('router', () => {
       router.navigateTo('/product/42')
 
       expect(container.querySelector('h1')).toBeNull()
-      expect(container.querySelector('p')).toBeDefined()
+      expect(container.querySelector('p')).toBeInstanceOf(HTMLParagraphElement)
     })
 
     it('should update the browser URL', () => {
@@ -266,13 +266,13 @@ describe('router', () => {
       ])
 
       router.navigateTo('/product/42')
-      expect(container.querySelector('p')).toBeDefined()
+      expect(container.querySelector('p')).toBeInstanceOf(HTMLParagraphElement)
 
       // Simulate browser back: change URL then fire popstate
       window.history.replaceState(null, '', '/')
       window.dispatchEvent(new PopStateEvent('popstate'))
 
-      expect(container.querySelector('h1')).toBeDefined()
+      expect(container.querySelector('h1')).toBeInstanceOf(HTMLHeadingElement)
       expect(container.querySelector('h1')!.innerHTML).toBe('3')
     })
 

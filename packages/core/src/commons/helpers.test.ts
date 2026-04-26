@@ -1,16 +1,20 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import {
   extractElementSnippet,
   filterOwnElements,
-  isNestedPropertyPath,
   isObject,
+  isPropertyOrNestedPath,
   toCamelCase,
   toKebabCase,
   unwrapTemplate,
 } from './helpers'
 
 describe('helpers', () => {
+  afterEach(() => {
+    clearComponentRegistry()
+  })
+
   describe('isObject', () => {
     it('should return true for plain objects', () => {
       expect(isObject({})).toBe(true)
@@ -83,6 +87,21 @@ describe('helpers', () => {
       expect(unwrapTemplate(template)).toBe('Content')
     })
 
+    it('should throw error for mismatched opening and closing tags', () => {
+      const template = '<pelela view-model="Test">Content</component>'
+      expect(() => unwrapTemplate(template)).toThrow('Malformed template')
+    })
+
+    it('should throw error for malformed template without closing tag', () => {
+      const template = '<pelela view-model="Test">Content'
+      expect(() => unwrapTemplate(template)).toThrow('Malformed template')
+    })
+
+    it('should throw error for template with wrong tag name', () => {
+      const template = '<div>Content</div>'
+      expect(() => unwrapTemplate(template)).toThrow('Malformed template')
+    })
+
     it('should handle whitespace and newlines', () => {
       const template = `
         <component view-model="Test">
@@ -90,11 +109,6 @@ describe('helpers', () => {
         </component>
       `
       expect(unwrapTemplate(template)).toBe('<div>Content</div>')
-    })
-
-    it('should return original string if no match found', () => {
-      const template = '<div>No Root</div>'
-      expect(unwrapTemplate(template)).toBe('<div>No Root</div>')
     })
   })
 
@@ -138,8 +152,6 @@ describe('helpers', () => {
 
       const filtered = filterOwnElements([nested], root)
       expect(filtered).not.toContain(nested)
-
-      clearComponentRegistry()
     })
   })
 
@@ -175,26 +187,26 @@ describe('helpers', () => {
     })
   })
 
-  describe('isNestedPropertyPath', () => {
+  describe('isPropertyOrNestedPath', () => {
     it('should return true for property matching root', () => {
-      expect(isNestedPropertyPath('item', 'item')).toBe(true)
+      expect(isPropertyOrNestedPath('item', 'item')).toBe(true)
     })
 
     it('should return true for property starting with root and dot', () => {
-      expect(isNestedPropertyPath('item.name', 'item')).toBe(true)
-      expect(isNestedPropertyPath('item.value', 'item')).toBe(true)
+      expect(isPropertyOrNestedPath('item.name', 'item')).toBe(true)
+      expect(isPropertyOrNestedPath('item.value', 'item')).toBe(true)
     })
 
     it('should return false for different property', () => {
-      expect(isNestedPropertyPath('other', 'item')).toBe(false)
+      expect(isPropertyOrNestedPath('other', 'item')).toBe(false)
     })
 
     it('should return false for property without dot separator', () => {
-      expect(isNestedPropertyPath('itemname', 'item')).toBe(false)
+      expect(isPropertyOrNestedPath('itemname', 'item')).toBe(false)
     })
 
     it('should return false for symbol properties', () => {
-      expect(isNestedPropertyPath(Symbol('test'), 'item')).toBe(false)
+      expect(isPropertyOrNestedPath(Symbol('test'), 'item')).toBe(false)
     })
   })
 })

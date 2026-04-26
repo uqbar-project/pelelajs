@@ -71,7 +71,7 @@ export const router = {
    */
   navigateTo(path: string): void {
     if (!container) {
-      throw new RoutingError('/', 'route-not-found')
+      throw new RoutingError('navigateTo()', 'router-not-started')
     }
 
     const url = new URL(path, window.location.origin)

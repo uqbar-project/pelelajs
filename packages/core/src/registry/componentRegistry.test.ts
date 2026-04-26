@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearComponentRegistry, defineComponent, getComponentEntry } from './componentRegistry'
+import {
+  clearComponentRegistry,
+  defineComponent,
+  getComponentByTag,
+  getComponentEntry,
+  getRegisteredTags,
+} from './componentRegistry'
 import { clearRegistry, getViewModel } from './viewModelRegistry'
 
 class TodoList {
@@ -72,6 +78,22 @@ describe('componentRegistry', () => {
       expect(getComponentEntry(UserProfile)).toBeDefined()
     })
 
+    it('should remove obsolete entries in componentsByTag when constructor is replaced', () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      defineComponent('Shared', TodoList, '<template1></template1>')
+
+      const entryBefore = getComponentByTag('shared')
+      expect(entryBefore).toBeDefined()
+      expect(entryBefore!.creator).toBe(TodoList)
+
+      defineComponent('Shared', UserProfile, '<template2></template2>')
+
+      const entryAfter = getComponentByTag('shared')
+      expect(entryAfter).toBeDefined()
+      expect(entryAfter!.creator).toBe(UserProfile)
+      expect(entryAfter!.creator).not.toBe(TodoList)
+    })
+
     it('should allow registering multiple components with different names', () => {
       defineComponent('TodoList', TodoList, '<pelela view-model="TodoList"></pelela>')
       defineComponent('UserProfile', UserProfile, '<pelela view-model="UserProfile"></pelela>')
@@ -93,6 +115,39 @@ describe('componentRegistry', () => {
 
     it('should return undefined for an unregistered component', () => {
       expect(getComponentEntry(TodoList)).toBeUndefined()
+    })
+  })
+
+  describe('getComponentByTag', () => {
+    it('should return the entry for a registered component using kebab-case tag', () => {
+      const template = '<pelela view-model="TodoList"></pelela>'
+      defineComponent('TodoList', TodoList, template)
+
+      const entry = getComponentByTag('todo-list')
+
+      expect(entry).toBeDefined()
+      expect(entry!.creator).toBe(TodoList)
+      expect(entry!.entry).toEqual({ name: 'TodoList', template })
+    })
+
+    it('should return undefined for a non-existent component tag', () => {
+      expect(getComponentByTag('non-existent')).toBeUndefined()
+    })
+  })
+
+  describe('getRegisteredTags', () => {
+    it('should return array with kebab-case tag of registered component', () => {
+      defineComponent('TodoList', TodoList, '<pelela view-model="TodoList"></pelela>')
+
+      const tags = getRegisteredTags()
+
+      expect(tags).toContain('todo-list')
+    })
+
+    it('should return empty array when no components are registered', () => {
+      const tags = getRegisteredTags()
+
+      expect(tags).toEqual([])
     })
   })
 

@@ -13,6 +13,7 @@
     - **Polimorfismo:** Preferir polimorfismo sobre condicionales. Evitar `instanceof` (excepto en excepciones).
     - **Declaratividad:** Usar funciones de orden superior (`map`, `filter`, `reduce`). Nada de loops imperativos (`for`, `break`, `continue`).
     - **Simplicidad:** Soluciones directas antes que complejidad innecesaria.
+    - **Unit tests**: Para evitar el efecto colateral, preferir afterEach antes que repetir un método de cleanup en cada test. Además si hay un error el cleanup no se ejecuta.
   </logic_and_design>
 
   <performance_and_lifecycle>
