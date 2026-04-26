@@ -106,7 +106,7 @@ function findComponentFiles(
 }
 
 function kebabToCamelCase(name: string): string {
-  return name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+  return name.replace(/[-.]([a-z])/g, (_, letter) => letter.toUpperCase())
 }
 
 function generateAutoRegistrationCode(

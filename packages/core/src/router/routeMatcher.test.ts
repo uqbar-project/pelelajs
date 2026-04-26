@@ -182,5 +182,11 @@ describe('routeMatcher', () => {
 
       expect(result.searchParameters).toEqual({ name: 'María' })
     })
+
+    it('should fall back to raw value when URI component is malformed', () => {
+      const result = matchRoute('/product/%', '', ROUTES)
+
+      expect(result.urlParameters).toEqual({ id: '%' })
+    })
   })
 })

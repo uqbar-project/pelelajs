@@ -40,7 +40,10 @@ export function clearComponentRegistry(): void {
  * Example: Home -> home, UserProfile -> user-profile
  */
 function camelToKebab(name: string): string {
-  return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+    .toLowerCase()
 }
 
 /**

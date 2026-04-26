@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearRegistry, getViewModel } from '../registry/viewModelRegistry'
-import { clearComponentRegistry, defineComponent, getComponentEntry } from './componentRegistry'
+import {
+  autoRegisterComponent,
+  clearComponentRegistry,
+  defineComponent,
+  getComponentEntry,
+  inferComponentName,
+} from './componentRegistry'
 
 class TodoList {
   items: string[] = []
@@ -104,6 +110,53 @@ describe('componentRegistry', () => {
       clearComponentRegistry()
 
       expect(getComponentEntry(TodoList)).toBeUndefined()
+    })
+  })
+
+  describe('inferComponentName', () => {
+    it('should convert simple camelCase to kebab-case', () => {
+      class Home {}
+      expect(inferComponentName(Home)).toBe('home')
+    })
+
+    it('should convert multi-word camelCase to kebab-case', () => {
+      class ShoppingCart {}
+      expect(inferComponentName(ShoppingCart)).toBe('shopping-cart')
+    })
+
+    it('should handle acronyms correctly', () => {
+      class XMLParser {}
+      expect(inferComponentName(XMLParser)).toBe('xml-parser')
+    })
+
+    it('should handle numbers correctly', () => {
+      class User2Profile {}
+      expect(inferComponentName(User2Profile)).toBe('user2-profile')
+    })
+
+    it('should handle consecutive uppercase letters', () => {
+      class HTTPRequest {}
+      expect(inferComponentName(HTTPRequest)).toBe('http-request')
+    })
+  })
+
+  describe('autoRegisterComponent', () => {
+    it('should register component with inferred name', () => {
+      const template = '<pelela view-model="TodoList"></pelela>'
+      autoRegisterComponent(TodoList, template)
+
+      expect(getViewModel('todo-list')).toBe(TodoList)
+      const entry = getComponentEntry(TodoList)
+      expect(entry).toBeDefined()
+      expect(entry!.name).toBe('todo-list')
+      expect(entry!.template).toBe(template)
+    })
+
+    it('should use kebab-case for multi-word class names', () => {
+      const template = '<pelela view-model="UserProfile"></pelela>'
+      autoRegisterComponent(UserProfile, template)
+
+      expect(getViewModel('user-profile')).toBe(UserProfile)
     })
   })
 })

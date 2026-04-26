@@ -1,4 +1,5 @@
 import * as fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pelelajsPlugin } from './index'
@@ -7,7 +8,7 @@ const VIRTUAL_MODULE_ID = 'virtual:pelela-auto-register'
 const RESOLVED_VIRTUAL_ID = '\0virtual:pelela-auto-register'
 
 function createTempDir(): string {
-  return fs.mkdtempSync(path.join(process.cwd(), 'test-fixtures-'))
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'test-fixtures-'))
 }
 
 function removeTempDir(dir: string): void {
@@ -140,10 +141,7 @@ describe('pelelajsPlugin', () => {
 
     it('handles component names with .ts in the middle', () => {
       const srcDir = path.join(tempDir, 'src')
-      fs.writeFileSync(
-        path.join(srcDir, 'foo.tsfile.ts'),
-        'export class FooTsfile {}',
-      )
+      fs.writeFileSync(path.join(srcDir, 'foo.tsfile.ts'), 'export class FooTsfile {}')
       fs.writeFileSync(
         path.join(srcDir, 'foo.tsfile.pelela'),
         '<pelela view-model="FooTsfile"><h1>Test</h1></pelela>',
@@ -159,9 +157,7 @@ describe('pelelajsPlugin', () => {
 
       expect(result).toContain('import { FooTsfile } from "./src/foo.tsfile.ts"')
       expect(result).toContain('import fooTsfileTemplate from "./src/foo.tsfile.pelela"')
-      expect(result).toContain(
-        'defineComponent("FooTsfile", FooTsfile, fooTsfileTemplate)',
-      )
+      expect(result).toContain('defineComponent("FooTsfile", FooTsfile, fooTsfileTemplate)')
 
       process.cwd = originalCwd
     })
@@ -229,6 +225,21 @@ describe('pelelajsPlugin', () => {
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
       expect(errors.some((e) => e.includes('view-model'))).toBe(true)
+    })
+
+    it('reports error when pelela tags are unbalanced', () => {
+      const pelelaPath = path.join(tempDir, 'unbalanced.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><h1>Missing closing tag</h1>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('unbalanced'))).toBe(true)
     })
 
     it('includes css import when matching css file exists', () => {

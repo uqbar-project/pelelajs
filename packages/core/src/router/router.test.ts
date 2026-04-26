@@ -186,6 +186,20 @@ describe('router', () => {
       }).toThrow(RoutingError)
     })
 
+    it('should throw RoutingError when component is not registered during navigation', async () => {
+      registerTestComponents()
+      await router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: '/product/:id', component: ProductDetail },
+      ])
+
+      clearComponentRegistry()
+
+      expect(() => {
+        router.navigateTo('/product/42')
+      }).toThrow(RoutingError)
+    })
+
     it('should NOT update the browser URL when navigation fails (atomicity)', async () => {
       registerTestComponents()
       await router.start(container, [{ path: '/', component: ProductCatalog }])
