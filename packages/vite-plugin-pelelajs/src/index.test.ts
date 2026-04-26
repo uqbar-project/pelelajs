@@ -345,6 +345,60 @@ describe('pelelajsPlugin', () => {
 
       expect(errors.some((e) => e.includes('forbiddenRootAttribute'))).toBe(true)
     })
+
+    it('reports error when component attribute lacks prop-* or link-* prefix', () => {
+      const pelelaPath = path.join(tempDir, 'invalid-comp.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><my-comp value="x"></my-comp></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(true)
+    })
+
+    it('accepts prop-* prefix on component attributes', () => {
+      const pelelaPath = path.join(tempDir, 'valid-props.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><my-comp prop-value="x"></my-comp></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+    })
+
+    it('accepts link-* prefix on component attributes', () => {
+      const pelelaPath = path.join(tempDir, 'valid-link.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><my-comp link-value="x"></my-comp></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+    })
   })
 
   describe('helper functions', () => {

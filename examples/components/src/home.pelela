@@ -3,7 +3,7 @@
   <div class="layout">
     <div class="list">
       <div for-each="person of people">
-        <person-row person="person" selected-index="selectedIndex"></person-row>
+        <person-row prop-person="person" prop-selected-index="selectedIndex"></person-row>
       </div>
 
     </div>
@@ -13,7 +13,7 @@
 
       <div class="counter-box">
         <h3>Selector por índice</h3>
-        <counter link-value="selectedIndex" total="totalPeople"></counter>
+        <counter link-value="selectedIndex" prop-total="totalPeople"></counter>
       </div>
     </div>
   </div>

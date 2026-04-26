@@ -618,7 +618,7 @@ describe('bindForEach', () => {
 
       container.innerHTML = `
         <div for-each="item of items">
-          <list-item name="item.name"></list-item>
+          <list-item prop-name="item.name"></list-item>
         </div>
       `
 
@@ -658,7 +658,7 @@ describe('bindForEach', () => {
 
       container.innerHTML = `
         <div for-each="item of items">
-          <list-item-reactive name="item.name" selected-id="parentSelectedId"></list-item-reactive>
+          <list-item-reactive prop-name="item.name" prop-selected-id="parentSelectedId"></list-item-reactive>
         </div>
       `
 

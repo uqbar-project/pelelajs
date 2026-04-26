@@ -50,6 +50,37 @@ export function extractLinkAttributeMatches(
   }))
 }
 
+function extractComponentAttributeMatches(
+  sourceCode: string,
+): Array<{ tagName: string; attributeName: string }> {
+  const componentAttributePattern = /<(\w+)[^>]*\s([a-zA-Z0-9_-]+)=/g
+  return Array.from(sourceCode.matchAll(componentAttributePattern), (match) => ({
+    tagName: match[1].toLowerCase(),
+    attributeName: match[2],
+  }))
+}
+
+function validateComponentAttributes(sourceCode: string, errorFn: (message: string) => void): void {
+  const componentMatches = extractComponentAttributeMatches(sourceCode)
+
+  const invalidMatches = componentMatches.filter(
+    (match) =>
+      !isRootPelelaOrComponent(match.tagName) &&
+      !isStandardHtmlTag(match.tagName) &&
+      !match.attributeName.startsWith('link-') &&
+      !match.attributeName.startsWith('prop-'),
+  )
+
+  invalidMatches.forEach((match) => {
+    errorFn(
+      t('compiler.invalidComponentAttribute', {
+        tag: match.tagName,
+        attr: match.attributeName,
+      }),
+    )
+  })
+}
+
 function validateNoForbiddenHtmlAttributes(
   sourceCode: string,
   filePath: string,
@@ -277,6 +308,7 @@ export function pelelajsPlugin(): Plugin {
       validatePelelaStructure(sourceCode, filePath, errorHandler)
       validateNoForbiddenRootAttributes(sourceCode, filePath, errorHandler)
       validateNoForbiddenHtmlAttributes(sourceCode, filePath, errorHandler)
+      validateComponentAttributes(sourceCode, errorHandler)
       validateNoForeignSyntax(sourceCode, filePath, errorHandler)
       const viewModelName = extractViewModelName(sourceCode, filePath, errorHandler)
 

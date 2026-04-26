@@ -28,5 +28,15 @@
     "prefix": "binds",
     "body": ["bind-style=\"$1\""],
     "description": "Atributo bind-style para estilos dinámicos"
+  },
+  "prop-*": {
+    "prefix": "prop",
+    "body": ["prop-$1=\"$2\""],
+    "description": "Atributo prop-* para one-way binding en componentes"
+  },
+  "link-*": {
+    "prefix": "link",
+    "body": ["link-$1=\"$2\""],
+    "description": "Atributo link-* para two-way binding en componentes"
   }
 }

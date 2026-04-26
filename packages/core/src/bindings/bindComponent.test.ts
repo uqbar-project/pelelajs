@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { initializeI18n } from '../commons/i18n'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import type { PelelaElement } from '../types'
@@ -10,6 +11,7 @@ describe('bindComponent', () => {
   let container: HTMLElement
 
   beforeEach(() => {
+    initializeI18n('en')
     container = document.createElement('div')
     document.body.appendChild(container)
     clearComponentRegistry()
@@ -25,7 +27,7 @@ describe('bindComponent', () => {
       '<component view-model="ChildVM"><span bind-content="message"></span></component>',
     )
 
-    container.innerHTML = '<child-comp message="parentMessage"></child-comp>'
+    container.innerHTML = '<child-comp prop-message="parentMessage"></child-comp>'
 
     const parentVM = createReactiveViewModel(
       {
@@ -50,7 +52,7 @@ describe('bindComponent', () => {
       '<component view-model="ChildVM"><span bind-content="count"></span></component>',
     )
 
-    container.innerHTML = '<counter-child count="parentCount"></counter-child>'
+    container.innerHTML = '<counter-child prop-count="parentCount"></counter-child>'
 
     const parentVM = createReactiveViewModel(
       {
@@ -101,8 +103,10 @@ describe('bindComponent', () => {
     expect(parentVM.parentVal).toBe('changed')
   })
 
-  describe('reserved HTML attributes filtering', () => {
-    it('should filter out standard HTML attributes', () => {
+  describe('prop-* prefix validation', () => {
+    it('should throw error when component attribute lacks prop-* or link-* prefix', () => {
+      initializeI18n('en')
+
       class ChildVM {
         message = ''
       }
@@ -112,8 +116,31 @@ describe('bindComponent', () => {
         '<component view-model="ChildVM"><span bind-content="message"></span></component>',
       )
 
-      container.innerHTML =
-        '<test-comp class="my-class" id="my-id" style="color:red" message="parentMessage"></test-comp>'
+      container.innerHTML = '<test-comp message="parentMessage"></test-comp>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          parentMessage: 'Hello',
+        },
+        () => {},
+      )
+
+      expect(() => {
+        setupComponentBindings(container, parentVM)
+      }).toThrow(Error)
+    })
+
+    it('should accept prop-* prefix for one-way binding', () => {
+      class ChildVM {
+        message = ''
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="message"></span></component>',
+      )
+
+      container.innerHTML = '<test-comp prop-message="parentMessage"></test-comp>'
 
       const parentVM = createReactiveViewModel(
         {
@@ -124,21 +151,19 @@ describe('bindComponent', () => {
 
       const bindings = setupComponentBindings(container, parentVM)
 
-      // Only 'message' should be mapped, not class, id, or style
       expect(bindings).toHaveLength(1)
       expect(bindings[0].mappings).toHaveLength(1)
       expect(bindings[0].mappings[0].childKey).toBe('message')
       expect(bindings[0].mappings[0].parentKey).toBe('parentMessage')
     })
 
-    it('should filter out aria-* attributes', () => {
+    it('should accept link-* prefix for two-way binding', () => {
       class ChildVM {
         value = ''
       }
-      defineComponent('aria-comp', ChildVM, '<component view-model="ChildVM"></component>')
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
 
-      container.innerHTML =
-        '<aria-comp aria-label="test" aria-hidden="true" value="parentValue"></aria-comp>'
+      container.innerHTML = '<test-comp link-value="parentValue"></test-comp>'
 
       const parentVM = createReactiveViewModel(
         {
@@ -149,87 +174,37 @@ describe('bindComponent', () => {
 
       const bindings = setupComponentBindings(container, parentVM)
 
-      // Only 'value' should be mapped, not aria-* attributes
       expect(bindings).toHaveLength(1)
       expect(bindings[0].mappings).toHaveLength(1)
       expect(bindings[0].mappings[0].childKey).toBe('value')
+      expect(bindings[0].mappings[0].parentKey).toBe('parentValue')
     })
 
-    it('should filter out data-* attributes', () => {
+    it('should accept mix of prop-* and link-* prefixes', () => {
       class ChildVM {
-        count = 0
+        oneWay = ''
+        twoWay = ''
       }
-      defineComponent('data-comp', ChildVM, '<component view-model="ChildVM"></component>')
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
 
       container.innerHTML =
-        '<data-comp data-id="123" data-name="test" count="parentCount"></data-comp>'
+        '<test-comp prop-one-way="parentOne" link-two-way="parentTwo"></test-comp>'
 
       const parentVM = createReactiveViewModel(
         {
-          parentCount: 10,
+          parentOne: 'value1',
+          parentTwo: 'value2',
         },
         () => {},
       )
 
       const bindings = setupComponentBindings(container, parentVM)
 
-      // Only 'count' should be mapped, not data-* attributes
-      expect(bindings).toHaveLength(1)
-      expect(bindings[0].mappings).toHaveLength(1)
-      expect(bindings[0].mappings[0].childKey).toBe('count')
-    })
-
-    it('should filter out slot, is, and role attributes', () => {
-      class ChildVM {
-        title = ''
-      }
-      defineComponent('slot-comp', ChildVM, '<component view-model="ChildVM"></component>')
-
-      container.innerHTML =
-        '<slot-comp slot="header" is="custom" role="button" title="parentTitle"></slot-comp>'
-
-      const parentVM = createReactiveViewModel(
-        {
-          parentTitle: 'Test',
-        },
-        () => {},
-      )
-
-      const bindings = setupComponentBindings(container, parentVM)
-
-      // Only 'title' should be mapped, not slot, is, or role
-      expect(bindings).toHaveLength(1)
-      expect(bindings[0].mappings).toHaveLength(1)
-      expect(bindings[0].mappings[0].childKey).toBe('title')
-    })
-
-    it('should map custom attributes that are not reserved', () => {
-      class ChildVM {
-        customProp = ''
-        anotherProp = ''
-      }
-      defineComponent('custom-comp', ChildVM, '<component view-model="ChildVM"></component>')
-
-      container.innerHTML =
-        '<custom-comp custom-prop="parentCustom" another-prop="parentAnother" class="ignored"></custom-comp>'
-
-      const parentVM = createReactiveViewModel(
-        {
-          parentCustom: 'value1',
-          parentAnother: 'value2',
-        },
-        () => {},
-      )
-
-      const bindings = setupComponentBindings(container, parentVM)
-
-      // customProp and anotherProp should be mapped, class should be filtered
       expect(bindings).toHaveLength(1)
       expect(bindings[0].mappings).toHaveLength(2)
-      const mappingKeys = bindings[0].mappings.map((m) => m.childKey)
-      expect(mappingKeys).toContain('customProp')
-      expect(mappingKeys).toContain('anotherProp')
-      expect(mappingKeys).not.toContain('class')
+      const mappingKeys = bindings[0].mappings.map((mapping) => mapping.childKey)
+      expect(mappingKeys).toContain('oneWay')
+      expect(mappingKeys).toContain('twoWay')
     })
   })
 

@@ -1,4 +1,5 @@
 import { toCamelCase, unwrapTemplate } from '../commons/helpers'
+import { t } from '../commons/i18n'
 import { sanitizeHTML } from '../commons/sanitization'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
@@ -7,20 +8,14 @@ import { setupBindings } from './setupBindings'
 import type { ComponentBinding, ViewModel } from './types'
 
 const LINK_PREFIX = 'link-'
+const PROPS_PREFIX = 'prop-'
 
 function isLink(attr: Attr): boolean {
   return attr.name.startsWith(LINK_PREFIX)
 }
 
-function isReservedHtmlAttribute(attrName: string): boolean {
-  const reservedNames = ['class', 'id', 'style', 'slot', 'is', 'role']
-  const reservedPatterns = ['aria-', 'data-']
-  const lowerName = attrName.toLowerCase()
-
-  return (
-    reservedNames.includes(lowerName) ||
-    reservedPatterns.some((pattern) => lowerName.startsWith(pattern))
-  )
+function isProps(attr: Attr): boolean {
+  return attr.name.startsWith(PROPS_PREFIX)
 }
 
 function extractLinkBindings(
@@ -38,11 +33,24 @@ function extractOneWayBindings(
   attributes: NamedNodeMap,
 ): Array<{ parentKey: string; childKey: string }> {
   return Array.from(attributes)
-    .filter((attr) => !isLink(attr) && !isReservedHtmlAttribute(attr.name))
+    .filter(isProps)
     .map((attr) => ({
-      childKey: toCamelCase(attr.name),
+      childKey: toCamelCase(attr.name.substring(PROPS_PREFIX.length)),
       parentKey: attr.value,
     }))
+}
+
+function assertOnlyValidComponentAttributes(element: HTMLElement): void {
+  Array.from(element.attributes).forEach((attr) => {
+    if (!isLink(attr) && !isProps(attr)) {
+      throw new Error(
+        t('compiler.invalidComponentAttribute', {
+          tag: element.tagName.toLowerCase(),
+          attr: attr.name,
+        }),
+      )
+    }
+  })
 }
 
 export function setupComponentBindings<T extends object>(
@@ -60,6 +68,9 @@ export function setupComponentBindings<T extends object>(
     const tagName = element.tagName.toLowerCase()
     const componentDef = getComponentByTag(tagName)
     if (!componentDef) return
+
+    assertOnlyValidComponentAttributes(element)
+
     const instance = new componentDef.creator() as Record<string, unknown>
     const linkBindings = extractLinkBindings(element.attributes)
     const oneWayBindings = extractOneWayBindings(element.attributes)
