@@ -12,6 +12,17 @@ function isLink(attr: Attr): boolean {
   return attr.name.startsWith(LINK_PREFIX)
 }
 
+function isReservedHtmlAttribute(attrName: string): boolean {
+  const reservedNames = ['class', 'id', 'style', 'slot', 'is', 'role']
+  const reservedPatterns = ['aria-', 'data-']
+  const lowerName = attrName.toLowerCase()
+
+  return (
+    reservedNames.includes(lowerName) ||
+    reservedPatterns.some((pattern) => lowerName.startsWith(pattern))
+  )
+}
+
 function extractLinkBindings(
   attributes: NamedNodeMap,
 ): Array<{ parentKey: string; childKey: string }> {
@@ -27,7 +38,7 @@ function extractOneWayBindings(
   attributes: NamedNodeMap,
 ): Array<{ parentKey: string; childKey: string }> {
   return Array.from(attributes)
-    .filter((attr) => !isLink(attr))
+    .filter((attr) => !isLink(attr) && !isReservedHtmlAttribute(attr.name))
     .map((attr) => ({
       childKey: toCamelCase(attr.name),
       parentKey: attr.value,
@@ -60,6 +71,9 @@ export function setupComponentBindings<T extends object>(
       }
     })
 
+    // Buffer change paths during setup to avoid losing reactive updates
+    const bufferedPaths: string[] = []
+    const isSetupComplete = { value: false }
     let renderChild: (changedPath?: string) => void = () => {}
     const reactiveInstance = createReactiveViewModel(instance, (changedPath: string) => {
       const linkBinding = linkBindings.find((binding) => binding.childKey === changedPath)
@@ -68,12 +82,23 @@ export function setupComponentBindings<T extends object>(
           reactiveInstance[changedPath]
       }
 
-      renderChild(changedPath)
+      // Buffer changes during setup, render directly after setup
+      if (!isSetupComplete.value) {
+        bufferedPaths.push(changedPath)
+      } else {
+        renderChild(changedPath)
+      }
     })
 
     const sanitizedHtml = sanitizeHTML(componentDef.entry.template)
     element.innerHTML = unwrapTemplate(sanitizedHtml)
     renderChild = setupBindings(element, reactiveInstance)
+    isSetupComplete.value = true
+
+    // Flush buffered changes after setupBindings assigns renderChild
+    bufferedPaths.forEach((path) => {
+      renderChild(path)
+    })
     ;(element as PelelaElement<Record<string, unknown>>).__pelelaViewModel = reactiveInstance
 
     bindings.push({

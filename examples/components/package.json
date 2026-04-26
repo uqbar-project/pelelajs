@@ -1,7 +1,7 @@
 {
   "name": "pelelajs-example-components",
   "version": "1.0.0",
-  "description": "Ejemplo de routing en PelelaJS",
+  "description": "Ejemplo de componentización en PelelaJS",
   "main": "index.js",
   "scripts": {
     "dev": "vite",

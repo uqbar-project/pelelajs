@@ -46,7 +46,7 @@ export const vscodeStub = {
     kind: number
     detail: string
     sortText: string
-    insertText: any
+    insertText: unknown
     constructor(label: string, kind: number) {
       this.label = label
       this.kind = kind

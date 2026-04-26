@@ -4,6 +4,7 @@ import {
   InvalidDOMStructureError,
   InvalidPropertyTypeError,
 } from '../errors/index'
+import { getComponentByTag } from '../registry/componentRegistry'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
@@ -167,13 +168,28 @@ export function setupSingleForEachBinding<T extends object>(
   }
 }
 
-function isBindingAttribute(attrName: string): boolean {
-  return (
-    attrName.startsWith('bind-') ||
-    attrName.startsWith('link-') ||
-    attrName === 'click' ||
-    attrName.includes('-')
-  )
+export function isBindingAttribute(attrName: string): boolean {
+  // Exclude standard HTML attributes that contain hyphens
+  if (
+    /^aria-/.test(attrName) ||
+    /^data-/.test(attrName) ||
+    attrName === 'role' ||
+    /^xml-/.test(attrName)
+  ) {
+    return false
+  }
+  // Accept only framework binding prefixes
+  return attrName.startsWith('bind-') || attrName.startsWith('link-') || attrName === 'click'
+}
+
+export function isCustomComponent(element: HTMLElement): boolean {
+  const tagName = element.tagName.toLowerCase()
+  // Custom elements must contain a hyphen per Web Components spec
+  if (!tagName.includes('-')) {
+    return false
+  }
+  // Or be registered in the component registry
+  return getComponentByTag(tagName) !== undefined
 }
 
 function isExternalDependency(propPath: string, itemName: string, collectionName: string): boolean {
@@ -181,23 +197,26 @@ function isExternalDependency(propPath: string, itemName: string, collectionName
 }
 
 function extractExtraDependencies(
-  element: HTMLElement,
+  parentElement: HTMLElement,
   itemName: string,
   collectionName: string,
 ): string[] {
-  const deps = new Set<string>()
-  const allElements = [element, ...Array.from(element.querySelectorAll('*'))]
-  for (const el of allElements) {
-    for (const attr of Array.from(el.attributes)) {
-      if (isBindingAttribute(attr.name)) {
-        const propPath = attr.value
-        if (isExternalDependency(propPath, itemName, collectionName)) {
-          deps.add(propPath.split('.')[0])
-        }
-      }
-    }
-  }
-  return Array.from(deps)
+  const allElements = [
+    parentElement,
+    ...Array.from(parentElement.querySelectorAll<HTMLElement>('*')),
+  ]
+  const allAttributes = allElements.flatMap((element) => Array.from(element.attributes))
+
+  return allAttributes
+    .filter((attr) => {
+      const isFrameworkBinding = isBindingAttribute(attr.name)
+      const isKebabCaseProp = attr.name.includes('-') && !isFrameworkBinding
+      const element = attr.ownerElement as HTMLElement
+      return isFrameworkBinding || (isKebabCaseProp && isCustomComponent(element))
+    })
+    .map((attr) => attr.value)
+    .filter((propPath) => propPath && isExternalDependency(propPath, itemName, collectionName))
+    .map((propPath) => propPath.split('.')[0])
 }
 
 export function setupForEachBindings<T extends object>(

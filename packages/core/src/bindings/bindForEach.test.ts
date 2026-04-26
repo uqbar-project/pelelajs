@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   InvalidBindingSyntaxError,
+  InvalidDOMStructureError,
   InvalidPropertyTypeError,
   PropertyValidationError,
 } from '../errors/index'
@@ -8,6 +9,8 @@ import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import {
   createExtendedViewModel,
+  isBindingAttribute,
+  isCustomComponent,
   renderForEachBindings,
   setupForEachBindings,
   setupSingleForEachBinding,
@@ -120,7 +123,10 @@ describe('bindForEach', () => {
 
       expect(() => {
         setupSingleForEachBinding(element, viewModel)
-      }).toThrow('element has no parent node')
+      }).toThrowError(InvalidDOMStructureError)
+      expect(() => {
+        setupSingleForEachBinding(element, viewModel)
+      }).toThrowError(/element has no parent node/)
     })
 
     it('should set item value through proxy', () => {
@@ -131,6 +137,53 @@ describe('bindForEach', () => {
       // Test proxy set handler for item (lines 47-49)
       extendedViewModel.item = 'updated'
       expect(itemRef.current).toBe('updated')
+    })
+
+    describe('isBindingAttribute', () => {
+      it('should accept framework binding prefixes', () => {
+        expect(isBindingAttribute('bind-content')).toBe(true)
+        expect(isBindingAttribute('bind-class')).toBe(true)
+        expect(isBindingAttribute('link-value')).toBe(true)
+        expect(isBindingAttribute('click')).toBe(true)
+      })
+
+      it('should reject standard HTML attributes with hyphens', () => {
+        expect(isBindingAttribute('aria-label')).toBe(false)
+        expect(isBindingAttribute('aria-hidden')).toBe(false)
+        expect(isBindingAttribute('data-test')).toBe(false)
+        expect(isBindingAttribute('data-id')).toBe(false)
+        expect(isBindingAttribute('role')).toBe(false)
+        expect(isBindingAttribute('xml:lang')).toBe(false)
+      })
+
+      it('should reject custom kebab-case props', () => {
+        expect(isBindingAttribute('custom-prop')).toBe(false)
+        expect(isBindingAttribute('my-attribute')).toBe(false)
+      })
+    })
+
+    describe('isCustomComponent', () => {
+      it('should return true for registered components with hyphen in tag name', () => {
+        class TestVM {
+          value = ''
+        }
+        defineComponent('custom-component', TestVM, '<component view-model="TestVM"></component>')
+
+        const element = document.createElement('custom-component')
+        expect(isCustomComponent(element)).toBe(true)
+      })
+
+      it('should return false for standard HTML elements', () => {
+        const div = document.createElement('div')
+        const span = document.createElement('span')
+        expect(isCustomComponent(div)).toBe(false)
+        expect(isCustomComponent(span)).toBe(false)
+      })
+
+      it('should return false for unregistered custom elements', () => {
+        const element = document.createElement('unregistered-comp')
+        expect(isCustomComponent(element)).toBe(false)
+      })
     })
 
     it('should handle setting nested properties through proxy', () => {
@@ -186,6 +239,10 @@ describe('bindForEach', () => {
   })
 
   describe('renderForEachBindings', () => {
+    afterEach(() => {
+      clearComponentRegistry()
+    })
+
     it('should render elements for initial array', () => {
       container.innerHTML = `
         <div for-each="user of users">
@@ -576,8 +633,6 @@ describe('bindForEach', () => {
       expect(spans).toHaveLength(2)
       expect(spans[0].innerHTML).toBe('Item A')
       expect(spans[1].innerHTML).toBe('Item B')
-
-      clearComponentRegistry()
     })
 
     it('should be reactive for components inside for-each loop when parent property changes', () => {
@@ -607,6 +662,7 @@ describe('bindForEach', () => {
         </div>
       `
 
+      let render: (path?: string) => void = () => {}
       const parentVM = createReactiveViewModel(
         {
           items: [{ name: 'Item 1' }, { name: 'Item 2' }],
@@ -617,7 +673,7 @@ describe('bindForEach', () => {
         },
       )
 
-      const render = setupBindings(container, parentVM)
+      render = setupBindings(container, parentVM)
 
       const spans = container.querySelectorAll('span')
       expect(spans[0].classList.contains('active')).toBe(true)
@@ -627,8 +683,6 @@ describe('bindForEach', () => {
 
       expect(spans[0].classList.contains('active')).toBe(false)
       expect(spans[1].classList.contains('active')).toBe(true)
-
-      clearComponentRegistry()
     })
   })
 })

@@ -13,22 +13,26 @@ const templatesByConstructor = new Map<ViewModelConstructor, ComponentEntry>()
  * Combines ViewModel registration with template association in a single call.
  * Safe for HMR: overwrites existing registration with a warning.
  */
-export function defineComponent(name: string, ctor: ViewModelConstructor, template: string): void {
-  const existingCtor = getViewModel(name)
+export function defineComponent(
+  name: string,
+  creator: ViewModelConstructor,
+  template: string,
+): void {
+  const existingCreator = getViewModel(name)
 
-  if (existingCtor && existingCtor !== ctor) {
+  if (existingCreator && existingCreator !== creator) {
     console.warn(`[pelela] Component "${name}" re-evaluated. Replacing old constructor.`)
-    templatesByConstructor.delete(existingCtor)
-    replaceViewModel(name, ctor)
-  } else if (!existingCtor) {
-    registerViewModel(name, ctor)
+    templatesByConstructor.delete(existingCreator)
+    replaceViewModel(name, creator)
+  } else if (!existingCreator) {
+    registerViewModel(name, creator)
   }
 
-  templatesByConstructor.set(ctor, { name, template })
+  templatesByConstructor.set(creator, { name, template })
 }
 
-export function getComponentEntry(ctor: ViewModelConstructor): ComponentEntry | undefined {
-  return templatesByConstructor.get(ctor)
+export function getComponentEntry(creator: ViewModelConstructor): ComponentEntry | undefined {
+  return templatesByConstructor.get(creator)
 }
 
 export function clearComponentRegistry(): void {
@@ -50,19 +54,19 @@ function camelToKebab(name: string): string {
  * Infers the component name from a ViewModel constructor.
  * Uses the constructor name and converts it to kebab-case.
  */
-export function inferComponentName(ctor: ViewModelConstructor): string {
-  return camelToKebab(ctor.name)
+export function inferComponentName(creator: ViewModelConstructor): string {
+  return camelToKebab(creator.name)
 }
 
 /**
  * Automatically registers a component with its template.
  * The component class and template must be provided by the caller.
  *
- * @param ctor - The ViewModel constructor to register
+ * @param creator - The ViewModel constructor to register
  * @param template - The template string for the component
  * @throws RoutingError if registration fails
  */
-export function autoRegisterComponent(ctor: ViewModelConstructor, template: string): void {
-  const componentName = inferComponentName(ctor)
-  defineComponent(componentName, ctor, template)
+export function autoRegisterComponent(creator: ViewModelConstructor, template: string): void {
+  const componentName = inferComponentName(creator)
+  defineComponent(componentName, creator, template)
 }
