@@ -6,7 +6,12 @@ import {
 } from '../errors/index'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
-import { createExtendedViewModel, renderForEachBindings, setupForEachBindings, setupSingleForEachBinding } from './bindForEach'
+import {
+  createExtendedViewModel,
+  renderForEachBindings,
+  setupForEachBindings,
+  setupSingleForEachBinding,
+} from './bindForEach'
 import { setupBindings } from './setupBindings'
 
 describe('bindForEach', () => {
