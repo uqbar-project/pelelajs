@@ -63,24 +63,19 @@ describe('viewModelRegistry', () => {
   describe('getViewModel', () => {
     it('should return the registered constructor', () => {
       registerViewModel('GetTest', TestViewModel)
-
-      const ctor = getViewModel('GetTest')
-
-      expect(ctor).toBe(TestViewModel)
+      const creator = getViewModel('GetTest')
+      expect(creator).toBe(TestViewModel)
     })
 
     it('should return undefined for unregistered names', () => {
-      const ctor = getViewModel('NonExistent')
-
-      expect(ctor).toBeUndefined()
+      const creator = getViewModel('NonExistent')
+      expect(creator).toBeUndefined()
     })
 
     it('should allow instantiating the returned constructor', () => {
       registerViewModel('Instantiable', TestViewModel)
-
-      const ctor = getViewModel('Instantiable')
-      const instance = ctor ? new ctor() : null
-
+      const creator = getViewModel('Instantiable')
+      const instance = creator ? new creator() : null
       expect(instance).toBeInstanceOf(TestViewModel)
       expect(instance).toHaveProperty('value', 0)
     })

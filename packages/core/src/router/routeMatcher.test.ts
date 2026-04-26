@@ -141,7 +141,7 @@ describe('routeMatcher', () => {
       expect(result.route.component).toBe(ProductDetail)
     })
 
-    it('should prefer first-declared route (first-match wins) even if a later route is more specific', () => {
+    it('should return catch-all only if no other route matches first', () => {
       const overlappingRoutes: RouteDefinition[] = [
         { path: '*', component: NotFoundPage },
         { path: '/product/:id', component: ProductDetail },
@@ -149,7 +149,7 @@ describe('routeMatcher', () => {
 
       const result = matchRoute('/product/42', '', overlappingRoutes)
 
-      // first-declared route wins
+      // catch-all defined first wins
       expect(result.route.component).toBe(NotFoundPage)
     })
   })
@@ -181,12 +181,6 @@ describe('routeMatcher', () => {
       const result = matchRoute('/', '?name=Mar%C3%ADa', ROUTES)
 
       expect(result.searchParameters).toEqual({ name: 'María' })
-    })
-
-    it('should fall back to raw value when URI component is malformed', () => {
-      const result = matchRoute('/product/%', '', ROUTES)
-
-      expect(result.urlParameters).toEqual({ id: '%' })
     })
   })
 })

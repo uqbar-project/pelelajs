@@ -1,3 +1,4 @@
+import { isObject } from './helpers'
 import { t } from './i18n'
 
 /**
@@ -33,7 +34,7 @@ export function sanitize<T>(value: T): T {
 
 function sanitizeInternal(value: unknown, seen: WeakSet<object>): unknown {
   if (typeof value === 'string') return escapeHTML(value)
-  if (value === null || typeof value !== 'object') return value
+  if (!isObject(value)) return value
 
   if (seen.has(value)) {
     throw new TypeError('Cannot sanitize circular references')

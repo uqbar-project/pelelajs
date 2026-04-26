@@ -1,6 +1,6 @@
 import { mountTemplate } from '../bootstrap/mountTemplate'
 import { RoutingError } from '../errors/RoutingError'
-import { getComponentEntry } from './componentRegistry'
+import { getComponentEntry } from '../registry/componentRegistry'
 import { matchRoute } from './routeMatcher'
 import type { MatchedRoute, RouteDefinition } from './types'
 
@@ -68,15 +68,10 @@ export const router = {
 
   /**
    * Programmatic navigation. Updates the URL and mounts the matching route.
-   * @param path - Absolute path (must start with '/')
    */
   navigateTo(path: string): void {
     if (!container) {
-      throw new RoutingError('navigateTo', 'router-not-started')
-    }
-
-    if (!path.startsWith('/')) {
-      throw new RoutingError(path, 'route-not-absolute')
+      throw new RoutingError('/', 'route-not-found')
     }
 
     const url = new URL(path, window.location.origin)

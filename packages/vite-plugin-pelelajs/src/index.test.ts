@@ -1,260 +1,179 @@
 import * as fs from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import type { PelelaVitePlugin } from '../index'
 import { pelelajsPlugin } from './index'
 
-const VIRTUAL_MODULE_ID = 'virtual:pelela-auto-register'
-const RESOLVED_VIRTUAL_ID = '\0virtual:pelela-auto-register'
-
-function createTempDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'test-fixtures-'))
-}
-
-function removeTempDir(dir: string): void {
-  fs.rmSync(dir, { recursive: true, force: true })
-}
-
-function getHandler<T>(hook: T): T extends { handler: infer H } ? H : T {
-  return (hook as { handler: never }).handler ?? hook
-}
+vi.mock('node:fs')
 
 describe('pelelajsPlugin', () => {
-  describe('resolveId', () => {
-    it('resolves virtual:pelela-auto-register to internal id', () => {
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.resolveId!)
+  const plugin = pelelajsPlugin() as PelelaVitePlugin
 
-      const result = handler.call(null as never, VIRTUAL_MODULE_ID, '', {} as never)
-
-      expect(result).toBe(RESOLVED_VIRTUAL_ID)
-    })
-
-    it('returns null for non-virtual imports', () => {
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.resolveId!)
-
-      const result = handler.call(null as never, './something.ts', '', {} as never)
-
-      expect(result).toBeNull()
-    })
+  it('should identify itself correctly', () => {
+    expect(plugin.name).toBe('vite-plugin-pelelajs')
   })
 
-  describe('load - virtual module', () => {
-    let tempDir: string
-
-    beforeEach(() => {
-      tempDir = createTempDir()
-      const srcDir = path.join(tempDir, 'src')
-      fs.mkdirSync(srcDir)
+  describe('load', () => {
+    it('should return null for non-pelela files', () => {
+      expect(plugin.load?.('test.ts')).toBeNull()
     })
 
-    afterEach(() => {
-      removeTempDir(tempDir)
-    })
+    it('should process a valid <pelela> template', () => {
+      const source = '<pelela view-model="TestVM"><div>Hello</div></pelela>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+      vi.mocked(fs.existsSync).mockReturnValue(false)
 
-    it('returns empty export when no components found', () => {
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-      const originalCwd = process.cwd
-
-      process.cwd = () => tempDir
-
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never)
-
-      expect(result).toBe('export {}')
-
-      process.cwd = originalCwd
-    })
-
-    it('generates registration code for simple component', () => {
-      const srcDir = path.join(tempDir, 'src')
-      fs.writeFileSync(path.join(srcDir, 'home.ts'), 'export class Home {}')
-      fs.writeFileSync(
-        path.join(srcDir, 'home.pelela'),
-        '<pelela view-model="Home"><h1>Hello</h1></pelela>',
-      )
-
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-      const originalCwd = process.cwd
-
-      process.cwd = () => tempDir
-
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
-
-      expect(result).toContain('import { Home } from "./src/home.ts"')
-      expect(result).toContain('import homeTemplate from "./src/home.pelela"')
-      expect(result).toContain('import { defineComponent } from "pelelajs"')
-      expect(result).toContain('defineComponent("Home", Home, homeTemplate)')
-
-      process.cwd = originalCwd
-    })
-
-    it('generates registration code for kebab-case component', () => {
-      const srcDir = path.join(tempDir, 'src')
-      fs.writeFileSync(path.join(srcDir, 'detail-special.ts'), 'export class DetailSpecial {}')
-      fs.writeFileSync(
-        path.join(srcDir, 'detail-special.pelela'),
-        '<pelela view-model="DetailSpecial"><h1>Special</h1></pelela>',
-      )
-
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-      const originalCwd = process.cwd
-
-      process.cwd = () => tempDir
-
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
-
-      expect(result).toContain('import { DetailSpecial } from "./src/detail-special.ts"')
-      expect(result).toContain('import detailSpecialTemplate from "./src/detail-special.pelela"')
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+      const result = load.call(context, 'test.pelela')
+      expect(result).toContain('export const viewModelName = "TestVM"')
       expect(result).toContain(
-        'defineComponent("DetailSpecial", DetailSpecial, detailSpecialTemplate)',
+        'const template = `<pelela view-model="TestVM"><div>Hello</div></pelela>`',
       )
-
-      process.cwd = originalCwd
     })
 
-    it('skips ts files without matching pelela template', () => {
-      const srcDir = path.join(tempDir, 'src')
-      fs.writeFileSync(path.join(srcDir, 'home.ts'), 'export class Home {}')
-      fs.writeFileSync(
-        path.join(srcDir, 'home.pelela'),
-        '<pelela view-model="Home"><h1>Hello</h1></pelela>',
+    it('should process a valid <component> template', () => {
+      const source = '<component view-model="MyComp"><span>Hi</span></component>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+      const result = load.call(context, 'test.pelela')
+      expect(result).toContain('export const viewModelName = "MyComp"')
+    })
+
+    it('should fail if view-model is missing', () => {
+      const source = '<component>No VM</component>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
+    it('should fail if multiple roots are present', () => {
+      const source = '<component view-model="A"></component><component view-model="B"></component>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
+    it('should fail if nested pelela elements are present', () => {
+      const source = '<pelela view-model="Outer"><pelela view-model="Inner"></pelela></pelela>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
+    it('should fail if nested component elements are present', () => {
+      const source =
+        '<component view-model="Outer"><component view-model="Inner"></component></component>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
+    it('should fail if mixed pelela and component elements are present', () => {
+      const source = '<pelela view-model="A"></pelela><component view-model="B"></component>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
+    it('should fail if foreign syntax {{}} is detected', () => {
+      const source = '<pelela view-model="A"><div>{{ wrong }}</div></pelela>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
+    it('should fail if a forbidden attribute (like link-*) is on the <pelela> tag', () => {
+      const source = '<pelela view-model="A" link-value="B"></pelela>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+      const lastError = errorSpy.mock.calls[0][0]
+      expect(lastError.includes('link-value') || lastError.includes('forbiddenRootAttribute')).toBe(
+        true,
       )
-      fs.writeFileSync(path.join(srcDir, 'orphan.ts'), 'export class Orphan {}')
-
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-      const originalCwd = process.cwd
-
-      process.cwd = () => tempDir
-
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
-
-      expect(result).toContain('import { Home }')
-      expect(result).not.toContain('Orphan')
-
-      process.cwd = originalCwd
     })
 
-    it('handles component names with .ts in the middle', () => {
-      const srcDir = path.join(tempDir, 'src')
-      fs.writeFileSync(path.join(srcDir, 'foo.tsfile.ts'), 'export class FooTsfile {}')
-      fs.writeFileSync(
-        path.join(srcDir, 'foo.tsfile.pelela'),
-        '<pelela view-model="FooTsfile"><h1>Test</h1></pelela>',
+    it('should fail if link-* is on the <component> root tag', () => {
+      const source = '<component view-model="A" link-value="B"></component>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+      const lastError = errorSpy.mock.calls[0][0]
+      expect(lastError.includes('link-value') || lastError.includes('forbiddenRootAttribute')).toBe(
+        true,
       )
-
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-      const originalCwd = process.cwd
-
-      process.cwd = () => tempDir
-
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
-
-      expect(result).toContain('import { FooTsfile } from "./src/foo.tsfile.ts"')
-      expect(result).toContain('import fooTsfileTemplate from "./src/foo.tsfile.pelela"')
-      expect(result).toContain('defineComponent("FooTsfile", FooTsfile, fooTsfileTemplate)')
-
-      process.cwd = originalCwd
-    })
-  })
-
-  describe('load - pelela files', () => {
-    let tempDir: string
-
-    beforeEach(() => {
-      tempDir = createTempDir()
     })
 
-    afterEach(() => {
-      removeTempDir(tempDir)
+    it('should NOT fail if link-* is on custom component tag (non-root)', () => {
+      const source = '<pelela view-model="Parent"><contador link-value="B"></contador></pelela>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
+
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
+
+      load.call(context, 'test.pelela')
+      expect(errorSpy).not.toHaveBeenCalled()
     })
 
-    it('returns null for non-pelela files', () => {
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
+    it('should fail if link-* is on HTML standard tag (non-root)', () => {
+      const source = '<pelela view-model="Parent"><div link-value="B">content</div></pelela>'
+      vi.mocked(fs.readFileSync).mockReturnValue(source)
 
-      const result = handler.call(null as never, '/some/file.ts', {} as never)
+      const errorSpy = vi.fn()
+      const context = { error: errorSpy }
+      const load = plugin.load as (this: unknown, id: string) => string
 
-      expect(result).toBeNull()
-    })
-
-    it('transforms pelela file into module with template and viewModelName', () => {
-      const pelelaPath = path.join(tempDir, 'home.pelela')
-      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><h1>Hello</h1></pelela>')
-
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-
-      const mockContext = { error: () => {} }
-      const result = handler.call(mockContext as never, pelelaPath, {} as never) as string
-
-      expect(result).toContain('export const viewModelName = "Home"')
-      expect(result).toContain('export default template')
-    })
-
-    it('reports error when pelela tag is missing', () => {
-      const pelelaPath = path.join(tempDir, 'broken.pelela')
-      fs.writeFileSync(pelelaPath, '<div>No pelela tag</div>')
-
-      const errors: string[] = []
-      const errorFn = (msg: string | Error) => errors.push(String(msg))
-
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-
-      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
-
-      expect(errors.length).toBeGreaterThan(0)
-    })
-
-    it('reports error when view-model attribute is missing', () => {
-      const pelelaPath = path.join(tempDir, 'no-vm.pelela')
-      fs.writeFileSync(pelelaPath, '<pelela><h1>No view-model</h1></pelela>')
-
-      const errors: string[] = []
-      const errorFn = (msg: string | Error) => errors.push(String(msg))
-
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-
-      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
-
-      expect(errors.some((e) => e.includes('view-model'))).toBe(true)
-    })
-
-    it('reports error when pelela tags are unbalanced', () => {
-      const pelelaPath = path.join(tempDir, 'unbalanced.pelela')
-      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><h1>Missing closing tag</h1>')
-
-      const errors: string[] = []
-      const errorFn = (msg: string | Error) => errors.push(String(msg))
-
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-
-      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
-
-      expect(errors.some((e) => e.includes('unbalanced'))).toBe(true)
-    })
-
-    it('includes css import when matching css file exists', () => {
-      const pelelaPath = path.join(tempDir, 'styled.pelela')
-      const cssPath = path.join(tempDir, 'styled.css')
-      fs.writeFileSync(pelelaPath, '<pelela view-model="Styled"><h1>Styled</h1></pelela>')
-      fs.writeFileSync(cssPath, 'h1 { color: red; }')
-
-      const plugin = pelelajsPlugin()
-      const handler = getHandler(plugin.load!)
-
-      const mockContext = { error: () => {} }
-      const result = handler.call(mockContext as never, pelelaPath, {} as never) as string
-
-      expect(result).toContain('import "./styled.css"')
+      load.call(context, 'test.pelela')
+      expect(errorSpy).toHaveBeenCalled()
+      const lastError = errorSpy.mock.calls[0][0]
+      expect(lastError.includes('link-value') || lastError.includes('forbiddenRootAttribute')).toBe(
+        true,
+      )
     })
   })
 })
