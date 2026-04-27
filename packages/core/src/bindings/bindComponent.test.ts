@@ -5,7 +5,7 @@ import { clearComponentRegistry, defineComponent } from '../registry/componentRe
 import type { PelelaElement } from '../types'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { setupBindings } from './setupBindings'
-import type { ComponentBinding } from './types'
+import type { ComponentBinding, ViewModel } from './types'
 
 describe('bindComponent', () => {
   let container: HTMLElement
@@ -223,7 +223,7 @@ describe('bindComponent', () => {
       const childViewModel = new ChildVM()
       const bindings: ComponentBinding[] = [
         {
-          childViewModel: childViewModel as never,
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
           mappings: [
             { parentKey: 'parentItems', childKey: 'items' },
             { parentKey: 'parentConfig', childKey: 'config' },
