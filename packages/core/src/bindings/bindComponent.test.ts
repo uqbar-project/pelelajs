@@ -206,6 +206,27 @@ describe('bindComponent', () => {
       expect(mappingKeys).toContain('oneWay')
       expect(mappingKeys).toContain('twoWay')
     })
+
+    it('should throw error when parent property does not exist', () => {
+      initializeI18n('en')
+
+      class ChildVM {
+        message = ''
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="message"></span></component>',
+      )
+
+      container.innerHTML = '<test-comp prop-message="nonExistentProperty"></test-comp>'
+
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => {
+        setupComponentBindings(container, parentVM)
+      }).toThrow(Error)
+    })
   })
 
   describe('renderComponentBindings', () => {

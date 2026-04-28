@@ -144,7 +144,10 @@ describe('bindForEach', () => {
         expect(isBindingAttribute('bind-content')).toBe(true)
         expect(isBindingAttribute('bind-class')).toBe(true)
         expect(isBindingAttribute('link-value')).toBe(true)
+        expect(isBindingAttribute('prop-name')).toBe(true)
         expect(isBindingAttribute('click')).toBe(true)
+        expect(isBindingAttribute('if')).toBe(true)
+        expect(isBindingAttribute('for-each')).toBe(true)
       })
 
       it('should reject standard HTML attributes with hyphens', () => {
@@ -195,6 +198,22 @@ describe('bindForEach', () => {
       extendedViewModel['item.name'] = 'updated'
       // The proxy should return true for nested property paths without modifying itemRef
       expect(itemRef.current).toEqual({ name: 'initial' })
+    })
+
+    it('should capture external dependencies from nested if and for-each bindings', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span if="searchQuery"></span>
+        </div>
+      `
+      const viewModel = { items: ['a', 'b'], searchQuery: 'test' }
+      const binding = setupSingleForEachBinding(
+        container.querySelector('[for-each]') as HTMLElement,
+        viewModel,
+      )
+
+      expect(binding).not.toBeNull()
+      expect(binding!.extraDependencies).toContain('searchQuery')
     })
 
     it('should handle setting parent viewModel properties through proxy', () => {

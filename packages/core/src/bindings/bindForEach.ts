@@ -183,16 +183,23 @@ export function isBindingAttribute(attrName: string): boolean {
     return false
   }
   // Accept only framework binding prefixes
-  return attrName.startsWith('bind-') || attrName.startsWith('link-') || attrName === 'click'
+  return (
+    attrName.startsWith('bind-') ||
+    attrName.startsWith('link-') ||
+    attrName.startsWith('prop-') ||
+    attrName === 'click' ||
+    attrName === 'if' ||
+    attrName === 'for-each'
+  )
 }
 
 export function isCustomComponent(element: HTMLElement): boolean {
   const tagName = element.tagName.toLowerCase()
-  // Custom elements must contain a hyphen per Web Components spec
+  // A Pelela component must (a) be a valid custom element name (contain a hyphen)
+  // per the Web Components spec, AND (b) be registered in the component registry.
   if (!tagName.includes('-')) {
     return false
   }
-  // Or be registered in the component registry
   return getComponentByTag(tagName) !== undefined
 }
 

@@ -77,14 +77,20 @@ export function setupComponentBindings<T extends object>(
     const allMappings = [...linkBindings, ...oneWayBindings]
 
     allMappings.forEach(({ parentKey, childKey }) => {
-      if (parentKey in parentViewModel) {
-        instance[childKey] = (parentViewModel as Record<string, unknown>)[parentKey]
+      if (!parentKey.includes('.') && !(parentKey in parentViewModel)) {
+        throw new Error(
+          t('compiler.missingParentProperty', {
+            tag: element.tagName.toLowerCase(),
+            parentKey,
+          }),
+        )
       }
+      instance[childKey] = (parentViewModel as Record<string, unknown>)[parentKey]
     })
 
     // Buffer change paths during setup to avoid losing reactive updates
     const bufferedPaths: string[] = []
-    const isSetupComplete = { value: false }
+    let isSetupComplete = false
     let renderChild: (changedPath?: string) => void = () => {}
     const reactiveInstance = createReactiveViewModel(instance, (changedPath: string) => {
       const linkBinding = linkBindings.find((binding) => binding.childKey === changedPath)
@@ -94,7 +100,7 @@ export function setupComponentBindings<T extends object>(
       }
 
       // Buffer changes during setup, render directly after setup
-      if (!isSetupComplete.value) {
+      if (!isSetupComplete) {
         bufferedPaths.push(changedPath)
       } else {
         renderChild(changedPath)
@@ -104,7 +110,7 @@ export function setupComponentBindings<T extends object>(
     const sanitizedHtml = sanitizeHTML(componentDef.entry.template)
     element.innerHTML = unwrapTemplate(sanitizedHtml)
     renderChild = setupBindings(element, reactiveInstance)
-    isSetupComplete.value = true
+    isSetupComplete = true
 
     // Flush buffered changes after setupBindings assigns renderChild
     bufferedPaths.forEach((path) => {
