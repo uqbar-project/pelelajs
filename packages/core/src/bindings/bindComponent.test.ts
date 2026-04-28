@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { initializeI18n } from '../commons/i18n'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
@@ -14,6 +14,11 @@ describe('bindComponent', () => {
     initializeI18n('en')
     container = document.createElement('div')
     document.body.appendChild(container)
+    clearComponentRegistry()
+  })
+
+  afterEach(() => {
+    container.remove()
     clearComponentRegistry()
   })
 
@@ -101,6 +106,34 @@ describe('bindComponent', () => {
     childVM.val = 'changed'
 
     expect(parentVM.parentVal).toBe('changed')
+  })
+
+  it('should process the root element if it is a component itself', () => {
+    class RootChildVM {
+      val = ''
+    }
+    defineComponent(
+      'root-child',
+      RootChildVM,
+      '<component view-model="RootChildVM"><span bind-content="val"></span></component>',
+    )
+
+    const rootElement = document.createElement('root-child')
+    rootElement.setAttribute('prop-val', 'parentVal')
+
+    const parentVM = createReactiveViewModel(
+      {
+        parentVal: 'root matched',
+      },
+      () => {},
+    )
+
+    const bindings = setupComponentBindings(rootElement, parentVM)
+
+    expect(bindings).toHaveLength(1)
+    expect(bindings[0].mappings).toHaveLength(1)
+    expect(bindings[0].mappings[0].childKey).toBe('val')
+    expect(bindings[0].mappings[0].parentKey).toBe('parentVal')
   })
 
   describe('prop-* prefix validation', () => {

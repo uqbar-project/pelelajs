@@ -416,6 +416,99 @@ describe('pelelajsPlugin', () => {
       const invalidAttrErrors = errors.filter((e) => e.includes('invalidComponentAttribute'))
       expect(invalidAttrErrors).toHaveLength(2)
     })
+
+    describe('component attribute extraction with values containing "="', () => {
+      it('does not report false positive when prop-* value contains "=" (URL query string)', () => {
+        const pelelaPath = path.join(tempDir, 'url-value.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          '<pelela view-model="Home"><my-comp prop-url="api?a=1&b=2"></my-comp></pelela>',
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+      })
+
+      it('does not report false positive when link-* value contains "="', () => {
+        const pelelaPath = path.join(tempDir, 'link-eq-value.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          '<pelela view-model="Home"><my-comp link-value="x=1"></my-comp></pelela>',
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+      })
+
+      it('does not report false positive when single-quoted value contains "="', () => {
+        const pelelaPath = path.join(tempDir, 'single-quote-eq.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          `<pelela view-model="Home"><my-comp prop-label='key=value'></my-comp></pelela>`,
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+      })
+
+      it('still detects truly invalid attributes when valid ones have "=" in their values', () => {
+        const pelelaPath = path.join(tempDir, 'mixed-valid-invalid.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          '<pelela view-model="Home"><my-comp prop-url="a=b" class="foo"></my-comp></pelela>',
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        const invalidAttrErrors = errors.filter((e) => e.includes('invalidComponentAttribute'))
+        expect(invalidAttrErrors).toHaveLength(1)
+      })
+
+      it('reports error for unprefixed boolean attributes on component tags', () => {
+        const pelelaPath = path.join(tempDir, 'boolean-attr.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          '<pelela view-model="Home"><my-comp disabled prop-value="ok"></my-comp></pelela>',
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(true)
+      })
+    })
   })
 
   describe('helper functions', () => {

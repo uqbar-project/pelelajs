@@ -45,7 +45,6 @@ export const PROP_PREFIX = 'prop-'
 
 const TAG_PATTERN = /<([\w-]+)([^>]*)>/g
 const LINK_ATTRIBUTE_PATTERN = new RegExp(`\\b(${LINK_PREFIX}[a-zA-Z0-9_-]+)\\s*=`, 'g')
-const COMPONENT_ATTRIBUTE_PATTERN = /([a-zA-Z0-9_-]+)\s*=/g
 
 function extractAttributes(
   sourceCode: string,
@@ -67,10 +66,21 @@ export function extractLinkAttributeMatches(
   return extractAttributes(sourceCode, LINK_ATTRIBUTE_PATTERN)
 }
 
+const ATTRIBUTE_PAIR_PATTERN = /([a-zA-Z0-9_-]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*))?/g
+
+function extractAttributeNames(attributesSegment: string): string[] {
+  return Array.from(attributesSegment.matchAll(ATTRIBUTE_PAIR_PATTERN), (match) => match[1])
+}
+
 function extractComponentAttributeMatches(
   sourceCode: string,
 ): Array<{ tagName: string; attributeName: string }> {
-  return extractAttributes(sourceCode, COMPONENT_ATTRIBUTE_PATTERN)
+  return Array.from(sourceCode.matchAll(TAG_PATTERN)).flatMap((tagMatch) =>
+    extractAttributeNames(tagMatch[2]).map((attributeName) => ({
+      tagName: tagMatch[1].toLowerCase(),
+      attributeName,
+    })),
+  )
 }
 
 function validateComponentAttributes(sourceCode: string, errorFn: (message: string) => void): void {
@@ -121,8 +131,8 @@ function validatePelelaStructure(
   filePath: string,
   errorFn: (message: string) => void,
 ): void {
-  const openTags = sourceCode.match(/<(?:pelela|component)\b[^>]*>/g) || []
-  const closeTags = sourceCode.match(/<\/(?:pelela|component)>/g) || []
+  const openTags = sourceCode.match(/<(?:pelela|component)\b[^>]*>/gi) || []
+  const closeTags = sourceCode.match(/<\/(?:pelela|component)>/gi) || []
 
   if (openTags.length === 0) {
     errorFn(t('compiler.missingRoot', { filePath }))
@@ -190,7 +200,7 @@ function extractViewModelName(
   filePath: string,
   errorFn: (message: string) => void,
 ): string {
-  const viewModelMatch = sourceCode.match(/<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/)
+  const viewModelMatch = sourceCode.match(/<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/i)
   const viewModelName = viewModelMatch ? viewModelMatch[1] : null
 
   if (!viewModelName) {

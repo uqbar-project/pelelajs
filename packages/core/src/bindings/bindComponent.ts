@@ -1,6 +1,6 @@
 import { toCamelCase, unwrapTemplate } from '../commons/helpers'
 import { t } from '../commons/i18n'
-import { sanitizeHTML } from '../commons/sanitization'
+import { hasProperty, isUnsafeKey, sanitizeHTML } from '../commons/sanitization'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
 import type { PelelaElement } from '../types'
@@ -62,9 +62,16 @@ export function setupComponentBindings<T extends object>(
 
   const selector = registeredTags.join(',')
   const customElements = Array.from(root.querySelectorAll<HTMLElement>(selector))
+  if (root.matches(selector)) {
+    customElements.unshift(root)
+  }
   const bindings: ComponentBinding[] = []
 
   customElements.forEach((element) => {
+    if ((element as PelelaElement<Record<string, unknown>>).__pelelaViewModel) {
+      return
+    }
+
     const tagName = element.tagName.toLowerCase()
     const componentDef = getComponentByTag(tagName)
     if (!componentDef) return
@@ -77,7 +84,11 @@ export function setupComponentBindings<T extends object>(
     const allMappings = [...linkBindings, ...oneWayBindings]
 
     allMappings.forEach(({ parentKey, childKey }) => {
-      if (!parentKey.includes('.') && !(parentKey in parentViewModel)) {
+      if (isUnsafeKey(parentKey) || isUnsafeKey(childKey)) {
+        throw new Error(`Prototype pollution blocked on key: ${parentKey} or ${childKey}`)
+      }
+
+      if (!parentKey.includes('.') && !hasProperty(parentViewModel, parentKey)) {
         throw new Error(
           t('compiler.missingParentProperty', {
             tag: element.tagName.toLowerCase(),
@@ -93,8 +104,11 @@ export function setupComponentBindings<T extends object>(
     let isSetupComplete = false
     let renderChild: (changedPath?: string) => void = () => {}
     const reactiveInstance = createReactiveViewModel(instance, (changedPath: string) => {
+      if (isUnsafeKey(changedPath)) return
+
       const linkBinding = linkBindings.find((binding) => binding.childKey === changedPath)
       if (linkBinding) {
+        if (isUnsafeKey(linkBinding.parentKey)) return
         ;(parentViewModel as Record<string, unknown>)[linkBinding.parentKey] =
           reactiveInstance[changedPath]
       }
@@ -109,6 +123,8 @@ export function setupComponentBindings<T extends object>(
 
     const sanitizedHtml = sanitizeHTML(componentDef.entry.template)
     element.innerHTML = unwrapTemplate(sanitizedHtml)
+    ;(element as PelelaElement<Record<string, unknown>>).__pelelaViewModel = reactiveInstance
+
     renderChild = setupBindings(element, reactiveInstance)
     isSetupComplete = true
 
@@ -116,7 +132,6 @@ export function setupComponentBindings<T extends object>(
     bufferedPaths.forEach((path) => {
       renderChild(path)
     })
-    ;(element as PelelaElement<Record<string, unknown>>).__pelelaViewModel = reactiveInstance
 
     bindings.push({
       childViewModel: reactiveInstance,
@@ -133,6 +148,10 @@ export function renderComponentBindings<T extends object>(
 ): void {
   bindings.forEach((binding) => {
     binding.mappings.forEach(({ parentKey, childKey }) => {
+      if (isUnsafeKey(parentKey) || isUnsafeKey(childKey)) {
+        return
+      }
+
       const parentValue = (parentViewModel as Record<string, unknown>)[parentKey]
       const childValue = (binding.childViewModel as Record<string, unknown>)[childKey]
 

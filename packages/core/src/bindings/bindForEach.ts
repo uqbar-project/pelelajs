@@ -45,6 +45,12 @@ export function createExtendedViewModel<T extends object>(
         if (isPropertyOrNestedPath(prop, itemName)) return true
         return prop in parentViewModel
       },
+      getOwnPropertyDescriptor(_target, prop) {
+        if (isPropertyOrNestedPath(prop, itemName)) {
+          return { configurable: true, enumerable: true, value: undefined } // value isn't strictly needed for hasOwn, but we provide a valid descriptor
+        }
+        return Object.getOwnPropertyDescriptor(parentViewModel, prop)
+      },
       get(_target, prop) {
         if (prop === itemName) return itemRef.current
         if (isPropertyOrNestedPath(prop, itemName)) {

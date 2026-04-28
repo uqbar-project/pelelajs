@@ -1,6 +1,19 @@
 import { isObject } from './helpers'
 import { t } from './i18n'
 
+const BLACKLISTED_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+export function isUnsafeKey(key: string): boolean {
+  return BLACKLISTED_KEYS.has(key)
+}
+
+export function hasProperty(obj: object, key: string): boolean {
+  // Reflect.has safely checks the prototype chain (for getters) and triggers Proxy 'has' traps,
+  // while isUnsafeKey guarantees we block Prototype Pollution.
+  if (isUnsafeKey(key)) return false
+  return Reflect.has(obj, key)
+}
+
 /**
  * Utilities for sanitizing and escaping untrusted content
  * before injecting it into the DOM or other sensitive contexts
