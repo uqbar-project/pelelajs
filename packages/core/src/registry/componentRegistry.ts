@@ -19,15 +19,12 @@ export function defineComponent(
   if (existingCreator && existingCreator !== creator) {
     console.warn(`[pelela] Component "${name}" re-evaluated. Replacing old constructor.`)
 
-    // Remove obsolete entries in componentsByTag pointing to existingCreator
-    const filteredEntries = Array.from(componentsByTag.entries()).filter(
-      ([, value]) => value.creator !== existingCreator,
-    )
-    componentsByTag.clear()
-    filteredEntries.forEach(([tag, value]) => {
-      componentsByTag.set(tag, value)
-    })
-
+    // Remove obsolete entries in componentsByTag pointing to existingConstructor
+    for (const [tag, value] of componentsByTag.entries()) {
+      if (value.creator === existingCreator) {
+        componentsByTag.delete(tag)
+      }
+    }
     templatesByConstructor.delete(existingCreator)
     replaceViewModel(name, creator)
   } else if (!existingCreator) {

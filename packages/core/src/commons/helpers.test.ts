@@ -110,6 +110,11 @@ describe('helpers', () => {
       `
       expect(unwrapTemplate(template)).toBe('<div>Content</div>')
     })
+
+    it('should preserve inner nested wrapper tag when same tag is nested', () => {
+      const nestedTemplate = '<pelela view-model="X"><pelela>inner</pelela></pelela>'
+      expect(unwrapTemplate(nestedTemplate)).toBe('<pelela>inner</pelela>')
+    })
   })
 
   describe('filterOwnElements', () => {

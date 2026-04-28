@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DependencyTracker } from './dependencyTracker'
-import type { BindingsCollection } from './types'
+import type { BindingsCollection, ComponentBinding } from './types'
 
 describe('DependencyTracker', () => {
   describe('registerDependency', () => {
@@ -375,7 +375,7 @@ describe('DependencyTracker', () => {
       expect(affected.forEachBindings).toContain(forEachBinding)
     })
 
-    it('should include getter bindings for componentBindings when a primitive property changes', () => {
+    it('should include getter-marked componentBindings when a dependency of the getter changes', () => {
       const tracker = new DependencyTracker()
 
       class ViewModel {
@@ -387,12 +387,11 @@ describe('DependencyTracker', () => {
 
       const viewModel = new ViewModel()
       const componentBinding = {
-        childViewModel: viewModel as never,
+        childViewModel: viewModel as unknown as ComponentBinding['childViewModel'],
         mappings: [{ parentKey: 'selectedPersonName', childKey: 'name' }],
       }
 
       tracker.registerDependency(componentBinding, 'selectedPersonName', viewModel)
-      tracker.markAsGetterBinding(componentBinding)
 
       const bindings: BindingsCollection = {
         valueBindings: [],
@@ -425,7 +424,6 @@ describe('DependencyTracker', () => {
       }
 
       tracker.registerDependency(valueBinding, 'selectedPersonName', viewModel)
-      tracker.markAsGetterBinding(valueBinding)
 
       const bindings: BindingsCollection = {
         valueBindings: [valueBinding],
@@ -463,7 +461,7 @@ describe('DependencyTracker', () => {
       }
 
       const componentBinding = {
-        childViewModel: viewModel as never,
+        childViewModel: viewModel as unknown as ComponentBinding['childViewModel'],
         mappings: [{ parentKey: 'totalPeople', childKey: 'count' }],
       }
 
@@ -476,9 +474,9 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(componentBinding, 'totalPeople', viewModel)
       tracker.registerDependency(valueBinding, 'totalPeople', viewModel)
 
+      // forEachBinding is registered with 'items' (not a getter), so it must be
+      // manually marked as a getter binding since its extraDependencies include 'totalPeople'
       tracker.markAsGetterBinding(forEachBinding)
-      tracker.markAsGetterBinding(componentBinding)
-      tracker.markAsGetterBinding(valueBinding)
 
       const bindings: BindingsCollection = {
         valueBindings: [valueBinding],

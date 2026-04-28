@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   clearComponentRegistry,
   defineComponent,
@@ -24,6 +24,10 @@ describe('componentRegistry', () => {
   beforeEach(() => {
     clearRegistry()
     clearComponentRegistry()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('defineComponent', () => {
@@ -66,7 +70,6 @@ describe('componentRegistry', () => {
       expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining('[pelela] Component "Shared" re-evaluated'),
       )
-      warnSpy.mockRestore()
     })
 
     it('should clean up old constructor mapping when replaced (HMR support)', () => {

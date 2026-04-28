@@ -32,7 +32,7 @@
   </style_and_clean_code>
 
   <type_safety_and_errors>
-    - **Tipado estricto:** Prohibido usar `any`. Usar `unknown` o tipos específicos/genéricos.
+    - **Tipado estricto:** Prohibido usar `any` / `never`. Usar `unknown` o tipos específicos/genéricos.
     - **Manejo de errores:** Usar excepciones solo para casos excepcionales. "Fail fast": fallar lo antes posible. **Nunca dejar catch vacío**.
   </type_safety_and_errors>
 

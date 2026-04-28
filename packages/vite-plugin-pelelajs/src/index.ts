@@ -37,7 +37,7 @@ function isStandardHtmlTag(tagName: string): boolean {
 }
 
 export function isRootPelelaOrComponent(tagName: string): boolean {
-  return tagName.toLowerCase() === 'pelela' || tagName.toLowerCase() === 'component'
+  return ['pelela', 'component'].includes(tagName.toLowerCase())
 }
 
 export function extractLinkAttributeMatches(

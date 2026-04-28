@@ -230,9 +230,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('missingViewModel') || e.includes('view-model'))).toBe(
-        true,
-      )
+      expect(errors.some((e) => e.includes('missingViewModel'))).toBe(true)
     })
 
     it('reports error when pelela tags are unbalanced', () => {
