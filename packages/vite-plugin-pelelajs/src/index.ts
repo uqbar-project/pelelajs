@@ -40,24 +40,37 @@ export function isRootPelelaOrComponent(tagName: string): boolean {
   return ['pelela', 'component'].includes(tagName.toLowerCase())
 }
 
+export const LINK_PREFIX = 'link-'
+export const PROP_PREFIX = 'prop-'
+
+const TAG_PATTERN = /<([\w-]+)([^>]*)>/g
+const LINK_ATTRIBUTE_PATTERN = new RegExp(`\\b(${LINK_PREFIX}[a-zA-Z0-9_-]+)\\s*=`, 'g')
+const COMPONENT_ATTRIBUTE_PATTERN = /([a-zA-Z0-9_-]+)\s*=/g
+
+function extractAttributes(
+  sourceCode: string,
+  attrPattern: RegExp,
+): Array<{ tagName: string; attributeName: string }> {
+  return Array.from(sourceCode.matchAll(TAG_PATTERN)).flatMap((tagMatch) => {
+    const tagName = tagMatch[1].toLowerCase()
+    const attributesSegment = tagMatch[2]
+    return Array.from(attributesSegment.matchAll(attrPattern), (attrMatch) => ({
+      tagName,
+      attributeName: attrMatch[1],
+    }))
+  })
+}
+
 export function extractLinkAttributeMatches(
   sourceCode: string,
 ): Array<{ tagName: string; attributeName: string }> {
-  const linkAttributePattern = /<(\w+)[^>]*\b(link-[a-zA-Z0-9_-]+)[^>]*>/g
-  return Array.from(sourceCode.matchAll(linkAttributePattern), (match) => ({
-    tagName: match[1].toLowerCase(),
-    attributeName: match[2],
-  }))
+  return extractAttributes(sourceCode, LINK_ATTRIBUTE_PATTERN)
 }
 
 function extractComponentAttributeMatches(
   sourceCode: string,
 ): Array<{ tagName: string; attributeName: string }> {
-  const componentAttributePattern = /<(\w+)[^>]*\s([a-zA-Z0-9_-]+)=/g
-  return Array.from(sourceCode.matchAll(componentAttributePattern), (match) => ({
-    tagName: match[1].toLowerCase(),
-    attributeName: match[2],
-  }))
+  return extractAttributes(sourceCode, COMPONENT_ATTRIBUTE_PATTERN)
 }
 
 function validateComponentAttributes(sourceCode: string, errorFn: (message: string) => void): void {
@@ -67,8 +80,8 @@ function validateComponentAttributes(sourceCode: string, errorFn: (message: stri
     (match) =>
       !isRootPelelaOrComponent(match.tagName) &&
       !isStandardHtmlTag(match.tagName) &&
-      !match.attributeName.startsWith('link-') &&
-      !match.attributeName.startsWith('prop-'),
+      !match.attributeName.startsWith(LINK_PREFIX) &&
+      !match.attributeName.startsWith(PROP_PREFIX),
   )
 
   invalidMatches.forEach((match) => {
@@ -152,7 +165,7 @@ function validateNoForbiddenRootAttributes(
 
   const attributes = rootTagMatch[2]
   const forbiddenPatterns = [
-    /\blink-[a-zA-Z0-9_-]+/,
+    new RegExp(`\\b${LINK_PREFIX}[a-zA-Z0-9_-]+`),
     /\bbind-[a-zA-Z0-9_-]+/,
     /\bif\s*=/,
     /\bfor-each\s*=/,

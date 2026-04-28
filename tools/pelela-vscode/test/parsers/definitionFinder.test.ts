@@ -40,7 +40,7 @@ export class UserViewModel {
     "some.property": "value"
   };
 
-  brokenObject: any = unknown;
+  brokenObject: unknown = null;
   // some logic
   if (true) {
     console.log("test");

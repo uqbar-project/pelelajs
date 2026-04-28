@@ -7,15 +7,15 @@ import type { PelelaElement } from '../types'
 import { setupBindings } from './setupBindings'
 import type { ComponentBinding, ViewModel } from './types'
 
-const LINK_PREFIX = 'link-'
-const PROPS_PREFIX = 'prop-'
+export const LINK_PREFIX = 'link-'
+export const PROP_PREFIX = 'prop-'
 
 function isLink(attr: Attr): boolean {
   return attr.name.startsWith(LINK_PREFIX)
 }
 
 function isProps(attr: Attr): boolean {
-  return attr.name.startsWith(PROPS_PREFIX)
+  return attr.name.startsWith(PROP_PREFIX)
 }
 
 function extractLinkBindings(
@@ -35,7 +35,7 @@ function extractOneWayBindings(
   return Array.from(attributes)
     .filter(isProps)
     .map((attr) => ({
-      childKey: toCamelCase(attr.name.substring(PROPS_PREFIX.length)),
+      childKey: toCamelCase(attr.name.substring(PROP_PREFIX.length)),
       parentKey: attr.value,
     }))
 }

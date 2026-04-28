@@ -12,7 +12,12 @@ import { getComponentByTag } from '../registry/componentRegistry'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
-import { renderComponentBindings, setupComponentBindings } from './bindComponent'
+import {
+  LINK_PREFIX,
+  PROP_PREFIX,
+  renderComponentBindings,
+  setupComponentBindings,
+} from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
@@ -185,8 +190,8 @@ export function isBindingAttribute(attrName: string): boolean {
   // Accept only framework binding prefixes
   return (
     attrName.startsWith('bind-') ||
-    attrName.startsWith('link-') ||
-    attrName.startsWith('prop-') ||
+    attrName.startsWith(LINK_PREFIX) ||
+    attrName.startsWith(PROP_PREFIX) ||
     attrName === 'click' ||
     attrName === 'if' ||
     attrName === 'for-each'

@@ -85,7 +85,7 @@
           },
           "patterns": [
             {
-              "include": "#tag-stuff"
+              "include": "#viewmodel-attribute"
             }
           ]
         },

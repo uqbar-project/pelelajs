@@ -397,6 +397,25 @@ describe('pelelajsPlugin', () => {
 
       expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
     })
+
+    it('reports error for each invalid attribute when component has multiple invalid attributes', () => {
+      const pelelaPath = path.join(tempDir, 'multi-invalid.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><my-comp class="bad" id="bad2" prop-x="ok"></my-comp></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      const invalidAttrErrors = errors.filter((e) => e.includes('invalidComponentAttribute'))
+      expect(invalidAttrErrors).toHaveLength(2)
+    })
   })
 
   describe('helper functions', () => {
@@ -434,10 +453,11 @@ describe('pelelajsPlugin', () => {
         const html = '<div link-value="x" link-content="y"></div>'
         const matches = extractLinkAttributeMatches(html)
 
-        // The function captures one link attribute per tag match
-        expect(matches).toHaveLength(1)
+        expect(matches).toHaveLength(2)
         expect(matches[0].tagName).toBe('div')
         expect(matches[0].attributeName).toMatch(/^link-/)
+        expect(matches[1].tagName).toBe('div')
+        expect(matches[1].attributeName).toMatch(/^link-/)
       })
 
       it('converts tag names to lowercase', () => {
