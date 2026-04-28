@@ -133,8 +133,8 @@ export function setupBindings<T extends object>(
   viewModel: ViewModel<T>,
 ): (changedPath?: string) => void {
   const bindings: BindingsCollection = {
-    componentBindings: setupComponentBindings(root, viewModel),
     forEachBindings: setupForEachBindings(root, viewModel),
+    componentBindings: setupComponentBindings(root, viewModel),
     valueBindings: setupValueBindings(root, viewModel),
     contentBindings: setupContentBindings(root, viewModel),
     ifBindings: setupIfBindings(root, viewModel),
