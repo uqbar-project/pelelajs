@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { initializeI18n } from '../commons/i18n'
-import { PropertyValidationError } from '../errors/index'
+import { PropertyValidationError, UnsupportedElementError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { renderValueBindings, setupValueBindings } from './bindValue'
+
+const { catchError } = testHelpers
 
 describe('bindValue', () => {
   let container: HTMLElement
@@ -32,27 +34,36 @@ describe('bindValue', () => {
       container.innerHTML = '<span bind-value="text"></span>'
       const viewModel = { text: '' }
 
-      expect(() => {
-        setupValueBindings(container, viewModel)
-      }).toThrow(/bind-value can only be used on input, textarea, or select elements/)
+      const error = catchError<UnsupportedElementError>(() =>
+        setupValueBindings(container, viewModel),
+      )
+
+      expect(error).toBeInstanceOf(UnsupportedElementError)
+      expect(error.i18nCode).toBe(UnsupportedElementError.I18N_CODE)
     })
 
     it('should throw error for div elements', () => {
       container.innerHTML = '<div bind-value="text"></div>'
       const viewModel = { text: '' }
 
-      expect(() => {
-        setupValueBindings(container, viewModel)
-      }).toThrow(/Use bind-content for display elements/)
+      const error = catchError<UnsupportedElementError>(() =>
+        setupValueBindings(container, viewModel),
+      )
+
+      expect(error).toBeInstanceOf(UnsupportedElementError)
+      expect(error.i18nCode).toBe(UnsupportedElementError.I18N_CODE)
     })
 
     it('should throw error for p elements', () => {
       container.innerHTML = '<p bind-value="text"></p>'
       const viewModel = { text: '' }
 
-      expect(() => {
-        setupValueBindings(container, viewModel)
-      }).toThrow(/bind-value can only be used on input, textarea, or select elements/)
+      const error = catchError<UnsupportedElementError>(() =>
+        setupValueBindings(container, viewModel),
+      )
+
+      expect(error).toBeInstanceOf(UnsupportedElementError)
+      expect(error.i18nCode).toBe(UnsupportedElementError.I18N_CODE)
     })
 
     it('should setup event listeners on inputs', () => {
