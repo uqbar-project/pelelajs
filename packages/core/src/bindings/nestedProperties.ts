@@ -1,12 +1,4 @@
-const BLACKLISTED_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
-
-function isUnsafeKey(key: string): boolean {
-  return BLACKLISTED_KEYS.has(key)
-}
-
-function hasProperty(obj: object, key: string): boolean {
-  return Object.hasOwn(obj, key)
-}
+import { hasProperty, isUnsafeKey } from '../commons/sanitization'
 
 export function getNestedProperty(obj: unknown, path: string): unknown {
   return path.split('.').reduce((current: unknown, part) => {

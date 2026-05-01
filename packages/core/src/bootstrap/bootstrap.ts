@@ -1,7 +1,10 @@
 import { setupBindings } from '../bindings/setupBindings'
+import { unwrapTemplate } from '../commons/helpers'
 import { initializeI18n } from '../commons/i18n'
+import { sanitizeHTML } from '../commons/sanitization'
 import { ViewModelRegistrationError } from '../errors/index'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
+import { getComponentEntry } from '../registry/componentRegistry'
 import { getViewModel } from '../registry/viewModelRegistry'
 import type { PelelaOptions } from '../types'
 
@@ -9,37 +12,33 @@ export function bootstrap(options: PelelaOptions = {}): void {
   initializeI18n()
   const doc = options.document ?? window.document
   const searchRoot: ParentNode = options.root ?? doc
-
   const roots = Array.from(searchRoot.querySelectorAll<HTMLElement>('pelela[view-model]'))
-
   if (roots.length === 0) {
     console.warn('[pelela] No <pelela view-model="..."> elements found')
   }
-
   roots.forEach((root) => {
     const name = root.getAttribute('view-model')
     if (!name) return
-
-    const ctor = getViewModel(name)
-    if (!ctor) {
+    const creator = getViewModel(name)
+    if (!creator) {
       throw new ViewModelRegistrationError(name, 'missing')
     }
-
-    const instance = new ctor()
-
+    const componentEntry = getComponentEntry(creator)
+    const needsDefaultTemplate = root.innerHTML.trim() === ''
+    if (componentEntry && needsDefaultTemplate) {
+      const sanitized = sanitizeHTML(componentEntry.template)
+      root.innerHTML = unwrapTemplate(sanitized)
+    }
+    const instance = new creator()
     let render: (changedPath?: string) => void = () => {}
-
     const reactiveInstance = createReactiveViewModel(
       instance as Record<string, unknown>,
       (changedPath: string) => {
         render(changedPath)
       },
     )
-
     ;(root as HTMLElement & { __pelelaViewModel: unknown }).__pelelaViewModel = reactiveInstance
-
     render = setupBindings(root, reactiveInstance)
-
     console.log(`[pelela] View model "${name}" instantiated and bound`, reactiveInstance)
   })
 }

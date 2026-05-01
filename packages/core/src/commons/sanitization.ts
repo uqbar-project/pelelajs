@@ -1,4 +1,18 @@
+import { isObject } from './helpers'
 import { t } from './i18n'
+
+const BLACKLISTED_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+export function isUnsafeKey(key: string): boolean {
+  return BLACKLISTED_KEYS.has(key)
+}
+
+export function hasProperty(obj: object, key: string): boolean {
+  // Reflect.has safely checks the prototype chain (for getters) and triggers Proxy 'has' traps,
+  // while isUnsafeKey guarantees we block Prototype Pollution.
+  if (isUnsafeKey(key)) return false
+  return Reflect.has(obj, key)
+}
 
 /**
  * Utilities for sanitizing and escaping untrusted content
@@ -33,7 +47,7 @@ export function sanitize<T>(value: T): T {
 
 function sanitizeInternal(value: unknown, seen: WeakSet<object>): unknown {
   if (typeof value === 'string') return escapeHTML(value)
-  if (value === null || typeof value !== 'object') return value
+  if (!isObject(value)) return value
 
   if (seen.has(value)) {
     throw new TypeError('Cannot sanitize circular references')

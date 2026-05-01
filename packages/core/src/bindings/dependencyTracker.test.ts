@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DependencyTracker } from './dependencyTracker'
-import type { BindingsCollection } from './types'
+import type { BindingsCollection, ComponentBinding } from './types'
 
 describe('DependencyTracker', () => {
   describe('registerDependency', () => {
@@ -20,6 +20,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -43,6 +44,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affectedByUser = tracker.getDependentBindings('user', bindings)
@@ -76,6 +78,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -100,6 +103,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users.0.name', bindings)
@@ -123,6 +127,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -151,6 +156,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('newUserName', bindings)
@@ -186,6 +192,7 @@ describe('DependencyTracker', () => {
         classBindings: [classBinding],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affectedByMessage = tracker.getDependentBindings('message', bindings)
@@ -208,6 +215,7 @@ describe('DependencyTracker', () => {
         placeholder: document.createComment(''),
         renderedElements: [],
         previousLength: 0,
+        extraDependencies: [],
       }
 
       tracker.registerDependency(forEachBinding, 'users')
@@ -219,6 +227,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [forEachBinding],
+        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -243,6 +252,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affectedByUser = tracker.getDependentBindings('user', bindings)
@@ -270,6 +280,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       const affectedByName = tracker.getDependentBindings('user.name', bindings)
@@ -301,6 +312,7 @@ describe('DependencyTracker', () => {
         classBindings: [],
         styleBindings: [],
         forEachBindings: [],
+        componentBindings: [],
       }
 
       // Cambio en prueba.nombre → solo debe afectar binding1
@@ -320,6 +332,206 @@ describe('DependencyTracker', () => {
       const affectedByPrueba = tracker.getDependentBindings('prueba', bindings)
       expect(affectedByPrueba.valueBindings).toContain(binding1)
       expect(affectedByPrueba.valueBindings).toContain(binding2)
+    })
+  })
+
+  describe('getDependentBindingsWithGetterSupport', () => {
+    it('should include getter bindings for forEachBindings when a primitive property changes', () => {
+      const tracker = new DependencyTracker()
+
+      class ViewModel {
+        selectedIndex = 0
+        get selectedPersonName(): string {
+          return this.selectedIndex === 0 ? 'Alice' : 'Bob'
+        }
+      }
+
+      const viewModel = new ViewModel()
+      const forEachBinding = {
+        collectionName: 'people',
+        itemName: 'person',
+        template: document.createElement('div'),
+        placeholder: document.createComment(''),
+        renderedElements: [],
+        previousLength: 0,
+        extraDependencies: ['selectedPersonName'],
+      }
+
+      tracker.registerDependency(forEachBinding, 'people', viewModel)
+      tracker.markAsGetterBinding(forEachBinding)
+
+      const bindings: BindingsCollection = {
+        valueBindings: [],
+        contentBindings: [],
+        ifBindings: [],
+        classBindings: [],
+        styleBindings: [],
+        forEachBindings: [forEachBinding],
+        componentBindings: [],
+      }
+
+      // Change in primitive property should trigger getter binding
+      const affected = tracker.getDependentBindingsWithGetterSupport('selectedIndex', bindings)
+      expect(affected.forEachBindings).toContain(forEachBinding)
+    })
+
+    it('should include getter-marked componentBindings when a dependency of the getter changes', () => {
+      const tracker = new DependencyTracker()
+
+      class ViewModel {
+        selectedIndex = 0
+        get selectedPersonName(): string {
+          return this.selectedIndex === 0 ? 'Alice' : 'Bob'
+        }
+      }
+
+      const viewModel = new ViewModel()
+      const componentBinding = {
+        childViewModel: viewModel as unknown as ComponentBinding['childViewModel'],
+        mappings: [{ parentKey: 'selectedPersonName', childKey: 'name' }],
+      }
+
+      tracker.registerDependency(componentBinding, 'selectedPersonName', viewModel)
+
+      const bindings: BindingsCollection = {
+        valueBindings: [],
+        contentBindings: [],
+        ifBindings: [],
+        classBindings: [],
+        styleBindings: [],
+        forEachBindings: [],
+        componentBindings: [componentBinding],
+      }
+
+      const affected = tracker.getDependentBindingsWithGetterSupport('selectedIndex', bindings)
+      expect(affected.componentBindings).toContain(componentBinding)
+    })
+
+    it('should include getter bindings for valueBindings when a primitive property changes', () => {
+      const tracker = new DependencyTracker()
+
+      class ViewModel {
+        selectedIndex = 0
+        get selectedPersonName(): string {
+          return this.selectedIndex === 0 ? 'Alice' : 'Bob'
+        }
+      }
+
+      const viewModel = new ViewModel()
+      const valueBinding = {
+        element: document.createElement('input'),
+        propertyName: 'selectedPersonName',
+      }
+
+      tracker.registerDependency(valueBinding, 'selectedPersonName', viewModel)
+
+      const bindings: BindingsCollection = {
+        valueBindings: [valueBinding],
+        contentBindings: [],
+        ifBindings: [],
+        classBindings: [],
+        styleBindings: [],
+        forEachBindings: [],
+        componentBindings: [],
+      }
+
+      const affected = tracker.getDependentBindingsWithGetterSupport('selectedIndex', bindings)
+      expect(affected.valueBindings).toContain(valueBinding)
+    })
+
+    it('should use addGetterBindings for forEachBindings, componentBindings and valueBindings', () => {
+      const tracker = new DependencyTracker()
+
+      class ViewModel {
+        totalCount = 0
+        get totalPeople(): number {
+          return this.totalCount * 2
+        }
+      }
+
+      const viewModel = new ViewModel()
+      const forEachBinding = {
+        collectionName: 'items',
+        itemName: 'item',
+        template: document.createElement('div'),
+        placeholder: document.createComment(''),
+        renderedElements: [],
+        previousLength: 0,
+        extraDependencies: ['totalPeople'],
+      }
+
+      const componentBinding = {
+        childViewModel: viewModel as unknown as ComponentBinding['childViewModel'],
+        mappings: [{ parentKey: 'totalPeople', childKey: 'count' }],
+      }
+
+      const valueBinding = {
+        element: document.createElement('span'),
+        propertyName: 'totalPeople',
+      }
+
+      tracker.registerDependency(forEachBinding, 'items', viewModel)
+      tracker.registerDependency(componentBinding, 'totalPeople', viewModel)
+      tracker.registerDependency(valueBinding, 'totalPeople', viewModel)
+
+      // forEachBinding is registered with 'items' (not a getter), so it must be
+      // manually marked as a getter binding since its extraDependencies include 'totalPeople'
+      tracker.markAsGetterBinding(forEachBinding)
+
+      const bindings: BindingsCollection = {
+        valueBindings: [valueBinding],
+        contentBindings: [],
+        ifBindings: [],
+        classBindings: [],
+        styleBindings: [],
+        forEachBindings: [forEachBinding],
+        componentBindings: [componentBinding],
+      }
+
+      // Change in primitive property should trigger all getter bindings
+      const affected = tracker.getDependentBindingsWithGetterSupport('totalCount', bindings)
+
+      expect(affected.forEachBindings).toContain(forEachBinding)
+      expect(affected.componentBindings).toContain(componentBinding)
+      expect(affected.valueBindings).toContain(valueBinding)
+    })
+
+    it('should mark getter during registerDependency when viewModel has getter', () => {
+      const tracker = new DependencyTracker()
+
+      class ViewModel {
+        get computedValue(): string {
+          return 'computed'
+        }
+      }
+
+      const viewModel = new ViewModel()
+      const binding = {
+        element: document.createElement('div'),
+        propertyName: 'computedValue',
+      }
+
+      tracker.registerDependency(binding, 'computedValue', viewModel)
+
+      expect(tracker.isGetterBinding(binding)).toBe(true)
+    })
+
+    it('should not mark as getter when property is not a getter', () => {
+      const tracker = new DependencyTracker()
+
+      class ViewModel {
+        regularValue = 'regular'
+      }
+
+      const viewModel = new ViewModel()
+      const binding = {
+        element: document.createElement('div'),
+        propertyName: 'regularValue',
+      }
+
+      tracker.registerDependency(binding, 'regularValue', viewModel)
+
+      expect(tracker.isGetterBinding(binding)).toBe(false)
     })
   })
 })

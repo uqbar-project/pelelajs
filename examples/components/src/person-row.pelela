@@ -1,0 +1,6 @@
+<component view-model="PersonRow">
+  <div class="persona-card" bind-class="personClasses">
+    <div class="avatar" bind-content="person.id"></div>
+    <div class="info" bind-content="person.name"></div>
+  </div>
+</component>

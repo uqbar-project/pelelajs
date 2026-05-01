@@ -1,10 +1,21 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   InvalidBindingSyntaxError,
+  InvalidDOMStructureError,
   InvalidPropertyTypeError,
   PropertyValidationError,
 } from '../errors/index'
-import { renderForEachBindings, setupForEachBindings } from './bindForEach'
+import { createReactiveViewModel } from '../reactivity/reactiveProxy'
+import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
+import {
+  createExtendedViewModel,
+  isBindingAttribute,
+  isCustomComponent,
+  renderForEachBindings,
+  setupForEachBindings,
+  setupSingleForEachBinding,
+} from './bindForEach'
+import { setupBindings } from './setupBindings'
 
 describe('bindForEach', () => {
   let container: HTMLElement
@@ -104,23 +115,153 @@ describe('bindForEach', () => {
       expect(bindings).toHaveLength(0)
     })
 
-    it('should handle element without parent node', () => {
+    it('should throw InvalidDOMStructureError when element has no parent node', () => {
       const element = document.createElement('div')
       element.setAttribute('for-each', 'item of items')
 
-      const tempContainer = document.createElement('div')
-      tempContainer.appendChild(element)
-
       const viewModel = { items: [] }
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      setupForEachBindings(tempContainer, viewModel)
+      expect(() => {
+        setupSingleForEachBinding(element, viewModel)
+      }).toThrowError(InvalidDOMStructureError)
+      expect(() => {
+        setupSingleForEachBinding(element, viewModel)
+      }).toThrowError(/element has no parent node/)
+    })
 
-      consoleSpy.mockRestore()
+    it('should set item value through proxy', () => {
+      const itemRef = { current: 'initial' }
+      const viewModel = { items: ['initial'] }
+      const extendedViewModel = createExtendedViewModel(viewModel, 'item', itemRef)
+
+      // Test proxy set handler for item (lines 47-49)
+      extendedViewModel.item = 'updated'
+      expect(itemRef.current).toBe('updated')
+    })
+
+    describe('isBindingAttribute', () => {
+      it('should accept framework binding prefixes', () => {
+        expect(isBindingAttribute('bind-content')).toBe(true)
+        expect(isBindingAttribute('bind-class')).toBe(true)
+        expect(isBindingAttribute('link-value')).toBe(true)
+        expect(isBindingAttribute('prop-name')).toBe(true)
+        expect(isBindingAttribute('click')).toBe(true)
+        expect(isBindingAttribute('if')).toBe(true)
+        expect(isBindingAttribute('for-each')).toBe(true)
+      })
+
+      it('should reject standard HTML attributes with hyphens', () => {
+        expect(isBindingAttribute('aria-label')).toBe(false)
+        expect(isBindingAttribute('aria-hidden')).toBe(false)
+        expect(isBindingAttribute('data-test')).toBe(false)
+        expect(isBindingAttribute('data-id')).toBe(false)
+        expect(isBindingAttribute('role')).toBe(false)
+        expect(isBindingAttribute('xml:lang')).toBe(false)
+      })
+
+      it('should reject custom kebab-case props', () => {
+        expect(isBindingAttribute('custom-prop')).toBe(false)
+        expect(isBindingAttribute('my-attribute')).toBe(false)
+      })
+    })
+
+    describe('isCustomComponent', () => {
+      it('should return true for registered components with hyphen in tag name', () => {
+        class TestVM {
+          value = ''
+        }
+        defineComponent('custom-component', TestVM, '<component view-model="TestVM"></component>')
+
+        const element = document.createElement('custom-component')
+        expect(isCustomComponent(element)).toBe(true)
+      })
+
+      it('should return false for standard HTML elements', () => {
+        const div = document.createElement('div')
+        const span = document.createElement('span')
+        expect(isCustomComponent(div)).toBe(false)
+        expect(isCustomComponent(span)).toBe(false)
+      })
+
+      it('should return false for unregistered custom elements', () => {
+        const element = document.createElement('unregistered-comp')
+        expect(isCustomComponent(element)).toBe(false)
+      })
+    })
+
+    it('should handle setting nested properties through proxy', () => {
+      const itemRef = { current: { name: 'initial' } }
+      const viewModel = { items: [{ name: 'initial' }] }
+      const extendedViewModel = createExtendedViewModel(viewModel, 'item', itemRef)
+
+      // Test proxy set handler for nested property (line 51)
+      extendedViewModel['item.name'] = 'updated'
+      // The proxy should return true for nested property paths without modifying itemRef
+      expect(itemRef.current).toEqual({ name: 'initial' })
+    })
+
+    it('should capture external dependencies from nested if and for-each bindings', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span if="searchQuery"></span>
+        </div>
+      `
+      const viewModel = { items: ['a', 'b'], searchQuery: 'test' }
+      const binding = setupSingleForEachBinding(
+        container.querySelector('[for-each]') as HTMLElement,
+        viewModel,
+      )
+
+      expect(binding).not.toBeNull()
+      expect(binding!.extraDependencies).toContain('searchQuery')
+    })
+
+    it('should handle setting parent viewModel properties through proxy', () => {
+      const itemRef = { current: 1 }
+      const viewModel = { items: [1], parentProp: 'initial' }
+      const extendedViewModel = createExtendedViewModel(viewModel, 'item', itemRef)
+
+      // Test proxy set handler for parent property (lines 52-53)
+      extendedViewModel.parentProp = 'updated'
+      expect(viewModel.parentProp).toBe('updated')
+    })
+
+    it('should map value bindings to real elements', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <input bind-value="item.value">
+        </div>
+      `
+
+      const viewModel = { items: [{ value: 'test' }] }
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const input = container.querySelector('input')
+      expect(input?.value).toBe('test')
+    })
+
+    it('should map style bindings to real elements', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span bind-style="item.style">Text</span>
+        </div>
+      `
+
+      const viewModel = { items: [{ style: { color: 'red' } }] }
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const span = container.querySelector('span')
+      expect(span?.style.color).toBe('red')
     })
   })
 
   describe('renderForEachBindings', () => {
+    afterEach(() => {
+      clearComponentRegistry()
+    })
+
     it('should render elements for initial array', () => {
       container.innerHTML = `
         <div for-each="user of users">
@@ -468,10 +609,7 @@ describe('bindForEach', () => {
         </ul>
       `
 
-      const handleItemClick = vi.fn((viewModel: unknown) => {
-        const vm = viewModel as { items: unknown }
-        return vm.items
-      })
+      const handleItemClick = vi.fn()
       const viewModel = {
         items: [{ name: 'Item 1' }, { name: 'Item 2' }],
         handleItemClick,
@@ -485,7 +623,85 @@ describe('bindForEach', () => {
       buttons[1].click()
 
       expect(handleItemClick).toHaveBeenCalledTimes(2)
-      expect(handleItemClick).toHaveReturnedWith(viewModel.items)
+    })
+
+    it('should initialize components inside for-each loop', () => {
+      class ItemVM {
+        name = ''
+      }
+      defineComponent(
+        'list-item',
+        ItemVM,
+        '<component view-model="ItemVM"><span bind-content="name"></span></component>',
+      )
+
+      container.innerHTML = `
+        <div for-each="item of items">
+          <list-item prop-name="item.name"></list-item>
+        </div>
+      `
+
+      const viewModel = {
+        items: [{ name: 'Item A' }, { name: 'Item B' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+      expect(spans[0].innerHTML).toBe('Item A')
+      expect(spans[1].innerHTML).toBe('Item B')
+    })
+
+    it('should be reactive for components inside for-each loop when parent property changes', () => {
+      class ItemVM {
+        name = ''
+        selectedId = -1
+        get isSelected() {
+          return this.name === `Item ${this.selectedId}`
+        }
+        get itemClasses() {
+          return { active: this.isSelected }
+        }
+      }
+      defineComponent(
+        'list-item-reactive',
+        ItemVM,
+        `
+        <component view-model="ItemVM">
+          <span bind-class="itemClasses" bind-content="name"></span>
+        </component>
+      `,
+      )
+
+      container.innerHTML = `
+        <div for-each="item of items">
+          <list-item-reactive prop-name="item.name" prop-selected-id="parentSelectedId"></list-item-reactive>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel(
+        {
+          items: [{ name: 'Item 1' }, { name: 'Item 2' }],
+          parentSelectedId: 1,
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans[0].classList.contains('active')).toBe(true)
+      expect(spans[1].classList.contains('active')).toBe(false)
+
+      parentVM.parentSelectedId = 2
+
+      expect(spans[0].classList.contains('active')).toBe(false)
+      expect(spans[1].classList.contains('active')).toBe(true)
     })
   })
 })

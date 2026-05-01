@@ -53,12 +53,12 @@ describe('nestedProperties', () => {
     })
 
     it('should not allow prototype pollution', () => {
-      const obj: any = {}
+      const obj: Record<string, unknown> = {}
       expect(setNestedProperty(obj, '__proto__.polluted', 'yes')).toBe(false)
-      expect((Object.prototype as any).polluted).toBeUndefined()
+      expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
 
       expect(setNestedProperty(obj, '__proto__.polluted', 'yes')).toBe(false)
-      expect((Object.prototype as any).polluted).toBeUndefined()
+      expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
     })
 
     it('should return false if intermediate node is null', () => {

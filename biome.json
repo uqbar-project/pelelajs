@@ -5,7 +5,7 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noExplicitAny": "off",
+        "noExplicitAny": "error",
         "noConsole": "off",
         "noEmptyBlockStatements": "off"
       },
@@ -57,7 +57,9 @@
   },
   "assist": {
     "actions": {
-      "source": { "organizeImports": "on" }
+      "source": {
+        "organizeImports": "on"
+      }
     }
   }
 }

@@ -2,7 +2,13 @@ import * as fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { pelelajsPlugin } from './index'
+import {
+  escapeTemplateForLiteral,
+  extractLinkAttributeMatches,
+  isRootPelelaOrComponent,
+  kebabToCamelCase,
+  pelelajsPlugin,
+} from './index'
 
 const VIRTUAL_MODULE_ID = 'virtual:pelela-auto-register'
 const RESOLVED_VIRTUAL_ID = '\0virtual:pelela-auto-register'
@@ -224,7 +230,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('view-model'))).toBe(true)
+      expect(errors.some((e) => e.includes('missingViewModel'))).toBe(true)
     })
 
     it('reports error when pelela tags are unbalanced', () => {
@@ -255,6 +261,369 @@ describe('pelelajsPlugin', () => {
       const result = handler.call(mockContext as never, pelelaPath, {} as never) as string
 
       expect(result).toContain('import "./styled.css"')
+    })
+
+    it('reports error when multiple root tags exist', () => {
+      const pelelaPath = path.join(tempDir, 'multiple.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"></pelela><pelela view-model="Other"></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('multipleRoots'))).toBe(true)
+    })
+
+    it('reports error when foreign interpolation syntax is used', () => {
+      const pelelaPath = path.join(tempDir, 'foreign.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><h1>{{value}}</h1></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('foreignInterpolation'))).toBe(true)
+    })
+
+    it('reports error when foreign property binding syntax is used', () => {
+      const pelelaPath = path.join(tempDir, 'foreign-prop.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><div [value]="x"></div></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('foreignPropertyBinding'))).toBe(true)
+    })
+
+    it('reports error when forbidden attributes are on root tag', () => {
+      const pelelaPath = path.join(tempDir, 'forbidden.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home" link-value="x"></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('forbiddenRootAttribute'))).toBe(true)
+    })
+
+    it('reports error when link attributes are on standard HTML tags', () => {
+      const pelelaPath = path.join(tempDir, 'html-link.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div link-value="x">Test</div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('forbiddenRootAttribute'))).toBe(true)
+    })
+
+    it('reports error when component attribute lacks prop-* or link-* prefix', () => {
+      const pelelaPath = path.join(tempDir, 'invalid-comp.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><my-comp value="x"></my-comp></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(true)
+    })
+
+    it('accepts prop-* prefix on component attributes', () => {
+      const pelelaPath = path.join(tempDir, 'valid-props.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><my-comp prop-value="x"></my-comp></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+    })
+
+    it('accepts link-* prefix on component attributes', () => {
+      const pelelaPath = path.join(tempDir, 'valid-link.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><my-comp link-value="x"></my-comp></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+    })
+
+    it('reports error for each invalid attribute when component has multiple invalid attributes', () => {
+      const pelelaPath = path.join(tempDir, 'multi-invalid.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><my-comp class="bad" id="bad2" prop-x="ok"></my-comp></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      const invalidAttrErrors = errors.filter((e) => e.includes('invalidComponentAttribute'))
+      expect(invalidAttrErrors).toHaveLength(2)
+    })
+
+    describe('component attribute extraction with values containing "="', () => {
+      it('does not report false positive when prop-* value contains "=" (URL query string)', () => {
+        const pelelaPath = path.join(tempDir, 'url-value.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          '<pelela view-model="Home"><my-comp prop-url="api?a=1&b=2"></my-comp></pelela>',
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+      })
+
+      it('does not report false positive when link-* value contains "="', () => {
+        const pelelaPath = path.join(tempDir, 'link-eq-value.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          '<pelela view-model="Home"><my-comp link-value="x=1"></my-comp></pelela>',
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+      })
+
+      it('does not report false positive when single-quoted value contains "="', () => {
+        const pelelaPath = path.join(tempDir, 'single-quote-eq.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          `<pelela view-model="Home"><my-comp prop-label='key=value'></my-comp></pelela>`,
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+      })
+
+      it('still detects truly invalid attributes when valid ones have "=" in their values', () => {
+        const pelelaPath = path.join(tempDir, 'mixed-valid-invalid.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          '<pelela view-model="Home"><my-comp prop-url="a=b" class="foo"></my-comp></pelela>',
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        const invalidAttrErrors = errors.filter((e) => e.includes('invalidComponentAttribute'))
+        expect(invalidAttrErrors).toHaveLength(1)
+      })
+
+      it('reports error for unprefixed boolean attributes on component tags', () => {
+        const pelelaPath = path.join(tempDir, 'boolean-attr.pelela')
+        fs.writeFileSync(
+          pelelaPath,
+          '<pelela view-model="Home"><my-comp disabled prop-value="ok"></my-comp></pelela>',
+        )
+
+        const errors: string[] = []
+        const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+        const plugin = pelelajsPlugin()
+        const handler = getHandler(plugin.load!)
+
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(true)
+      })
+    })
+  })
+
+  describe('helper functions', () => {
+    describe('isRootPelelaOrComponent', () => {
+      it('returns true for pelela tag', () => {
+        expect(isRootPelelaOrComponent('pelela')).toBe(true)
+        expect(isRootPelelaOrComponent('PELELA')).toBe(true)
+        expect(isRootPelelaOrComponent('Pelela')).toBe(true)
+      })
+
+      it('returns true for component tag', () => {
+        expect(isRootPelelaOrComponent('component')).toBe(true)
+        expect(isRootPelelaOrComponent('COMPONENT')).toBe(true)
+        expect(isRootPelelaOrComponent('Component')).toBe(true)
+      })
+
+      it('returns false for other tags', () => {
+        expect(isRootPelelaOrComponent('div')).toBe(false)
+        expect(isRootPelelaOrComponent('span')).toBe(false)
+        expect(isRootPelelaOrComponent('my-component')).toBe(false)
+      })
+    })
+
+    describe('extractLinkAttributeMatches', () => {
+      it('extracts link attributes from HTML', () => {
+        const html = '<div link-value="x"></div><span link-content="y"></span>'
+        const matches = extractLinkAttributeMatches(html)
+
+        expect(matches).toHaveLength(2)
+        expect(matches[0]).toEqual({ tagName: 'div', attributeName: 'link-value' })
+        expect(matches[1]).toEqual({ tagName: 'span', attributeName: 'link-content' })
+      })
+
+      it('handles multiple link attributes on same tag', () => {
+        const html = '<div link-value="x" link-content="y"></div>'
+        const matches = extractLinkAttributeMatches(html)
+
+        expect(matches).toHaveLength(2)
+        expect(matches[0].tagName).toBe('div')
+        expect(matches[0].attributeName).toMatch(/^link-/)
+        expect(matches[1].tagName).toBe('div')
+        expect(matches[1].attributeName).toMatch(/^link-/)
+      })
+
+      it('converts tag names to lowercase', () => {
+        const html = '<DIV link-value="x"></DIV>'
+        const matches = extractLinkAttributeMatches(html)
+
+        expect(matches[0].tagName).toBe('div')
+      })
+
+      it('returns empty array when no link attributes found', () => {
+        const html = '<div class="x"></div>'
+        const matches = extractLinkAttributeMatches(html)
+
+        expect(matches).toHaveLength(0)
+      })
+
+      it('handles complex HTML with nested tags', () => {
+        const html = '<div><span link-value="x"></span></div>'
+        const matches = extractLinkAttributeMatches(html)
+
+        expect(matches).toHaveLength(1)
+        expect(matches[0]).toEqual({ tagName: 'span', attributeName: 'link-value' })
+      })
+    })
+
+    describe('kebabToCamelCase', () => {
+      it('converts kebab-case to camelCase', () => {
+        expect(kebabToCamelCase('my-component')).toBe('myComponent')
+        expect(kebabToCamelCase('person-row')).toBe('personRow')
+        expect(kebabToCamelCase('detail-special')).toBe('detailSpecial')
+      })
+
+      it('handles single word', () => {
+        expect(kebabToCamelCase('home')).toBe('home')
+        expect(kebabToCamelCase('counter')).toBe('counter')
+      })
+
+      it('handles multiple hyphens', () => {
+        expect(kebabToCamelCase('my-long-component-name')).toBe('myLongComponentName')
+      })
+
+      it('handles dots as separators', () => {
+        expect(kebabToCamelCase('foo.bar')).toBe('fooBar')
+      })
+
+      it('handles mixed separators', () => {
+        expect(kebabToCamelCase('my-component.name')).toBe('myComponentName')
+      })
+    })
+
+    describe('escapeTemplateForLiteral', () => {
+      it('escapes backticks', () => {
+        expect(escapeTemplateForLiteral('`hello`')).toBe('\\`hello\\`')
+        expect(escapeTemplateForLiteral('test `code` here')).toBe('test \\`code\\` here')
+      })
+
+      it('escapes template literal expressions', () => {
+        expect(escapeTemplateForLiteral('${' + 'value' + '}')).toBe('\\${' + 'value' + '}')
+        expect(escapeTemplateForLiteral('test ${' + 'x' + '} here')).toBe(
+          'test \\${' + 'x' + '} here',
+        )
+      })
+
+      it('escapes both backticks and expressions', () => {
+        expect(escapeTemplateForLiteral('`test ${' + 'x' + '}`')).toBe(
+          '\\`test \\${' + 'x' + '}\\`',
+        )
+      })
+
+      it('leaves normal text unchanged', () => {
+        expect(escapeTemplateForLiteral('hello world')).toBe('hello world')
+        expect(escapeTemplateForLiteral('<div>test</div>')).toBe('<div>test</div>')
+      })
     })
   })
 })
