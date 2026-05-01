@@ -206,11 +206,6 @@ export function isBindingAttribute(attrName: string): boolean {
 
 export function isCustomComponent(element: HTMLElement): boolean {
   const tagName = element.tagName.toLowerCase()
-  // A Pelela component must (a) be a valid custom element name (contain a hyphen)
-  // per the Web Components spec, AND (b) be registered in the component registry.
-  if (!tagName.includes('-')) {
-    return false
-  }
   return getComponentByTag(tagName) !== undefined
 }
 

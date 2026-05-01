@@ -11,7 +11,7 @@
         <p>Persona actualmente seleccionada: <strong bind-content="selectedPersonName"></strong></p>
         <div class="counter-box">
           <h3>Selector por índice</h3>
-          <counter link-value="selectedIndex" prop-total="totalPeople"></counter>
+          <counte link-value="selectedIndex" prop-total="totalPeople"></counte>
         </div>
       </div>
     </div>

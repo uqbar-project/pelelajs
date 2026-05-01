@@ -1,6 +1,8 @@
+import { isPelelaRootTag, isStandardHtmlTag } from '../commons/dom'
 import { toCamelCase, unwrapTemplate } from '../commons/helpers'
 import { t } from '../commons/i18n'
 import { hasProperty, isUnsafeKey, sanitizeHTML } from '../commons/sanitization'
+import { UnknownComponentError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
 import type { PelelaElement } from '../types'
@@ -53,11 +55,33 @@ function assertOnlyValidComponentAttributes(element: HTMLElement): void {
   })
 }
 
+function isPotentialComponent(element: HTMLElement): boolean {
+  const tagName = element.tagName.toLowerCase()
+  return !isPelelaRootTag(tagName) && !isStandardHtmlTag(tagName)
+}
+
+function validateTags(root: HTMLElement, registeredTags: string[]): void {
+  const allElements = Array.from(root.querySelectorAll<HTMLElement>('*'))
+  if (isPotentialComponent(root)) {
+    allElements.unshift(root)
+  }
+
+  allElements.forEach((element) => {
+    if (isPotentialComponent(element)) {
+      const tagName = element.tagName.toLowerCase()
+      if (!registeredTags.includes(tagName)) {
+        throw new UnknownComponentError(tagName, element)
+      }
+    }
+  })
+}
+
 export function setupComponentBindings<T extends object>(
   root: HTMLElement,
   parentViewModel: ViewModel<T>,
 ): ComponentBinding[] {
   const registeredTags = getRegisteredTags()
+  validateTags(root, registeredTags)
   if (registeredTags.length === 0) return []
 
   const selector = registeredTags.join(',')

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   escapeTemplateForLiteral,
   extractLinkAttributeMatches,
-  isRootPelelaOrComponent,
+  isPelelaRootTag,
   kebabToCamelCase,
   pelelajsPlugin,
 } from './index'
@@ -512,23 +512,23 @@ describe('pelelajsPlugin', () => {
   })
 
   describe('helper functions', () => {
-    describe('isRootPelelaOrComponent', () => {
+    describe('isPelelaRootTag', () => {
       it('returns true for pelela tag', () => {
-        expect(isRootPelelaOrComponent('pelela')).toBe(true)
-        expect(isRootPelelaOrComponent('PELELA')).toBe(true)
-        expect(isRootPelelaOrComponent('Pelela')).toBe(true)
+        expect(isPelelaRootTag('pelela')).toBe(true)
+        expect(isPelelaRootTag('PELELA')).toBe(true)
+        expect(isPelelaRootTag('Pelela')).toBe(true)
       })
 
       it('returns true for component tag', () => {
-        expect(isRootPelelaOrComponent('component')).toBe(true)
-        expect(isRootPelelaOrComponent('COMPONENT')).toBe(true)
-        expect(isRootPelelaOrComponent('Component')).toBe(true)
+        expect(isPelelaRootTag('component')).toBe(true)
+        expect(isPelelaRootTag('COMPONENT')).toBe(true)
+        expect(isPelelaRootTag('Component')).toBe(true)
       })
 
       it('returns false for other tags', () => {
-        expect(isRootPelelaOrComponent('div')).toBe(false)
-        expect(isRootPelelaOrComponent('span')).toBe(false)
-        expect(isRootPelelaOrComponent('my-component')).toBe(false)
+        expect(isPelelaRootTag('div')).toBe(false)
+        expect(isPelelaRootTag('span')).toBe(false)
+        expect(isPelelaRootTag('my-component')).toBe(false)
       })
     })
 
