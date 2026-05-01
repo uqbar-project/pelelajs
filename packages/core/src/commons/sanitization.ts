@@ -1,5 +1,5 @@
+import { DOMEnvironmentError } from '../errors'
 import { isObject } from './helpers'
-import { t } from './i18n'
 
 const BLACKLISTED_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
@@ -96,7 +96,7 @@ function isUnsafeAttribute(name: string, value: string): boolean {
  */
 export function sanitizeHTML(html: string): string {
   if (typeof document === 'undefined' || typeof DOMParser === 'undefined') {
-    throw new Error(t('errors.security.domEnvironmentRequired'))
+    throw new DOMEnvironmentError()
   }
 
   const parser = new DOMParser()
