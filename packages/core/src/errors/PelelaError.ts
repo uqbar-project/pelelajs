@@ -19,6 +19,8 @@
  * ```
  */
 export abstract class PelelaError extends Error {
+  abstract get i18nCode(): string
+
   /**
    * @param message - The error message
    * @param options - Optional configuration

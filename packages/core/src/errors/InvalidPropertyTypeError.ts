@@ -14,6 +14,12 @@ interface InvalidPropertyTypeErrorParams {
 }
 
 export class InvalidPropertyTypeError extends PelelaError {
+  static readonly I18N_CODE = 'errors.properties.invalidType' as const
+
+  get i18nCode() {
+    return InvalidPropertyTypeError.I18N_CODE
+  }
+
   public readonly propertyName: string
   public readonly bindingKind: BindingKind
   public readonly expectedType: ExpectedType
@@ -22,7 +28,7 @@ export class InvalidPropertyTypeError extends PelelaError {
 
   constructor(params: InvalidPropertyTypeErrorParams) {
     super(
-      t('errors.properties.invalidType', {
+      t(InvalidPropertyTypeError.I18N_CODE, {
         name: params.propertyName,
         kind: params.bindingKind,
         expected: params.expectedType,

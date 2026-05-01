@@ -4,6 +4,12 @@ import { PelelaError } from './PelelaError'
 export type EventType = 'click' | 'submit' | 'change' | 'input' | 'keypress' | (string & {})
 
 export class InvalidHandlerError extends PelelaError {
+  static readonly I18N_CODE = 'errors.handlers.invalid' as const
+
+  get i18nCode() {
+    return InvalidHandlerError.I18N_CODE
+  }
+
   constructor(
     public readonly handlerName: string,
     public readonly viewModelName: string,
@@ -12,7 +18,7 @@ export class InvalidHandlerError extends PelelaError {
   ) {
     const eventInfo = eventType ? `${eventType}="..."` : t('errors.handlers.unknownEvent')
     super(
-      t('errors.handlers.invalid', {
+      t(InvalidHandlerError.I18N_CODE, {
         name: handlerName,
         eventInfo,
         viewModel: viewModelName,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PropertyValidationError } from '../errors/index'
+import { testHelpers } from '../test/helpers'
 import { assertViewModelProperty } from './assertViewModelProperty'
 
 class TestViewModel {
@@ -11,6 +12,8 @@ class TestViewModel {
     },
   }
 }
+
+const { catchError } = testHelpers
 
 describe('assertViewModelProperty', () => {
   it('should not throw error if property exists', () => {
@@ -68,9 +71,13 @@ describe('assertViewModelProperty', () => {
     element.setAttribute('click', 'missingAction')
     element.innerHTML = '<span>Click</span>'
 
-    expect(() => {
-      assertViewModelProperty(viewModel, 'missingProperty', 'bind-content', element)
-    }).toThrow(/<button click="missingAction"><span>Click<\/span><\/button>/)
+    const error = catchError<PropertyValidationError>(() =>
+      assertViewModelProperty(viewModel, 'missingProperty', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(PropertyValidationError)
+    expect(error.i18nCode).toBe(PropertyValidationError.I18N_CODE)
+    expect(error.elementSnippet).toContain('<button click="missingAction">')
   })
 
   it('should truncate snippet if too long', () => {
@@ -78,17 +85,12 @@ describe('assertViewModelProperty', () => {
     const element = document.createElement('div')
     element.innerHTML = 'a'.repeat(200)
 
-    expect.assertions(2)
+    const error = catchError<PropertyValidationError>(() =>
+      assertViewModelProperty(viewModel, 'missing', 'bind-value', element),
+    )
 
-    expect(() => {
-      assertViewModelProperty(viewModel, 'missing', 'bind-value', element)
-    }).toThrow()
-
-    try {
-      assertViewModelProperty(viewModel, 'missing', 'bind-value', element)
-    } catch (error: unknown) {
-      expect((error as Error).message.length).toBeLessThan(300)
-    }
+    expect(error).toBeInstanceOf(PropertyValidationError)
+    expect(error.message.length).toBeLessThan(300)
   })
 
   it('should allow inherited properties', () => {
@@ -133,9 +135,13 @@ describe('assertViewModelProperty', () => {
     const viewModel = new TestViewModel()
     const element = document.createElement('div')
 
-    expect(() => {
-      assertViewModelProperty(viewModel, 'user.missing', 'bind-value', element)
-    }).toThrow(/Unknown property "user.missing"/)
+    const error = catchError<PropertyValidationError>(() =>
+      assertViewModelProperty(viewModel, 'user.missing', 'bind-value', element),
+    )
+
+    expect(error).toBeInstanceOf(PropertyValidationError)
+    expect(error.i18nCode).toBe(PropertyValidationError.I18N_CODE)
+    expect(error.propertyName).toBe('user.missing')
   })
 
   /**
@@ -165,8 +171,12 @@ describe('assertViewModelProperty', () => {
     const viewModel = { 'user.name': 'literal value' }
     const element = document.createElement('div')
 
-    expect(() => {
-      assertViewModelProperty(viewModel, 'user.name', 'bind-value', element)
-    }).toThrow(/Unknown property "user.name"/)
+    const error = catchError<PropertyValidationError>(() =>
+      assertViewModelProperty(viewModel, 'user.name', 'bind-value', element),
+    )
+
+    expect(error).toBeInstanceOf(PropertyValidationError)
+    expect(error.i18nCode).toBe(PropertyValidationError.I18N_CODE)
+    expect(error.propertyName).toBe('user.name')
   })
 })

@@ -3,7 +3,13 @@ import { PelelaError } from './PelelaError'
 import { PropertyValidationError } from './PropertyValidationError'
 
 // Concrete test class since PelelaError is abstract
-class TestPelelaError extends PelelaError {}
+class TestPelelaError extends PelelaError {
+  static readonly I18N_CODE = 'test.error' as const
+
+  get i18nCode() {
+    return TestPelelaError.I18N_CODE
+  }
+}
 
 describe('PelelaError', () => {
   describe('basic error creation', () => {
@@ -136,6 +142,23 @@ describe('PelelaError', () => {
       expect(error instanceof Error).toBe(true)
       expect(error instanceof PelelaError).toBe(true)
       expect(error instanceof PropertyValidationError).toBe(true)
+    })
+  })
+
+  describe('i18nCode property', () => {
+    it('should expose i18nCode via getter', () => {
+      const error = new TestPelelaError('Test error')
+      expect(error.i18nCode).toBe(TestPelelaError.I18N_CODE)
+    })
+
+    it('should expose i18nCode for PropertyValidationError', () => {
+      const error = new PropertyValidationError({
+        propertyName: 'myProp',
+        bindingKind: 'bind-value',
+        viewModelName: 'TestVM',
+        elementSnippet: '<div>',
+      })
+      expect(error.i18nCode).toBe(PropertyValidationError.I18N_CODE)
     })
   })
 })
