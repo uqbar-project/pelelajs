@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   escapeTemplateForLiteral,
   extractLinkAttributeMatches,
-  isPelelaRootTag,
   kebabToCamelCase,
   pelelajsPlugin,
 } from './index'
@@ -512,26 +511,6 @@ describe('pelelajsPlugin', () => {
   })
 
   describe('helper functions', () => {
-    describe('isPelelaRootTag', () => {
-      it('returns true for pelela tag', () => {
-        expect(isPelelaRootTag('pelela')).toBe(true)
-        expect(isPelelaRootTag('PELELA')).toBe(true)
-        expect(isPelelaRootTag('Pelela')).toBe(true)
-      })
-
-      it('returns true for component tag', () => {
-        expect(isPelelaRootTag('component')).toBe(true)
-        expect(isPelelaRootTag('COMPONENT')).toBe(true)
-        expect(isPelelaRootTag('Component')).toBe(true)
-      })
-
-      it('returns false for other tags', () => {
-        expect(isPelelaRootTag('div')).toBe(false)
-        expect(isPelelaRootTag('span')).toBe(false)
-        expect(isPelelaRootTag('my-component')).toBe(false)
-      })
-    })
-
     describe('extractLinkAttributeMatches', () => {
       it('extracts link attributes from HTML', () => {
         const html = '<div link-value="x"></div><span link-content="y"></span>'

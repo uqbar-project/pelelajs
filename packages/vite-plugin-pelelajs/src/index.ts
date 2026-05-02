@@ -2,8 +2,6 @@ import * as fs from 'node:fs'
 import path from 'node:path'
 import { initializeI18n, isPelelaRootTag, isStandardHtmlTag, t } from 'pelelajs'
 
-export { isPelelaRootTag, isStandardHtmlTag }
-
 import type { Plugin } from 'vite'
 
 export function escapeTemplateForLiteral(html: string): string {

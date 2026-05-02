@@ -11,7 +11,8 @@ export const STANDARD_HTML_TAGS = [
   'template', 'slot', 'time', 'data', 'code', 'pre', 'blockquote', 'q',
   'cite', 'abbr', 'address', 'bdo', 'ins', 'del', 'small', 'strong', 'em',
   'mark', 'sub', 'sup', 'var', 'samp', 'kbd', 'output', 'progress', 'meter',
-  'fieldset', 'legend', 'optgroup', 'datalist',
+  'fieldset', 'legend', 'optgroup', 'datalist', 'i', 'b', 'u', 's', 'noscript',
+  'picture', 'wbr', 'bdi', 'ruby', 'rt', 'rp', 'dfn', 'hgroup', 'menu', 'search',
 ] as const
 
 export function isStandardHtmlTag(tagName: string): boolean {
