@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { PelelaError } from './PelelaError'
 import { PropertyValidationError } from './PropertyValidationError'
+import { RoutingError } from './RoutingError'
+import { ViewModelRegistrationError } from './ViewModelRegistrationError'
 
 // Concrete test class since PelelaError is abstract
 class TestPelelaError extends PelelaError {
@@ -159,6 +161,31 @@ describe('PelelaError', () => {
         elementSnippet: '<div>',
       })
       expect(error.i18nCode).toBe(PropertyValidationError.I18N_CODE)
+    })
+
+    it('should expose correct i18nCode for ViewModelRegistrationError duplicate', () => {
+      const error = new ViewModelRegistrationError('TestVM', 'duplicate')
+      expect(error.i18nCode).toBe(ViewModelRegistrationError.I18N_CODES.duplicate)
+    })
+
+    it('should expose correct i18nCode for ViewModelRegistrationError missing', () => {
+      const error = new ViewModelRegistrationError('TestVM', 'missing')
+      expect(error.i18nCode).toBe(ViewModelRegistrationError.I18N_CODES.missing)
+    })
+
+    it('should expose correct i18nCode for RoutingError route-not-found', () => {
+      const error = new RoutingError('/missing', 'route-not-found')
+      expect(error.i18nCode).toBe(RoutingError.I18N_CODES['route-not-found'])
+    })
+
+    it('should expose correct i18nCode for RoutingError router-not-started', () => {
+      const error = new RoutingError('navigateTo', 'router-not-started')
+      expect(error.i18nCode).toBe(RoutingError.I18N_CODES['router-not-started'])
+    })
+
+    it('should expose correct i18nCode for RoutingError component-not-registered', () => {
+      const error = new RoutingError('MyComponent', 'component-not-registered')
+      expect(error.i18nCode).toBe(RoutingError.I18N_CODES['component-not-registered'])
     })
   })
 })
