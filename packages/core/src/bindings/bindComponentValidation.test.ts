@@ -55,4 +55,26 @@ describe('bindComponent validation', () => {
 
     expect(() => setupComponentBindings(container, vm)).not.toThrow()
   })
+
+  it('should allow "if" attribute on registered components', () => {
+    class MyComp {}
+    defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')
+
+    container.innerHTML = '<my-comp if="show"></my-comp>'
+    const vm = createReactiveViewModel({ show: true }, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).not.toThrow()
+  })
+
+  it('should throw Error for invalid attributes on registered components', () => {
+    class MyComp {}
+    defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')
+
+    container.innerHTML = '<my-comp invalid-attr="value"></my-comp>'
+    const vm = createReactiveViewModel({}, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).toThrow(
+      /attribute "invalid-attr" must use "prop-"/,
+    )
+  })
 })

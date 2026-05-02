@@ -1,6 +1,13 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
-import { initializeI18n, isPelelaRootTag, isStandardHtmlTag, t } from 'pelelajs'
+import {
+  initializeI18n,
+  isPelelaRootTag,
+  isStandardHtmlTag,
+  isValidComponentAttribute,
+  LINK_PREFIX,
+  t,
+} from 'pelelajs'
 
 import type { Plugin } from 'vite'
 
@@ -16,9 +23,6 @@ function getCssImport(pelelaFilePath: string): string {
   }
   return ''
 }
-
-export const LINK_PREFIX = 'link-'
-export const PROP_PREFIX = 'prop-'
 
 const TAG_PATTERN = /<([\w-]+)([^>]*)>/g
 const LINK_ATTRIBUTE_PATTERN = new RegExp(`\\b(${LINK_PREFIX}[a-zA-Z0-9_-]+)\\s*=`, 'g')
@@ -67,13 +71,12 @@ function validateComponentAttributes(sourceCode: string, errorFn: (message: stri
     (match) =>
       !isPelelaRootTag(match.tagName) &&
       !isStandardHtmlTag(match.tagName) &&
-      !match.attributeName.startsWith(LINK_PREFIX) &&
-      !match.attributeName.startsWith(PROP_PREFIX),
+      !isValidComponentAttribute(match.attributeName),
   )
 
   invalidMatches.forEach((match) => {
     errorFn(
-      t('compiler.invalidComponentAttribute', {
+      t('errors.compiler.invalidComponentAttribute', {
         tag: match.tagName,
         attr: match.attributeName,
       }),
@@ -94,7 +97,7 @@ function validateNoForbiddenHtmlAttributes(
 
   invalidMatches.forEach((match) => {
     errorFn(
-      t('compiler.forbiddenRootAttribute', {
+      t('errors.compiler.forbiddenRootAttribute', {
         filePath,
         tagName: match.tagName,
         attr: match.attributeName,
@@ -112,19 +115,19 @@ function validatePelelaStructure(
   const closeTags = sourceCode.match(/<\/(?:pelela|component)>/gi) || []
 
   if (openTags.length === 0) {
-    errorFn(t('compiler.missingRoot', { filePath }))
+    errorFn(t('errors.compiler.missingRoot', { filePath }))
   }
 
   if (openTags.length > 1) {
-    errorFn(t('compiler.multipleRoots', { filePath, count: openTags.length }))
+    errorFn(t('errors.compiler.multipleRoots', { filePath, count: openTags.length }))
   }
 
   if (closeTags.length === 0) {
-    errorFn(t('compiler.missingClosingTag', { filePath }))
+    errorFn(t('errors.compiler.missingClosingTag', { filePath }))
   }
 
   if (closeTags.length !== openTags.length) {
-    errorFn(t('compiler.unbalancedTags', { filePath }))
+    errorFn(t('errors.compiler.unbalancedTags', { filePath }))
   }
 }
 
@@ -134,11 +137,11 @@ function validateNoForeignSyntax(
   errorFn: (message: string) => void,
 ): void {
   if (/\{\{.*?\}\}/.test(sourceCode)) {
-    errorFn(t('compiler.foreignInterpolation', { filePath }))
+    errorFn(t('errors.compiler.foreignInterpolation', { filePath }))
   }
 
   if (/<[^>]+ \[[^\]]+\]\s*=.*/.test(sourceCode)) {
-    errorFn(t('compiler.foreignPropertyBinding', { filePath }))
+    errorFn(t('errors.compiler.foreignPropertyBinding', { filePath }))
   }
 }
 
@@ -163,7 +166,7 @@ function validateNoForbiddenRootAttributes(
 
   if (foundPattern) {
     errorFn(
-      t('compiler.forbiddenRootAttribute', {
+      t('errors.compiler.forbiddenRootAttribute', {
         filePath,
         tagName: rootTagMatch[1],
         attr: attributes.match(foundPattern)?.[0],
@@ -181,7 +184,7 @@ function extractViewModelName(
   const viewModelName = viewModelMatch ? viewModelMatch[1] : null
 
   if (!viewModelName) {
-    errorFn(t('compiler.missingViewModel', { filePath }))
+    errorFn(t('errors.compiler.missingViewModel', { filePath }))
     return ''
   }
 

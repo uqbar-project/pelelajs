@@ -1,4 +1,10 @@
-import { isPelelaRootTag, isStandardHtmlTag } from '../commons/dom'
+import {
+  isPelelaRootTag,
+  isStandardHtmlTag,
+  isValidComponentAttribute,
+  LINK_PREFIX,
+  PROP_PREFIX,
+} from '../commons/dom'
 import { toCamelCase, unwrapTemplate } from '../commons/helpers'
 import { t } from '../commons/i18n'
 import { hasProperty, isUnsafeKey, sanitizeHTML } from '../commons/sanitization'
@@ -8,9 +14,6 @@ import { getComponentByTag, getRegisteredTags } from '../registry/componentRegis
 import type { PelelaElement } from '../types'
 import { setupBindings } from './setupBindings'
 import type { ComponentBinding, ViewModel } from './types'
-
-export const LINK_PREFIX = 'link-'
-export const PROP_PREFIX = 'prop-'
 
 function isLink(attr: Attr): boolean {
   return attr.name.startsWith(LINK_PREFIX)
@@ -44,9 +47,9 @@ function extractOneWayBindings(
 
 function assertOnlyValidComponentAttributes(element: HTMLElement): void {
   Array.from(element.attributes).forEach((attr) => {
-    if (!isLink(attr) && !isProps(attr)) {
+    if (!isValidComponentAttribute(attr.name)) {
       throw new Error(
-        t('compiler.invalidComponentAttribute', {
+        t('errors.compiler.invalidComponentAttribute', {
           tag: element.tagName.toLowerCase(),
           attr: attr.name,
         }),
@@ -104,12 +107,16 @@ export function setupComponentBindings<T extends object>(
 
     allMappings.forEach(({ parentKey, childKey }) => {
       if (isUnsafeKey(parentKey) || isUnsafeKey(childKey)) {
-        throw new Error(`Prototype pollution blocked on key: ${parentKey} or ${childKey}`)
+        throw new Error(
+          t('errors.security.prototypePollution', {
+            keys: `${parentKey} or ${childKey}`,
+          }),
+        )
       }
 
       if (!parentKey.includes('.') && !hasProperty(parentViewModel, parentKey)) {
         throw new Error(
-          t('compiler.missingParentProperty', {
+          t('errors.compiler.missingParentProperty', {
             tag: element.tagName.toLowerCase(),
             parentKey,
           }),

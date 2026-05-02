@@ -22,3 +22,18 @@ export function isStandardHtmlTag(tagName: string): boolean {
 export function isPelelaRootTag(tagName: string): boolean {
   return ['pelela', 'component'].includes(tagName.toLowerCase())
 }
+
+export const LINK_PREFIX = 'link-'
+export const PROP_PREFIX = 'prop-'
+
+function isValidBindingAttrForComponent(attrName: string): boolean {
+  return attrName === 'if'
+}
+
+export function isValidComponentAttribute(attrName: string): boolean {
+  return (
+    attrName.startsWith(LINK_PREFIX) ||
+    attrName.startsWith(PROP_PREFIX) ||
+    isValidBindingAttrForComponent(attrName)
+  )
+}

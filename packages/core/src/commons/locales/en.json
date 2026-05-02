@@ -24,7 +24,8 @@
       }
     },
     "security": {
-      "domEnvironmentRequired": "sanitizeHTML requires a DOM environment (document and DOMParser)"
+      "domEnvironmentRequired": "sanitizeHTML requires a DOM environment (document and DOMParser)",
+      "prototypePollution": "[pelela] Prototype pollution blocked on key: {{keys}}"
     },
     "routing": {
       "routeNotFound": "[pelela] No route defined for \"{{path}}\"",
@@ -33,6 +34,7 @@
     },
     "compiler": {
       "missingRoot": "Pelela template \"{{filePath}}\" must contain exactly one <pelela ...> or <component ...> as root.",
+      "malformedTemplate": "Malformed template: expected <pelela>...</pelela> or <component>...</component> with matching tags, got: {{template}}",
       "multipleRoots": "Pelela template \"{{filePath}}\" has {{count}} root tags. Only one is allowed.",
       "missingClosingTag": "Pelela template \"{{filePath}}\" has no corresponding closing tag.",
       "unbalancedTags": "Pelela template \"{{filePath}}\" has an unbalanced number of root tags.",

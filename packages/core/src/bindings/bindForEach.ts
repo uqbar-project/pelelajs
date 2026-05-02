@@ -1,3 +1,4 @@
+import { LINK_PREFIX, PROP_PREFIX } from '../commons/dom'
 import {
   extractElementSnippet,
   filterOwnElements,
@@ -12,12 +13,7 @@ import { getComponentByTag } from '../registry/componentRegistry'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
-import {
-  LINK_PREFIX,
-  PROP_PREFIX,
-  renderComponentBindings,
-  setupComponentBindings,
-} from './bindComponent'
+import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'

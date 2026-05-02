@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isPelelaRootTag, isStandardHtmlTag } from './dom'
+import { isPelelaRootTag, isStandardHtmlTag, isValidComponentAttribute } from './dom'
 
 describe('dom utilities', () => {
   describe('isStandardHtmlTag', () => {
@@ -34,6 +34,30 @@ describe('dom utilities', () => {
       expect(isPelelaRootTag('div')).toBe(false)
       expect(isPelelaRootTag('span')).toBe(false)
       expect(isPelelaRootTag('my-component')).toBe(false)
+    })
+  })
+
+  describe('isValidComponentAttribute', () => {
+    it('returns true for link- prefix', () => {
+      expect(isValidComponentAttribute('link-value')).toBe(true)
+      expect(isValidComponentAttribute('link-any-property')).toBe(true)
+    })
+
+    it('returns true for prop- prefix', () => {
+      expect(isValidComponentAttribute('prop-value')).toBe(true)
+      expect(isValidComponentAttribute('prop-data')).toBe(true)
+    })
+
+    it('returns true for "if" attribute', () => {
+      expect(isValidComponentAttribute('if')).toBe(true)
+    })
+
+    it('returns false for standard HTML attributes or unknown prefixes', () => {
+      expect(isValidComponentAttribute('class')).toBe(false)
+      expect(isValidComponentAttribute('id')).toBe(false)
+      expect(isValidComponentAttribute('value')).toBe(false)
+      expect(isValidComponentAttribute('bind-content')).toBe(false)
+      expect(isValidComponentAttribute('on-click')).toBe(false)
     })
   })
 })
