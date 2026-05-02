@@ -61,17 +61,12 @@ function isPotentialComponent(element: HTMLElement): boolean {
 }
 
 function validateTags(root: HTMLElement, registeredTags: string[]): void {
-  const allElements = Array.from(root.querySelectorAll<HTMLElement>('*'))
-  if (isPotentialComponent(root)) {
-    allElements.unshift(root)
-  }
+  const allElements = [root, ...root.querySelectorAll<HTMLElement>('*')]
 
-  allElements.forEach((element) => {
-    if (isPotentialComponent(element)) {
-      const tagName = element.tagName.toLowerCase()
-      if (!registeredTags.includes(tagName)) {
-        throw new UnknownComponentError(tagName, element)
-      }
+  allElements.filter(isPotentialComponent).forEach((element) => {
+    const tagName = element.tagName.toLowerCase()
+    if (!registeredTags.includes(tagName)) {
+      throw new UnknownComponentError(tagName, element)
     }
   })
 }
