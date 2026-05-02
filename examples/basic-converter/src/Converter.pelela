@@ -6,7 +6,7 @@
     <input type="text" bind-value="miles" />
   </label>
 
-  <button click="convert">Convertir</button>
+  <button class="button-primary" click="convert">Convertir</button>
 
   <p if="hasResult">
     Kilómetros:
