@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { initializeI18n } from '../commons/i18n'
+import { initializeI18n, t } from '../commons/i18n'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import type { PelelaElement } from '../types'
@@ -160,7 +160,12 @@ describe('bindComponent', () => {
 
       expect(() => {
         setupComponentBindings(container, parentVM)
-      }).toThrow(Error)
+      }).toThrow(
+        t('errors.compiler.invalidComponentAttribute', {
+          tag: 'test-comp',
+          attr: 'message',
+        }),
+      )
     })
 
     it('should accept prop-* prefix for one-way binding', () => {
@@ -258,7 +263,12 @@ describe('bindComponent', () => {
 
       expect(() => {
         setupComponentBindings(container, parentVM)
-      }).toThrow(Error)
+      }).toThrow(
+        t('errors.compiler.missingParentProperty', {
+          tag: 'test-comp',
+          parentKey: 'nonExistentProperty',
+        }),
+      )
     })
   })
 

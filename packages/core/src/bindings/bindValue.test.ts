@@ -4,8 +4,6 @@ import { PropertyValidationError, UnsupportedElementError } from '../errors/inde
 import { testHelpers } from '../test/helpers'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 
-const { catchError } = testHelpers
-
 describe('bindValue', () => {
   let container: HTMLElement
 
@@ -34,36 +32,27 @@ describe('bindValue', () => {
       container.innerHTML = '<span bind-value="text"></span>'
       const viewModel = { text: '' }
 
-      const error = catchError<UnsupportedElementError>(() =>
-        setupValueBindings(container, viewModel),
+      expect(() => setupValueBindings(container, viewModel)).toThrow(
+        new UnsupportedElementError('span', '<span bind-value="text"></span>'),
       )
-
-      expect(error).toBeInstanceOf(UnsupportedElementError)
-      expect(error.i18nCode).toBe(UnsupportedElementError.I18N_CODE)
     })
 
     it('should throw error for div elements', () => {
       container.innerHTML = '<div bind-value="text"></div>'
       const viewModel = { text: '' }
 
-      const error = catchError<UnsupportedElementError>(() =>
-        setupValueBindings(container, viewModel),
+      expect(() => setupValueBindings(container, viewModel)).toThrow(
+        new UnsupportedElementError('div', '<div bind-value="text"></div>'),
       )
-
-      expect(error).toBeInstanceOf(UnsupportedElementError)
-      expect(error.i18nCode).toBe(UnsupportedElementError.I18N_CODE)
     })
 
     it('should throw error for p elements', () => {
       container.innerHTML = '<p bind-value="text"></p>'
       const viewModel = { text: '' }
 
-      const error = catchError<UnsupportedElementError>(() =>
-        setupValueBindings(container, viewModel),
+      expect(() => setupValueBindings(container, viewModel)).toThrow(
+        new UnsupportedElementError('p', '<p bind-value="text"></p>'),
       )
-
-      expect(error).toBeInstanceOf(UnsupportedElementError)
-      expect(error.i18nCode).toBe(UnsupportedElementError.I18N_CODE)
     })
 
     it('should setup event listeners on inputs', () => {

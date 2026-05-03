@@ -18,12 +18,6 @@ interface PropertyValidationErrorParams {
 }
 
 export class PropertyValidationError extends PelelaError {
-  static readonly I18N_CODE = 'errors.properties.validation' as const
-
-  get i18nCode() {
-    return PropertyValidationError.I18N_CODE
-  }
-
   public readonly propertyName: string
   public readonly bindingKind: BindingKind
   public readonly viewModelName: string
@@ -31,7 +25,7 @@ export class PropertyValidationError extends PelelaError {
 
   constructor(params: PropertyValidationErrorParams) {
     super(
-      t(PropertyValidationError.I18N_CODE, {
+      t('errors.properties.validation', {
         name: params.propertyName,
         kind: params.bindingKind,
         snippet: params.elementSnippet,

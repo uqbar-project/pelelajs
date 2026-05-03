@@ -76,7 +76,6 @@ describe('assertViewModelProperty', () => {
     )
 
     expect(error).toBeInstanceOf(PropertyValidationError)
-    expect(error.i18nCode).toBe(PropertyValidationError.I18N_CODE)
     expect(error.elementSnippet).toContain('<button click="missingAction">')
   })
 
@@ -140,7 +139,6 @@ describe('assertViewModelProperty', () => {
     )
 
     expect(error).toBeInstanceOf(PropertyValidationError)
-    expect(error.i18nCode).toBe(PropertyValidationError.I18N_CODE)
     expect(error.propertyName).toBe('user.missing')
   })
 
@@ -176,7 +174,6 @@ describe('assertViewModelProperty', () => {
     )
 
     expect(error).toBeInstanceOf(PropertyValidationError)
-    expect(error.i18nCode).toBe(PropertyValidationError.I18N_CODE)
     expect(error.propertyName).toBe('user.name')
   })
 })
