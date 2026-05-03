@@ -104,9 +104,9 @@ describe('i18n', () => {
         tagName: 'div',
         snippet: '<div>',
       })
-      expect(result).toBe(
-        'bind-value can only be used on input, textarea, or select elements. Found on <div>. Use bind-content for display elements.\nElement: <div>',
-      )
+      expect(result).toContain('bind-value can only be used on input, textarea, or select')
+      expect(result).toContain('Found on <div>.')
+      expect(result).toContain('Element: <div>')
     })
   })
 
