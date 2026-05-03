@@ -89,15 +89,13 @@ describe('i18n', () => {
     it('should translate keys using real resources (en)', () => {
       initializeI18n('en')
       const result = t('errors.viewmodel.registration.duplicate', { name: 'MyVM' })
-      expect(result).not.toBe('errors.viewmodel.registration.duplicate')
-      expect(result).toContain('MyVM')
+      expect(result).toBe('[pelela] View model "MyVM" is already registered')
     })
 
     it('should translate keys using real resources (es)', () => {
       initializeI18n('es')
       const result = t('errors.viewmodel.registration.duplicate', { name: 'MyVM' })
-      expect(result).not.toBe('errors.viewmodel.registration.duplicate')
-      expect(result).toContain('MyVM')
+      expect(result).toBe('[pelela] El view model "MyVM" ya está registrado')
     })
 
     it('should support interpolation with double curly braces', () => {
@@ -106,8 +104,9 @@ describe('i18n', () => {
         tagName: 'div',
         snippet: '<div>',
       })
-      expect(result).toContain('Found on <div>')
-      expect(result).toContain('Element: <div>')
+      expect(result).toBe(
+        'bind-value can only be used on input, textarea, or select elements. Found on <div>. Use bind-content for display elements.\nElement: <div>',
+      )
     })
   })
 
