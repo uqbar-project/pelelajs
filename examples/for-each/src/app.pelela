@@ -1,25 +1,47 @@
 <pelela view-model="App">
   <h1>Ejemplos for-each</h1>
 
-  <h2>Select</h2>
+  <h2>1) Ejemplo de binding para un select</h2>
   <select bind-value="selectedBetType">
     <option for-each="betType of betTypes" bind-content="betType.description"></option>
   </select>
 
   <p>Valor seleccionado: <span bind-content="selectedBetType"></span></p>
 
-  <input bind-value="testObject.name">
-  <span bind-content="testObject.name" style="color: white;"></span>
+  <hr/>
 
-  <h3>Opciones del select activas:</h3>
-  <div class="options-container">
-    <span for-each="betType of betTypes"
-          if="betType.active"
-          bind-content="betType.description"></span>
+  <h2>2) Ejemplo binding objetos anidados</h2>
+
+  <div class="card">
+    <input bind-value="testObject.name">
+    <span bind-content="testObject.name" class="result-text"></span>
   </div>
 
-  <h2>Lista de Ítems</h2>
+  <hr/>
+
+  <h2>3) Ejemplo de filtros dinámicos (if + for-each)</h2>
   
+  <p>Configurar apuestas activas:</p>
+  <div for-each="betType of betTypes">
+    <div class="options">
+      <input type="checkbox" bind-value="betType.active">
+      <span bind-content="betType.description"></span>
+    </div>
+  </div>
+  
+  <div class="options-container">
+    <p>Opciones renderizadas:</p>
+    <span for-each="betType of betTypes"
+          if="betType.active"
+          bind-content="betType.description"
+          class="badge"></span>
+  </div>
+
+  <hr/>
+
+  <h2>Ejemplo combinación de directivas for-each + if en visibilidad</h2>
+  
+  <p>En este ejemplo solo se visualizan las opciones que tienen marcados el atributo visible en true</p>
   <ul>
     <div for-each="item of items">
       <li if="item.visible">
@@ -28,7 +50,9 @@
     </div>
   </ul>
 
-  <h2>Usuarios</h2>
+  <hr/>
+
+  <h2>5) Usuarios</h2>
 
   <table>
     <tbody>
@@ -40,28 +64,38 @@
     </tbody>
   </table>
 
-  <p>Add user: </p>
+  <p>Agregar usuario: </p>
   <label>
-    Name:
+    Nombre:
     <input type="text" bind-value="newUserName" />
   </label>
   <label>
     Email:
     <input type="text" bind-value="newUserEmail" />
   </label>
-  <button click="addUser">Add User</button>
+  <button click="addUser">Agregar Usuario</button>
 
-  <h3>Dirección</h3>
-  <input type="text" bind-value="testObject.address.street.name" />
-  <span bind-content="testObject.address.street.name" style="color: white;"></span>
+  <hr/>
 
-  <h3>Buscar usuario por ID</h3>
-  <input bind-value="userSearch" placeholder="Buscar por nombre o email"/>
-  <button click="searchUser">Buscar</button>
-  <span style="color: white;" bind-content="userSearched">
-  
+  <h2>6) Binding en profundidad sobre un objeto compuesto</h2>
 
-  
+  <p>Dirección</p>
 
+  <div class="card">
+    <input type="text" bind-value="testObject.address.street.name" />
+    <span bind-content="testObject.address.street.name" class="result-text"></span>
+  </div>
+
+  <hr/>
+
+  <h2>7) Interacción del usuario con lógica interna</h2>
+
+  <p>Buscar usuario por ID</p>
+
+  <div class="card">
+    <input bind-value="userSearch" placeholder="Buscar por nombre o email"/>
+    <button click="searchUser">Buscar</button>
+  </div>
+  <p bind-content="userSearched" class="result-text"></p>
   
 </pelela>

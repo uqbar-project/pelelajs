@@ -5,7 +5,7 @@ import {
   LINK_PREFIX,
   PROP_PREFIX,
 } from '../commons/dom'
-import { toCamelCase, unwrapTemplate } from '../commons/helpers'
+import { findAllElements, toCamelCase, unwrapTemplate } from '../commons/helpers'
 import { t } from '../commons/i18n'
 import { hasProperty, isUnsafeKey, sanitizeHTML } from '../commons/sanitization'
 import { UnknownComponentError } from '../errors'
@@ -83,10 +83,7 @@ export function setupComponentBindings<T extends object>(
   if (registeredTags.length === 0) return []
 
   const selector = registeredTags.join(',')
-  const customElements = Array.from(root.querySelectorAll<HTMLElement>(selector))
-  if (root.matches(selector)) {
-    customElements.unshift(root)
-  }
+  const customElements = findAllElements(root, selector)
   const bindings: ComponentBinding[] = []
 
   customElements.forEach((element) => {

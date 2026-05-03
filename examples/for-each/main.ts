@@ -1,9 +1,7 @@
 import './styles.css'
-import { defineViewModel, mountTemplate } from 'pelelajs'
-import { App } from './src/app'
+import { mountTemplate } from 'pelelajs'
 import template from './src/app.pelela'
-
-defineViewModel('App', App)
+import 'virtual:pelela-auto-register'
 
 const root = document.getElementById('app') ?? document.body
 mountTemplate(root, template)

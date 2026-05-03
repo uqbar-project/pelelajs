@@ -1,4 +1,4 @@
-import { filterOwnElements } from '../commons/helpers'
+import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { ContentBinding, ViewModel } from './types'
@@ -19,7 +19,7 @@ export function setupContentBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): ContentBinding[] {
-  const elements = root.querySelectorAll<HTMLElement>('[bind-content]')
+  const elements = findAllElements(root, '[bind-content]')
   const ownElements = filterOwnElements(elements, root)
 
   return ownElements
@@ -32,15 +32,6 @@ function renderSingleContentBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): void {
   const value = getNestedProperty(viewModel, binding.propertyName)
-
-  console.log(
-    '[pelela] renderContentBinding:',
-    binding.element.tagName,
-    'property:',
-    binding.propertyName,
-    'value:',
-    value,
-  )
 
   binding.element.textContent = value === undefined || value === null ? '' : String(value)
 }

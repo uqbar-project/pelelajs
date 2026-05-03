@@ -1,4 +1,4 @@
-import { filterOwnElements } from '../commons/helpers'
+import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { ClassBinding, ViewModel } from './types'
@@ -23,7 +23,7 @@ export function setupClassBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): ClassBinding[] {
-  const elements = root.querySelectorAll<HTMLElement>('[bind-class]')
+  const elements = findAllElements(root, '[bind-class]')
   const ownElements = filterOwnElements(elements, root)
 
   return ownElements

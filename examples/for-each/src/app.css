@@ -31,21 +31,27 @@ select:focus {
 .options-container {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
-  margin-top: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.options-container p {
+  margin: 0;
 }
 
 .options-container span {
   display: inline-flex;
   align-items: center;
-  padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(236, 72, 153, 0.15));
+  padding: 4px 12px;
+  background: rgba(99, 102, 241, 0.2);
   color: #e0e7ff;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  backdrop-filter: blur(10px);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  margin: 4px 6px 4px 0;
+  line-height: 1.2;
   transition: all 0.2s ease;
 }
 
@@ -207,4 +213,52 @@ button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.card button {
+  margin-top: 0;
+}
+
+.result-text {
+  color: #f8fafc;
+  font-weight: 500;
+}
+
+.options {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 0.75rem;
+  margin-bottom: 0.5rem;
+  color: #e0e7ff;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.options:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.options input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.options span {
+  font-weight: 500;
+  cursor: pointer;
 }
