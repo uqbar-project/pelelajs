@@ -12,7 +12,7 @@ Este proyecto utiliza `pnpm` como gestor de paquetes. Para instalar todo lo nece
 pnpm install
 ```
 
-2. **Levantar el servidor de desarrollo:**
+1. **Levantar el servidor de desarrollo:**
 
 Una vez instaladas las dependencias, arrancá el entorno con:
 
@@ -20,7 +20,7 @@ Una vez instaladas las dependencias, arrancá el entorno con:
 pnpm dev
 ```
 
-3. **Ver la aplicación:**
+1. **Ver la aplicación:**
 
 Abrí tu navegador e ingresá a [http://localhost:5173](http://localhost:5173) para ver la aplicación funcionando en vivo.
 
