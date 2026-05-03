@@ -5,7 +5,10 @@ import { createDirectory } from './shell'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const TEMPLATE_SOURCE = join(__dirname, '..', 'templates', 'base-template-for-cli')
+// In dev (Vitest), __dirname is src/utils, so we need ../../templates
+// In prod (bundled dist/index.js), __dirname is dist, so we need ../templates
+const basePath = __dirname.endsWith('utils') ? join(__dirname, '..', '..') : join(__dirname, '..')
+const TEMPLATE_SOURCE = join(basePath, 'templates', 'base-template-for-cli')
 
 export function copyTemplate(projectPath: string): void {
   createDirectory(projectPath)

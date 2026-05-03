@@ -1,8 +1,9 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  copyTemplate,
   getTemplatePath,
   updateProjectPackageJson,
   validateTemplatePath,
@@ -17,6 +18,17 @@ describe('templates', () => {
 
   afterEach(() => {
     rmdirSync(tempDir, { recursive: true })
+  })
+
+  describe('copyTemplate', () => {
+    it('copies template and renames _biome.json to biome.json if it exists', () => {
+      const projectPath = join(tempDir, 'test-copy')
+      copyTemplate(projectPath)
+
+      expect(existsSync(join(projectPath, 'biome.json'))).toBe(true)
+      expect(existsSync(join(projectPath, '_biome.json'))).toBe(false)
+      expect(existsSync(join(projectPath, 'package.json'))).toBe(true)
+    })
   })
 
   describe('getTemplatePath', () => {
