@@ -1,9 +1,10 @@
 import i18next from 'i18next'
-import enMessages from './locales/en.json'
-import esMessages from './locales/es.json'
-
-const SUPPORTED_LANGUAGES = ['en', 'es'] as const
-type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
+import {
+  coreI18nDefaultNamespace,
+  coreI18nResources,
+  SUPPORTED_LANGUAGES,
+  type SupportedLanguage,
+} from './resources'
 
 function detectLanguage(): SupportedLanguage {
   // Browser detection
@@ -46,10 +47,8 @@ export function initializeI18n(language?: SupportedLanguage): void {
   i18next.init({
     lng: detectedLanguage,
     fallbackLng: 'en',
-    resources: {
-      en: { translation: enMessages },
-      es: { translation: esMessages },
-    },
+    defaultNS: coreI18nDefaultNamespace,
+    resources: coreI18nResources,
     interpolation: {
       escapeValue: false, // Pelela handles its own sanitization
     },
@@ -58,9 +57,7 @@ export function initializeI18n(language?: SupportedLanguage): void {
   })
 }
 
-export function t(key: string, options?: Record<string, unknown>): string {
-  return i18next.t(key, options)
-}
+export const t = i18next.t.bind(i18next) as typeof i18next.t
 
 export function getCurrentLanguage(): SupportedLanguage {
   const current = i18next.language

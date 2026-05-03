@@ -44,7 +44,7 @@ function assertOnlyValidComponentAttributes(element: HTMLElement): void {
   Array.from(element.attributes).forEach((attr) => {
     if (!isLink(attr) && !isProps(attr)) {
       throw new Error(
-        t('compiler.invalidComponentAttribute', {
+        t('errors.compiler.invalidComponentAttribute', {
           tag: element.tagName.toLowerCase(),
           attr: attr.name,
         }),
@@ -90,7 +90,7 @@ export function setupComponentBindings<T extends object>(
 
       if (!parentKey.includes('.') && !hasProperty(parentViewModel, parentKey)) {
         throw new Error(
-          t('compiler.missingParentProperty', {
+          t('errors.compiler.missingParentProperty', {
             tag: element.tagName.toLowerCase(),
             parentKey,
           }),
