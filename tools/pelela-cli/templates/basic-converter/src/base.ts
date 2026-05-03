@@ -1,4 +1,4 @@
-export class Example {
+export class Base {
   miles: number = 0
   kilometers: number | undefined = undefined
 

@@ -1,7 +1,7 @@
 import './styles.css'
-import { mountTemplate } from 'pelelajs'
+import { router } from 'pelelajs'
 import 'virtual:pelela-auto-register'
-import template from './src/Example.pelela'
+import { routes } from './routes'
 
 const root = document.getElementById('app') ?? document.body
-mountTemplate(root, template)
+router.start(root, routes)
