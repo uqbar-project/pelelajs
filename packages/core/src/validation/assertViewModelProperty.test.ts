@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ELEMENT_SNIPPET_MAX_LENGTH, extractElementSnippet } from '../commons/helpers'
 import { PropertyValidationError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { assertViewModelProperty } from './assertViewModelProperty'
@@ -89,7 +90,8 @@ describe('assertViewModelProperty', () => {
     )
 
     expect(error).toBeInstanceOf(PropertyValidationError)
-    expect(error.message.length).toBeLessThan(300)
+    expect(error.elementSnippet).toBe(extractElementSnippet(element))
+    expect(error.elementSnippet.length).toBeLessThanOrEqual(ELEMENT_SNIPPET_MAX_LENGTH)
   })
 
   it('should allow inherited properties', () => {

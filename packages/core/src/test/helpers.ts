@@ -1,7 +1,10 @@
 export const testHelpers = {
-  catchError<T = unknown>(fn: () => void): T {
+  catchError<T = unknown>(fn: () => unknown): T {
     try {
-      fn()
+      const result = fn()
+      if (result instanceof Promise) {
+        throw new TypeError('catchError does not support async functions. Use an async helper.')
+      }
     } catch (error) {
       return error as T
     }

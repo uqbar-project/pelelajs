@@ -138,8 +138,6 @@ describe('bindComponent', () => {
 
   describe('prop-* prefix validation', () => {
     it('should throw error when component attribute lacks prop-* or link-* prefix', () => {
-      initializeI18n('en')
-
       class ChildVM {
         message = ''
       }
@@ -246,8 +244,6 @@ describe('bindComponent', () => {
     })
 
     it('should throw error when parent property does not exist', () => {
-      initializeI18n('en')
-
       class ChildVM {
         message = ''
       }
