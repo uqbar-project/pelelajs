@@ -69,10 +69,10 @@ importers:
         version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
-        specifier: ^5.9.3
+        specifier: 5.9.3
         version: 5.9.3
       vite:
-        specifier: ^7.2.4
+        specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(tsx@4.21.0)
 
   examples/hello-world:
