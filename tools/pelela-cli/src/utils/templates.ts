@@ -3,12 +3,18 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createDirectory } from './shell'
 
+export function computeTemplatePath(currentDir: string): string {
+  // In dev (Vitest), currentDir is src/utils, so we need ../../templates
+  // In prod (bundled dist/index.js), currentDir is dist, so we need ../templates
+  const basePath = currentDir.endsWith('utils')
+    ? join(currentDir, '..', '..')
+    : join(currentDir, '..')
+  return join(basePath, 'templates', 'base-template-for-cli')
+}
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-// In dev (Vitest), __dirname is src/utils, so we need ../../templates
-// In prod (bundled dist/index.js), __dirname is dist, so we need ../templates
-const basePath = __dirname.endsWith('utils') ? join(__dirname, '..', '..') : join(__dirname, '..')
-const TEMPLATE_SOURCE = join(basePath, 'templates', 'base-template-for-cli')
+const TEMPLATE_SOURCE = computeTemplatePath(__dirname)
 
 export function copyTemplate(projectPath: string): void {
   createDirectory(projectPath)

@@ -1,8 +1,9 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  computeTemplatePath,
   copyTemplate,
   getTemplatePath,
   updateProjectPackageJson,
@@ -17,7 +18,25 @@ describe('templates', () => {
   })
 
   afterEach(() => {
-    rmdirSync(tempDir, { recursive: true })
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  describe('computeTemplatePath', () => {
+    it('computes path for dev environment (src/utils)', () => {
+      // simulate the file path ending in 'utils'
+      const path = computeTemplatePath(join('/', 'mock', 'src', 'utils'))
+      expect(path).toContain('templates')
+      expect(path).toContain('base-template-for-cli')
+      expect(path).toBe(join('/', 'mock', 'templates', 'base-template-for-cli'))
+    })
+
+    it('computes path for prod environment (dist)', () => {
+      // simulate the bundled path 'dist'
+      const path = computeTemplatePath(join('/', 'mock', 'dist'))
+      expect(path).toContain('templates')
+      expect(path).toContain('base-template-for-cli')
+      expect(path).toBe(join('/', 'mock', 'templates', 'base-template-for-cli'))
+    })
   })
 
   describe('copyTemplate', () => {

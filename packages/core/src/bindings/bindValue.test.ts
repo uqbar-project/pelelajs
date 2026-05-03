@@ -203,6 +203,23 @@ describe('bindValue', () => {
 
       expect(viewModel.isActive).toBe(true)
     })
+
+    it('should update nested checkbox binding in repeated structures', () => {
+      container.innerHTML = '<input type="checkbox" bind-value="bet.active" />'
+      const viewModel = { bet: { active: false } }
+
+      const bindings = setupValueBindings(container, viewModel)
+      const input = container.querySelector('input')!
+
+      input.checked = true
+      input.dispatchEvent(new Event('change'))
+
+      expect(viewModel.bet.active).toBe(true)
+
+      viewModel.bet.active = false
+      renderValueBindings(bindings, viewModel)
+      expect(input.checked).toBe(false)
+    })
   })
 
   describe('renderValueBindings', () => {
