@@ -39,7 +39,7 @@
 
   <hr/>
 
-  <h2>Ejemplo combinación de directivas for-each + if en visibilidad</h2>
+  <h2>4) Ejemplo combinación de directivas for-each + if en visibilidad</h2>
   
   <p>En este ejemplo solo se visualizan las opciones que tienen marcados el atributo visible en true</p>
   <ul>
@@ -93,7 +93,7 @@
   <p>Buscar usuario por ID</p>
 
   <div class="card">
-    <input bind-value="userSearch" placeholder="Buscar por nombre o email"/>
+    <input bind-value="userSearch" placeholder="Ej: 1, 2, 3..."/>
     <button click="searchUser">Buscar</button>
   </div>
   <p bind-content="userSearched" class="result-text"></p>

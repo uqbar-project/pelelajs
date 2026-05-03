@@ -24,7 +24,7 @@ describe('templates', () => {
       const path = getTemplatePath()
 
       expect(path).toContain('templates')
-      expect(path).toContain('basic-converter')
+      expect(path).toContain('base-template-for-cli')
     })
   })
 

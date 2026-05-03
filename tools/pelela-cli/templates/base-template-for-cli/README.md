@@ -1,23 +1,28 @@
 # 🪴 Ejemplo de PelelaJS
 
-¡Bienvenido a tu nuevo proyecto generado con Pelela CLI! Este esqueleto básico está listo para que empieces a programar, e incluye configuraciones modernas (ESLint estricto, TypeScript) y routing por defecto.
+¡Bienvenido a tu nuevo proyecto generado con Pelela CLI! Este esqueleto básico está listo para que empieces a programar, e incluye configuraciones modernas (linter con biome, TypeScript) y routing por defecto.
 
 ## 🚀 Cómo ejecutarlo
 
 1. **Instalar las dependencias:**
-   Este proyecto utiliza `pnpm` como gestor de paquetes. Para instalar todo lo necesario, ejecutá:
-   ```bash
-   pnpm install
-   ```
+
+Este proyecto utiliza `pnpm` como gestor de paquetes. Para instalar todo lo necesario, ejecutá:
+
+```bash
+pnpm install
+```
 
 2. **Levantar el servidor de desarrollo:**
-   Una vez instaladas las dependencias, arrancá el entorno con:
-   ```bash
-   pnpm dev
-   ```
+
+Una vez instaladas las dependencias, arrancá el entorno con:
+
+```bash
+pnpm dev
+```
 
 3. **Ver la aplicación:**
-   Abrí tu navegador e ingresá a [http://localhost:5173](http://localhost:5173) para ver la aplicación funcionando en vivo.
+
+Abrí tu navegador e ingresá a [http://localhost:5173](http://localhost:5173) para ver la aplicación funcionando en vivo.
 
 ## 🔎 Explorando el código
 
@@ -43,6 +48,15 @@ git commit -m "commit inicial"
 # git remote add origin <TU_URL_DEL_REPOSITORIO>
 # git push -u origin main
 ```
+
+---
+
+## 🛠️ Extensiones Recomendadas
+
+Si utilizás VSCode o similares (Cursor, VSCodium, Windsurf, Antigravity), te recomendamos instalar las siguientes extensiones para aprovechar al máximo el entorno:
+
+- **PelelaJS** (`pelelajs.pelela-vscode`): Autocompletado, resaltado de sintaxis y diagnóstico para archivos `.pelela`.
+- **Biome** (`biomejs.biome`): Linter y formateador ultrarrápido configurado por defecto en este proyecto.
 
 ---
 

@@ -1,6 +1,6 @@
 <h1>Conversor Millas a Kilómetros</h1>
 
-<pelela view-model="Converter">
+<pelela view-model="Converter" class="pelela">
   <label>
     Millas:
     <input type="text" bind-value="miles" />

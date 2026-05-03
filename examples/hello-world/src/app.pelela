@@ -1,4 +1,4 @@
-<pelela view-model="App">
+<pelela view-model="App" class="pelela">
   <h1>Bienvenido a PelelaJS!</h1>
   
   <h2>Contador</h2>

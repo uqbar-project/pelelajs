@@ -1,5 +1,5 @@
 {
-  "name": "basic-converter",
+  "name": "base-template-for-cli",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -9,7 +9,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "biome check .",
+    "format": "biome format --write ."
   },
   "keywords": [],
   "author": "",
@@ -19,11 +20,7 @@
     "vite-plugin-pelelajs": "latest"
   },
   "devDependencies": {
-    "@eslint/js": "9.0.0",
-    "@typescript-eslint/eslint-plugin": "8.0.0",
-    "@typescript-eslint/parser": "8.0.0",
-    "eslint": "9.0.0",
-    "typescript-eslint": "8.0.0",
+    "@biomejs/biome": "1.9.4",
     "typescript": "5.9.3",
     "vite": "7.2.4"
   },

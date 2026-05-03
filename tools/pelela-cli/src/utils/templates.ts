@@ -1,11 +1,11 @@
-import { cpSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createDirectory } from './shell'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const TEMPLATE_SOURCE = join(__dirname, '..', 'templates', 'basic-converter')
+const TEMPLATE_SOURCE = join(__dirname, '..', 'templates', 'base-template-for-cli')
 
 export function copyTemplate(projectPath: string): void {
   createDirectory(projectPath)
@@ -14,6 +14,11 @@ export function copyTemplate(projectPath: string): void {
     recursive: true,
     filter: (src) => !src.includes('node_modules'),
   })
+
+  const biomePath = join(projectPath, '_biome.json')
+  if (existsSync(biomePath)) {
+    renameSync(biomePath, join(projectPath, 'biome.json'))
+  }
 }
 
 export function updateProjectPackageJson(projectPath: string, projectName: string): void {
