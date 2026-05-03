@@ -1,6 +1,14 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
-import { initializeI18n, t } from 'pelelajs'
+import {
+  initializeI18n,
+  isPelelaRootTag,
+  isStandardHtmlTag,
+  isValidComponentAttribute,
+  LINK_PREFIX,
+  t,
+} from 'pelelajs'
+
 import type { Plugin } from 'vite'
 
 export function escapeTemplateForLiteral(html: string): string {
@@ -15,33 +23,6 @@ function getCssImport(pelelaFilePath: string): string {
   }
   return ''
 }
-
-// biome-ignore format: <line length exceeds 100 due to comprehensive HTML tags list>
-const STANDARD_HTML_TAGS = [
-  'html', 'head', 'title', 'body', 'div', 'span', 'p', 'br', 'hr',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'dl', 'dt', 'dd',
-  'a', 'img', 'script', 'style', 'link', 'meta', 'base', 'form', 'input',
-  'button', 'select', 'option', 'textarea', 'label', 'table', 'tr', 'td',
-  'th', 'thead', 'tbody', 'tfoot', 'caption', 'col', 'colgroup', 'section',
-  'article', 'nav', 'aside', 'header', 'footer', 'main', 'figure', 'figcaption',
-  'iframe', 'canvas', 'svg', 'math', 'video', 'audio', 'source', 'track',
-  'map', 'area', 'object', 'param', 'embed', 'details', 'summary', 'dialog',
-  'template', 'slot', 'time', 'data', 'code', 'pre', 'blockquote', 'q',
-  'cite', 'abbr', 'address', 'bdo', 'ins', 'del', 'small', 'strong', 'em',
-  'mark', 'sub', 'sup', 'var', 'samp', 'kbd', 'output', 'progress', 'meter',
-  'fieldset', 'legend', 'optgroup', 'datalist',
-] as const
-
-function isStandardHtmlTag(tagName: string): boolean {
-  return STANDARD_HTML_TAGS.includes(tagName.toLowerCase() as (typeof STANDARD_HTML_TAGS)[number])
-}
-
-export function isRootPelelaOrComponent(tagName: string): boolean {
-  return ['pelela', 'component'].includes(tagName.toLowerCase())
-}
-
-export const LINK_PREFIX = 'link-'
-export const PROP_PREFIX = 'prop-'
 
 const TAG_PATTERN = /<([\w-]+)([^>]*)>/g
 const LINK_ATTRIBUTE_PATTERN = new RegExp(`\\b(${LINK_PREFIX}[a-zA-Z0-9_-]+)\\s*=`, 'g')
@@ -88,15 +69,14 @@ function validateComponentAttributes(sourceCode: string, errorFn: (message: stri
 
   const invalidMatches = componentMatches.filter(
     (match) =>
-      !isRootPelelaOrComponent(match.tagName) &&
+      !isPelelaRootTag(match.tagName) &&
       !isStandardHtmlTag(match.tagName) &&
-      !match.attributeName.startsWith(LINK_PREFIX) &&
-      !match.attributeName.startsWith(PROP_PREFIX),
+      !isValidComponentAttribute(match.attributeName),
   )
 
   invalidMatches.forEach((match) => {
     errorFn(
-      t('compiler.invalidComponentAttribute', {
+      t('errors.compiler.invalidComponentAttribute', {
         tag: match.tagName,
         attr: match.attributeName,
       }),
@@ -112,12 +92,12 @@ function validateNoForbiddenHtmlAttributes(
   const linkMatches = extractLinkAttributeMatches(sourceCode)
 
   const invalidMatches = linkMatches.filter(
-    (match) => !isRootPelelaOrComponent(match.tagName) && isStandardHtmlTag(match.tagName),
+    (match) => !isPelelaRootTag(match.tagName) && isStandardHtmlTag(match.tagName),
   )
 
   invalidMatches.forEach((match) => {
     errorFn(
-      t('compiler.forbiddenRootAttribute', {
+      t('errors.compiler.forbiddenRootAttribute', {
         filePath,
         tagName: match.tagName,
         attr: match.attributeName,
@@ -135,19 +115,19 @@ function validatePelelaStructure(
   const closeTags = sourceCode.match(/<\/(?:pelela|component)>/gi) || []
 
   if (openTags.length === 0) {
-    errorFn(t('compiler.missingRoot', { filePath }))
+    errorFn(t('errors.compiler.missingRoot', { filePath }))
   }
 
   if (openTags.length > 1) {
-    errorFn(t('compiler.multipleRoots', { filePath, count: openTags.length }))
+    errorFn(t('errors.compiler.multipleRoots', { filePath, count: openTags.length }))
   }
 
   if (closeTags.length === 0) {
-    errorFn(t('compiler.missingClosingTag', { filePath }))
+    errorFn(t('errors.compiler.missingClosingTag', { filePath }))
   }
 
   if (closeTags.length !== openTags.length) {
-    errorFn(t('compiler.unbalancedTags', { filePath }))
+    errorFn(t('errors.compiler.unbalancedTags', { filePath }))
   }
 }
 
@@ -157,11 +137,11 @@ function validateNoForeignSyntax(
   errorFn: (message: string) => void,
 ): void {
   if (/\{\{.*?\}\}/.test(sourceCode)) {
-    errorFn(t('compiler.foreignInterpolation', { filePath }))
+    errorFn(t('errors.compiler.foreignInterpolation', { filePath }))
   }
 
   if (/<[^>]+ \[[^\]]+\]\s*=.*/.test(sourceCode)) {
-    errorFn(t('compiler.foreignPropertyBinding', { filePath }))
+    errorFn(t('errors.compiler.foreignPropertyBinding', { filePath }))
   }
 }
 
@@ -186,7 +166,7 @@ function validateNoForbiddenRootAttributes(
 
   if (foundPattern) {
     errorFn(
-      t('compiler.forbiddenRootAttribute', {
+      t('errors.compiler.forbiddenRootAttribute', {
         filePath,
         tagName: rootTagMatch[1],
         attr: attributes.match(foundPattern)?.[0],
@@ -204,7 +184,7 @@ function extractViewModelName(
   const viewModelName = viewModelMatch ? viewModelMatch[1] : null
 
   if (!viewModelName) {
-    errorFn(t('compiler.missingViewModel', { filePath }))
+    errorFn(t('errors.compiler.missingViewModel', { filePath }))
     return ''
   }
 

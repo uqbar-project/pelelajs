@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   escapeTemplateForLiteral,
   extractLinkAttributeMatches,
-  isRootPelelaOrComponent,
   kebabToCamelCase,
   pelelajsPlugin,
 } from './index'
@@ -230,7 +229,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('missingViewModel'))).toBe(true)
+      expect(errors.some((e) => e.includes('view-model="..."'))).toBe(true)
     })
 
     it('reports error when pelela tags are unbalanced', () => {
@@ -278,7 +277,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('multipleRoots'))).toBe(true)
+      expect(errors.some((e) => e.includes('root tags'))).toBe(true)
     })
 
     it('reports error when foreign interpolation syntax is used', () => {
@@ -293,7 +292,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('foreignInterpolation'))).toBe(true)
+      expect(errors.some((e) => e.includes('{{ expression }}'))).toBe(true)
     })
 
     it('reports error when foreign property binding syntax is used', () => {
@@ -308,7 +307,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('foreignPropertyBinding'))).toBe(true)
+      expect(errors.some((e) => e.includes('[property]=value'))).toBe(true)
     })
 
     it('reports error when forbidden attributes are on root tag', () => {
@@ -323,7 +322,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('forbiddenRootAttribute'))).toBe(true)
+      expect(errors.some((e) => e.includes('not allowed on root tag'))).toBe(true)
     })
 
     it('reports error when link attributes are on standard HTML tags', () => {
@@ -341,7 +340,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('forbiddenRootAttribute'))).toBe(true)
+      expect(errors.some((e) => e.includes('not allowed on root tag'))).toBe(true)
     })
 
     it('reports error when component attribute lacks prop-* or link-* prefix', () => {
@@ -359,7 +358,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(true)
+      expect(errors.some((e) => e.includes('must use "prop-"'))).toBe(true)
     })
 
     it('accepts prop-* prefix on component attributes', () => {
@@ -413,7 +412,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      const invalidAttrErrors = errors.filter((e) => e.includes('invalidComponentAttribute'))
+      const invalidAttrErrors = errors.filter((e) => e.includes('must use "prop-"'))
       expect(invalidAttrErrors).toHaveLength(2)
     })
 
@@ -487,7 +486,7 @@ describe('pelelajsPlugin', () => {
 
         handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-        const invalidAttrErrors = errors.filter((e) => e.includes('invalidComponentAttribute'))
+        const invalidAttrErrors = errors.filter((e) => e.includes('must use "prop-"'))
         expect(invalidAttrErrors).toHaveLength(1)
       })
 
@@ -506,32 +505,12 @@ describe('pelelajsPlugin', () => {
 
         handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(true)
+        expect(errors.some((e) => e.includes('must use "prop-"'))).toBe(true)
       })
     })
   })
 
   describe('helper functions', () => {
-    describe('isRootPelelaOrComponent', () => {
-      it('returns true for pelela tag', () => {
-        expect(isRootPelelaOrComponent('pelela')).toBe(true)
-        expect(isRootPelelaOrComponent('PELELA')).toBe(true)
-        expect(isRootPelelaOrComponent('Pelela')).toBe(true)
-      })
-
-      it('returns true for component tag', () => {
-        expect(isRootPelelaOrComponent('component')).toBe(true)
-        expect(isRootPelelaOrComponent('COMPONENT')).toBe(true)
-        expect(isRootPelelaOrComponent('Component')).toBe(true)
-      })
-
-      it('returns false for other tags', () => {
-        expect(isRootPelelaOrComponent('div')).toBe(false)
-        expect(isRootPelelaOrComponent('span')).toBe(false)
-        expect(isRootPelelaOrComponent('my-component')).toBe(false)
-      })
-    })
-
     describe('extractLinkAttributeMatches', () => {
       it('extracts link attributes from HTML', () => {
         const html = '<div link-value="x"></div><span link-content="y"></span>'
