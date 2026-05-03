@@ -1,6 +1,8 @@
 <pelela view-model="App">
-  <h1>Hello World PelelaJS</h1>
+  <h1>Bienvenido a PelelaJS!</h1>
   
+  <h2>Contador</h2>
+
   <div class="counter">
     <button click="decrement">-</button>
     <p bind-content="counter"></p>
