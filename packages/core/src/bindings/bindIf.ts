@@ -22,8 +22,13 @@ function setupSingleIfBinding<T extends object>(
 export function setupIfBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
+  skipRootElement = false,
 ): IfBinding[] {
-  const elements = findAllElements(root, '[if]')
+  // When mounting a component child, the root element's 'if' belongs to the
+  // parent view model. Callers can pass skipRootElement=true to exclude it.
+  const elements = skipRootElement
+    ? Array.from(root.querySelectorAll<HTMLElement>('[if]'))
+    : findAllElements(root, '[if]')
   const ownElements = filterOwnElements(elements, root)
 
   return ownElements

@@ -148,7 +148,9 @@ export function setupComponentBindings<T extends object>(
     element.innerHTML = unwrapTemplate(sanitizedHtml)
     ;(element as PelelaElement<Record<string, unknown>>).__pelelaViewModel = reactiveInstance
 
-    renderChild = setupBindings(element, reactiveInstance)
+    // The component tag's own 'if' belongs to the parent's view model.
+    // Pass skipRootIf so the child binding setup doesn't try to validate it.
+    renderChild = setupBindings(element, reactiveInstance, { skipRootIf: true })
     isSetupComplete = true
 
     // Flush buffered changes after setupBindings assigns renderChild

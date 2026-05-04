@@ -131,13 +131,14 @@ function executeRenderPipeline<T extends object>(
 export function setupBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
+  { skipRootIf = false }: { skipRootIf?: boolean } = {},
 ): (changedPath?: string) => void {
   const bindings: BindingsCollection = {
     forEachBindings: setupForEachBindings(root, viewModel),
     componentBindings: setupComponentBindings(root, viewModel),
     valueBindings: setupValueBindings(root, viewModel),
     contentBindings: setupContentBindings(root, viewModel),
-    ifBindings: setupIfBindings(root, viewModel),
+    ifBindings: setupIfBindings(root, viewModel, skipRootIf),
     classBindings: setupClassBindings(root, viewModel),
     styleBindings: setupStyleBindings(root, viewModel),
   }
