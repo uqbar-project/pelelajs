@@ -1,3 +1,4 @@
+import { LINK_PREFIX, PROP_PREFIX } from '../commons/dom'
 import {
   extractElementSnippet,
   filterOwnElements,
@@ -12,12 +13,7 @@ import { getComponentByTag } from '../registry/componentRegistry'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
-import {
-  LINK_PREFIX,
-  PROP_PREFIX,
-  renderComponentBindings,
-  setupComponentBindings,
-} from './bindComponent'
+import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
@@ -206,11 +202,6 @@ export function isBindingAttribute(attrName: string): boolean {
 
 export function isCustomComponent(element: HTMLElement): boolean {
   const tagName = element.tagName.toLowerCase()
-  // A Pelela component must (a) be a valid custom element name (contain a hyphen)
-  // per the Web Components spec, AND (b) be registered in the component registry.
-  if (!tagName.includes('-')) {
-    return false
-  }
   return getComponentByTag(tagName) !== undefined
 }
 

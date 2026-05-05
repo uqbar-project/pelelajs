@@ -31,6 +31,7 @@ const errors = {
   },
   security: {
     domEnvironmentRequired: 'sanitizeHTML requiere un entorno DOM (document y DOMParser)',
+    prototypePollution: '[pelela] Intento de Prototype Pollution bloqueado en la clave: {{keys}}',
   },
   routing: {
     routeNotFound: '[pelela] No hay una ruta definida para "{{path}}"',
@@ -42,6 +43,8 @@ const errors = {
   compiler: {
     missingRoot:
       'Pelela template "{{filePath}}" debe contener exactamente un <pelela ...> o un <component ...> como raíz.',
+    malformedTemplate:
+      'Template malformado: se esperaba <pelela>...</pelela> o <component>...</component> con etiquetas coincidentes, se obtuvo: {{template}}',
     multipleRoots:
       'Pelela template "{{filePath}}" tiene {{count}} etiquetas raíz. Solo se permite una.',
     missingClosingTag:
@@ -59,6 +62,8 @@ const errors = {
     missingViewModel: 'Pelela template "{{filePath}}" debe contener atributo view-model="..."',
     forbiddenRootAttribute:
       'Pelela template "{{filePath}}": El atributo "{{attr}}" no está permitido en la etiqueta raíz <{{tagName}}>. Los atributos de lógica y binding solo pueden usarse en elementos internos o invocaciones de componentes.',
+    unknownComponent:
+      'Componente desconocido: <{{tagName}}>. ¿Olvidaste registrarlo?\nEncontrado en: {{snippet}}',
   },
 } as const satisfies TranslationSchema['errors']
 

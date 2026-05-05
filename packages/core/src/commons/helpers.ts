@@ -1,4 +1,5 @@
 import { getRegisteredTags } from '../registry/componentRegistry'
+import { t } from './i18n'
 
 export const ELEMENT_SNIPPET_MAX_LENGTH = 100
 
@@ -17,9 +18,7 @@ export function unwrapTemplate(template: string): string {
   const trimmed = template.trim()
   const match = trimmed.match(/^<(pelela|component)\b[^>]*>([\s\S]*)<\/\1>$/i)
   if (!match) {
-    throw new Error(
-      `Malformed template: expected <pelela>...</pelela> or <component>...</component> with matching tags, got: ${trimmed}`,
-    )
+    throw new Error(t('errors.compiler.malformedTemplate', { template: trimmed }))
   }
   return match[2].trim()
 }

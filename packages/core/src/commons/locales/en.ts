@@ -31,6 +31,7 @@ const errors = {
   },
   security: {
     domEnvironmentRequired: 'sanitizeHTML requires a DOM environment (document and DOMParser)',
+    prototypePollution: '[pelela] Prototype pollution blocked on key: {{keys}}',
   },
   routing: {
     routeNotFound: '[pelela] No route defined for "{{path}}"',
@@ -41,6 +42,8 @@ const errors = {
   compiler: {
     missingRoot:
       'Pelela template "{{filePath}}" must contain exactly one <pelela ...> or <component ...> as root.',
+    malformedTemplate:
+      'Malformed template: expected <pelela>...</pelela> or <component>...</component> with matching tags, got: {{template}}',
     multipleRoots: 'Pelela template "{{filePath}}" has {{count}} root tags. Only one is allowed.',
     missingClosingTag: 'Pelela template "{{filePath}}" has no corresponding closing tag.',
     unbalancedTags: 'Pelela template "{{filePath}}" has an unbalanced number of root tags.',
@@ -55,6 +58,8 @@ const errors = {
     missingViewModel: 'Pelela template "{{filePath}}" must contain view-model="..." attribute',
     forbiddenRootAttribute:
       'Pelela template "{{filePath}}": Attribute "{{attr}}" is not allowed on root tag <{{tagName}}>. Logic and binding attributes can only be used on internal elements or component invocations.',
+    unknownComponent:
+      'Unknown component: <{{tagName}}>. Did you forget to register it?\nFound at: {{snippet}}',
   },
 } as const satisfies TranslationSchema['errors']
 

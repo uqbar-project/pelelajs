@@ -24,6 +24,7 @@ type ErrorTranslations = {
   }
   security: {
     domEnvironmentRequired: string
+    prototypePollution: string
   }
   routing: {
     routeNotFound: string
@@ -32,6 +33,7 @@ type ErrorTranslations = {
   }
   compiler: {
     missingRoot: string
+    malformedTemplate: string
     multipleRoots: string
     missingClosingTag: string
     unbalancedTags: string
@@ -41,6 +43,7 @@ type ErrorTranslations = {
     missingParentProperty: string
     missingViewModel: string
     forbiddenRootAttribute: string
+    unknownComponent: string
   }
 }
 
