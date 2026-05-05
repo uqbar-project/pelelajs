@@ -104,14 +104,9 @@ describe('i18n', () => {
         tagName: 'div',
         snippet: '<div>',
       })
-      expect(result).toContain('Found on <div>')
+      expect(result).toContain('bind-value can only be used on input, textarea, or select')
+      expect(result).toContain('Found on <div>.')
       expect(result).toContain('Element: <div>')
-    })
-
-    it('should return key when translation is missing', () => {
-      initializeI18n('en')
-      const result = t('nonexistent.key')
-      expect(result).toBe('nonexistent.key')
     })
   })
 

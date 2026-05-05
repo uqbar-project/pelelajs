@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { initializeI18n } from '../commons/i18n'
+import { initializeI18n, t } from '../commons/i18n'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import type { PelelaElement } from '../types'
@@ -138,8 +138,6 @@ describe('bindComponent', () => {
 
   describe('prop-* prefix validation', () => {
     it('should throw error when component attribute lacks prop-* or link-* prefix', () => {
-      initializeI18n('en')
-
       class ChildVM {
         message = ''
       }
@@ -160,7 +158,12 @@ describe('bindComponent', () => {
 
       expect(() => {
         setupComponentBindings(container, parentVM)
-      }).toThrow(Error)
+      }).toThrow(
+        t('errors.compiler.invalidComponentAttribute', {
+          tag: 'test-comp',
+          attr: 'message',
+        }),
+      )
     })
 
     it('should accept prop-* prefix for one-way binding', () => {
@@ -241,8 +244,6 @@ describe('bindComponent', () => {
     })
 
     it('should throw error when parent property does not exist', () => {
-      initializeI18n('en')
-
       class ChildVM {
         message = ''
       }
@@ -258,7 +259,12 @@ describe('bindComponent', () => {
 
       expect(() => {
         setupComponentBindings(container, parentVM)
-      }).toThrow(Error)
+      }).toThrow(
+        t('errors.compiler.missingParentProperty', {
+          tag: 'test-comp',
+          parentKey: 'nonExistentProperty',
+        }),
+      )
     })
   })
 

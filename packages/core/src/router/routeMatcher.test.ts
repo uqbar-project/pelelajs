@@ -125,7 +125,7 @@ describe('routeMatcher', () => {
 
       expect(() => {
         matchRoute('/not-found', '', routesWithoutCatchAll)
-      }).toThrow('/not-found')
+      }).toThrow(new RoutingError('/not-found', 'route-not-found'))
     })
   })
 

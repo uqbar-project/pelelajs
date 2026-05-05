@@ -1,5 +1,6 @@
 import { extractElementSnippet, filterOwnElements } from '../commons/helpers'
-import { getDecimalSeparator, getThousandsSeparator, t } from '../commons/i18n'
+import { getDecimalSeparator, getThousandsSeparator } from '../commons/i18n'
+import { UnsupportedElementError } from '../errors'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
 import type { ValueBinding, ViewModel } from './types'
@@ -16,13 +17,7 @@ function setupSingleValueBinding<T extends object>(
   const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName)
 
   if (!isInput) {
-    const snippet = extractElementSnippet(element)
-    throw new Error(
-      t('errors.bindings.value.invalidElement', {
-        tagName: element.tagName.toLowerCase(),
-        snippet,
-      }),
-    )
+    throw new UnsupportedElementError(element.tagName.toLowerCase(), extractElementSnippet(element))
   }
 
   element.addEventListener('input', (event) => {

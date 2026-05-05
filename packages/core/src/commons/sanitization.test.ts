@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DOMEnvironmentError } from '../errors'
 import { escapeHTML, sanitize, sanitizeHTML } from './sanitization'
 
 describe('sanitization', () => {
@@ -86,7 +87,7 @@ describe('sanitization', () => {
         // @ts-expect-error - simulating environment without DOM
         global.DOMParser = undefined
 
-        expect(() => sanitizeHTML('<div></div>')).toThrow(/DOM environment/i)
+        expect(() => sanitizeHTML('<div></div>')).toThrow(new DOMEnvironmentError())
       } finally {
         global.document = originalDocument
         global.DOMParser = originalDOMParser

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { initializeI18n } from '../commons/i18n'
-import { PropertyValidationError } from '../errors/index'
+import { PropertyValidationError, UnsupportedElementError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 
@@ -32,27 +32,27 @@ describe('bindValue', () => {
       container.innerHTML = '<span bind-value="text"></span>'
       const viewModel = { text: '' }
 
-      expect(() => {
-        setupValueBindings(container, viewModel)
-      }).toThrow(/bind-value can only be used on input, textarea, or select elements/)
+      expect(() => setupValueBindings(container, viewModel)).toThrow(
+        new UnsupportedElementError('span', '<span bind-value="text"></span>'),
+      )
     })
 
     it('should throw error for div elements', () => {
       container.innerHTML = '<div bind-value="text"></div>'
       const viewModel = { text: '' }
 
-      expect(() => {
-        setupValueBindings(container, viewModel)
-      }).toThrow(/Use bind-content for display elements/)
+      expect(() => setupValueBindings(container, viewModel)).toThrow(
+        new UnsupportedElementError('div', '<div bind-value="text"></div>'),
+      )
     })
 
     it('should throw error for p elements', () => {
       container.innerHTML = '<p bind-value="text"></p>'
       const viewModel = { text: '' }
 
-      expect(() => {
-        setupValueBindings(container, viewModel)
-      }).toThrow(/bind-value can only be used on input, textarea, or select elements/)
+      expect(() => setupValueBindings(container, viewModel)).toThrow(
+        new UnsupportedElementError('p', '<p bind-value="text"></p>'),
+      )
     })
 
     it('should setup event listeners on inputs', () => {
