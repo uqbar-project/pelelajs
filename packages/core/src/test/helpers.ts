@@ -8,6 +8,7 @@ export const testHelpers = {
     }
 
     if (result instanceof Promise) {
+      void (result as Promise<unknown>).catch(() => {})
       throw new TypeError('catchError does not support async functions. Use an async helper.')
     }
 
