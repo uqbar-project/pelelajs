@@ -21,6 +21,10 @@
     "build": "tsup",
     "test": "vitest"
   },
+  "files": [
+    "dist",
+    "!dist/**/node_modules"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
