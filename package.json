@@ -23,7 +23,6 @@
     "biome:check:fix": "biome check --write .",
     "install:vscode": "node scripts/install-pelela-vscode.cjs",
     "release": "tsx scripts/release.ts",
-    "version": "pnpm -r version",
     "audit": "pnpm audit --audit-level moderate",
     "ci:local": "pnpm install && pnpm run biome:check && pnpm run typecheck && pnpm run build && pnpm run test:coverage",
     "ci:act": "act -j ci"

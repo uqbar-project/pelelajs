@@ -14,7 +14,7 @@
     }
   },
   "bin": {
-    "pelela": "./dist/cli.js"
+    "pelela": "./dist/cli.cjs"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
