@@ -79,8 +79,10 @@ const main = async (): Promise<void> => {
   ]
 
   packagesToUpdate.forEach((pkg) => {
+    // We use a different approach to avoid EUSAGE/EACCES issues with pnpm version across directories
+    // We'll use a subshell to change directory and run the command
     runCommand(
-      `pnpm version ${versionType} --no-git-tag-version --dir ${pkg.path}`,
+      `cd ${pkg.path} && pnpm version ${versionType} --no-git-tag-version`,
       `Bumping version (${versionType}) in ${pkg.name} (${pkg.path})`,
     )
   })
