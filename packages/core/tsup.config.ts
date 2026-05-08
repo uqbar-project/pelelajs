@@ -26,8 +26,7 @@ export default defineConfig([
       const { execSync } = await import('node:child_process')
       try {
         execSync('rm -rf dist/**/node_modules')
-      } catch (_error) {
-      }
-    }
+      } catch (_error) {}
+    },
   },
 ])
