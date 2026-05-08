@@ -1,10 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { gt } from 'semver'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 
 interface PackageInfo {
   name: string
@@ -38,8 +34,12 @@ export function getCliVersion(): string {
   return getPackageVersion()
 }
 
+export const versionUtils = {
+  getLocalVersion: async (): Promise<string> => getCliVersion(),
+}
+
 export async function getLocalVersion(): Promise<string> {
-  return getCliVersion()
+  return versionUtils.getLocalVersion()
 }
 
 export async function checkNewVersion(): Promise<{
@@ -47,7 +47,7 @@ export async function checkNewVersion(): Promise<{
   latest: string | null
   hasUpdate: boolean
 }> {
-  const current = await getLocalVersion()
+  const current = await versionUtils.getLocalVersion()
   const failResponse = {
     current,
     latest: null as string | null,
@@ -70,7 +70,10 @@ export async function checkNewVersion(): Promise<{
     const data = (await response.json()) as { 'dist-tags'?: { latest?: string } }
     const latest = data['dist-tags']?.latest
 
-    const hasUpdate = typeof latest === 'string' && gt(latest, current)
+    let hasUpdate = false
+    try {
+      hasUpdate = typeof latest === 'string' && !!latest && gt(latest, current)
+    } catch (_error) {}
 
     return {
       current,

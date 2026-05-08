@@ -16,7 +16,7 @@ export default defineConfig([
     entry: {
       cli: '../../tools/pelela-cli/src/index.ts',
     },
-    format: ['esm'],
+    format: ['cjs'],
     target: 'node22',
     outDir: 'dist',
     banner: { js: '#!/usr/bin/env node' },

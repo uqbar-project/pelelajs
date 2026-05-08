@@ -1,13 +1,8 @@
 import { cpSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 import { createDirectory } from './shell'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-const isDist = __dirname.includes('dist')
-const TEMPLATE_SOURCE = isDist
+const TEMPLATE_SOURCE = __dirname.includes('dist')
   ? join(__dirname, 'templates', 'basic-converter')
   : join(__dirname, '..', 'templates', 'basic-converter')
 
