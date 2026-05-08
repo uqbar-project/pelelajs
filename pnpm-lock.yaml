@@ -11,15 +11,24 @@ importers:
       '@biomejs/biome':
         specifier: 2.3.8
         version: 2.3.8
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
       '@vitest/coverage-v8':
         specifier: 4.0.14
         version: 4.0.14(vitest@4.0.14(@types/node@24.10.1)(jsdom@27.2.0)(tsx@4.21.0))
+      chalk:
+        specifier: 5.6.2
+        version: 5.6.2
       jsdom:
         specifier: 27.2.0
         version: 27.2.0
       tsup:
         specifier: 8.5.1
         version: 8.5.1(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
+      tsx:
+        specifier: 4.21.0
+        version: 4.21.0
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -109,9 +118,21 @@ importers:
 
   packages/core:
     dependencies:
+      chalk:
+        specifier: 5.6.2
+        version: 5.6.2
+      cli-box:
+        specifier: 6.0.11
+        version: 6.0.11
+      commander:
+        specifier: 12.1.0
+        version: 12.1.0
       i18next:
         specifier: ^23.7.6
         version: 23.16.8
+      semver:
+        specifier: 7.7.0
+        version: 7.7.0
     devDependencies:
       '@types/node':
         specifier: 24.10.1
@@ -2565,6 +2586,7 @@ packages:
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-mimetype@4.0.0:
     resolution: {integrity: sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg==}

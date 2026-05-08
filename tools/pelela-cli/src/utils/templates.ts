@@ -5,7 +5,11 @@ import { createDirectory } from './shell'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const TEMPLATE_SOURCE = join(__dirname, '..', 'templates', 'basic-converter')
+
+const isDist = __dirname.includes('dist')
+const TEMPLATE_SOURCE = isDist
+  ? join(__dirname, 'templates', 'basic-converter')
+  : join(__dirname, '..', 'templates', 'basic-converter')
 
 export function copyTemplate(projectPath: string): void {
   createDirectory(projectPath)

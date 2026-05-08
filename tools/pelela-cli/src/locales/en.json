@@ -27,6 +27,8 @@
     "versionCheckFailed": "Failed to check for updates: {{error}}"
   },
   "errors": {
-    "prefix": "❌ Error:"
+    "prefix": "❌ Error:",
+    "nodeVersion": "PelelaJS requires Node.js {{requiredVersion}}",
+    "currentVersion": "Current version: {{currentVersion}}"
   }
 }

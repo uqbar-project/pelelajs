@@ -27,6 +27,8 @@
     "versionCheckFailed": "Error al verificar actualizaciones: {{error}}"
   },
   "errors": {
-    "prefix": "❌ Error:"
+    "prefix": "❌ Error:",
+    "nodeVersion": "PelelaJS requiere Node.js {{requiredVersion}}",
+    "currentVersion": "Versión actual: {{currentVersion}}"
   }
 }

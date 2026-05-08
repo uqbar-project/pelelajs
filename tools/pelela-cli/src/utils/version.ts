@@ -1,8 +1,37 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { gt } from 'semver'
-import packageJson from '../../package.json' with { type: 'json' }
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+interface PackageInfo {
+  name: string
+  version: string
+}
+
+const findVersionRecursively = (currentDir: string, depth: number): string => {
+  if (depth <= 0) {
+    return '0.0.0'
+  }
+
+  const pkgPath = join(currentDir, 'package.json')
+
+  try {
+    const content = readFileSync(pkgPath, 'utf-8')
+    const pkg = JSON.parse(content) as PackageInfo
+
+    return ['pelelajs', '@pelelajs/cli'].includes(pkg.name)
+      ? pkg.version
+      : findVersionRecursively(dirname(currentDir), depth - 1)
+  } catch (_error) {
+    return findVersionRecursively(dirname(currentDir), depth - 1)
+  }
+}
 
 function getPackageVersion(): string {
-  return packageJson.version
+  return findVersionRecursively(__dirname, 5)
 }
 
 export function getCliVersion(): string {
@@ -29,7 +58,7 @@ export async function checkNewVersion(): Promise<{
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-    const response = await fetch('https://registry.npmjs.org/@pelelajs/cli', {
+    const response = await fetch('https://registry.npmjs.org/pelelajs', {
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
