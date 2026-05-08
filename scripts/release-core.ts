@@ -72,12 +72,16 @@ const main = async (): Promise<void> => {
   // 2. Versioning
   const versionType = await askVersionType()
 
-  const packagesToUpdate = ['.', 'packages/core', 'tools/pelela-cli']
+  const packagesToUpdate = [
+    { name: 'root', path: '.' },
+    { name: 'core', path: 'packages/core' },
+    { name: 'cli', path: 'tools/pelela-cli' }
+  ]
 
-  packagesToUpdate.forEach((pkgPath) => {
+  packagesToUpdate.forEach((pkg) => {
     runCommand(
-      `pnpm -C ${pkgPath} version ${versionType} --no-git-tag-version`,
-      `Bumping version (${versionType}) in ${pkgPath}`,
+      `pnpm version ${versionType} --no-git-tag-version --dir ${pkg.path}`,
+      `Bumping version (${versionType}) in ${pkg.name} (${pkg.path})`,
     )
   })
 
