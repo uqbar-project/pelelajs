@@ -35,6 +35,10 @@ pnpm install
 pnpm build
 ```
 
+### Release
+
+For detailed information on how to publish new versions, see [Publishing Process](file:///Users/fernando/workspace/algo3/pelelajs/docs/publishing.md).
+
 ⚠️ **This project requires pnpm** (uses the `workspace:*` protocol which npm doesn't support)
 
 ### VSCode Extension
