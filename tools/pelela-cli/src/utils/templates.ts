@@ -16,6 +16,10 @@ const TEMPLATE_SOURCE = computeTemplatePath(__dirname)
 export function copyTemplate(projectPath: string): void {
   createDirectory(projectPath)
 
+  if (!existsSync(TEMPLATE_SOURCE)) {
+    throw new Error(`Template source not found at: ${TEMPLATE_SOURCE}`)
+  }
+
   cpSync(TEMPLATE_SOURCE, projectPath, {
     recursive: true,
     filter: (src) => !src.includes('node_modules'),
@@ -38,8 +42,9 @@ export function updateProjectPackageJson(projectPath: string, projectName: strin
     packageJson.name = projectName
 
     writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
-  } catch (_error) {
-    throw new Error(`Failed to update package.json in ${projectPath}`)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to update package.json in ${projectPath}: ${message}`)
   }
 }
 
