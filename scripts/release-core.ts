@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process'
-import readline from 'node:readline/promises'
 import { stdin as input, stdout as output } from 'node:process'
+import readline from 'node:readline/promises'
 import chalk from 'chalk'
 
 const runCommand = (command: string, description: string): void => {
@@ -23,11 +23,15 @@ const validateEnvironment = (): void => {
 
 const checkGitStatus = (): void => {
   console.log(chalk.blue('\n🔍 Checking git status...'))
-  
+
   // Check if working directory is clean
   const status = execSync('git status --porcelain', { encoding: 'utf-8' })
   if (status.trim().length > 0) {
-    console.error(chalk.red('\n❌ Git working directory is not clean. Please commit or stash changes before releasing.'))
+    console.error(
+      chalk.red(
+        '\n❌ Git working directory is not clean. Please commit or stash changes before releasing.',
+      ),
+    )
     process.exit(1)
   }
 
@@ -43,9 +47,11 @@ const checkGitStatus = (): void => {
 
 const askVersionType = async (): Promise<string> => {
   const rl = readline.createInterface({ input, output })
-  const answer = await rl.question(chalk.yellow('\n❓ Select version increment type (patch/minor/major) [patch]: '))
+  const answer = await rl.question(
+    chalk.yellow('\n❓ Select version increment type (patch/minor/major) [patch]: '),
+  )
   rl.close()
-  
+
   const type = answer.trim().toLowerCase() || 'patch'
   if (!['patch', 'minor', 'major'].includes(type)) {
     console.error(chalk.red(`\n❌ Invalid version type: ${type}`))
@@ -65,27 +71,32 @@ const main = async (): Promise<void> => {
 
   // 2. Versioning
   const versionType = await askVersionType()
-  
-  const packagesToUpdate = [
-    '.',
-    'packages/core',
-    'tools/pelela-cli'
-  ]
+
+  const packagesToUpdate = ['.', 'packages/core', 'tools/pelela-cli']
 
   packagesToUpdate.forEach((pkgPath) => {
-    runCommand(`pnpm -C ${pkgPath} version ${versionType} --no-git-tag-version`, `Bumping version (${versionType}) in ${pkgPath}`)
+    runCommand(
+      `pnpm -C ${pkgPath} version ${versionType} --no-git-tag-version`,
+      `Bumping version (${versionType}) in ${pkgPath}`,
+    )
   })
 
   // 3. Build
   runCommand('pnpm run build', 'Building packages')
 
   // 4. Publish
-  runCommand('cd packages/core && pnpm publish --no-git-checks --access public', 'Publishing to NPM')
+  runCommand(
+    'cd packages/core && pnpm publish --no-git-checks --access public',
+    'Publishing to NPM',
+  )
 
   // 5. Git Commit, Tag and Push
   const newVersion = JSON.parse(execSync('cat package.json', { encoding: 'utf-8' })).version
   runCommand('git add .', 'Staging changes')
-  runCommand(`git commit -m "chore: release v${newVersion}"`, `Creating release commit v${newVersion}`)
+  runCommand(
+    `git commit -m "chore: release v${newVersion}"`,
+    `Creating release commit v${newVersion}`,
+  )
   runCommand(`git tag v${newVersion}`, `Creating git tag v${newVersion}`)
   runCommand('git push origin main --tags', 'Pushing changes and tags to GitHub')
 
