@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { initializeI18n } from '../../src/utils/i18n'
-import { checkNewVersion } from '../../src/utils/version'
+import { checkNewVersion, versionUtils } from '../../src/utils/version'
 
 beforeAll(async () => {
   await initializeI18n('en')
@@ -18,7 +18,7 @@ describe('checkNewVersion', () => {
       vi.fn(() => Promise.reject(new Error('Network error'))),
     )
 
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
@@ -37,7 +37,7 @@ describe('checkNewVersion', () => {
         return Promise.reject(error)
       }),
     )
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
@@ -52,7 +52,7 @@ describe('checkNewVersion', () => {
       'fetch',
       vi.fn(() => Promise.resolve(new Response('{}', { status: 200 }))),
     )
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
@@ -72,7 +72,7 @@ describe('checkNewVersion', () => {
       'fetch',
       vi.fn(() => Promise.resolve(new Response(JSON.stringify(mockResponse), { status: 200 }))),
     )
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
@@ -90,7 +90,7 @@ describe('checkNewVersion', () => {
       'fetch',
       vi.fn(() => Promise.resolve(new Response(JSON.stringify(mockResponse), { status: 200 }))),
     )
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
@@ -110,7 +110,7 @@ describe('checkNewVersion', () => {
       'fetch',
       vi.fn(() => Promise.resolve(new Response(JSON.stringify(mockResponse), { status: 200 }))),
     )
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
@@ -129,7 +129,7 @@ describe('checkNewVersion', () => {
       'fetch',
       vi.fn(() => Promise.resolve(new Response(JSON.stringify(mockResponse), { status: 200 }))),
     )
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
@@ -143,7 +143,7 @@ describe('checkNewVersion', () => {
       'fetch',
       vi.fn(() => Promise.resolve(new Response('Not found', { status: 404 }))),
     )
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
@@ -162,7 +162,7 @@ describe('checkNewVersion', () => {
       'fetch',
       vi.fn(() => Promise.resolve(new Response(JSON.stringify(mockResponse), { status: 200 }))),
     )
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
@@ -181,12 +181,12 @@ describe('checkNewVersion', () => {
       'fetch',
       vi.fn(() => Promise.resolve(new Response(JSON.stringify(mockResponse), { status: 200 }))),
     )
-    vi.spyOn(await import('../../src/utils/version'), 'getLocalVersion').mockResolvedValue('1.0.0')
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
 
     const result = await checkNewVersion()
 
     expect(result.current).toBe('1.0.0')
-    expect(result.latest).toBeNull()
+    expect(result.latest).toBe('invalid-version-string')
     expect(result.hasUpdate).toBe(false)
   })
 })

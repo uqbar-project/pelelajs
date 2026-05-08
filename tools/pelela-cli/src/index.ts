@@ -1,13 +1,24 @@
 import chalk from 'chalk'
 import { Command } from 'commander'
+import semver from 'semver'
 import { initCommand } from './commands/init'
 import { initializeI18n, t } from './utils/i18n'
 import { checkNewVersion, getCliVersion } from './utils/version'
 
 const { log, warn } = console
 
+function validateNodeVersion(): void {
+  const requiredVersion = '>=22.0.0'
+  if (!semver.satisfies(process.version, requiredVersion)) {
+    warn(chalk.red.bold(`\n${t('errors.nodeVersion', { requiredVersion })}\n`))
+    warn(chalk.red(`${t('errors.currentVersion', { currentVersion: process.version })}\n`))
+    process.exit(1)
+  }
+}
+
 async function main(): Promise<void> {
   await initializeI18n()
+  validateNodeVersion()
 
   const program = new Command()
 

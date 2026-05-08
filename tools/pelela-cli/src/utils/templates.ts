@@ -3,18 +3,14 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createDirectory } from './shell'
 
-export function computeTemplatePath(currentDir: string): string {
-  // In dev (Vitest), currentDir is src/utils, so we need ../../templates
-  // In prod (bundled dist/index.js), currentDir is dist, so we need ../templates
-  const basePath = currentDir.endsWith('utils')
-    ? join(currentDir, '..', '..')
-    : join(currentDir, '..')
-  return join(basePath, 'templates', 'base-template-for-cli')
-}
-
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const TEMPLATE_SOURCE = computeTemplatePath(__dirname)
+
+// En desarrollo (__dirname es src/utils), el template está en ../../templates
+// En producción (__dirname es dist), el template está en el mismo nivel (gracias a publicDir de tsup)
+const TEMPLATE_SOURCE = __dirname.includes('dist')
+  ? join(__dirname, 'base-template-for-cli')
+  : join(__dirname, '..', '..', 'templates', 'base-template-for-cli')
 
 export function copyTemplate(projectPath: string): void {
   createDirectory(projectPath)
@@ -24,6 +20,7 @@ export function copyTemplate(projectPath: string): void {
     filter: (src) => !src.includes('node_modules'),
   })
 
+  // Renombrar _biome.json a biome.json para evitar conflictos en el monorepo
   const biomePath = join(projectPath, '_biome.json')
   if (existsSync(biomePath)) {
     renameSync(biomePath, join(projectPath, 'biome.json'))

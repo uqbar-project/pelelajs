@@ -2,7 +2,7 @@
   "name": "pelela",
   "type": "module",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.5.3",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -22,6 +22,7 @@
     "biome:check": "biome check .",
     "biome:check:fix": "biome check --write .",
     "install:vscode": "node scripts/install-pelela-vscode.cjs",
+    "release": "tsx scripts/release.ts",
     "audit": "pnpm audit --audit-level moderate",
     "ci:local": "pnpm install && pnpm run biome:check && pnpm run typecheck && pnpm run build && pnpm run test:coverage",
     "ci:act": "act -j ci"
@@ -31,20 +32,17 @@
   "license": "ISC",
   "engines": {
     "node": ">=22.0.0",
-    "pnpm": "^10.0.0"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^10.0.0"
-    }
+    "pnpm": ">=10.0.0"
   },
   "packageManager": "pnpm@10.33.2",
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
+    "@types/node": "24.10.1",
     "@vitest/coverage-v8": "4.0.14",
+    "chalk": "5.6.2",
     "jsdom": "27.2.0",
     "tsup": "8.5.1",
+    "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.0.14"
   }
