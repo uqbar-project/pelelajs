@@ -88,7 +88,7 @@ describe('templates', () => {
 
       expect(() => {
         updateProjectPackageJson(projectPath, 'test-name')
-      }).toThrow('Failed to update package.json')
+      }).toThrow('Failed to read/write package.json')
     })
 
     it('throws error when package.json is invalid JSON', () => {
@@ -98,7 +98,7 @@ describe('templates', () => {
 
       expect(() => {
         updateProjectPackageJson(projectPath, 'test-name')
-      }).toThrow('Failed to update package.json')
+      }).toThrow('Failed to read/write package.json')
     })
   })
 })
