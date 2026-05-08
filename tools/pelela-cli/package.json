@@ -3,7 +3,7 @@
   "engines": {
     "node": ">=22"
   },
-  "version": "0.5.4",
+  "version": "0.5.5",
   "type": "module",
   "description": "CLI tool to bootstrap new PelelaJS projects",
   "bin": {
