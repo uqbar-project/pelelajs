@@ -34,40 +34,23 @@ The workflow will:
 
 Use this method only for emergency hotfixes or local testing.
 
-### 1. Update Versions
-Update the version in the root `package.json` and in the packages:
+### 1. Run the Release Script
+The release process is fully automated via a single script. Execute it from the root directory:
 
 ```bash
-pnpm version [patch|minor|major]
-cd packages/core && pnpm version [patch|minor|major]
-cd ../../tools/pelela-cli && pnpm version [patch|minor|major]
+pnpm run release:core
 ```
 
-### 2. Run the Validation Script
-Execute the release script which will run all checks and build the project:
+The script will:
+- **Validate Git Status**: Ensures your working directory is clean.
+- **Run Quality Checks**: Executes `biome:check`, `typecheck`, and `test:coverage`.
+- **Prompt for Version**: Asks you to select `patch`, `minor`, or `major`.
+- **Sync Versions**: Automatically updates `package.json` in root, `packages/core`, and `tools/pelela-cli`.
+- **Build**: Compiles all packages.
+- **Publish**: Deploys `pelelajs` to the NPM registry.
+- **Commit, Tag & Push**: Creates a release commit, a git tag (e.g., `v0.5.4`), and pushes everything to GitHub's `main` branch.
 
-```bash
-pnpm run release
-```
-
-### 3. Commit and Push
-Commit the version changes:
-
-```bash
-git add .
-git commit -m "chore: version bump"
-git push --follow-tags
-```
-
-### 4. Publish to NPM
-Enter the core package directory and publish:
-
-```bash
-cd packages/core
-pnpm publish --no-git-checks --access public
-```
-
-> **Note:** The published `pelelajs` package includes both the project library and the `pelela` CLI.
+---
 
 ## Installation for Users
 

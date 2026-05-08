@@ -49,7 +49,7 @@ jobs:
           cd ../../tools/pelela-cli && pnpm version ${{ github.event.inputs.version_type }} --no-git-tag-version
 
       - name: Build
-        run: pnpm run release
+        run: pnpm run release:core
 
       - name: Publish to NPM
         run: |
