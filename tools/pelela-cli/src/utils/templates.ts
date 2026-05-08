@@ -3,14 +3,17 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createDirectory } from './shell'
 
+export function computeTemplatePath(currentDir: string): string {
+  // In development (__dirname is src/utils), template is in ../../templates
+  // In production (__dirname is dist), template is at the same level (via tsup's publicDir)
+  return currentDir.includes('dist')
+    ? join(currentDir, 'base-template-for-cli')
+    : join(currentDir, '..', '..', 'templates', 'base-template-for-cli')
+}
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-
-// En desarrollo (__dirname es src/utils), el template está en ../../templates
-// En producción (__dirname es dist), el template está en el mismo nivel (gracias a publicDir de tsup)
-const TEMPLATE_SOURCE = __dirname.includes('dist')
-  ? join(__dirname, 'base-template-for-cli')
-  : join(__dirname, '..', '..', 'templates', 'base-template-for-cli')
+const TEMPLATE_SOURCE = computeTemplatePath(__dirname)
 
 export function copyTemplate(projectPath: string): void {
   createDirectory(projectPath)
@@ -20,7 +23,7 @@ export function copyTemplate(projectPath: string): void {
     filter: (src) => !src.includes('node_modules'),
   })
 
-  // Renombrar _biome.json a biome.json para evitar conflictos en el monorepo
+  // Rename _biome.json to biome.json to avoid conflicts in the monorepo
   const biomePath = join(projectPath, '_biome.json')
   if (existsSync(biomePath)) {
     renameSync(biomePath, join(projectPath, 'biome.json'))

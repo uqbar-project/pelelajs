@@ -33,9 +33,8 @@ describe('templates', () => {
     it('computes path for prod environment (dist)', () => {
       // simulate the bundled path 'dist'
       const path = computeTemplatePath(join('/', 'mock', 'dist'))
-      expect(path).toContain('templates')
       expect(path).toContain('base-template-for-cli')
-      expect(path).toBe(join('/', 'mock', 'templates', 'base-template-for-cli'))
+      expect(path).toBe(join('/', 'mock', 'dist', 'base-template-for-cli'))
     })
   })
 
