@@ -75,7 +75,7 @@ const main = async (): Promise<void> => {
   const packagesToUpdate = [
     { name: 'root', path: '.' },
     { name: 'core', path: 'packages/core' },
-    { name: 'cli', path: 'tools/pelela-cli' }
+    { name: 'cli', path: 'tools/pelela-cli' },
   ]
 
   packagesToUpdate.forEach((pkg) => {
