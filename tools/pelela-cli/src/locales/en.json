@@ -10,7 +10,7 @@
       "error": {
         "nameEmpty": "Project name cannot be empty",
         "nameTooLong": "Project name is too long (max 100 characters)",
-        "templateNotFound": "Template not found. The basic-converter example is missing.",
+        "templateNotFound": "Template not found. The base-template-for-cli is missing.",
         "directoryExists": "Directory \"{{projectName}}\" already exists",
         "initializationFailed": "Failed to initialize project: {{error}}"
       }

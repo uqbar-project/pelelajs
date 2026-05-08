@@ -10,7 +10,7 @@
       "error": {
         "nameEmpty": "El nombre del proyecto no puede estar vacío",
         "nameTooLong": "El nombre del proyecto es demasiado largo (máximo 100 caracteres)",
-        "templateNotFound": "Plantilla no encontrada. El ejemplo basic-converter está faltando.",
+        "templateNotFound": "Plantilla no encontrada. El esqueleto base-template-for-cli está faltando.",
         "directoryExists": "El directorio \"{{projectName}}\" ya existe",
         "initializationFailed": "Error al inicializar el proyecto: {{error}}"
       }

@@ -1,15 +1,119 @@
 :root {
-  --bg: #f8f9fa;
-  --text: #222;
-  --primary: #0d6efd;
-  --primary-hover: #0b5ed7;
-  --radius: 8px;
-  --transition: 0.2s ease;
-  font-family: system-ui, sans-serif;
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --secondary: #ec4899;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(226, 232, 240, 0.8);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
 }
 
-body {
+* {
+  box-sizing: border-box;
+  font-family: Inter, -apple-system, sans-serif;
+}
+
+html, body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
+  padding: 0;
+  background-color: #0f172a; /* Fallback para browsers sin soporte de gradientes */
+  background-image: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f8fafc;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.pelela {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+#app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 1rem;
+  background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 2rem;
+  text-align: center;
+  width: 100%;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3rem 4rem;
+  border-radius: 2.5rem;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.counter p {
+  font-size: 5rem;
+  font-weight: 800;
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  color: white;
+  min-width: 4rem;
+  text-align: center;
+  text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+button {
+  width: 4.5rem;
+  height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+button:hover {
+  transform: scale(1.1) translateY(-3px);
+  filter: brightness(1.2);
+  box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4);
+}
+
+button:active {
+  transform: scale(0.95);
 }

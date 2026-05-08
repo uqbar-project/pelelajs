@@ -3,6 +3,7 @@ import { clearComponentRegistry, defineComponent } from '../registry/componentRe
 import {
   extractElementSnippet,
   filterOwnElements,
+  findAllElements,
   isObject,
   isPropertyOrNestedPath,
   toCamelCase,
@@ -212,6 +213,48 @@ describe('helpers', () => {
 
     it('should return false for symbol properties', () => {
       expect(isPropertyOrNestedPath(Symbol('test'), 'item')).toBe(false)
+    })
+  })
+
+  describe('findAllElements', () => {
+    it('should find elements with the selector inside the root', () => {
+      const root = document.createElement('div')
+      root.innerHTML = '<span bind-class="test"></span>'
+      const span = root.querySelector('span') as HTMLElement
+
+      const result = findAllElements(root, '[bind-class]')
+      expect(result).toHaveLength(1)
+      expect(result[0]).toBe(span)
+    })
+
+    it('should include the root element if it matches the selector', () => {
+      const root = document.createElement('div')
+      root.setAttribute('bind-class', 'test')
+      root.innerHTML = '<span></span>'
+
+      const result = findAllElements(root, '[bind-class]')
+      expect(result).toHaveLength(1)
+      expect(result[0]).toBe(root)
+    })
+
+    it('should include both root and descendants if they match', () => {
+      const root = document.createElement('div')
+      root.setAttribute('bind-class', 'root-class')
+      root.innerHTML = '<span bind-class="child-class"></span>'
+      const span = root.querySelector('span') as HTMLElement
+
+      const result = findAllElements(root, '[bind-class]')
+      expect(result).toHaveLength(2)
+      expect(result).toContain(root)
+      expect(result).toContain(span)
+    })
+
+    it('should return an empty array if no elements match', () => {
+      const root = document.createElement('div')
+      root.innerHTML = '<span></span>'
+
+      const result = findAllElements(root, '[bind-class]')
+      expect(result).toHaveLength(0)
     })
   })
 })

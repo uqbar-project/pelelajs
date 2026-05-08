@@ -190,6 +190,36 @@ describe('bindValue', () => {
 
       expect(bindings).toHaveLength(0)
     })
+
+    it('should setup event listeners on checkboxes', () => {
+      container.innerHTML = '<input type="checkbox" bind-value="isActive" />'
+      const viewModel = { isActive: false }
+
+      setupValueBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      input.checked = true
+      input.dispatchEvent(new Event('change'))
+
+      expect(viewModel.isActive).toBe(true)
+    })
+
+    it('should update nested checkbox binding in repeated structures', () => {
+      container.innerHTML = '<input type="checkbox" bind-value="bet.active" />'
+      const viewModel = { bet: { active: false } }
+
+      const bindings = setupValueBindings(container, viewModel)
+      const input = container.querySelector('input')!
+
+      input.checked = true
+      input.dispatchEvent(new Event('change'))
+
+      expect(viewModel.bet.active).toBe(true)
+
+      viewModel.bet.active = false
+      renderValueBindings(bindings, viewModel)
+      expect(input.checked).toBe(false)
+    })
   })
 
   describe('renderValueBindings', () => {
@@ -240,6 +270,23 @@ describe('bindValue', () => {
       renderValueBindings(bindings, viewModel)
 
       expect(input.value).toBe('John')
+    })
+
+    it('should update checked state for checkboxes', () => {
+      container.innerHTML = '<input type="checkbox" bind-value="isActive" />'
+      const viewModel = { isActive: false }
+      const bindings = setupValueBindings(container, viewModel)
+
+      viewModel.isActive = true
+      renderValueBindings(bindings, viewModel)
+
+      const input = container.querySelector('input')!
+      expect(input.checked).toBe(true)
+
+      viewModel.isActive = false
+      renderValueBindings(bindings, viewModel)
+
+      expect(input.checked).toBe(false)
     })
   })
 })

@@ -66,3 +66,14 @@ export function toKebabCase(str: string): string {
 export function isPropertyOrNestedPath(property: string | symbol, root: string): boolean {
   return typeof property === 'string' && (property === root || property.startsWith(`${root}.`))
 }
+
+export function findAllElements(
+  root: HTMLElement,
+  selector: string,
+  includeRoot = true,
+): HTMLElement[] {
+  return [
+    ...(includeRoot && root.matches(selector) ? [root] : []),
+    ...Array.from(root.querySelectorAll<HTMLElement>(selector)),
+  ]
+}

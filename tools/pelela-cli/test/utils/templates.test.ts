@@ -1,8 +1,10 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  computeTemplatePath,
+  copyTemplate,
   getTemplatePath,
   updateProjectPackageJson,
   validateTemplatePath,
@@ -16,7 +18,36 @@ describe('templates', () => {
   })
 
   afterEach(() => {
-    rmdirSync(tempDir, { recursive: true })
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  describe('computeTemplatePath', () => {
+    it('computes path for dev environment (src/utils)', () => {
+      // simulate the file path ending in 'utils'
+      const path = computeTemplatePath(join('/', 'mock', 'src', 'utils'))
+      expect(path).toContain('templates')
+      expect(path).toContain('base-template-for-cli')
+      expect(path).toBe(join('/', 'mock', 'templates', 'base-template-for-cli'))
+    })
+
+    it('computes path for prod environment (dist)', () => {
+      // simulate the bundled path 'dist'
+      const path = computeTemplatePath(join('/', 'mock', 'dist'))
+      expect(path).toContain('templates')
+      expect(path).toContain('base-template-for-cli')
+      expect(path).toBe(join('/', 'mock', 'templates', 'base-template-for-cli'))
+    })
+  })
+
+  describe('copyTemplate', () => {
+    it('copies template and renames _biome.json to biome.json if it exists', () => {
+      const projectPath = join(tempDir, 'test-copy')
+      copyTemplate(projectPath)
+
+      expect(existsSync(join(projectPath, 'biome.json'))).toBe(true)
+      expect(existsSync(join(projectPath, '_biome.json'))).toBe(false)
+      expect(existsSync(join(projectPath, 'package.json'))).toBe(true)
+    })
   })
 
   describe('getTemplatePath', () => {
@@ -24,7 +55,7 @@ describe('templates', () => {
       const path = getTemplatePath()
 
       expect(path).toContain('templates')
-      expect(path).toContain('basic-converter')
+      expect(path).toContain('base-template-for-cli')
     })
   })
 

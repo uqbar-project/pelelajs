@@ -8,8 +8,4 @@ export class App {
   decrement() {
     this.counter--
   }
-
-  isCounterPositive(): boolean {
-    return this.counter > 0
-  }
 }

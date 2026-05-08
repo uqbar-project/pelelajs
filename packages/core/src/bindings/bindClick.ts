@@ -1,4 +1,4 @@
-import { filterOwnElements } from '../commons/helpers'
+import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { InvalidHandlerError } from '../errors/index'
 import type { ViewModel } from './types'
 
@@ -28,9 +28,7 @@ export function setupClickBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): void {
-  setupSingleClickBinding(root, viewModel)
-
-  const elements = root.querySelectorAll<HTMLElement>('[click]')
+  const elements = findAllElements(root, '[click]')
   const ownElements = filterOwnElements(elements, root)
 
   ownElements.forEach((element) => {

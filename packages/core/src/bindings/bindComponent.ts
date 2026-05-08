@@ -5,7 +5,7 @@ import {
   LINK_PREFIX,
   PROP_PREFIX,
 } from '../commons/dom'
-import { toCamelCase, unwrapTemplate } from '../commons/helpers'
+import { findAllElements, toCamelCase, unwrapTemplate } from '../commons/helpers'
 import { t } from '../commons/i18n'
 import { hasProperty, isUnsafeKey, sanitizeHTML } from '../commons/sanitization'
 import { UnknownComponentError } from '../errors'
@@ -83,10 +83,7 @@ export function setupComponentBindings<T extends object>(
   if (registeredTags.length === 0) return []
 
   const selector = registeredTags.join(',')
-  const customElements = Array.from(root.querySelectorAll<HTMLElement>(selector))
-  if (root.matches(selector)) {
-    customElements.unshift(root)
-  }
+  const customElements = findAllElements(root, selector)
   const bindings: ComponentBinding[] = []
 
   customElements.forEach((element) => {
@@ -151,7 +148,9 @@ export function setupComponentBindings<T extends object>(
     element.innerHTML = unwrapTemplate(sanitizedHtml)
     ;(element as PelelaElement<Record<string, unknown>>).__pelelaViewModel = reactiveInstance
 
-    renderChild = setupBindings(element, reactiveInstance)
+    // The component tag's own 'if' belongs to the parent's view model.
+    // Pass skipRootIf so the child binding setup doesn't try to validate it.
+    renderChild = setupBindings(element, reactiveInstance, { skipRootIf: true })
     isSetupComplete = true
 
     // Flush buffered changes after setupBindings assigns renderChild

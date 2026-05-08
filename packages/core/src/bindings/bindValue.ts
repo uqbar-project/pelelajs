@@ -1,4 +1,4 @@
-import { extractElementSnippet, filterOwnElements } from '../commons/helpers'
+import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
 import { getDecimalSeparator, getThousandsSeparator } from '../commons/i18n'
 import { UnsupportedElementError } from '../errors'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
@@ -20,9 +20,17 @@ function setupSingleValueBinding<T extends object>(
     throw new UnsupportedElementError(element.tagName.toLowerCase(), extractElementSnippet(element))
   }
 
-  element.addEventListener('input', (event) => {
+  const isCheckbox = element instanceof HTMLInputElement && element.type === 'checkbox'
+
+  element.addEventListener(isCheckbox ? 'change' : 'input', (event) => {
     const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     const currentValue = getNestedProperty(viewModel, propertyName)
+
+    if (isCheckbox) {
+      setNestedProperty(viewModel, propertyName, (target as HTMLInputElement).checked)
+      return
+    }
+
     const inputValue = target.value
 
     if (typeof currentValue === 'number') {
@@ -49,7 +57,7 @@ export function setupValueBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): ValueBinding[] {
-  const elements = root.querySelectorAll<HTMLElement>('[bind-value]')
+  const elements = findAllElements(root, '[bind-value]')
   const ownElements = filterOwnElements(elements, root)
 
   return ownElements
@@ -63,19 +71,16 @@ function renderSingleValueBinding<T extends object>(
 ): void {
   const value = getNestedProperty(viewModel, binding.propertyName)
 
-  console.log(
-    '[pelela] renderValueBinding:',
-    binding.element.tagName,
-    'property:',
-    binding.propertyName,
-    'value:',
-    value,
-  )
-
   const input = binding.element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-  const newValue = value ?? ''
-  if (input.value !== String(newValue)) {
-    input.value = String(newValue)
+  const isCheckbox = input instanceof HTMLInputElement && input.type === 'checkbox'
+
+  if (isCheckbox) {
+    ;(input as HTMLInputElement).checked = !!value
+  } else {
+    const newValue = value ?? ''
+    if (input.value !== String(newValue)) {
+      input.value = String(newValue)
+    }
   }
 }
 

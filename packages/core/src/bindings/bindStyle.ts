@@ -1,4 +1,4 @@
-import { filterOwnElements } from '../commons/helpers'
+import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { StyleBinding, ViewModel } from './types'
@@ -22,7 +22,7 @@ export function setupStyleBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): StyleBinding[] {
-  const elements = root.querySelectorAll<HTMLElement>('[bind-style]')
+  const elements = findAllElements(root, '[bind-style]')
   const ownElements = filterOwnElements(elements, root)
 
   return ownElements

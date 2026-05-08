@@ -1,4 +1,4 @@
-import { filterOwnElements } from '../commons/helpers'
+import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty } from './nestedProperties'
 import type { IfBinding, ViewModel } from './types'
@@ -22,8 +22,9 @@ function setupSingleIfBinding<T extends object>(
 export function setupIfBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
+  skipRootElement = false,
 ): IfBinding[] {
-  const elements = root.querySelectorAll<HTMLElement>('[if]')
+  const elements = findAllElements(root, '[if]', !skipRootElement)
   const ownElements = filterOwnElements(elements, root)
 
   return ownElements

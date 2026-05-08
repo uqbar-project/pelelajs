@@ -2,6 +2,7 @@ import { LINK_PREFIX, PROP_PREFIX } from '../commons/dom'
 import {
   extractElementSnippet,
   filterOwnElements,
+  findAllElements,
   isPropertyOrNestedPath,
 } from '../commons/helpers'
 import {
@@ -73,34 +74,15 @@ function setupBindingsForElement<T extends object>(
   viewModel: ViewModel<T>,
 ): () => void {
   const componentBindings = setupComponentBindings(element, viewModel)
-  const wrapper = document.createElement('div')
-  const clonedForSearch = element.cloneNode(true) as HTMLElement
-  wrapper.appendChild(clonedForSearch)
-  const tempBindings = {
-    valueBindings: setupValueBindings(wrapper, viewModel),
-    contentBindings: setupContentBindings(wrapper, viewModel),
-    ifBindings: setupIfBindings(wrapper, viewModel),
-    classBindings: setupClassBindings(wrapper, viewModel),
-    styleBindings: setupStyleBindings(wrapper, viewModel),
+  const bindings = {
+    valueBindings: setupValueBindings(element, viewModel),
+    contentBindings: setupContentBindings(element, viewModel),
+    ifBindings: setupIfBindings(element, viewModel),
+    classBindings: setupClassBindings(element, viewModel),
+    styleBindings: setupStyleBindings(element, viewModel),
   }
   setupClickBindings(element, viewModel)
-  const bindings = {
-    valueBindings: tempBindings.valueBindings.map((binding) =>
-      mapBindingToRealElement(binding, clonedForSearch, element),
-    ),
-    contentBindings: tempBindings.contentBindings.map((binding) =>
-      mapBindingToRealElement(binding, clonedForSearch, element),
-    ),
-    ifBindings: tempBindings.ifBindings.map((binding) =>
-      mapBindingToRealElement(binding, clonedForSearch, element),
-    ),
-    classBindings: tempBindings.classBindings.map((binding) =>
-      mapBindingToRealElement(binding, clonedForSearch, element),
-    ),
-    styleBindings: tempBindings.styleBindings.map((binding) =>
-      mapBindingToRealElement(binding, clonedForSearch, element),
-    ),
-  }
+
   return () => {
     renderValueBindings(bindings.valueBindings, viewModel)
     renderContentBindings(bindings.contentBindings, viewModel)
@@ -109,35 +91,6 @@ function setupBindingsForElement<T extends object>(
     renderStyleBindings(bindings.styleBindings, viewModel)
     renderComponentBindings(componentBindings, viewModel)
   }
-}
-
-function mapBindingToRealElement<T extends { element: HTMLElement }>(
-  binding: T,
-  clonedRoot: HTMLElement,
-  realRoot: HTMLElement,
-): T {
-  return { ...binding, element: mapElementPath(binding.element, clonedRoot, realRoot) }
-}
-
-function mapElementPath(
-  sourceElement: HTMLElement,
-  sourceRoot: HTMLElement,
-  targetRoot: HTMLElement,
-): HTMLElement {
-  if (sourceElement === sourceRoot) return targetRoot
-  const buildPath = (element: HTMLElement, root: HTMLElement): number[] => {
-    const parent = element.parentElement
-    if (!parent || element === root) return []
-    const index = Array.from(parent.children).indexOf(element)
-    return [...buildPath(parent, root), index]
-  }
-  const path = buildPath(sourceElement, sourceRoot)
-  return path.reduce((currentElement: HTMLElement, index) => {
-    const children = currentElement.children
-    if (index >= children.length) return currentElement
-    const nextElement = children[index] as HTMLElement
-    return nextElement || currentElement
-  }, targetRoot)
 }
 
 export function setupSingleForEachBinding<T extends object>(
@@ -236,7 +189,7 @@ export function setupForEachBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
 ): ForEachBinding[] {
-  const elements = root.querySelectorAll<HTMLElement>('[for-each]')
+  const elements = findAllElements(root, '[for-each]')
   const ownElements = filterOwnElements(elements, root)
   return ownElements
     .map((element) => setupSingleForEachBinding(element, viewModel))
