@@ -1,18 +1,16 @@
 import { cpSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 import { createDirectory } from './shell'
 
 export function computeTemplatePath(currentDir: string): string {
-  // In development (__dirname is src/utils), template is in ../../templates
-  // In production (__dirname is dist), template is at the same level (via tsup's publicDir)
+  // In development (currentDir is src/utils), template is in ../../templates
+  // In production (currentDir is dist), template is at the same level (via tsup's publicDir)
   return currentDir.includes('dist')
     ? join(currentDir, 'base-template-for-cli')
     : join(currentDir, '..', '..', 'templates', 'base-template-for-cli')
 }
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+// In CJS bundled by tsup, __dirname is available globally
 const TEMPLATE_SOURCE = computeTemplatePath(__dirname)
 
 export function copyTemplate(projectPath: string): void {

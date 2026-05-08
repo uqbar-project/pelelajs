@@ -48,6 +48,7 @@
   - **Linter:** Respetar estrictamente las reglas de **Biome** definidas en `biome.json`.
   - **Package Manager:** Usar exclusivamente **pnpm**. Existe un `pnpm-workspace.yaml`.
   - **Arquitectura:** Separación estricta entre lógica de negocio, presentación y datos. Mantener acoplamiento bajo y evitar dependencias circulares.
+  - **Usamos Common JS (CJS)** por retrocompatibilidad. ESM es más moderno pero muchas bibliotecas no funcionan bien, vamos a lo seguro.
 </project_infrastructure>
 
 <workflow_constraints>
