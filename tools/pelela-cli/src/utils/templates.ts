@@ -14,16 +14,26 @@ export function computeTemplatePath(currentDir: string): string {
 const TEMPLATE_SOURCE = computeTemplatePath(__dirname)
 
 export function copyTemplate(projectPath: string): void {
-  createDirectory(projectPath)
-
   if (!existsSync(TEMPLATE_SOURCE)) {
     throw new Error(`Template source not found at: ${TEMPLATE_SOURCE}`)
   }
 
-  cpSync(TEMPLATE_SOURCE, projectPath, {
-    recursive: true,
-    filter: (src) => !src.includes('node_modules'),
-  })
+  createDirectory(projectPath)
+
+  try {
+    cpSync(TEMPLATE_SOURCE, projectPath, {
+      recursive: true,
+      filter: (src) => !src.includes('node_modules'),
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to copy template from ${TEMPLATE_SOURCE} to ${projectPath}: ${message}`)
+  }
+
+  // Verify that at least package.json was copied
+  if (!existsSync(join(projectPath, 'package.json'))) {
+    throw new Error(`Template was not copied correctly. package.json is missing in ${projectPath}`)
+  }
 
   // Rename _biome.json to biome.json to avoid conflicts in the monorepo
   const biomePath = join(projectPath, '_biome.json')
@@ -44,7 +54,7 @@ export function updateProjectPackageJson(projectPath: string, projectName: strin
     writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to update package.json in ${projectPath}: ${message}`)
+    throw new Error(`Failed to read/write package.json in ${projectPath}: ${message}`)
   }
 }
 
