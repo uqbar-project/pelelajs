@@ -1,4 +1,13 @@
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import { createDirectory } from './shell'
 
@@ -51,7 +60,9 @@ export function copyTemplate(projectPath: string): void {
 
   // Verify that at least package.json was copied
   if (!existsSync(join(projectPath, 'package.json'))) {
-    throw new Error(`Template was not copied correctly. package.json is missing in ${projectPath}. Files found: ${readdirSync(projectPath).join(', ')}`)
+    throw new Error(
+      `Template was not copied correctly. package.json is missing in ${projectPath}. Files found: ${readdirSync(projectPath).join(', ')}`,
+    )
   }
 
   // Rename _biome.json to biome.json to avoid conflicts in the monorepo
