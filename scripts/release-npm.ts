@@ -1,7 +1,14 @@
 import { execSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { stdin as input, stdout as output } from 'node:process'
 import readline from 'node:readline/promises'
+import { fileURLToPath } from 'node:url'
 import chalk from 'chalk'
+import semver from 'semver'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const VALID_VERSION_TYPES = ['patch', 'minor', 'major'] as const
 type VersionType = (typeof VALID_VERSION_TYPES)[number]
@@ -9,20 +16,32 @@ type VersionType = (typeof VALID_VERSION_TYPES)[number]
 const isValidVersionType = (value: string): value is VersionType =>
   (VALID_VERSION_TYPES as readonly string[]).includes(value)
 
-const runCommand = (command: string, description: string): void => {
+interface ExecError extends Error {
+  status?: number
+  stderr?: Buffer | string
+}
+
+const runCommand = (command: string, description: string, cwd?: string): void => {
   console.log(chalk.blue(`\n🚀 ${description}...`))
   try {
-    execSync(command, { stdio: 'inherit' })
-  } catch (_error) {
+    execSync(command, { stdio: 'inherit', cwd })
+  } catch (err: unknown) {
+    const error = err as ExecError
     console.error(chalk.red(`\n❌ Error during: ${description}`))
-    process.exit(1)
+    if (error.message) console.error(chalk.red(`Message: ${error.message}`))
+    if (error.stderr) console.error(chalk.red(`Stderr: ${error.stderr.toString()}`))
+
+    process.exit(error.status || 1)
   }
 }
 
 const validateEnvironment = (): void => {
   const nodeVersion = process.version
-  if (!nodeVersion.startsWith('v22')) {
-    console.error(chalk.red(`\n❌ PelelaJS requires Node.js v22. Current: ${nodeVersion}`))
+  const requiredVersion = '>=22.0.0'
+  if (!semver.satisfies(nodeVersion, requiredVersion)) {
+    console.error(
+      chalk.red(`\n❌ PelelaJS requires Node.js ${requiredVersion}. Current: ${nodeVersion}`),
+    )
     process.exit(1)
   }
 }
@@ -42,6 +61,7 @@ const checkGitStatus = (): void => {
   }
 
   /*
+  // TODO: enable this when we have PR merged
   // Check if we are on main branch
   const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim()
   if (branch !== 'main') {
@@ -103,11 +123,10 @@ const main = async (): Promise<void> => {
   ]
 
   packagesToUpdate.forEach((pkg) => {
-    // We use a different approach to avoid EUSAGE/EACCES issues with pnpm version across directories
-    // We'll use a subshell to change directory and run the command
     runCommand(
-      `cd ${pkg.path} && pnpm version ${versionType} --no-git-tag-version`,
+      `pnpm version ${versionType} --no-git-tag-version`,
       `Bumping version (${versionType}) in ${pkg.name} (${pkg.path})`,
+      pkg.path,
     )
   })
 
@@ -116,17 +135,22 @@ const main = async (): Promise<void> => {
 
   // 4. Publish
   runCommand(
-    'cd packages/core && pnpm publish --no-git-checks --access public',
+    'pnpm publish --no-git-checks --access public',
     'Publishing Core to NPM',
+    'packages/core',
   )
 
   runCommand(
-    'cd packages/vite-plugin-pelelajs && pnpm publish --no-git-checks --access public',
+    'pnpm publish --no-git-checks --access public',
     'Publishing Vite Plugin to NPM',
+    'packages/vite-plugin-pelelajs',
   )
 
   // 5. Git Commit, Tag and Push
-  const newVersion = JSON.parse(execSync('cat package.json', { encoding: 'utf-8' })).version
+  const newVersion = JSON.parse(
+    readFileSync(resolve(__dirname, '..', 'package.json'), 'utf-8'),
+  ).version
+
   runCommand('git add .', 'Staging changes')
   runCommand(
     `git commit -m "chore: release v${newVersion}"`,

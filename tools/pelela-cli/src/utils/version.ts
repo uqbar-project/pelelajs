@@ -73,7 +73,10 @@ export async function checkNewVersion(): Promise<{
     let hasUpdate = false
     try {
       hasUpdate = typeof latest === 'string' && !!latest && gt(latest, current)
-    } catch (_error) {}
+    } catch (error: unknown) {
+      console.warn('Invalid version format while checking updates', { latest, current, error })
+      hasUpdate = false
+    }
 
     return {
       current,

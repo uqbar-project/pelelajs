@@ -15,6 +15,7 @@ This document describes how to publish a new version of PelelaJS to the NPM regi
 This method uses GitHub Actions and is the preferred way to publish. It is already configured to work with OIDC (OpenID Connect), so **no manual tokens or additional configuration are required**.
 
 ### Run the Workflow
+
 1. Go to the **Actions** tab in the GitHub repository.
 2. Select the **"Deploy to NPM"** workflow.
 3. Click **"Run workflow"**.
@@ -35,17 +36,19 @@ The workflow will:
 Use this method only for emergency hotfixes or local testing.
 
 ### 1. Run the Release Script
+
 The release process is fully automated via a single script. Execute it from the root directory:
 
 ```bash
-pnpm run release:core
+pnpm run release:npm
 ```
 
 The script will:
+
 - **Validate Git Status**: Ensures your working directory is clean.
 - **Run Quality Checks**: Executes `biome:check`, `typecheck`, and `test:coverage`.
 - **Prompt for Version**: Asks you to select `patch`, `minor`, or `major`.
-- **Sync Versions**: Automatically updates `package.json` in root, `packages/core`, and `tools/pelela-cli`.
+- **Sync Versions**: Automatically updates `package.json` in root, `packages/core`, `packages/vite-plugin-pelelajs`, and `tools/pelela-cli`.
 - **Build**: Compiles all packages.
 - **Publish**: Deploys `pelelajs` to the NPM registry.
 - **Commit, Tag & Push**: Creates a release commit, a git tag (e.g., `v0.5.4`), and pushes everything to GitHub's `main` branch.
