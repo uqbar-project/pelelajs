@@ -60,7 +60,9 @@ const resolveVersionType = async (): Promise<VersionType> => {
 
   if (argType !== undefined) {
     if (!isValidVersionType(argType)) {
-      console.error(chalk.red(`\n❌ Invalid version type: "${argType}". Expected: patch | minor | major`))
+      console.error(
+        chalk.red(`\n❌ Invalid version type: "${argType}". Expected: patch | minor | major`),
+      )
       process.exit(1)
     }
     console.log(chalk.cyan(`\n📌 Version type from argument: ${argType}`))
