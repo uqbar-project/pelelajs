@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   computeTemplatePath,
   copyTemplate,
@@ -9,6 +9,15 @@ import {
   updateProjectPackageJson,
   validateTemplatePath,
 } from '../../src/utils/templates'
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return {
+    ...actual,
+    existsSync: vi.fn(actual.existsSync),
+    cpSync: vi.fn(actual.cpSync),
+  }
+})
 
 describe('templates', () => {
   let tempDir: string
@@ -46,6 +55,48 @@ describe('templates', () => {
       expect(existsSync(join(projectPath, 'biome.json'))).toBe(true)
       expect(existsSync(join(projectPath, '_biome.json'))).toBe(false)
       expect(existsSync(join(projectPath, 'package.json'))).toBe(true)
+    })
+
+    it('throws error when template source is missing', async () => {
+      const fs = await import('node:fs')
+      const existsSpy = vi.spyOn(fs, 'existsSync').mockImplementation((path: unknown) => {
+        if (typeof path === 'string' && path.includes('templates/base-template-for-cli'))
+          return false
+        return true
+      })
+
+      expect(() => copyTemplate(join(tempDir, 'fail'))).toThrow('Template source not found')
+      existsSpy.mockRestore()
+    })
+
+    it('throws error when copy fails', async () => {
+      const fs = await import('node:fs')
+      // Force an error during copy
+      const cpSpy = vi.spyOn(fs, 'cpSync').mockImplementation(() => {
+        throw new Error('Disk full')
+      })
+
+      expect(() => copyTemplate(join(tempDir, 'fail-copy'))).toThrow('Failed to copy template')
+      cpSpy.mockRestore()
+    })
+
+    it('throws error if package.json is missing after copy', async () => {
+      const fs = await import('node:fs')
+      // Simulate successful copy but missing package.json validation
+      const existsSpy = vi.spyOn(fs, 'existsSync').mockImplementation((path: unknown) => {
+        if (
+          typeof path === 'string' &&
+          path.endsWith('package.json') &&
+          path.includes('after-copy')
+        )
+          return false
+        return true
+      })
+
+      expect(() => copyTemplate(join(tempDir, 'after-copy'))).toThrow(
+        'Template was not copied correctly',
+      )
+      existsSpy.mockRestore()
     })
   })
 

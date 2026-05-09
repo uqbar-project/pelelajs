@@ -2,6 +2,14 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { initializeI18n } from '../../src/utils/i18n'
 import { checkNewVersion, versionUtils } from '../../src/utils/version'
 
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return {
+    ...actual,
+    readFileSync: vi.fn(actual.readFileSync),
+  }
+})
+
 beforeAll(async () => {
   await initializeI18n('en')
 })
@@ -188,5 +196,43 @@ describe('checkNewVersion', () => {
     expect(result.current).toBe('1.0.0')
     expect(result.latest).toBe('invalid-version-string')
     expect(result.hasUpdate).toBe(false)
+  })
+})
+
+describe('getCliVersion', () => {
+  it('returns version from package.json if found', async () => {
+    const { getCliVersion } = await import('../../src/utils/version')
+    const version = getCliVersion()
+    expect(version).toMatch(/^\d+\.\d+\.\d+/)
+  })
+
+  it('handles deep recursive search', async () => {
+    const fs = await import('node:fs')
+    const { getCliVersion } = await import('../../src/utils/version')
+
+    // Mock implementation for this specific test
+    const readSpy = vi.spyOn(fs, 'readFileSync').mockImplementation((path) => {
+      if (typeof path === 'string' && path.includes('deep/path/package.json')) {
+        throw new Error('Not found')
+      }
+      return JSON.stringify({ name: 'pelelajs', version: '1.2.3' })
+    })
+
+    const version = getCliVersion()
+    expect(version).toBeDefined()
+    readSpy.mockRestore()
+  })
+
+  it('returns 0.0.0 if package.json is not found after max depth', async () => {
+    const fs = await import('node:fs')
+    const { getCliVersion } = await import('../../src/utils/version')
+
+    const readSpy = vi.spyOn(fs, 'readFileSync').mockImplementation(() => {
+      throw new Error('Not found')
+    })
+
+    const version = getCliVersion()
+    expect(version).toBe('0.0.0')
+    readSpy.mockRestore()
   })
 })
