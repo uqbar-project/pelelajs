@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icons/pelela.png" alt="PelelaJS Logo" width="300">
+</p>
+
 # PelelaJS
 
 A didactic framework for building simple web UI applications

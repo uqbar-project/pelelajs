@@ -1,1 +1,44 @@
-/* Put global styles here */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* Brand Colors */
+  --primary-color: #6a1b9a;
+  --primary-hover: #8e24aa;
+  
+  /* Semantic Status Colors */
+  --status-small-bg: #f3e5f5;
+  --status-small-text: #6a1b9a;
+  --status-big-bg: #f9fbe7;
+  --status-big-text: #827717;
+
+  /* Neutrals */
+  --bg-color: #f8f9fa;
+  --card-bg: #ffffff;
+  --text-color: #212529;
+  --text-muted: #6c757d;
+  --border-color: #dee2e6;
+  
+  /* Design Tokens */
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --transition: 0.2s ease;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+h1 {
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}

@@ -23,11 +23,12 @@
   },
   "files": [
     "dist",
+    "icons",
     "!dist/**/node_modules"
   ],
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "chalk": "5.6.2",
     "cli-box": "6.0.11",
