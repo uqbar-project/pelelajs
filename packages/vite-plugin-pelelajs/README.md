@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./icons/pelela.png" alt="PelelaJS Logo" width="150">
+  <img src="https://unpkg.com/pelelajs/icons/pelela.png" alt="PelelaJS Logo" width="150">
 </p>
 
 # vite-plugin-pelelajs

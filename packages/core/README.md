@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./icons/pelela.png" alt="PelelaJS Logo" width="200">
+  <img src="https://unpkg.com/pelelajs/icons/pelela.png" alt="PelelaJS Logo" width="200">
 </p>
 
 <p align="center">
