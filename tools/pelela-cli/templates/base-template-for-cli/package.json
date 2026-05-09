@@ -16,8 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "pelelajs": "latest",
-    "vite-plugin-pelelajs": "latest"
+    "pelelajs": "latest"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",

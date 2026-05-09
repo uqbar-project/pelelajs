@@ -42,26 +42,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Bump Version
-        run: |
-          pnpm version ${{ github.event.inputs.version_type }} --no-git-tag-version
-          cd packages/core && pnpm version ${{ github.event.inputs.version_type }} --no-git-tag-version
-          cd ../../tools/pelela-cli && pnpm version ${{ github.event.inputs.version_type }} --no-git-tag-version
-
-      - name: Build
-        run: pnpm run release:core
-
-      - name: Publish to NPM
-        run: |
-          cd packages/core
-          pnpm publish --no-git-checks --provenance --access public
+      - name: Release
+        run: pnpm run release:npm -- ${{ github.event.inputs.version_type }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Push changes and tags
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          git add .
-          git commit -m "chore: release v$VERSION"
-          git tag "v$VERSION"
-          git push origin main --tags

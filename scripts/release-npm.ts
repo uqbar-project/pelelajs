@@ -3,6 +3,12 @@ import { stdin as input, stdout as output } from 'node:process'
 import readline from 'node:readline/promises'
 import chalk from 'chalk'
 
+const VALID_VERSION_TYPES = ['patch', 'minor', 'major'] as const
+type VersionType = (typeof VALID_VERSION_TYPES)[number]
+
+const isValidVersionType = (value: string): value is VersionType =>
+  (VALID_VERSION_TYPES as readonly string[]).includes(value)
+
 const runCommand = (command: string, description: string): void => {
   console.log(chalk.blue(`\n🚀 ${description}...`))
   try {
@@ -45,7 +51,22 @@ const checkGitStatus = (): void => {
   */
 }
 
-const askVersionType = async (): Promise<string> => {
+/**
+ * Resolves the version bump type from a CLI argument (CI mode) or
+ * from an interactive prompt (local mode). Exits on invalid input.
+ */
+const resolveVersionType = async (): Promise<VersionType> => {
+  const argType = process.argv[2]?.toLowerCase()
+
+  if (argType !== undefined) {
+    if (!isValidVersionType(argType)) {
+      console.error(chalk.red(`\n❌ Invalid version type: "${argType}". Expected: patch | minor | major`))
+      process.exit(1)
+    }
+    console.log(chalk.cyan(`\n📌 Version type from argument: ${argType}`))
+    return argType
+  }
+
   const rl = readline.createInterface({ input, output })
   const answer = await rl.question(
     chalk.yellow('\n❓ Select version increment type (patch/minor/major) [patch]: '),
@@ -53,7 +74,7 @@ const askVersionType = async (): Promise<string> => {
   rl.close()
 
   const type = answer.trim().toLowerCase() || 'patch'
-  if (!['patch', 'minor', 'major'].includes(type)) {
+  if (!isValidVersionType(type)) {
     console.error(chalk.red(`\n❌ Invalid version type: ${type}`))
     process.exit(1)
   }
@@ -70,11 +91,12 @@ const main = async (): Promise<void> => {
   runCommand('pnpm run test:coverage', 'Running tests with coverage')
 
   // 2. Versioning
-  const versionType = await askVersionType()
+  const versionType = await resolveVersionType()
 
   const packagesToUpdate = [
     { name: 'root', path: '.' },
     { name: 'core', path: 'packages/core' },
+    { name: 'plugin', path: 'packages/vite-plugin-pelelajs' },
     { name: 'cli', path: 'tools/pelela-cli' },
   ]
 
@@ -93,7 +115,12 @@ const main = async (): Promise<void> => {
   // 4. Publish
   runCommand(
     'cd packages/core && pnpm publish --no-git-checks --access public',
-    'Publishing to NPM',
+    'Publishing Core to NPM',
+  )
+
+  runCommand(
+    'cd packages/vite-plugin-pelelajs && pnpm publish --no-git-checks --access public',
+    'Publishing Vite Plugin to NPM',
   )
 
   // 5. Git Commit, Tag and Push
