@@ -9,6 +9,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { join } from 'node:path'
+import { t } from './i18n'
 import { createDirectory } from './shell'
 
 /**
@@ -45,7 +46,7 @@ const TEMPLATE_SOURCE = computeTemplatePath(__dirname)
 
 export function copyTemplate(projectPath: string): void {
   if (!existsSync(TEMPLATE_SOURCE)) {
-    throw new Error(`Template source not found at: ${TEMPLATE_SOURCE}`)
+    throw new Error(t('commands.init.error.templateNotFound', { source: TEMPLATE_SOURCE }))
   }
 
   createDirectory(projectPath)
@@ -55,13 +56,22 @@ export function copyTemplate(projectPath: string): void {
     copyRecursive(TEMPLATE_SOURCE, projectPath)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to copy template from ${TEMPLATE_SOURCE} to ${projectPath}: ${message}`)
+    throw new Error(
+      t('commands.init.error.copyFailed', {
+        source: TEMPLATE_SOURCE,
+        dest: projectPath,
+        error: message,
+      }),
+    )
   }
 
   // Verify that at least package.json was copied
   if (!existsSync(join(projectPath, 'package.json'))) {
     throw new Error(
-      `Template was not copied correctly. package.json is missing in ${projectPath}. Files found: ${readdirSync(projectPath).join(', ')}`,
+      t('commands.init.error.verificationFailed', {
+        path: projectPath,
+        files: readdirSync(projectPath).join(', '),
+      }),
     )
   }
 
@@ -84,7 +94,9 @@ export function updateProjectPackageJson(projectPath: string, projectName: strin
     writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2))
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to read/write package.json in ${projectPath}: ${message}`)
+    throw new Error(
+      t('commands.init.error.packageJsonUpdateFailed', { path: projectPath, error: message }),
+    )
   }
 }
 

@@ -269,3 +269,13 @@ describe('getCliVersion', () => {
     readSpy.mockRestore()
   })
 })
+
+describe('getLocalVersion', () => {
+  it('delegates to getCliVersion and returns the same value as a Promise', async () => {
+    const { getLocalVersion, getCliVersion } = await import('../../src/utils/version')
+    const syncVersion = getCliVersion()
+    const asyncVersion = await getLocalVersion()
+
+    expect(asyncVersion).toBe(syncVersion)
+  })
+})

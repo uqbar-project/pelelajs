@@ -60,15 +60,14 @@ const checkGitStatus = (): void => {
     process.exit(1)
   }
 
-  /*
-  // TODO: enable this when we have PR merged
   // Check if we are on main branch
   const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim()
   if (branch !== 'main') {
-    console.error(chalk.red(`\n❌ You are on branch "${branch}". Releases must be made from "main" branch.`))
+    console.error(
+      chalk.red(`\n❌ You are on branch "${branch}". Releases must be made from "main" branch.`),
+    )
     process.exit(1)
   }
-  */
 }
 
 /**
