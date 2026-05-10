@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { initializeI18n } from '../../src/utils/i18n'
 import { checkNewVersion, versionUtils } from '../../src/utils/version'
@@ -210,16 +211,48 @@ describe('getCliVersion', () => {
     const fs = await import('node:fs')
     const { getCliVersion } = await import('../../src/utils/version')
 
-    // Mock implementation for this specific test
-    const readSpy = vi.spyOn(fs, 'readFileSync').mockImplementation((path) => {
-      if (typeof path === 'string' && path.includes('deep/path/package.json')) {
-        throw new Error('Not found')
+    // Mock implementation to test recursion depth by inspecting the path
+    const readSpy = vi.spyOn(fs, 'readFileSync').mockImplementation((path: unknown) => {
+      const pathStr = String(path)
+      // Simulate that package.json is missing in intermediate directories (src/utils, src)
+      // to force the recursive search to move up the directory tree.
+      if (
+        pathStr.endsWith(join('src', 'utils', 'package.json')) ||
+        pathStr.endsWith(join('src', 'package.json'))
+      ) {
+        throw new Error('ENOENT: no such file or directory')
       }
-      return JSON.stringify({ name: 'pelelajs', version: '1.2.3' })
+      // Return valid version for the first package.json found outside src
+      if (pathStr.endsWith('package.json')) {
+        return JSON.stringify({ name: 'pelelajs', version: '1.2.3' })
+      }
+      throw new Error('ENOENT: no such file or directory')
     })
 
     const version = getCliVersion()
-    expect(version).toBeDefined()
+    expect(version).toBe('1.2.3')
+    expect(readSpy).toHaveBeenCalled()
+    // Verify that it actually recursed (called at least twice)
+    expect(readSpy.mock.calls.length).toBeGreaterThan(1)
+    readSpy.mockRestore()
+  })
+
+  it('stops at the first recognized package (like vite-plugin-pelelajs)', async () => {
+    const fs = await import('node:fs')
+    const { getCliVersion } = await import('../../src/utils/version')
+
+    let calls = 0
+    const readSpy = vi.spyOn(fs, 'readFileSync').mockImplementation(() => {
+      calls++
+      // First call: unrecognized package, should continue
+      if (calls === 1) return JSON.stringify({ name: 'my-app', version: '1.0.0' })
+      // Second call: recognized package, should stop
+      return JSON.stringify({ name: 'vite-plugin-pelelajs', version: '0.5.12' })
+    })
+
+    const version = getCliVersion()
+    expect(version).toBe('0.5.12')
+    expect(calls).toBe(2)
     readSpy.mockRestore()
   })
 

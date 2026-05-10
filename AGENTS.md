@@ -12,8 +12,8 @@
     - **Composición sobre herencia:** Preferir composición para reusar código.
     - **Polimorfismo:** Preferir polimorfismo sobre condicionales. Evitar `instanceof` (excepto en excepciones).
     - **Declaratividad:** Usar funciones de orden superior (`map`, `filter`, `reduce`). Nada de loops imperativos (`for`, `break`, `continue`).
-    - **Simplicidad:** Soluciones directas antes que complejidad innecesaria.
-    - **Unit tests**: Para evitar el efecto colateral, preferir afterEach antes que repetir un método de cleanup en cada test. Además si hay un error el cleanup no se ejecuta.
+    - **Simplicidad:** Soluciones directas antes que complejidad innecesaria. Evitar el "miedo al booleano" (ej: preferir `return x === y` en lugar de `if (x === y) return true else return false`).
+    - **Unit tests**: Para evitar el efecto colateral, preferir afterEach antes que repetir un método de cleanup en cada test. Además si hay un error el cleanup no se ejecuta. Prohibido el uso de "magic strings" y chequeos parciales (`includes`, `endsWith`) en los mocks; preferir comparaciones exactas con constantes o variables bien definidas.
   </logic_and_design>
 
   <performance_and_lifecycle>
@@ -53,7 +53,7 @@
 </project_infrastructure>
 
 <workflow_constraints>
-  - **Idioma:** Código y comentarios en **Inglés**. Documentación en **Español**.
+  - **Idioma:** Código y comentarios en **Inglés**. Documentación en **Inglés** si es para desarrolladores, en **Español** si es para alumnos (el template del CLI en tools/pelela-cli/templates/base-template-for-cli/`).
   - **i18n:** Todos los mensajes de cara al usuario DEBEN usar la función `t()` de internacionalización. Nada de strings hardcodeados en español.
   - **Testing:** Cobertura > 90%. Primero caso feliz, luego casos borde. Los tests son documentación. Ante un bug: primero escribir el test que lo reproduce.
   - **Protocolo de ejecución:** NO corras tests ni linter por tu cuenta. Pedí al humano que lo haga: `pnpm run biome:check` y `pnpm run test --run`.

@@ -18,7 +18,7 @@ const findVersionRecursively = (currentDir: string, depth: number): string => {
     const content = readFileSync(pkgPath, 'utf-8')
     const pkg = JSON.parse(content) as PackageInfo
 
-    return ['pelelajs', '@pelelajs/cli'].includes(pkg.name)
+    return ['pelelajs', '@pelelajs/cli', 'vite-plugin-pelelajs'].includes(pkg.name)
       ? pkg.version
       : findVersionRecursively(dirname(currentDir), depth - 1)
   } catch (_error) {

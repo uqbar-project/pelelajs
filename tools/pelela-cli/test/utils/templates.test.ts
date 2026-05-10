@@ -59,11 +59,11 @@ describe('templates', () => {
 
     it('throws error when template source is missing', async () => {
       const fs = await import('node:fs')
-      const existsSpy = vi.spyOn(fs, 'existsSync').mockImplementation((path: unknown) => {
-        if (typeof path === 'string' && path.includes('templates/base-template-for-cli'))
-          return false
-        return true
-      })
+      const templatePath = getTemplatePath()
+
+      const existsSpy = vi
+        .spyOn(fs, 'existsSync')
+        .mockImplementation((path: unknown) => path !== templatePath)
 
       expect(() => copyTemplate(join(tempDir, 'fail'))).toThrow('Template source not found')
       existsSpy.mockRestore()
@@ -82,20 +82,15 @@ describe('templates', () => {
 
     it('throws error if package.json is missing after copy', async () => {
       const fs = await import('node:fs')
-      // Simulate successful copy but missing package.json validation
-      const existsSpy = vi.spyOn(fs, 'existsSync').mockImplementation((path: unknown) => {
-        if (
-          typeof path === 'string' &&
-          path.endsWith('package.json') &&
-          path.includes('after-copy')
-        )
-          return false
-        return true
-      })
+      const projectPath = join(tempDir, 'after-copy')
+      const expectedPackageJson = join(projectPath, 'package.json')
 
-      expect(() => copyTemplate(join(tempDir, 'after-copy'))).toThrow(
-        'Template was not copied correctly',
-      )
+      // Simulate successful copy but missing package.json validation
+      const existsSpy = vi
+        .spyOn(fs, 'existsSync')
+        .mockImplementation((path: unknown) => path !== expectedPackageJson)
+
+      expect(() => copyTemplate(projectPath)).toThrow('Template was not copied correctly')
       existsSpy.mockRestore()
     })
   })
