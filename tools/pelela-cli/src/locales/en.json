@@ -10,8 +10,11 @@
       "error": {
         "nameEmpty": "Project name cannot be empty",
         "nameTooLong": "Project name is too long (max 100 characters)",
-        "templateNotFound": "Template not found. The base-template-for-cli is missing.",
+        "templateNotFound": "Template source not found at: {{source}}",
         "directoryExists": "Directory \"{{projectName}}\" already exists",
+        "copyFailed": "Failed to copy template from {{source}} to {{dest}}: {{error}}",
+        "verificationFailed": "Template was not copied correctly. package.json is missing in {{path}}. Files found: {{files}}",
+        "packageJsonUpdateFailed": "Failed to read/write package.json in {{path}}: {{error}}",
         "initializationFailed": "Failed to initialize project: {{error}}"
       }
     }
@@ -27,6 +30,8 @@
     "versionCheckFailed": "Failed to check for updates: {{error}}"
   },
   "errors": {
-    "prefix": "❌ Error:"
+    "prefix": "❌ Error:",
+    "nodeVersion": "PelelaJS requires Node.js {{requiredVersion}}",
+    "currentVersion": "Current version: {{currentVersion}}"
   }
 }

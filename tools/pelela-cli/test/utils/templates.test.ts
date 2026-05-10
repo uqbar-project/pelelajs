@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { initializeI18n } from '../../src/utils/i18n'
 import {
   computeTemplatePath,
   copyTemplate,
@@ -9,6 +10,19 @@ import {
   updateProjectPackageJson,
   validateTemplatePath,
 } from '../../src/utils/templates'
+
+beforeAll(async () => {
+  await initializeI18n('en')
+})
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return {
+    ...actual,
+    existsSync: vi.fn(actual.existsSync),
+    cpSync: vi.fn(actual.cpSync),
+  }
+})
 
 describe('templates', () => {
   let tempDir: string
@@ -33,9 +47,8 @@ describe('templates', () => {
     it('computes path for prod environment (dist)', () => {
       // simulate the bundled path 'dist'
       const path = computeTemplatePath(join('/', 'mock', 'dist'))
-      expect(path).toContain('templates')
       expect(path).toContain('base-template-for-cli')
-      expect(path).toBe(join('/', 'mock', 'templates', 'base-template-for-cli'))
+      expect(path).toBe(join('/', 'mock', 'dist', 'base-template-for-cli'))
     })
   })
 
@@ -47,6 +60,43 @@ describe('templates', () => {
       expect(existsSync(join(projectPath, 'biome.json'))).toBe(true)
       expect(existsSync(join(projectPath, '_biome.json'))).toBe(false)
       expect(existsSync(join(projectPath, 'package.json'))).toBe(true)
+    })
+
+    it('throws error when template source is missing', async () => {
+      const fs = await import('node:fs')
+      const templatePath = getTemplatePath()
+
+      const existsSpy = vi
+        .spyOn(fs, 'existsSync')
+        .mockImplementation((path: unknown) => path !== templatePath)
+
+      expect(() => copyTemplate(join(tempDir, 'fail'))).toThrow('Template source not found')
+      existsSpy.mockRestore()
+    })
+
+    it('throws error when copy fails', async () => {
+      const fs = await import('node:fs')
+      // Force an error during copy
+      const cpSpy = vi.spyOn(fs, 'cpSync').mockImplementation(() => {
+        throw new Error('Disk full')
+      })
+
+      expect(() => copyTemplate(join(tempDir, 'fail-copy'))).toThrow('Failed to copy template')
+      cpSpy.mockRestore()
+    })
+
+    it('throws error if package.json is missing after copy', async () => {
+      const fs = await import('node:fs')
+      const projectPath = join(tempDir, 'after-copy')
+      const expectedPackageJson = join(projectPath, 'package.json')
+
+      // Simulate successful copy but missing package.json validation
+      const existsSpy = vi
+        .spyOn(fs, 'existsSync')
+        .mockImplementation((path: unknown) => path !== expectedPackageJson)
+
+      expect(() => copyTemplate(projectPath)).toThrow('Template was not copied correctly')
+      existsSpy.mockRestore()
     })
   })
 
@@ -89,7 +139,7 @@ describe('templates', () => {
 
       expect(() => {
         updateProjectPackageJson(projectPath, 'test-name')
-      }).toThrow('Failed to update package.json')
+      }).toThrow('Failed to read/write package.json')
     })
 
     it('throws error when package.json is invalid JSON', () => {
@@ -99,7 +149,7 @@ describe('templates', () => {
 
       expect(() => {
         updateProjectPackageJson(projectPath, 'test-name')
-      }).toThrow('Failed to update package.json')
+      }).toThrow('Failed to read/write package.json')
     })
   })
 })

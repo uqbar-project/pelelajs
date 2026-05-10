@@ -1,16 +1,45 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { gt } from 'semver'
-import packageJson from '../../package.json' with { type: 'json' }
+
+interface PackageInfo {
+  name: string
+  version: string
+}
+
+const findVersionRecursively = (currentDir: string, depth: number): string => {
+  if (depth <= 0) {
+    return '0.0.0'
+  }
+
+  const pkgPath = join(currentDir, 'package.json')
+
+  try {
+    const content = readFileSync(pkgPath, 'utf-8')
+    const pkg = JSON.parse(content) as PackageInfo
+
+    return ['pelelajs', '@pelelajs/cli', 'vite-plugin-pelelajs'].includes(pkg.name)
+      ? pkg.version
+      : findVersionRecursively(dirname(currentDir), depth - 1)
+  } catch (_error) {
+    return findVersionRecursively(dirname(currentDir), depth - 1)
+  }
+}
 
 function getPackageVersion(): string {
-  return packageJson.version
+  return findVersionRecursively(__dirname, 5)
 }
 
 export function getCliVersion(): string {
   return getPackageVersion()
 }
 
+export const versionUtils = {
+  getLocalVersion: async (): Promise<string> => getCliVersion(),
+}
+
 export async function getLocalVersion(): Promise<string> {
-  return getCliVersion()
+  return versionUtils.getLocalVersion()
 }
 
 export async function checkNewVersion(): Promise<{
@@ -18,7 +47,7 @@ export async function checkNewVersion(): Promise<{
   latest: string | null
   hasUpdate: boolean
 }> {
-  const current = await getLocalVersion()
+  const current = await versionUtils.getLocalVersion()
   const failResponse = {
     current,
     latest: null as string | null,
@@ -29,7 +58,7 @@ export async function checkNewVersion(): Promise<{
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-    const response = await fetch('https://registry.npmjs.org/@pelelajs/cli', {
+    const response = await fetch('https://registry.npmjs.org/pelelajs', {
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
@@ -41,7 +70,13 @@ export async function checkNewVersion(): Promise<{
     const data = (await response.json()) as { 'dist-tags'?: { latest?: string } }
     const latest = data['dist-tags']?.latest
 
-    const hasUpdate = typeof latest === 'string' && gt(latest, current)
+    let hasUpdate = false
+    try {
+      hasUpdate = typeof latest === 'string' && !!latest && gt(latest, current)
+    } catch (error: unknown) {
+      console.warn('Invalid version format while checking updates', { latest, current, error })
+      hasUpdate = false
+    }
 
     return {
       current,

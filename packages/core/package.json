@@ -1,7 +1,7 @@
 {
   "name": "pelelajs",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.5.13",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -13,21 +13,34 @@
       "require": "./dist/index.cjs"
     }
   },
+  "bin": {
+    "pelela": "./dist/cli.cjs"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsup src/index.ts --dts --format cjs,esm --clean",
+    "build": "tsup",
     "test": "vitest"
   },
+  "files": [
+    "dist",
+    "icons",
+    "!dist/**/node_modules"
+  ],
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
+    "chalk": "5.6.2",
+    "cli-box": "6.0.11",
+    "commander": "12.1.0",
     "i18next": "^23.7.6"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
+    "@types/semver": "7.7.0",
     "@vitest/coverage-v8": "4.0.14",
     "jsdom": "27.2.0",
+    "semver": "7.7.0",
     "tsup": "8.5.1",
     "typescript": "5.9.3",
     "vitest": "4.0.14"

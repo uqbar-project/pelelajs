@@ -1,24 +1,49 @@
+<p align="center">
+  <img src="icons/pelela.png" alt="PelelaJS Logo" width="300">
+</p>
+
 # PelelaJS
 
 A didactic framework for building simple web UI applications
 
-## Installation
+## Getting Started (for Students)
 
-⚠️ **This project requires pnpm** (uses the `workspace:*` protocol which npm doesn't support)
-
-### Install pnpm
+### Install PelelaJS globally
 
 ```bash
-npm install -g pnpm
+pnpm add -g pelelajs
 ```
+
+This installs both the library and the `pelela` CLI tool.
+
+### Requirements
+
+- **Node.js >= 22.0.0**
+- **pnpm** (recommended package manager)
+
+## Development (for Contributors)
 
 ### Setup the project
 
+If you want to contribute to the framework, follow these steps:
+
 ```bash
-nvm use
+# Clone the repo and enter the directory
+git clone https://github.com/uqbar-project/pelelajs.git
+cd pelelajs
+
+# Install dependencies
+pnpm install
+
+# Build all packages
 pnpm build
-pnpm install --frozen-lockfile
 ```
+
+### Release
+
+For detailed information on how to publish new versions, see [Publishing Process](./docs/publishing.md).
+
+⚠️ **This project requires pnpm** (uses the `workspace:*` protocol which npm doesn't support)
 
 ### VSCode Extension
 

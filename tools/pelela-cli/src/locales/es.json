@@ -10,8 +10,11 @@
       "error": {
         "nameEmpty": "El nombre del proyecto no puede estar vacío",
         "nameTooLong": "El nombre del proyecto es demasiado largo (máximo 100 caracteres)",
-        "templateNotFound": "Plantilla no encontrada. El esqueleto base-template-for-cli está faltando.",
+        "templateNotFound": "Origen de la plantilla no encontrado en: {{source}}",
         "directoryExists": "El directorio \"{{projectName}}\" ya existe",
+        "copyFailed": "Error al copiar la plantilla desde {{source}} hacia {{dest}}: {{error}}",
+        "verificationFailed": "La plantilla no se copió correctamente. package.json no se encuentra en {{path}}. Archivos encontrados: {{files}}",
+        "packageJsonUpdateFailed": "Error al leer/escribir package.json en {{path}}: {{error}}",
         "initializationFailed": "Error al inicializar el proyecto: {{error}}"
       }
     }
@@ -27,6 +30,8 @@
     "versionCheckFailed": "Error al verificar actualizaciones: {{error}}"
   },
   "errors": {
-    "prefix": "❌ Error:"
+    "prefix": "❌ Error:",
+    "nodeVersion": "PelelaJS requiere Node.js {{requiredVersion}}",
+    "currentVersion": "Versión actual: {{currentVersion}}"
   }
 }

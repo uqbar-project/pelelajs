@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-pelelajs",
-  "version": "0.0.1",
+  "version": "0.5.13",
   "description": "",
   "type": "module",
   "main": "dist/index.cjs",
@@ -17,9 +17,14 @@
     "typecheck": "tsc --noEmit",
     "build": "tsup src/index.ts --dts --format esm,cjs --clean"
   },
+  "files": [
+    "dist",
+    "icons",
+    "index.d.ts"
+  ],
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "pelelajs": "workspace:*"
   },

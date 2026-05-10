@@ -1,0 +1,18 @@
+# Source code and tests
+src/
+**/*.test.ts
+test-setup.ts
+
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Configuration
+tsconfig.json
+vitest.config.ts
+tsup.config.ts
+
+# Logs and cache
+*.log
+.turbo
+.cache
