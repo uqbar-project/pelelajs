@@ -6,9 +6,11 @@ import readline from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 import chalk from 'chalk'
 import semver from 'semver'
+import { getRequiredNodeVersion } from '../tools/pelela-cli/src/utils/nodeVersion'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
+const rootPackageJsonPath = resolve(__dirname, '..', 'package.json')
 
 const VALID_VERSION_TYPES = ['patch', 'minor', 'major'] as const
 type VersionType = (typeof VALID_VERSION_TYPES)[number]
@@ -37,10 +39,10 @@ const runCommand = (command: string, description: string, cwd?: string): void =>
 
 const validateEnvironment = (): void => {
   const nodeVersion = process.version
-  const requiredVersion = '>=22.0.0'
-  if (!semver.satisfies(nodeVersion, requiredVersion)) {
+  const requiredNodeVersion = getRequiredNodeVersion()
+  if (!semver.satisfies(nodeVersion, requiredNodeVersion)) {
     console.error(
-      chalk.red(`\n❌ PelelaJS requires Node.js ${requiredVersion}. Current: ${nodeVersion}`),
+      chalk.red(`\n❌ PelelaJS requires Node.js ${requiredNodeVersion}. Current: ${nodeVersion}`),
     )
     process.exit(1)
   }
@@ -146,9 +148,7 @@ const main = async (): Promise<void> => {
   )
 
   // 5. Git Commit, Tag and Push
-  const newVersion = JSON.parse(
-    readFileSync(resolve(__dirname, '..', 'package.json'), 'utf-8'),
-  ).version
+  const newVersion = JSON.parse(readFileSync(rootPackageJsonPath, 'utf-8')).version
 
   runCommand('git add .', 'Staging changes')
   runCommand(

@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initializeI18n } from '../../src/utils/i18n'
 import {
+  BASE_TEMPLATE_FOR_CLI,
   computeTemplatePath,
   copyTemplate,
   getTemplatePath,
@@ -40,15 +41,15 @@ describe('templates', () => {
       // simulate the file path ending in 'utils'
       const path = computeTemplatePath(join('/', 'mock', 'src', 'utils'))
       expect(path).toContain('templates')
-      expect(path).toContain('base-template-for-cli')
-      expect(path).toBe(join('/', 'mock', 'templates', 'base-template-for-cli'))
+      expect(path).toContain(BASE_TEMPLATE_FOR_CLI)
+      expect(path).toBe(join('/', 'mock', 'templates', BASE_TEMPLATE_FOR_CLI))
     })
 
     it('computes path for prod environment (dist)', () => {
       // simulate the bundled path 'dist'
       const path = computeTemplatePath(join('/', 'mock', 'dist'))
-      expect(path).toContain('base-template-for-cli')
-      expect(path).toBe(join('/', 'mock', 'dist', 'base-template-for-cli'))
+      expect(path).toContain(BASE_TEMPLATE_FOR_CLI)
+      expect(path).toBe(join('/', 'mock', 'dist', BASE_TEMPLATE_FOR_CLI))
     })
   })
 
@@ -105,7 +106,7 @@ describe('templates', () => {
       const path = getTemplatePath()
 
       expect(path).toContain('templates')
-      expect(path).toContain('base-template-for-cli')
+      expect(path).toContain(BASE_TEMPLATE_FOR_CLI)
     })
   })
 
