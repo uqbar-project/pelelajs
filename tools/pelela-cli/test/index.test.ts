@@ -1,7 +1,8 @@
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { describe, expect, it } from 'vitest'
 
-// Note: Testing the CLI entry point is challenging because it calls main() immediately
-// and has side effects. We test the individual components that make up the CLI.
+const execFileAsync = promisify(execFile)
 
 describe('CLI structure', () => {
   it('exports expected modules from commands', async () => {
@@ -27,5 +28,18 @@ describe('CLI structure', () => {
 
     expect(chalk.default).toBeDefined()
     expect(Command).toBeDefined()
+  })
+
+  it('runs the standalone CLI entrypoint in ESM mode and prints the version', async () => {
+    const result = await execFileAsync('pnpm', [
+      '-C',
+      'tools/pelela-cli',
+      'exec',
+      'tsx',
+      'src/index.ts',
+      '--version',
+    ])
+
+    expect(result.stdout).toMatch(/\d+\.\d+\.\d+/)
   })
 })
