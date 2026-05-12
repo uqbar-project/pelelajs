@@ -4,7 +4,18 @@
   "type": "commonjs",
   "publisher": "uqbar",
   "displayName": "Pelela Templates",
-  "description": "Soporte básico para archivos .pelela (syntax highlighting y snippets).",
+  "description": "Language support for .pelela template files: syntax highlighting, snippets, and completions.",
+  "icon": "icon.png",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uqbar-project/pelelajs",
+    "directory": "tools/pelela-vscode"
+  },
+  "homepage": "https://github.com/uqbar-project/pelelajs/tree/main/tools/pelela-vscode",
+  "bugs": {
+    "url": "https://github.com/uqbar-project/pelelajs/issues"
+  },
   "engines": {
     "vscode": "^1.105.0"
   },
@@ -16,7 +27,9 @@
     "build": "tsup src/extension.ts --format cjs --external vscode --clean",
     "typecheck": "tsc --noEmit",
     "test": "mocha --require tsx --require test/setup.ts test/**/*.test.ts",
-    "package": "vsce package"
+    "package": "vsce package",
+    "publish:marketplace": "vsce publish",
+    "publish:openvsx": "ovsx publish"
   },
   "devDependencies": {
     "@types/mocha": "10.0.10",
