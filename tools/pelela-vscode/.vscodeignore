@@ -1,0 +1,9 @@
+# Development files — not needed at runtime
+src/
+test/
+biome.json
+tsconfig.json
+pnpm-lock.yaml
+.gitignore
+.vscode-test/
+*.vsix

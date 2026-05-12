@@ -41,21 +41,34 @@ pnpm build
 
 ### Release
 
-For detailed information on how to publish new versions, see [Publishing Process](./docs/publishing.md).
+For detailed information on how to publish new versions:
+- **NPM packages:** [Publishing Process (NPM)](./docs/publishing-npm.md)
+- **VSCode Extension:** [Publishing Process (VSCode)](./docs/publishing-vscode.md)
 
 ⚠️ **This project requires pnpm** (uses the `workspace:*` protocol which npm doesn't support)
 
 ### VSCode Extension
 
+#### Installation (for Students)
+
+1. Open VSCode.
+2. Go to the **Extensions** view (`Ctrl+Shift+X` / `Cmd+Shift+X`).
+3. Search for **"Pelela Templates"**.
+4. Click **Install**.
+
+The extension is also available on [OpenVSX](https://open-vsx.org/) for editors like VSCodium.
+
+#### Development and Debugging
+
 To develop and test the Pelela VSCode extension:
 
-#### 1. Debugging (Recommended)
+##### 1. Debugging (Recommended)
 
 1. Open this monorepo in VSCode.
 2. Press **F5** (or go to **Run and Debug** -> **Launch Pelela Extension**).
 3. A new window will open with the extension active. You can test it using the `examples/hello-world` folder which is opened by default.
 
-#### 2. Manual Installation (.vsix)
+##### 2. Manual Installation (.vsix)
 
 If you prefer to generate and install the extension manually:
 
