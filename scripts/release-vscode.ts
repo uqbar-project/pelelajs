@@ -70,6 +70,21 @@ const checkGitStatus = (): void => {
   }
 }
 
+const validatePublishSecrets = (): void => {
+  const missing = []
+  if (!process.env.VSCE_PAT) missing.push('VSCE_PAT')
+  if (!process.env.OVSX_PAT) missing.push('OVSX_PAT')
+
+  if (missing.length > 0) {
+    console.error(
+      chalk.red(
+        `\n❌ Missing environment variables: ${missing.join(', ')}. Publishing requires these secrets.`,
+      ),
+    )
+    process.exit(1)
+  }
+}
+
 /**
  * Resolves the version bump type from a CLI argument (CI mode) or
  * from an interactive prompt (local mode). Exits on invalid input.
@@ -105,6 +120,7 @@ const resolveVersionType = async (): Promise<VersionType> => {
 const main = async (): Promise<void> => {
   validateEnvironment()
   checkGitStatus()
+  validatePublishSecrets()
 
   console.log(chalk.cyan('\n📦 Releasing pelela-vscode extension\n'))
 
