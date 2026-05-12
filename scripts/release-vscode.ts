@@ -68,7 +68,7 @@ const checkGitStatus = (): void => {
   //     chalk.red(`\n❌ You are on branch "${branch}". Releases must be made from "main" branch.`),
   //   )
   //   process.exit(1)
-  }
+  // }
 }
 
 /**
