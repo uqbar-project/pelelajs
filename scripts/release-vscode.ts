@@ -109,7 +109,9 @@ const main = async (): Promise<void> => {
 
   console.log(chalk.cyan('\n📦 Releasing pelela-vscode extension\n'))
 
-  // 1. Run extension tests
+  // 1. Quality checks
+  runCommand('pnpm run biome:check', 'Checking linting and formatting')
+  runCommand('pnpm run typecheck', 'Running typecheck', VSCODE_EXTENSION_PATH)
   runCommand('pnpm test', 'Running VSCode extension tests', VSCODE_EXTENSION_PATH)
 
   // 2. Versioning (independent from NPM packages)
@@ -130,11 +132,7 @@ const main = async (): Promise<void> => {
   )
 
   // 6. Publish to OpenVSX
-  runCommand(
-    'pnpm run publish:openvsx',
-    'Publishing to OpenVSX',
-    VSCODE_EXTENSION_PATH,
-  )
+  runCommand('pnpm run publish:openvsx', 'Publishing to OpenVSX', VSCODE_EXTENSION_PATH)
 
   // 7. Git Commit, Tag and Push
   const newVersion = readExtensionVersion()
