@@ -36,9 +36,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install extension dependencies
-        run: pnpm install --ignore-workspace
-        working-directory: tools/pelela-vscode
 
       - name: Configure Git
         run: |
