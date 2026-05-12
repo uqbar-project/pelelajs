@@ -41,8 +41,25 @@ const runCommand = (command: string, description: string, cwd?: string): void =>
   }
 }
 
-const readRootPackageJson = (): RootPackageJson =>
-  JSON.parse(readFileSync(rootPackageJsonPath, 'utf-8')) as RootPackageJson
+const readRootPackageJson = (): RootPackageJson => {
+  const parsed = JSON.parse(readFileSync(rootPackageJsonPath, 'utf-8')) as {
+    engines?: { node?: unknown }
+    version?: unknown
+  }
+
+  if (typeof parsed.engines?.node !== 'string') {
+    throw new Error('Missing engines.node in root package.json')
+  }
+
+  if (typeof parsed.version !== 'string') {
+    throw new Error('Missing version in root package.json')
+  }
+
+  return {
+    engines: { node: parsed.engines.node },
+    version: parsed.version,
+  }
+}
 
 const validateEnvironment = (): void => {
   const nodeVersion = process.version
