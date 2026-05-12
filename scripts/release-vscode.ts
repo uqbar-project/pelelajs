@@ -61,12 +61,13 @@ const checkGitStatus = (): void => {
     process.exit(1)
   }
 
-  const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim()
-  if (branch !== 'main') {
-    console.error(
-      chalk.red(`\n❌ You are on branch "${branch}". Releases must be made from "main" branch.`),
-    )
-    process.exit(1)
+  // TODO: re-enable this check once we have a release workflow
+  // const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim()
+  // if (branch !== 'main') {
+  //   console.error(
+  //     chalk.red(`\n❌ You are on branch "${branch}". Releases must be made from "main" branch.`),
+  //   )
+  //   process.exit(1)
   }
 }
 
