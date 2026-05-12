@@ -135,9 +135,8 @@ const main = async (): Promise<void> => {
   )
 
   // 6. Publish to OpenVSX
-  const vsixFile = getVsixFilename()
   runCommand(
-    `npx -y ovsx publish ${vsixFile}`,
+    'pnpm run publish:openvsx',
     'Publishing to OpenVSX',
     VSCODE_EXTENSION_PATH,
   )
@@ -161,11 +160,6 @@ const main = async (): Promise<void> => {
 
 const readExtensionVersion = (): string =>
   JSON.parse(readFileSync(resolve(VSCODE_EXTENSION_PATH, 'package.json'), 'utf-8')).version
-
-const getVsixFilename = (): string => {
-  const version = readExtensionVersion()
-  return `pelela-vscode-${version}.vsix`
-}
 
 main().catch((error) => {
   console.error(chalk.red('\n❌ Unexpected error:'), error)
