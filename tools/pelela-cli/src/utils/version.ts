@@ -14,6 +14,10 @@ type SupportedCliPackage = (typeof supportedCliPackages)[number]
 
 const currentModuleDir = getCurrentModuleDir(import.meta.url)
 
+function isSupportedCliPackage(name: string): name is SupportedCliPackage {
+  return (supportedCliPackages as readonly string[]).includes(name)
+}
+
 const findVersionRecursively = (currentDir: string, depth: number): string => {
   if (depth <= 0) {
     return '0.0.0'
@@ -25,7 +29,7 @@ const findVersionRecursively = (currentDir: string, depth: number): string => {
     const content = readFileSync(pkgPath, 'utf-8')
     const pkg = JSON.parse(content) as PackageInfo
 
-    return supportedCliPackages.includes(pkg.name as SupportedCliPackage)
+    return isSupportedCliPackage(pkg.name)
       ? pkg.version
       : findVersionRecursively(dirname(currentDir), depth - 1)
   } catch (_error) {

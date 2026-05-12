@@ -1,5 +1,5 @@
-import rootPackageJson from '../../../../package.json' with { type: 'json' }
+import cliPackageJson from '../../package.json' with { type: 'json' }
 
 export function getRequiredNodeVersion(): string {
-  return rootPackageJson.engines.node
+  return cliPackageJson.engines.node
 }

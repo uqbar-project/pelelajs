@@ -41,5 +41,6 @@ describe('CLI structure', () => {
     ])
 
     expect(result.stdout).toMatch(/\d+\.\d+\.\d+/)
+    expect(result.stderr).toBe('')
   })
 })
