@@ -172,14 +172,33 @@ const main = async (): Promise<void> => {
  */
 const bumpExtensionVersion = (versionType: VersionType): void => {
   const packageJsonPath = resolve(VSCODE_EXTENSION_PATH, 'package.json')
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version: string }
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+
+  if (typeof packageJson.version !== 'string') {
+    console.error(
+      chalk.red(`\n❌ Invalid or missing version in ${packageJsonPath}. Expected a string.`),
+    )
+    process.exit(1)
+  }
+
   const bumped = semver.inc(packageJson.version, versionType)
   if (!bumped) {
     console.error(chalk.red(`\n❌ Failed to bump version from ${packageJson.version}`))
     process.exit(1)
   }
+
   packageJson.version = bumped
-  writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+  try {
+    writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+  } catch (err: unknown) {
+    console.error(
+      chalk.red(
+        `\n❌ Failed to write updated version (${bumped}) to ${packageJsonPath}: ${err instanceof Error ? err.message : String(err)}`,
+      ),
+    )
+    process.exit(1)
+  }
+
   console.log(chalk.cyan(`\n📌 Version bumped: ${bumped}`))
 }
 
