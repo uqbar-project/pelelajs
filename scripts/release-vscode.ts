@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { stdin as input, stdout as output } from 'node:process'
 import readline from 'node:readline/promises'
@@ -114,12 +114,7 @@ const main = async (): Promise<void> => {
 
   // 2. Versioning (independent from NPM packages)
   const versionType = await resolveVersionType()
-
-  runCommand(
-    `pnpm version ${versionType} --no-git-tag-version`,
-    `Bumping version (${versionType}) in pelela-vscode`,
-    VSCODE_EXTENSION_PATH,
-  )
+  bumpExtensionVersion(versionType)
 
   // 3. Build
   runCommand('pnpm run build', 'Building extension', VSCODE_EXTENSION_PATH)
@@ -156,6 +151,23 @@ const main = async (): Promise<void> => {
   console.log(
     chalk.green(`\n✅ Successfully published pelela-vscode ${tagName} to Marketplace and OpenVSX!`),
   )
+}
+
+/**
+ * Bumps the version in pelela-vscode/package.json directly using semver,
+ * avoiding any npm/pnpm subprocess that would leak env var warnings.
+ */
+const bumpExtensionVersion = (versionType: VersionType): void => {
+  const packageJsonPath = resolve(VSCODE_EXTENSION_PATH, 'package.json')
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version: string }
+  const bumped = semver.inc(packageJson.version, versionType)
+  if (!bumped) {
+    console.error(chalk.red(`\n❌ Failed to bump version from ${packageJson.version}`))
+    process.exit(1)
+  }
+  packageJson.version = bumped
+  writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+  console.log(chalk.cyan(`\n📌 Version bumped: ${bumped}`))
 }
 
 const readExtensionVersion = (): string =>
