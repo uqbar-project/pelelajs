@@ -81,15 +81,13 @@ export class DependencyTracker {
     const addGetterBindings = <T extends object>(
       bindings: Array<T>,
       currentResult: Array<T>,
-    ): Array<T> => {
-      return [
-        ...currentResult,
-        ...bindings.filter(
-          (binding) =>
-            !currentResult.includes(binding) && this.isGetterBinding(binding as unknown as Binding),
-        ),
-      ]
-    }
+    ): Array<T> => [
+      ...currentResult,
+      ...bindings.filter(
+        (binding) =>
+          !currentResult.includes(binding) && this.isGetterBinding(binding as unknown as Binding),
+      ),
+    ]
 
     return {
       ...result,

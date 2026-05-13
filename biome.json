@@ -48,7 +48,18 @@
         "noForIn": "error",
         "noMisusedPromises": "error",
         "noProto": "error",
-        "noShadow": "error"
+        "noShadow": "error",
+        "noUnknownAttribute": "error",
+        "noUnnecessaryConditions": "error",
+        "useMaxParams": {
+          "level": "warn",
+          "options": {
+            "max": 4
+          }
+        },
+        "useFind": "error",
+        "useConsistentArrowReturn": "error",
+        "noUselessUndefined": "off"
       }
     }
   },
