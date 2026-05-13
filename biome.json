@@ -59,7 +59,9 @@
         },
         "useFind": "error",
         "useConsistentArrowReturn": "error",
-        "noUselessUndefined": "off"
+        "noUselessUndefined": "off",
+        "noUselessCatchBinding": "error",
+        "noUnresolvedImports": "off"
       }
     }
   },
