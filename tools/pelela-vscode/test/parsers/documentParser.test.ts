@@ -70,7 +70,7 @@ describe('documentParser', () => {
       assert.strictEqual(result, false)
     })
 
-    it('should return false if not inside a tag', () => {
+    it('should return false for plain text', () => {
       const result = isStartingTag('texto normal')
       assert.strictEqual(result, false)
     })

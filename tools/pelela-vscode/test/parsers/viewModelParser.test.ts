@@ -75,7 +75,7 @@ interface Item {
       assert.ok(!methods.includes('constructor'))
     })
 
-    it('should not include constructor in methods', () => {
+    it('should not include the constructor in methods', () => {
       const { methods } = extractViewModelMembers(testVMPath)
       assert.ok(!methods.includes('constructor'))
     })
@@ -101,7 +101,7 @@ interface Item {
       assert.ok(props.includes('number'))
     })
 
-    it('should return empty array for non-existent properties', () => {
+    it('should return an empty array for non-existent properties', () => {
       const props = extractNestedProperties(testVMPath, ['nonExistent'])
       assert.strictEqual(props.length, 0)
     })
@@ -125,7 +125,7 @@ interface Item {
       assert.ok(props.includes('completed'))
     })
 
-    it('should return empty array for non-existent interfaces', () => {
+    it('should return an empty array for non-existent interfaces', () => {
       const testVMContent = fs.readFileSync(testVMPath, 'utf-8')
       const props = extractInterfaceProperties(testVMContent, 'NonExistent')
 

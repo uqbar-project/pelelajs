@@ -125,7 +125,7 @@ export class UserViewModel {
       assert.strictEqual(location?.uri.fsPath, testVMPath)
     })
 
-    it('should return the simple definition if path has a single element', () => {
+    it('should return the simple definition if the path has a single element', () => {
       const location = findNestedPropertyDefinition(testVMPath, ['username'])
 
       assert.ok(location instanceof vscode.Location)
