@@ -143,7 +143,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
     methodName: (typeof ARRAY_MUTATION_METHODS)[number],
   ): (...args: unknown[]) => unknown {
     return (...args: unknown[]) => {
-      const method = Array.prototype[methodName] as (...args: unknown[]) => unknown
+      const method = Array.prototype[methodName] as (...methodArgs: unknown[]) => unknown
       const result = method.apply(targetArray, args)
       this.onChange(this.parentPath || 'root')
       return result

@@ -32,7 +32,7 @@ const findVersionRecursively = (currentDir: string, depth: number): string => {
     return isSupportedCliPackage(pkg.name)
       ? pkg.version
       : findVersionRecursively(dirname(currentDir), depth - 1)
-  } catch (_error) {
+  } catch {
     return findVersionRecursively(dirname(currentDir), depth - 1)
   }
 }

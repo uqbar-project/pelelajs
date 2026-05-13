@@ -17,7 +17,7 @@ function detectLanguage(): SupportedLanguage {
 }
 
 async function initializeI18n(language?: 'en' | 'es'): Promise<void> {
-  const detectedLanguage = language || detectLanguage()
+  const detectedLanguage = language ?? detectLanguage()
 
   await i18next.init({
     lng: detectedLanguage,

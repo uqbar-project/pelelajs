@@ -6,10 +6,10 @@ interface ViewModelWithRaw {
 }
 
 function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
-  const hasGetter = (currentObj: unknown, part: string): boolean => {
-    if (!isObject(currentObj)) return false
+  const hasGetter = (target: unknown, part: string): boolean => {
+    if (!isObject(target)) return false
 
-    let proto = currentObj
+    let proto = target
     while (proto) {
       const descriptor = Object.getOwnPropertyDescriptor(proto, part)
       if (descriptor?.get) {
@@ -81,15 +81,13 @@ export class DependencyTracker {
     const addGetterBindings = <T extends object>(
       bindings: Array<T>,
       currentResult: Array<T>,
-    ): Array<T> => {
-      return [
-        ...currentResult,
-        ...bindings.filter(
-          (binding) =>
-            !currentResult.includes(binding) && this.isGetterBinding(binding as unknown as Binding),
-        ),
-      ]
-    }
+    ): Array<T> => [
+      ...currentResult,
+      ...bindings.filter(
+        (binding) =>
+          !currentResult.includes(binding) && this.isGetterBinding(binding as unknown as Binding),
+      ),
+    ]
 
     return {
       ...result,

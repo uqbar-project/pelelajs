@@ -7,11 +7,22 @@
       "suspicious": {
         "noExplicitAny": "error",
         "noConsole": "off",
-        "noEmptyBlockStatements": "off"
+        "noEmptyBlockStatements": "off",
+        "useIsArray": "error",
+        "noPrototypeBuiltins": "error"
       },
       "style": {
         "noNonNullAssertion": "off",
-        "noNamespace": "off"
+        "noNamespace": "off",
+        "noNegationElse": "warn",
+        "useTemplate": "warn",
+        "useConst": "error",
+        "useNamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false
+          }
+        }
       },
       "correctness": {
         "noUnusedVariables": "warn",
@@ -27,7 +38,30 @@
         "noAccumulatingSpread": "warn"
       },
       "nursery": {
-        "noUnusedExpressions": "off"
+        "noUnusedExpressions": "error",
+        "noContinue": "error",
+        "noDuplicateDependencies": "error",
+        "noEqualsToNull": "error",
+        "noDeprecatedImports": "error",
+        "noEmptySource": "error",
+        "noFloatingPromises": "error",
+        "noForIn": "error",
+        "noMisusedPromises": "error",
+        "noProto": "error",
+        "noShadow": "error",
+        "noUnknownAttribute": "error",
+        "noUnnecessaryConditions": "error",
+        "useMaxParams": {
+          "level": "warn",
+          "options": {
+            "max": 4
+          }
+        },
+        "useFind": "error",
+        "useConsistentArrowReturn": "error",
+        "noUselessUndefined": "off",
+        "noUselessCatchBinding": "error",
+        "noUnresolvedImports": "off"
       }
     }
   },
