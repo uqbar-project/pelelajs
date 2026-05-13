@@ -10,7 +10,10 @@ import {
 } from 'node:fs'
 import { join } from 'node:path'
 import { t } from './i18n'
+import { getCurrentModuleDir } from './modulePath'
 import { createDirectory } from './shell'
+
+export const BASE_TEMPLATE_FOR_CLI = 'base-template-for-cli'
 
 /**
  * Recursively copy a directory.
@@ -37,12 +40,13 @@ export function computeTemplatePath(currentDir: string): string {
   // In development (currentDir is src/utils), template is in ../../templates
   // In production (currentDir is dist), template is at the same level (via tsup's publicDir)
   return currentDir.includes('dist')
-    ? join(currentDir, 'base-template-for-cli')
-    : join(currentDir, '..', '..', 'templates', 'base-template-for-cli')
+    ? join(currentDir, BASE_TEMPLATE_FOR_CLI)
+    : join(currentDir, '..', '..', 'templates', BASE_TEMPLATE_FOR_CLI)
 }
 
-// In CJS bundled by tsup, __dirname is available globally
-const TEMPLATE_SOURCE = computeTemplatePath(__dirname)
+const currentModuleDir = getCurrentModuleDir(import.meta.url)
+
+const TEMPLATE_SOURCE = computeTemplatePath(currentModuleDir)
 
 export function copyTemplate(projectPath: string): void {
   if (!existsSync(TEMPLATE_SOURCE)) {

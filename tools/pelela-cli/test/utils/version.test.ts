@@ -237,7 +237,7 @@ describe('getCliVersion', () => {
     readSpy.mockRestore()
   })
 
-  it('stops at the first recognized package (like vite-plugin-pelelajs)', async () => {
+  it('stops at the first supported package when it finds pelelajs', async () => {
     const fs = await import('node:fs')
     const { getCliVersion } = await import('../../src/utils/version')
 
@@ -247,7 +247,39 @@ describe('getCliVersion', () => {
       // First call: unrecognized package, should continue
       if (calls === 1) return JSON.stringify({ name: 'my-app', version: '1.0.0' })
       // Second call: recognized package, should stop
-      return JSON.stringify({ name: 'vite-plugin-pelelajs', version: '0.5.12' })
+      return JSON.stringify({ name: 'pelelajs', version: '0.5.12' })
+    })
+
+    const version = getCliVersion()
+    expect(version).toBe('0.5.12')
+    expect(calls).toBe(2)
+    readSpy.mockRestore()
+  })
+
+  it('keeps supporting the standalone CLI package as a fallback source', async () => {
+    const fs = await import('node:fs')
+    const { getCliVersion } = await import('../../src/utils/version')
+
+    const readSpy = vi
+      .spyOn(fs, 'readFileSync')
+      .mockImplementation(() => JSON.stringify({ name: '@pelelajs/cli', version: '0.5.12' }))
+
+    const version = getCliVersion()
+    expect(version).toBe('0.5.12')
+    readSpy.mockRestore()
+  })
+
+  it('ignores vite-plugin-pelelajs as a CLI version source', async () => {
+    const fs = await import('node:fs')
+    const { getCliVersion } = await import('../../src/utils/version')
+
+    let calls = 0
+    const readSpy = vi.spyOn(fs, 'readFileSync').mockImplementation(() => {
+      calls++
+      if (calls === 1) {
+        return JSON.stringify({ name: 'vite-plugin-pelelajs', version: '9.9.9' })
+      }
+      return JSON.stringify({ name: 'pelelajs', version: '0.5.12' })
     })
 
     const version = getCliVersion()

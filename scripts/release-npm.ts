@@ -9,9 +9,15 @@ import semver from 'semver'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
+const rootPackageJsonPath = resolve(__dirname, '..', 'package.json')
 
 const VALID_VERSION_TYPES = ['patch', 'minor', 'major'] as const
 type VersionType = (typeof VALID_VERSION_TYPES)[number]
+
+interface RootPackageJson {
+  engines: { node: string }
+  version: string
+}
 
 const isValidVersionType = (value: string): value is VersionType =>
   (VALID_VERSION_TYPES as readonly string[]).includes(value)
@@ -35,12 +41,32 @@ const runCommand = (command: string, description: string, cwd?: string): void =>
   }
 }
 
+const readRootPackageJson = (): RootPackageJson => {
+  const parsed = JSON.parse(readFileSync(rootPackageJsonPath, 'utf-8')) as {
+    engines?: { node?: unknown }
+    version?: unknown
+  }
+
+  if (typeof parsed.engines?.node !== 'string') {
+    throw new Error('Missing engines.node in root package.json')
+  }
+
+  if (typeof parsed.version !== 'string') {
+    throw new Error('Missing version in root package.json')
+  }
+
+  return {
+    engines: { node: parsed.engines.node },
+    version: parsed.version,
+  }
+}
+
 const validateEnvironment = (): void => {
   const nodeVersion = process.version
-  const requiredVersion = '>=22.0.0'
-  if (!semver.satisfies(nodeVersion, requiredVersion)) {
+  const requiredNodeVersion = readRootPackageJson().engines.node
+  if (!semver.satisfies(nodeVersion, requiredNodeVersion)) {
     console.error(
-      chalk.red(`\n❌ PelelaJS requires Node.js ${requiredVersion}. Current: ${nodeVersion}`),
+      chalk.red(`\n❌ PelelaJS requires Node.js ${requiredNodeVersion}. Current: ${nodeVersion}`),
     )
     process.exit(1)
   }
@@ -146,9 +172,7 @@ const main = async (): Promise<void> => {
   )
 
   // 5. Git Commit, Tag and Push
-  const newVersion = JSON.parse(
-    readFileSync(resolve(__dirname, '..', 'package.json'), 'utf-8'),
-  ).version
+  const newVersion = readRootPackageJson().version
 
   runCommand('git add .', 'Staging changes')
   runCommand(

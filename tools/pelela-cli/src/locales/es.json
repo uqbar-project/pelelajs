@@ -26,7 +26,7 @@
     "install": "pnpm install",
     "dev": "pnpm dev",
     "newVersionAvailable": "🆕 Una nueva versión está disponible: {{version}}",
-    "updateCommand": "Ejecuta `pnpm add -g @pelelajs/cli` para actualizar",
+    "updateCommand": "Ejecuta `pnpm add -g pelelajs` para actualizar",
     "versionCheckFailed": "Error al verificar actualizaciones: {{error}}"
   },
   "errors": {
