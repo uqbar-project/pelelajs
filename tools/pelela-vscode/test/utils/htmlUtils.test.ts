@@ -4,14 +4,14 @@ import { getHtmlAttributes, getHtmlElements, getPelelaAttributes } from '../../s
 
 describe('htmlUtils', () => {
   describe('getHtmlElements', () => {
-    it('debería retornar un array de elementos HTML', () => {
+    it('should return an array of HTML elements', () => {
       const elements = getHtmlElements()
 
       assert.ok(Array.isArray(elements))
       assert.ok(elements.length > 0)
     })
 
-    it('debería incluir elementos comunes', () => {
+    it('should include common elements', () => {
       const elements = getHtmlElements()
 
       assert.ok(elements.includes('div'))
@@ -21,7 +21,7 @@ describe('htmlUtils', () => {
       assert.ok(elements.includes('section'))
     })
 
-    it('no debería incluir elementos duplicados', () => {
+    it('should not include duplicate elements', () => {
       const elements = getHtmlElements()
       const uniqueElements = [...new Set(elements)]
 
@@ -30,14 +30,14 @@ describe('htmlUtils', () => {
   })
 
   describe('getHtmlAttributes', () => {
-    it('debería retornar un array de atributos HTML', () => {
+    it('should return an array of HTML attributes', () => {
       const attributes = getHtmlAttributes()
 
       assert.ok(Array.isArray(attributes))
       assert.ok(attributes.length > 0)
     })
 
-    it('debería incluir atributos comunes', () => {
+    it('should include common attributes', () => {
       const attributes = getHtmlAttributes()
 
       assert.ok(attributes.includes('id'))
@@ -47,7 +47,7 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('href'))
     })
 
-    it('debería incluir atributos con guiones', () => {
+    it('should include attributes with hyphens', () => {
       const attributes = getHtmlAttributes()
 
       assert.ok(attributes.includes('data-'))
@@ -56,14 +56,14 @@ describe('htmlUtils', () => {
   })
 
   describe('getPelelaAttributes', () => {
-    it('debería retornar un array de atributos de Pelela', () => {
+    it('should return an array of Pelela attributes', () => {
       const attributes = getPelelaAttributes()
 
       assert.ok(Array.isArray(attributes))
       assert.ok(attributes.length > 0)
     })
 
-    it('debería incluir todos los atributos de Pelela', () => {
+    it('should include all Pelela attributes', () => {
       const attributes = getPelelaAttributes()
 
       assert.ok(attributes.includes('view-model'))
@@ -75,7 +75,7 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('for-each'))
     })
 
-    it('debería retornar exactamente 8 atributos', () => {
+    it('should return exactly 8 attributes', () => {
       const attributes = getPelelaAttributes()
       assert.strictEqual(attributes.length, 8)
     })
