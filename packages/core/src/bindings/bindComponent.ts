@@ -137,10 +137,10 @@ export function setupComponentBindings<T extends object>(
       }
 
       // Buffer changes during setup, render directly after setup
-      if (!isSetupComplete) {
-        bufferedPaths.push(changedPath)
-      } else {
+      if (isSetupComplete) {
         renderChild(changedPath)
+      } else {
+        bufferedPaths.push(changedPath)
       }
     })
 
