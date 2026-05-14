@@ -68,6 +68,7 @@ describe('htmlUtils', () => {
 
       assert.ok(attributes.includes('view-model'))
       assert.ok(attributes.includes('bind-value'))
+      assert.ok(attributes.includes('bind-content'))
       assert.ok(attributes.includes('if'))
       assert.ok(attributes.includes('bind-class'))
       assert.ok(attributes.includes('bind-style'))
