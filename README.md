@@ -20,7 +20,7 @@ This installs both the library and the `pelela` CLI tool.
 
 - **Node.js >= 22.0.0**
 
-- **pnpm** (recommended package manager)
+- **pnpm** (required package manager)
 
 ## Development (for Contributors)
 
