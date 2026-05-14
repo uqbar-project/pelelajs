@@ -61,7 +61,7 @@ interface Item {
   })
 
   describe('extractViewModelMembers', () => {
-    it('debería extraer propiedades y métodos de una clase', () => {
+    it('should extract properties and methods from a class', () => {
       const { properties, methods } = extractViewModelMembers(testVMPath)
 
       assert.ok(properties.includes('name'))
@@ -75,38 +75,38 @@ interface Item {
       assert.ok(!methods.includes('constructor'))
     })
 
-    it('no debería incluir constructor en los métodos', () => {
+    it('should not include the constructor in methods', () => {
       const { methods } = extractViewModelMembers(testVMPath)
       assert.ok(!methods.includes('constructor'))
     })
 
-    it('debería incluir getters como propiedades', () => {
+    it('should include getters as properties', () => {
       const { properties } = extractViewModelMembers(testVMPath)
       assert.ok(properties.includes('fullName'))
     })
   })
 
   describe('extractNestedProperties', () => {
-    it('debería extraer propiedades anidadas de un objeto literal', () => {
+    it('should extract nested properties from an object literal', () => {
       const props = extractNestedProperties(testVMPath, ['user'])
 
       assert.ok(props.includes('name'))
       assert.ok(props.includes('address'))
     })
 
-    it('debería extraer propiedades profundamente anidadas', () => {
+    it('should extract deeply nested properties', () => {
       const props = extractNestedProperties(testVMPath, ['user', 'address'])
 
       assert.ok(props.includes('street'))
       assert.ok(props.includes('number'))
     })
 
-    it('debería retornar array vacío para propiedades inexistentes', () => {
+    it('should return an empty array for non-existent properties', () => {
       const props = extractNestedProperties(testVMPath, ['nonExistent'])
       assert.strictEqual(props.length, 0)
     })
 
-    it('debería extraer propiedades de una interfaz cuando la propiedad es un array', () => {
+    it('should extract properties from an interface when the property is an array', () => {
       const props = extractNestedProperties(testVMPath, ['items'])
 
       assert.ok(props.includes('id'))
@@ -116,7 +116,7 @@ interface Item {
   })
 
   describe('extractInterfaceProperties', () => {
-    it('debería extraer propiedades de una interfaz', () => {
+    it('should extract properties from an interface', () => {
       const testVMContent = fs.readFileSync(testVMPath, 'utf-8')
       const props = extractInterfaceProperties(testVMContent, 'Item')
 
@@ -125,7 +125,7 @@ interface Item {
       assert.ok(props.includes('completed'))
     })
 
-    it('debería retornar array vacío para interfaces inexistentes', () => {
+    it('should return an empty array for non-existent interfaces', () => {
       const testVMContent = fs.readFileSync(testVMPath, 'utf-8')
       const props = extractInterfaceProperties(testVMContent, 'NonExistent')
 

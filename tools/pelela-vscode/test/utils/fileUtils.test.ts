@@ -28,14 +28,14 @@ describe('fileUtils', () => {
   })
 
   describe('findViewModelFile', () => {
-    it('debería encontrar el archivo ViewModel correspondiente', () => {
+    it('should find the corresponding ViewModel file', () => {
       const mockUri = { fsPath: testPelelaPath } as vscode.Uri
       const result = findViewModelFile(mockUri)
 
       assert.strictEqual(result, testTsPath)
     })
 
-    it('debería retornar null si no existe el archivo ViewModel', () => {
+    it('should return null if the ViewModel file does not exist', () => {
       const nonExistentPath = path.join(testFilesDir, 'nonexistent.pelela')
       const mockUri = { fsPath: nonExistentPath } as vscode.Uri
       const result = findViewModelFile(mockUri)
@@ -45,7 +45,7 @@ describe('fileUtils', () => {
   })
 
   describe('readFileLines', () => {
-    it('debería leer un archivo y retornar un array de líneas', () => {
+    it('should read a file and return an array of lines', () => {
       const testContent = 'line1\nline2\nline3'
       const testFile = path.join(testFilesDir, 'readtest.txt')
       fs.writeFileSync(testFile, testContent)
@@ -61,7 +61,7 @@ describe('fileUtils', () => {
       fs.unlinkSync(testFile)
     })
 
-    it('debería manejar archivos vacíos', () => {
+    it('should handle empty files', () => {
       const testFile = path.join(testFilesDir, 'empty.txt')
       fs.writeFileSync(testFile, '')
 
@@ -76,7 +76,7 @@ describe('fileUtils', () => {
   })
 
   describe('readFileContent', () => {
-    it('debería leer el contenido completo de un archivo', () => {
+    it('should read the complete file content', () => {
       const testContent = 'Hello World\nSecond line'
       const testFile = path.join(testFilesDir, 'content.txt')
       fs.writeFileSync(testFile, testContent)
@@ -88,7 +88,7 @@ describe('fileUtils', () => {
       fs.unlinkSync(testFile)
     })
 
-    it('debería manejar archivos vacíos', () => {
+    it('should handle empty files', () => {
       const testFile = path.join(testFilesDir, 'empty2.txt')
       fs.writeFileSync(testFile, '')
 
