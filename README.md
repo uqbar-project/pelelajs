@@ -19,6 +19,7 @@ This installs both the library and the `pelela` CLI tool.
 ### Requirements
 
 - **Node.js >= 22.0.0**
+
 - **pnpm** (recommended package manager)
 
 ## Development (for Contributors)
@@ -94,6 +95,7 @@ Coverage report will be generated in `coverage/lcov.info` (consolidated for all 
 To include a new package in the test suite and coverage report:
 
 1. Create `packages/new-package/vitest.config.ts`:
+
    ```typescript
    import { defineProject } from "vitest/config";
 

@@ -24,13 +24,19 @@ graph TD
 ### Key Modules
 
 1. **Parser & Commander:** We rely on standard CLI arg parsing to define strict inputs.
+
 2. **Template Utilities:** The system dynamically copies files from an internal `templates/` directory to the target workspace. It handles token replacement (e.g., replacing `{{projectName}}` in configuration files).
+
 3. **i18n Engine:** All user-facing strings, errors, and success messages are retrieved via the `t()` function, mapped to dictionaries (currently `es.json` and `en.json`), preventing hardcoded language strings.
+
 4. **Version Detectors:** Validates the Node.js environment to ensure compatibility with PelelaJS requirements before executing heavy disk operations.
 
 ## Extending the CLI
 
 When contributing to the CLI:
+
 - **Always update the localization files.** Never add hardcoded strings to `console.log`.
+
 - Ensure robust error handling (fail fast) if file system operations (like writing a template) encounter permission issues.
+
 - Provide comprehensive tests mimicking filesystem behavior via virtual mocking, ensuring cross-platform stability.
