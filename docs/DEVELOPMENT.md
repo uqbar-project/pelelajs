@@ -8,7 +8,17 @@ This guide provides the necessary steps to set up the PelelaJS monorepo for loca
 
 - **pnpm**: This project strictly uses `pnpm` as the package manager (`npm` or `yarn` will fail).
 
-- **VSCode**: Recommended editor with the Biome extension.
+- **VSCode**: Recommended editor for its excellent TypeScript and LSP support.
+
+## Recommended VSCode Extensions
+
+To ensure a smooth development experience and adherence to the project's coding standards, we recommend installing the following extensions:
+
+- **Biome (`biomejs.biome`)**: Mandatory for linting and formatting. The project is configured to auto-format on save using Biome.
+
+- **Pelela Templates (`uqbar.pelela-vscode`)**: Provides syntax highlighting and Intellisense for `.pelela` files. Essential when working on examples or integration tests.
+
+- **Vitest (`vitest.explorer`)**: (Optional) Provides a rich UI for running and debugging tests directly from the editor.
 
 ## Initial Setup
 
@@ -52,6 +62,14 @@ PelelaJS uses **Biome** as its primary toolchain for formatting and linting.
   ```bash
   pnpm run biome:format
   ```
+
+### Type Checking
+
+Strict typing is a priority. While the editor provides real-time feedback, you should run the full type check across all packages before committing:
+
+```bash
+pnpm run typecheck
+```
 
 ### Testing
 

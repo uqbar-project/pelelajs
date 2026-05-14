@@ -29,40 +29,33 @@ graph LR
 
 - **File Verbosity:** Requires multiple files per component compared to single-file components (SFCs) like in Vue or Svelte.
 
-## Lifecycle and Bootstrapping
+## The Build-time Engine (Vite Plugin)
 
-The framework lifecycle is designed to be as invisible as possible to the user, favoring convention over configuration.
+The developer experience in PelelaJS relies heavily on a custom Vite plugin that bridges the gap between declarative templates and the JavaScript runtime. This engine handles two critical tasks: discovery and transformation.
 
-### Auto-register Mechanism
+### 1. Auto-discovery & Registration
 
-PelelaJS uses an `auto-register` approach. At build time (via the Vite plugin), all components in a specific structure are automatically discovered and registered in the `ComponentRegistry`.
+PelelaJS favors convention over configuration. The plugin scans the `src/` directory for `.pelela` files and dynamically generates a **Virtual Module** (`virtual:pelela-auto-register`).
+
+- **Mechanism:** This virtual module contains the necessary `import` statements and calls to the `ComponentRegistry`.
+
+- **Effect:** By simply importing this virtual module in the application's `main.ts`, all components and routes are automatically wired up.
 
 ```mermaid
 sequenceDiagram
     participant Build as Vite Plugin (Build Time)
     participant Registry as Component Registry (Runtime)
-    participant Core as Pelela Core
+    participant Main as main.ts (Developer Code)
     
-    Build->>Registry: Automatically inject component metadata
-    Note over Core: main.ts initializes the root app
-    Core->>Registry: Request available components
-    Registry-->>Core: Return component map
-    Core->>Core: Bootstrap application
+    Build->>Build: Scan src/ for .pelela files
+    Build->>Main: Expose virtual:pelela-auto-register
+    Main->>Registry: Import virtual module & Register components
+    Note over Registry: Registry is now populated with metadata
 ```
 
-While manual registration of components and routes is possible under the hood, the framework strongly discourages it to keep the developer experience straightforward and declarative.
+### 2. Source Transformation
 
-### How Auto-discovery Works
-
-The auto-discovery is powered by the **Vite plugin**, which scans the `src/` directory at build time looking for `.pelela` files. It dynamically generates a **Virtual Module** (`virtual:pelela-auto-register`) that contains the necessary `import` statements and calls to `ComponentRegistry.register()`. By simply importing this virtual module in the application's `main.ts`, all components are automatically wired up without the developer having to write a single line of boilerplate registration code.
-
-## Build-time Transformation (Vite Plugin)
-
-To bridge the gap between the declarative `.pelela` templates and the JavaScript runtime, PelelaJS utilizes a custom Vite plugin that performs a source-to-source transformation.
-
-### The Transformation Process
-
-When the build system encounters a `.pelela` file, the plugin intercepts it and converts it into a standard JavaScript module. This allows the browser to import templates as if they were code.
+Since browsers cannot natively execute `.pelela` files, the plugin transforms them into standard JavaScript modules on-the-fly.
 
 ```mermaid
 graph TD
@@ -74,25 +67,17 @@ graph TD
     D & E & F --> G[Generated .js Module]
 ```
 
-**Key Outputs of the Transformation:**
+**Key Outputs:**
 
 - **Default Export**: The sanitized HTML template string.
 
 - **Named Export (`viewModelName`)**: The identifier of the TypeScript class associated with this view.
 
-- **CSS Side-effect**: An automatic `import "./filename.css"` if the file exists, ensuring styles are bundled.
+- **CSS Side-effect**: An automatic `import "./filename.css"` if the file exists.
 
-*Example Transformation:*
+## Application Lifecycle
 
-- **Input (`app.pelela`)**: `<pelela view-model="App">...</pelela>`
-
-- **Output**: 
-  ```javascript
-  import "./app.css";
-  export const viewModelName = "App";
-  const template = "...";
-  export default template;
-  ```
+The framework lifecycle is designed to be as invisible as possible, managing the transition from static templates to a reactive DOM.
 
 ### The Bootstrapping Flow
 
