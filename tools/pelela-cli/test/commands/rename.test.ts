@@ -56,7 +56,9 @@ describe('renameCommand', () => {
 
     mockedFs.existsSync.mockImplementation((path) => {
       const pathString = path.toString()
-      return pathString === 'src' || pathString.includes('Old.ts') || pathString.includes('Old.pelela')
+      return (
+        pathString === 'src' || pathString.includes('Old.ts') || pathString.includes('Old.pelela')
+      )
     })
 
     mockedFs.readFileSync.mockImplementation((path) => {
@@ -97,10 +99,9 @@ describe('renameCommand', () => {
 
     await renameCommand({ oldName: 'Old', newName: 'new-dir/New' })
 
-    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('new-dir'),
-      { recursive: true },
-    )
+    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('new-dir'), {
+      recursive: true,
+    })
   })
 
   it('creates new directory for pelela file if it does not exist', async () => {
@@ -111,10 +112,9 @@ describe('renameCommand', () => {
 
     await renameCommand({ oldName: 'Old', newName: 'new-dir/New' })
 
-    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('new-dir'),
-      { recursive: true },
-    )
+    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('new-dir'), {
+      recursive: true,
+    })
   })
 
   it('throws error when rename fails', async () => {
