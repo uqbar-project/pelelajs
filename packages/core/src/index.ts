@@ -20,3 +20,4 @@ export { registerViewModel as defineViewModel } from './registry/viewModelRegist
 export type { RouteDefinition } from './router/index'
 export { defineComponent, router } from './router/index'
 export type { PelelaOptions, ViewModelConstructor } from './types'
+export { ViewModel } from './types'

@@ -17,6 +17,31 @@
         "packageJsonUpdateFailed": "Failed to read/write package.json in {{path}}: {{error}}",
         "initializationFailed": "Failed to initialize project: {{error}}"
       }
+    },
+    "new": {
+      "description": "✨ Create a new PelelaJS component",
+      "error": {
+        "nameEmpty": "Component name cannot be empty",
+        "nameInvalid": "Component name must be PascalCase (e.g., MyComponent)",
+        "filesExist": "Component files for \"{{name}}\" already exist",
+        "creationFailed": "Failed to create component: {{error}}"
+      },
+      "messages": {
+        "success": "✅ Component \"{{name}}\" created successfully"
+      }
+    },
+    "rename": {
+      "description": "🔄 Rename an existing component",
+      "error": {
+        "oldNameEmpty": "Current component name cannot be empty",
+        "newNameEmpty": "New component name cannot be empty",
+        "oldNotFound": "Could not find files for component \"{{name}}\"",
+        "newNameExists": "Files with name \"{{name}}\" already exist",
+        "renameFailed": "Failed to rename component: {{error}}"
+      },
+      "messages": {
+        "success": "✅ Component \"{{oldName}}\" renamed to \"{{newName}}\" successfully"
+      }
     }
   },
   "messages": {

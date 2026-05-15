@@ -10,3 +10,7 @@ export type PelelaOptions = {
 export interface PelelaElement<T = object> extends HTMLElement {
   __pelelaViewModel: T
 }
+
+export class ViewModel {
+  [key: string]: unknown
+}
