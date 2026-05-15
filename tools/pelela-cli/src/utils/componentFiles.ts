@@ -22,9 +22,7 @@ export function createTsFile(name: string, targetDir: string): void {
   }
 
   const className = basename(normalizedName)
-  const content = `import { ViewModel } from 'pelelajs'
-
-export class ${className} extends ViewModel {
+  const content = `export class ${className} {
   // Add your properties and methods here
 }
 `
@@ -46,6 +44,23 @@ export function createPelelaFile(name: string, targetDir: string): void {
     <!-- Add your template here -->
   </pelela>
 </div>
+`
+  writeFileSync(path, content)
+}
+
+export function createCssFile(name: string, targetDir: string): void {
+  const normalizedName = normalizeComponentName(name, targetDir)
+  const path = join(targetDir, `${normalizedName}.css`)
+  const dir = dirname(path)
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true })
+  }
+
+  const componentName = basename(normalizedName)
+  const content = `/* Styles for ${componentName} component */
+.container {
+  padding: 1rem;
+}
 `
   writeFileSync(path, content)
 }
@@ -94,5 +109,21 @@ export function renamePelelaFile(oldName: string, newName: string, targetDir: st
     `view-model="${newComponentName}"`,
   )
   writeFileSync(oldPath, content)
+  renameSync(oldPath, newPath)
+}
+
+export function renameCssFile(oldName: string, newName: string, targetDir: string): void {
+  const normalizedOldName = normalizeComponentName(oldName, targetDir)
+  const normalizedNewName = normalizeComponentName(newName, targetDir)
+
+  const oldPath = join(targetDir, `${normalizedOldName}.css`)
+  const newPath = join(targetDir, `${normalizedNewName}.css`)
+  if (!existsSync(oldPath)) return
+
+  const newDir = dirname(newPath)
+  if (!existsSync(newDir)) {
+    mkdirSync(newDir, { recursive: true })
+  }
+
   renameSync(oldPath, newPath)
 }

@@ -11,7 +11,7 @@ beforeAll(async () => {
 })
 
 afterEach(() => {
-  vi.restoreAllMocks()
+  vi.clearAllMocks()
 })
 
 describe('renameCommand', () => {
@@ -51,13 +51,16 @@ describe('renameCommand', () => {
   })
 
   it('renames files and updates content successfully', async () => {
-    const oldContentTs = 'export class Old extends ViewModel {}'
+    const oldContentTs = 'export class Old {}'
     const oldContentPelela = '<pelela view-model="Old"></pelela>'
 
     mockedFs.existsSync.mockImplementation((path) => {
       const pathString = path.toString()
       return (
-        pathString === 'src' || pathString.includes('Old.ts') || pathString.includes('Old.pelela')
+        pathString === 'src' ||
+        pathString.includes('Old.ts') ||
+        pathString.includes('Old.pelela') ||
+        pathString.includes('Old.css')
       )
     })
 
@@ -73,7 +76,7 @@ describe('renameCommand', () => {
     // Check content update
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('Old.ts'),
-      'export class New extends ViewModel {}',
+      'export class New {}',
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('Old.pelela'),
@@ -88,6 +91,10 @@ describe('renameCommand', () => {
     expect(mockedFs.renameSync).toHaveBeenCalledWith(
       expect.stringContaining('Old.pelela'),
       expect.stringContaining('New.pelela'),
+    )
+    expect(mockedFs.renameSync).toHaveBeenCalledWith(
+      expect.stringContaining('Old.css'),
+      expect.stringContaining('New.css'),
     )
   })
 

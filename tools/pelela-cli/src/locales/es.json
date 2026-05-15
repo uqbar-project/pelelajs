@@ -20,6 +20,9 @@
     },
     "new": {
       "description": "✨ Crear un nuevo componente PelelaJS",
+      "options": {
+        "noCss": "No generar el archivo CSS"
+      },
       "error": {
         "nameEmpty": "El nombre del componente no puede estar vacío",
         "nameInvalid": "El nombre del componente debe ser PascalCase (ej: MiComponente)",

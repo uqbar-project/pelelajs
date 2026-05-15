@@ -11,7 +11,7 @@ beforeAll(async () => {
 })
 
 afterEach(() => {
-  vi.restoreAllMocks()
+  vi.clearAllMocks()
 })
 
 describe('newCommand', () => {
@@ -37,14 +37,18 @@ describe('newCommand', () => {
 
     await newCommand({ name: 'MyComponent' })
 
-    expect(mockedFs.writeFileSync).toHaveBeenCalledTimes(2)
+    expect(mockedFs.writeFileSync).toHaveBeenCalledTimes(3)
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('src/MyComponent.ts'),
-      expect.stringContaining('class MyComponent extends ViewModel'),
+      expect.stringContaining('export class MyComponent {'),
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('src/MyComponent.pelela'),
       expect.stringContaining('view-model="MyComponent"'),
+    )
+    expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('src/MyComponent.css'),
+      expect.stringContaining('Styles for MyComponent component'),
     )
   })
 
@@ -55,11 +59,27 @@ describe('newCommand', () => {
 
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       'MyComponent.ts',
-      expect.stringContaining('class MyComponent extends ViewModel'),
+      expect.stringContaining('export class MyComponent {'),
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       'MyComponent.pelela',
       expect.stringContaining('view-model="MyComponent"'),
+    )
+    expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
+      'MyComponent.css',
+      expect.stringContaining('Styles for MyComponent component'),
+    )
+  })
+
+  it('does not create css file when css option is false', async () => {
+    mockedFs.existsSync.mockImplementation((path) => path === 'src')
+
+    await newCommand({ name: 'MyComponent', css: false })
+
+    expect(mockedFs.writeFileSync).toHaveBeenCalledTimes(2)
+    expect(mockedFs.writeFileSync).not.toHaveBeenCalledWith(
+      expect.stringContaining('src/MyComponent.css'),
+      expect.any(String),
     )
   })
 
@@ -70,7 +90,7 @@ describe('newCommand', () => {
 
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('src/MyComponent.ts'),
-      expect.stringContaining('class MyComponent extends ViewModel'),
+      expect.stringContaining('export class MyComponent {'),
     )
   })
 

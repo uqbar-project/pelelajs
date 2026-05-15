@@ -43,9 +43,10 @@ async function main(): Promise<void> {
   program
     .command('new <componentName>')
     .description(t('commands.new.description'))
-    .action(async (componentName: string) => {
+    .option('--no-css', t('commands.new.options.noCss'))
+    .action(async (componentName: string, options: { css: boolean }) => {
       try {
-        await newCommand({ name: componentName })
+        await newCommand({ name: componentName, css: options.css })
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))

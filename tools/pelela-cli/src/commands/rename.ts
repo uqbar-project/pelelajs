@@ -1,7 +1,12 @@
 import { existsSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import chalk from 'chalk'
-import { getComponentTargetDir, renamePelelaFile, renameTsFile } from '../utils/componentFiles'
+import {
+  getComponentTargetDir,
+  renameCssFile,
+  renamePelelaFile,
+  renameTsFile,
+} from '../utils/componentFiles'
 import { t } from '../utils/i18n'
 
 export interface RenameCommandOptions {
@@ -27,20 +32,23 @@ export async function renameCommand(options: RenameCommandOptions): Promise<void
   const targetDir = getComponentTargetDir()
   const oldTsFile = join(targetDir, `${oldName}.ts`)
   const oldPelelaFile = join(targetDir, `${oldName}.pelela`)
+  const oldCssFile = join(targetDir, `${oldName}.css`)
   const newTsFile = join(targetDir, `${newName}.ts`)
   const newPelelaFile = join(targetDir, `${newName}.pelela`)
+  const newCssFile = join(targetDir, `${newName}.css`)
 
-  if (!existsSync(oldTsFile) && !existsSync(oldPelelaFile)) {
+  if (!existsSync(oldTsFile) && !existsSync(oldPelelaFile) && !existsSync(oldCssFile)) {
     throw new Error(t('commands.rename.error.oldNotFound', { name: oldName }))
   }
 
-  if (existsSync(newTsFile) || existsSync(newPelelaFile)) {
+  if (existsSync(newTsFile) || existsSync(newPelelaFile) || existsSync(newCssFile)) {
     throw new Error(t('commands.rename.error.newNameExists', { name: newName }))
   }
 
   try {
     renameTsFile(oldName, newName, targetDir)
     renamePelelaFile(oldName, newName, targetDir)
+    renameCssFile(oldName, newName, targetDir)
 
     console.log(chalk.green(t('commands.rename.messages.success', { oldName, newName })))
   } catch (error) {

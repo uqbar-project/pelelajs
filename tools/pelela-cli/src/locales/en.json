@@ -20,6 +20,9 @@
     },
     "new": {
       "description": "✨ Create a new PelelaJS component",
+      "options": {
+        "noCss": "Do not generate a CSS file"
+      },
       "error": {
         "nameEmpty": "Component name cannot be empty",
         "nameInvalid": "Component name must be PascalCase (e.g., MyComponent)",

@@ -1,15 +1,21 @@
 import { existsSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import chalk from 'chalk'
-import { createPelelaFile, createTsFile, getComponentTargetDir } from '../utils/componentFiles'
+import {
+  createCssFile,
+  createPelelaFile,
+  createTsFile,
+  getComponentTargetDir,
+} from '../utils/componentFiles'
 import { t } from '../utils/i18n'
 
 export interface NewCommandOptions {
   name: string
+  css?: boolean
 }
 
 export async function newCommand(options: NewCommandOptions): Promise<void> {
-  const { name } = options
+  const { name, css = true } = options
 
   if (!name) {
     throw new Error(t('commands.new.error.nameEmpty'))
@@ -23,14 +29,18 @@ export async function newCommand(options: NewCommandOptions): Promise<void> {
   const targetDir = getComponentTargetDir()
   const tsFile = join(targetDir, `${name}.ts`)
   const pelelaFile = join(targetDir, `${name}.pelela`)
+  const cssFile = join(targetDir, `${name}.css`)
 
-  if (existsSync(tsFile) || existsSync(pelelaFile)) {
+  if (existsSync(tsFile) || existsSync(pelelaFile) || (css && existsSync(cssFile))) {
     throw new Error(t('commands.new.error.filesExist', { name }))
   }
 
   try {
     createTsFile(name, targetDir)
     createPelelaFile(name, targetDir)
+    if (css) {
+      createCssFile(name, targetDir)
+    }
 
     console.log(chalk.green(t('commands.new.messages.success', { name })))
   } catch (error) {
