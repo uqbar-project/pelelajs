@@ -38,7 +38,6 @@
   "packageManager": "pnpm@10.33.2",
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
-    "@release-it/conventional-changelog": "11.0.0",
     "@types/node": "24.10.1",
     "@types/semver": "7.7.0",
     "@vitest/coverage-v8": "4.0.14",

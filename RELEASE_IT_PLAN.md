@@ -42,7 +42,7 @@ Seguiremos el estilo de `wollok-ts`, utilizando emojis para categorizar los camb
 ```
 
 ## 5. Integración con CI (GitHub Actions)
-Modificaremos los workflows `deploy.yml` y `deploy-vscode.yml`:
+Modificaremos los workflows `deploy-npm.yml` y `deploy-vscode.yml`:
 - Agregar un input `changelog_notes` al `workflow_dispatch`.
 - Pasar este input a `release-it` mediante una variable de entorno (`RELEASE_IT_NOTES`).
 - Configurar `release-it` para que, en modo no interactivo (CI), use estas notas prioritariamente.

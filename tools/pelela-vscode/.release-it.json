@@ -14,7 +14,11 @@
     "publish": false
   },
   "hooks": {
-    "after:bump": ["pnpm run build", "pnpm run package"],
+    "after:bump": [
+      "pnpm tsx ../../scripts/update-changelog.ts ${version} vscode CHANGELOG.md",
+      "pnpm run build",
+      "pnpm run package"
+    ],
     "after:release": [
       "pnpm run publish:marketplace",
       "pnpm run publish:openvsx",

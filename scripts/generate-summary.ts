@@ -11,10 +11,11 @@ export function getLatestTag(tagPrefix: string): string | null {
   }
 }
 
-export function getCommits(fromTag: string | null): string[] {
+export function getCommits(fromTag: string | null, pathFilter?: string): string[] {
   const range = fromTag ? `${fromTag}..HEAD` : 'HEAD'
+  const filter = pathFilter ? ` -- ${pathFilter}` : ''
   try {
-    return execSync(`git log ${range} --oneline`, { encoding: 'utf-8' })
+    return execSync(`git log ${range} --oneline${filter}`, { encoding: 'utf-8' })
       .trim()
       .split('\n')
       .filter(Boolean)
@@ -36,17 +37,19 @@ export function generateSummaryContent(commits: string[]): string {
     { keywords: ['test', '🧪'], emoji: '🧪' },
     { keywords: ['security', 'secure', '🔒', 'lock'], emoji: '🔒' },
     { keywords: ['css', 'style', '🎨'], emoji: '🎨' },
+    {
+      keywords: ['chore', 'deps', 'config', 'release', 'bump', 'setup', 'workflow', 'ci'],
+      emoji: '⚙️',
+    },
+    { keywords: ['doc', 'readme', 'manual', 'guide'], emoji: '📚' },
+    { keywords: ['task', 'todo', 'migrate'], emoji: '📋' },
+    { keywords: ['merge'], emoji: '🔀' },
+    { keywords: ['typo'], emoji: '✏️' },
   ]
-
-  const noiseKeywords = ['chore', 'deps', 'typo', 'merge', 'release', 'bump']
 
   const messages = commits.map((commit) => commit.replace(/^[a-f0-9]+\s+/, '').trim())
 
-  const uniqueImportantChanges = messages
-    .filter((message) => {
-      const lowerMessage = message.toLowerCase()
-      return !noiseKeywords.some((noise) => lowerMessage.includes(noise))
-    })
+  const uniqueChanges = messages
     .filter((message, index, self) => self.indexOf(message) === index)
     .map((message) => {
       const lowerMessage = message.toLowerCase()
@@ -57,19 +60,32 @@ export function generateSummaryContent(commits: string[]): string {
       return `- ${emoji} ${message}`
     })
 
-  return uniqueImportantChanges.length === 0
+  return uniqueChanges.length === 0
     ? '- Internal changes and performance improvements'
-    : uniqueImportantChanges.join('\n')
+    : uniqueChanges.join('\n')
 }
 
-// Only execute if run directly
+type ReleaseType = 'npm' | 'vscode'
+
 if (
   import.meta.url === `file://${process.argv[1]}` ||
   process.argv[1]?.endsWith('generate-summary.ts')
 ) {
-  const type = process.argv[2] || 'npm'
-  const tagPrefix = type === 'vscode' ? 'vscode-v' : 'v'
+  const type = (process.argv[2] as ReleaseType) || 'npm'
+  const isVsCode = type === 'vscode'
+  const tagPrefix = isVsCode ? 'vscode-v' : 'v'
+
+  const pathFilter = isVsCode ? 'tools/pelela-vscode' : ' . ":(exclude)tools/pelela-vscode"'
+
   const latestTag = getLatestTag(tagPrefix)
-  const commits = getCommits(latestTag)
-  console.log(generateSummaryContent(commits))
+  const commits = getCommits(latestTag, pathFilter)
+
+  const filteredCommits = commits.filter((commit) => {
+    if (isVsCode) return true
+    const lowerCommit = commit.toLowerCase()
+    const vscodeKeywords = ['vscode', 'marketplace', 'extension']
+    return !vscodeKeywords.some((keyword) => lowerCommit.includes(keyword))
+  })
+
+  console.log(generateSummaryContent(filteredCommits))
 }

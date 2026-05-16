@@ -15,6 +15,7 @@
   },
   "hooks": {
     "after:bump": [
+      "pnpm tsx scripts/update-changelog.ts ${version} npm",
       "pnpm -C packages/core version ${version} --no-git-tag-version",
       "pnpm -C packages/vite-plugin-pelelajs version ${version} --no-git-tag-version",
       "pnpm -C tools/pelela-cli version ${version} --no-git-tag-version",
@@ -26,11 +27,5 @@
       "pnpm -C tools/pelela-cli publish --no-git-checks --access public",
       "echo \"✅ Successfully published v${version} to NPM and GitHub!\""
     ]
-  },
-  "plugins": {
-    "@release-it/conventional-changelog": {
-      "preset": "conventionalcommits",
-      "infile": "CHANGELOG.md"
-    }
   }
 }

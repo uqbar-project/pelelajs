@@ -32,7 +32,9 @@ This method uses GitHub Actions and is the preferred way to publish.
 
 4. Choose the version increment type: `patch`, `minor`, or `major`.
 
-5. Click **"Run workflow"**.
+5. (Optional) Provide custom notes for the CHANGELOG in the `changelog_notes` input. If left empty, a summary will be automatically generated from the commits.
+
+6. Click **"Run workflow"**.
 
 The workflow will:
 

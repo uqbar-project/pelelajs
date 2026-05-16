@@ -24,7 +24,7 @@ describe('generateSummaryContent', () => {
     expect(summary).toContain('🐛 fixed parsing bug')
   })
 
-  it('should filter out noise', () => {
+  it('should include chores and other types with emojis instead of filtering', () => {
     const commits = [
       'a1b2c3d chore: update dependencies',
       'e5f6g7h feat: new feature',
@@ -32,8 +32,8 @@ describe('generateSummaryContent', () => {
     ]
     const summary = generateSummaryContent(commits)
     expect(summary).toContain('🚀 new feature')
-    expect(summary).not.toContain('chore')
-    expect(summary).not.toContain('typo')
+    expect(summary).toContain('⚙️ chore: update dependencies')
+    expect(summary).toContain('✏️ typo in readme')
   })
 
   it('should remove duplicates', () => {
@@ -52,6 +52,8 @@ describe('generateSummaryContent', () => {
       '444 i18n: translate to english',
       '555 security: fix vulnerability',
       '666 css: add styles',
+      '777 chore: config',
+      '888 doc: add guide',
     ]
     const summary = generateSummaryContent(commits)
     expect(summary).toContain('🚀')
@@ -60,11 +62,27 @@ describe('generateSummaryContent', () => {
     expect(summary).toContain('🌍')
     expect(summary).toContain('🔒')
     expect(summary).toContain('🎨')
+    expect(summary).toContain('⚙️')
+    expect(summary).toContain('📚')
   })
 
-  it('should return a specific message when all commits are filtered as noise', () => {
-    const commits = ['a1b2c3d chore: update', 'e5f6g7h bump version']
+  it('should use a fallback emoji for commits without recognized keywords', () => {
+    const commits = ['a1b2c3d just playing around']
     const summary = generateSummaryContent(commits)
-    expect(summary).toBe('- Internal changes and performance improvements')
+    expect(summary).toContain('📝 just playing around')
+  })
+
+  it('should match keywords case-insensitively', () => {
+    const commits = ['a1b2c3d FEAT: uppercase feature', 'e5f6g7h FiX: mixed case']
+    const summary = generateSummaryContent(commits)
+    expect(summary).toContain('🚀 FEAT: uppercase feature')
+    expect(summary).toContain('🐛 FiX: mixed case')
+  })
+
+  it('should prioritize the first matching rule when multiple keywords exist', () => {
+    // "fix" comes before "typo" in the rules array
+    const commits = ['a1b2c3d fix: typo in readme']
+    const summary = generateSummaryContent(commits)
+    expect(summary).toContain('🐛 fix: typo in readme')
   })
 })
