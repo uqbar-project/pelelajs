@@ -1,0 +1,24 @@
+{
+  "git": {
+    "changelog": "tsx ../../scripts/generate-summary.ts vscode",
+    "commitMessage": "chore: release vscode-v${version}",
+    "tagName": "vscode-v${version}",
+    "requireCleanWorkingDir": true,
+    "requireBranch": "main"
+  },
+  "github": {
+    "release": true,
+    "releaseName": "vscode-v${version}"
+  },
+  "npm": {
+    "publish": false
+  },
+  "hooks": {
+    "after:bump": ["pnpm run build", "pnpm run package"],
+    "after:release": [
+      "pnpm run publish:marketplace",
+      "pnpm run publish:openvsx",
+      "echo \"✅ Successfully published vscode-v${version} to Marketplace and OpenVSX!\""
+    ]
+  }
+}
