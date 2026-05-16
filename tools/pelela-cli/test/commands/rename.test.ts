@@ -6,6 +6,19 @@ import { initializeI18n, t } from '../../src/utils/i18n'
 vi.mock('node:fs')
 const mockedFs = vi.mocked(fs)
 
+const OLD_TS = 'src/Old.ts'
+const OLD_PELELA = 'src/Old.pelela'
+const OLD_CSS = 'src/Old.css'
+const NEW_TS = 'src/New.ts'
+const NEW_PELELA = 'src/New.pelela'
+const NEW_CSS = 'src/New.css'
+const NEW_DIR = 'src/new-dir'
+
+const OLD_CONTENT_TS = 'export class Old {}'
+const OLD_CONTENT_PELELA = '<pelela view-model="Old"></pelela>'
+const NEW_CONTENT_TS = 'export class New {}'
+const NEW_CONTENT_PELELA = '<pelela view-model="New"></pelela>'
+
 beforeAll(async () => {
   await initializeI18n('en')
 })
@@ -41,91 +54,62 @@ describe('renameCommand', () => {
   })
 
   it('throws if new files already exist', async () => {
-    mockedFs.existsSync.mockImplementation((path) => {
-      const pathString = path.toString()
-      return pathString.includes('Old') || pathString.includes('New')
-    })
+    const existing = ['src', OLD_TS, NEW_TS]
+    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
+
     await expect(renameCommand({ oldName: 'Old', newName: 'New' })).rejects.toThrow(
       t('commands.rename.error.newNameExists', { name: 'New' }),
     )
   })
 
   it('renames files and updates content successfully', async () => {
-    const oldContentTs = 'export class Old {}'
-    const oldContentPelela = '<pelela view-model="Old"></pelela>'
-
-    mockedFs.existsSync.mockImplementation((path) => {
-      const pathString = path.toString()
-      return (
-        pathString === 'src' ||
-        pathString.includes('Old.ts') ||
-        pathString.includes('Old.pelela') ||
-        pathString.includes('Old.css')
-      )
-    })
+    const existing = ['src', OLD_TS, OLD_PELELA, OLD_CSS]
+    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
 
     mockedFs.readFileSync.mockImplementation((path) => {
       const pathString = path.toString()
-      if (pathString.includes('Old.ts')) return oldContentTs
-      if (pathString.includes('Old.pelela')) return oldContentPelela
+      if (pathString === OLD_TS) return OLD_CONTENT_TS
+      if (pathString === OLD_PELELA) return OLD_CONTENT_PELELA
       return ''
     })
 
     await renameCommand({ oldName: 'Old', newName: 'New' })
 
     // Check content update
-    expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('Old.ts'),
-      'export class New {}',
-    )
-    expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('Old.pelela'),
-      '<pelela view-model="New"></pelela>',
-    )
+    expect(mockedFs.writeFileSync).toHaveBeenCalledWith(OLD_TS, NEW_CONTENT_TS)
+    expect(mockedFs.writeFileSync).toHaveBeenCalledWith(OLD_PELELA, NEW_CONTENT_PELELA)
 
     // Check renaming
-    expect(mockedFs.renameSync).toHaveBeenCalledWith(
-      expect.stringContaining('Old.ts'),
-      expect.stringContaining('New.ts'),
-    )
-    expect(mockedFs.renameSync).toHaveBeenCalledWith(
-      expect.stringContaining('Old.pelela'),
-      expect.stringContaining('New.pelela'),
-    )
-    expect(mockedFs.renameSync).toHaveBeenCalledWith(
-      expect.stringContaining('Old.css'),
-      expect.stringContaining('New.css'),
-    )
+    expect(mockedFs.renameSync).toHaveBeenCalledWith(OLD_TS, NEW_TS)
+    expect(mockedFs.renameSync).toHaveBeenCalledWith(OLD_PELELA, NEW_PELELA)
+    expect(mockedFs.renameSync).toHaveBeenCalledWith(OLD_CSS, NEW_CSS)
   })
 
   it('creates new directory if it does not exist', async () => {
-    mockedFs.existsSync.mockImplementation((path) => {
-      const pathString = path.toString()
-      return pathString === 'src' || pathString.includes('Old.ts')
-    })
+    const existing = ['src', OLD_TS]
+    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
 
     await renameCommand({ oldName: 'Old', newName: 'new-dir/New' })
 
-    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('new-dir'), {
+    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(NEW_DIR, {
       recursive: true,
     })
   })
 
   it('creates new directory for pelela file if it does not exist', async () => {
-    mockedFs.existsSync.mockImplementation((path) => {
-      const pathString = path.toString()
-      return pathString === 'src' || pathString.includes('Old.pelela')
-    })
+    const existing = ['src', OLD_PELELA]
+    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
 
     await renameCommand({ oldName: 'Old', newName: 'new-dir/New' })
 
-    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('new-dir'), {
+    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(NEW_DIR, {
       recursive: true,
     })
   })
 
   it('throws error when rename fails', async () => {
-    mockedFs.existsSync.mockImplementation((path) => path.toString().includes('Old.ts'))
+    const existing = ['src', OLD_TS]
+    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
     mockedFs.readFileSync.mockImplementation(() => {
       throw new Error('Read failed')
     })
