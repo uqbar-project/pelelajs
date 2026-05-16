@@ -6,6 +6,7 @@ import {
   createPelelaFile,
   createTsFile,
   getComponentTargetDir,
+  normalizeComponentName,
 } from '../utils/componentFiles'
 import { t } from '../utils/i18n'
 
@@ -27,9 +28,10 @@ export async function newCommand(options: NewCommandOptions): Promise<void> {
   }
 
   const targetDir = getComponentTargetDir()
-  const tsFile = join(targetDir, `${name}.ts`)
-  const pelelaFile = join(targetDir, `${name}.pelela`)
-  const cssFile = join(targetDir, `${name}.css`)
+  const normalizedName = normalizeComponentName(name, targetDir)
+  const tsFile = join(targetDir, `${normalizedName}.ts`)
+  const pelelaFile = join(targetDir, `${normalizedName}.pelela`)
+  const cssFile = join(targetDir, `${normalizedName}.css`)
 
   if (existsSync(tsFile) || existsSync(pelelaFile) || (css && existsSync(cssFile))) {
     throw new Error(t('commands.new.error.filesExist', { name }))

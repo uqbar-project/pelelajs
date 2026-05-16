@@ -29,7 +29,7 @@ describe('renameCommand', () => {
 
   it('throws for invalid new name', async () => {
     await expect(renameCommand({ oldName: 'Old', newName: 'invalid-name' })).rejects.toThrow(
-      t('commands.new.error.nameInvalid'),
+      t('commands.rename.error.nameInvalid'),
     )
   })
 

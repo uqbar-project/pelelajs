@@ -38,6 +38,7 @@
       "error": {
         "oldNameEmpty": "Current component name cannot be empty",
         "newNameEmpty": "New component name cannot be empty",
+        "nameInvalid": "New component name must be PascalCase (e.g., MyComponent)",
         "oldNotFound": "Could not find files for component \"{{name}}\"",
         "newNameExists": "Files with name \"{{name}}\" already exist",
         "renameFailed": "Failed to rename component: {{error}}"

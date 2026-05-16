@@ -5,12 +5,16 @@ export function getComponentTargetDir(): string {
   return existsSync('src') ? 'src' : '.'
 }
 
-function normalizeComponentName(name: string, targetDir: string): string {
+export function normalizeComponentName(name: string, targetDir: string): string {
   const normalized = name.replace(/\\/g, '/')
   if (targetDir === 'src' && normalized.startsWith('src/')) {
     return normalized.slice(4)
   }
   return normalized
+}
+
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 export function createTsFile(name: string, targetDir: string): void {
@@ -82,7 +86,10 @@ export function renameTsFile(oldName: string, newName: string, targetDir: string
   }
 
   let content = readFileSync(oldPath, 'utf-8')
-  content = content.replace(new RegExp(`class\\s+${oldClassName}`, 'g'), `class ${newClassName}`)
+  content = content.replace(
+    new RegExp(`class\\s+${escapeRegExp(oldClassName)}`, 'g'),
+    () => `class ${newClassName}`,
+  )
   writeFileSync(oldPath, content)
   renameSync(oldPath, newPath)
 }
@@ -105,8 +112,8 @@ export function renamePelelaFile(oldName: string, newName: string, targetDir: st
 
   let content = readFileSync(oldPath, 'utf-8')
   content = content.replace(
-    new RegExp(`view-model="${oldComponentName}"`, 'g'),
-    `view-model="${newComponentName}"`,
+    new RegExp(`view-model="${escapeRegExp(oldComponentName)}"`, 'g'),
+    () => `view-model="${newComponentName}"`,
   )
   writeFileSync(oldPath, content)
   renameSync(oldPath, newPath)

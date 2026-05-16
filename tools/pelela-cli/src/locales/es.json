@@ -38,6 +38,7 @@
       "error": {
         "oldNameEmpty": "El nombre actual del componente no puede estar vacío",
         "newNameEmpty": "El nuevo nombre del componente no puede estar vacío",
+        "nameInvalid": "El nuevo nombre del componente debe ser PascalCase (ej: MiComponente)",
         "oldNotFound": "No se encontraron los archivos para el componente \"{{name}}\"",
         "newNameExists": "Ya existen archivos con el nombre \"{{name}}\"",
         "renameFailed": "Error al renombrar el componente: {{error}}"

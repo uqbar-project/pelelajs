@@ -3,6 +3,7 @@ import { basename, join } from 'node:path'
 import chalk from 'chalk'
 import {
   getComponentTargetDir,
+  normalizeComponentName,
   renameCssFile,
   renamePelelaFile,
   renameTsFile,
@@ -26,16 +27,19 @@ export async function renameCommand(options: RenameCommandOptions): Promise<void
 
   const newComponentName = basename(newName)
   if (!/^[A-Z][a-zA-Z0-9]*$/.test(newComponentName)) {
-    throw new Error(t('commands.new.error.nameInvalid'))
+    throw new Error(t('commands.rename.error.nameInvalid'))
   }
 
   const targetDir = getComponentTargetDir()
-  const oldTsFile = join(targetDir, `${oldName}.ts`)
-  const oldPelelaFile = join(targetDir, `${oldName}.pelela`)
-  const oldCssFile = join(targetDir, `${oldName}.css`)
-  const newTsFile = join(targetDir, `${newName}.ts`)
-  const newPelelaFile = join(targetDir, `${newName}.pelela`)
-  const newCssFile = join(targetDir, `${newName}.css`)
+  const normalizedOldName = normalizeComponentName(oldName, targetDir)
+  const normalizedNewName = normalizeComponentName(newName, targetDir)
+
+  const oldTsFile = join(targetDir, `${normalizedOldName}.ts`)
+  const oldPelelaFile = join(targetDir, `${normalizedOldName}.pelela`)
+  const oldCssFile = join(targetDir, `${normalizedOldName}.css`)
+  const newTsFile = join(targetDir, `${normalizedNewName}.ts`)
+  const newPelelaFile = join(targetDir, `${normalizedNewName}.pelela`)
+  const newCssFile = join(targetDir, `${normalizedNewName}.css`)
 
   if (!existsSync(oldTsFile) && !existsSync(oldPelelaFile) && !existsSync(oldCssFile)) {
     throw new Error(t('commands.rename.error.oldNotFound', { name: oldName }))
