@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateSummaryContent } from '../scripts/generate-summary'
+import { generateSummaryContent, getCommits, getLatestTag } from '../scripts/generate-summary'
 
 describe('generateSummaryContent', () => {
   it('should return a default message when no commits are provided', () => {
@@ -88,8 +88,6 @@ describe('generateSummaryContent', () => {
 })
 
 describe('getLatestTag', () => {
-  const { getLatestTag } = require('../scripts/generate-summary')
-
   it('should return null for invalid tag prefixes to prevent shell injection', () => {
     expect(getLatestTag('v; rm -rf /')).toBeNull()
     expect(getLatestTag('v&echo')).toBeNull()
@@ -105,8 +103,6 @@ describe('getLatestTag', () => {
 })
 
 describe('getCommits', () => {
-  const { getCommits } = require('../scripts/generate-summary')
-
   it('should return a list of commits or empty array securely', () => {
     const result = getCommits(null, ['.'])
     expect(Array.isArray(result)).toBe(true)
