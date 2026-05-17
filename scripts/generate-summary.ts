@@ -1,8 +1,13 @@
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 
 export function getLatestTag(tagPrefix: string): string | null {
+  if (!/^[A-Za-z0-9._-]+$/.test(tagPrefix)) {
+    return null
+  }
   try {
-    const tags = execSync(`git tag -l "${tagPrefix}*" --sort=-v:refname`, { encoding: 'utf-8' })
+    const tags = execFileSync('git', ['tag', '-l', `${tagPrefix}*`, '--sort=-v:refname'], {
+      encoding: 'utf-8',
+    })
       .trim()
       .split('\n')
     return tags[0] || null
@@ -11,14 +16,14 @@ export function getLatestTag(tagPrefix: string): string | null {
   }
 }
 
-export function getCommits(fromTag: string | null, pathFilter?: string): string[] {
+export function getCommits(fromTag: string | null, pathSpecs?: string[]): string[] {
   const range = fromTag ? `${fromTag}..HEAD` : 'HEAD'
-  const filter = pathFilter ? ` -- ${pathFilter}` : ''
+  const args = ['log', range, '--oneline']
+  if (pathSpecs?.length) {
+    args.push('--', ...pathSpecs)
+  }
   try {
-    return execSync(`git log ${range} --oneline${filter}`, { encoding: 'utf-8' })
-      .trim()
-      .split('\n')
-      .filter(Boolean)
+    return execFileSync('git', args, { encoding: 'utf-8' }).trim().split('\n').filter(Boolean)
   } catch {
     return []
   }
@@ -75,10 +80,10 @@ if (
   const isVsCode = type === 'vscode'
   const tagPrefix = isVsCode ? 'vscode-v' : 'v'
 
-  const pathFilter = isVsCode ? 'tools/pelela-vscode' : ' . ":(exclude)tools/pelela-vscode"'
+  const pathSpecs = isVsCode ? ['tools/pelela-vscode'] : ['.', ':^tools/pelela-vscode']
 
   const latestTag = getLatestTag(tagPrefix)
-  const commits = getCommits(latestTag, pathFilter)
+  const commits = getCommits(latestTag, pathSpecs)
 
   const filteredCommits = commits.filter((commit) => {
     if (isVsCode) return true

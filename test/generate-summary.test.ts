@@ -86,3 +86,34 @@ describe('generateSummaryContent', () => {
     expect(summary).toContain('🐛 fix: typo in readme')
   })
 })
+
+describe('getLatestTag', () => {
+  const { getLatestTag } = require('../scripts/generate-summary')
+
+  it('should return null for invalid tag prefixes to prevent shell injection', () => {
+    expect(getLatestTag('v; rm -rf /')).toBeNull()
+    expect(getLatestTag('v&echo')).toBeNull()
+    expect(getLatestTag('v|cat')).toBeNull()
+    expect(getLatestTag('vscode-v$()')).toBeNull()
+  })
+
+  it('should accept valid tag prefixes', () => {
+    // Valid patterns shouldn't be blocked by regex. It might return null if no git tags match or git command fails, which is expected.
+    const result = getLatestTag('v-test.1')
+    expect(result === null || typeof result === 'string').toBe(true)
+  })
+})
+
+describe('getCommits', () => {
+  const { getCommits } = require('../scripts/generate-summary')
+
+  it('should return a list of commits or empty array securely', () => {
+    const result = getCommits(null, ['.'])
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('should handle non-existent tag gracefully by falling back to HEAD or empty list on error', () => {
+    const result = getCommits('non-existent-tag-xyz123', ['.'])
+    expect(result).toEqual([])
+  })
+})

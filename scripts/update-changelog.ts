@@ -1,5 +1,5 @@
-import { execSync } from 'node:child_process'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 
 export function updateChangelogContent(
   version: string,
@@ -23,16 +23,25 @@ if (
     process.exit(1)
   }
 
+  const allowedTypes = ['npm', 'vscode']
+  if (!allowedTypes.includes(type)) {
+    console.error(`Invalid release type: "${type}". Allowed values are: ${allowedTypes.join(', ')}`)
+    process.exit(1)
+  }
+
   try {
     let summary = (process.env.RELEASE_IT_NOTES || '').trim()
 
     if (!summary) {
-      summary = execSync(`pnpm tsx scripts/generate-summary.ts ${type}`, {
+      summary = execFileSync('pnpm', ['tsx', 'scripts/generate-summary.ts', type], {
         encoding: 'utf-8',
       }).trim()
     }
 
-    const currentContent = readFileSync(changelogFile, 'utf-8')
+    let currentContent = ''
+    if (existsSync(changelogFile)) {
+      currentContent = readFileSync(changelogFile, 'utf-8')
+    }
     const newContent = updateChangelogContent(version, currentContent, summary)
 
     writeFileSync(changelogFile, newContent)

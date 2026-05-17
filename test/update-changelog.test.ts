@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
 import { updateChangelogContent } from '../scripts/update-changelog'
 
@@ -18,5 +19,20 @@ describe('updateChangelogContent', () => {
     const result = updateChangelogContent('0.1.0', existingContent, newSummary)
 
     expect(result).toBe('## v0.1.0\n- 🚀 Initial release\n\n')
+  })
+})
+
+describe('update-changelog CLI', () => {
+  it('should reject invalid release types when run as a CLI to prevent command injection', () => {
+    try {
+      execSync('pnpm tsx scripts/update-changelog.ts 1.0.0 invalid-type', {
+        stdio: 'pipe',
+      })
+      expect.fail('Should have failed for invalid release type')
+    } catch (error) {
+      const err = error as { status: number; stderr: Buffer }
+      expect(err.status).toBe(1)
+      expect(err.stderr.toString()).toContain('Invalid release type')
+    }
   })
 })
