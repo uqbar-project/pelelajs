@@ -10,7 +10,7 @@ describe('generateSummaryContent', () => {
   it('should identify features using keywords', () => {
     const commits = [
       'a1b2c3d feat: add new reactivity system',
-      'e5f6g7h support for nested components',
+      'e5f6a7b support for nested components',
     ]
     const summary = generateSummaryContent(commits)
     expect(summary).toContain('🚀 add new reactivity system')
@@ -18,7 +18,7 @@ describe('generateSummaryContent', () => {
   })
 
   it('should identify fixes using keywords', () => {
-    const commits = ['a1b2c3d fix: memory leak in proxy', 'e5f6g7h fixed parsing bug']
+    const commits = ['a1b2c3d fix: memory leak in proxy', 'e5f6a7b fixed parsing bug']
     const summary = generateSummaryContent(commits)
     expect(summary).toContain('🐛 fix: memory leak in proxy')
     expect(summary).toContain('🐛 fixed parsing bug')
@@ -27,8 +27,8 @@ describe('generateSummaryContent', () => {
   it('should include chores and other types with emojis instead of filtering', () => {
     const commits = [
       'a1b2c3d chore: update dependencies',
-      'e5f6g7h feat: new feature',
-      'i9j0k1l typo in readme',
+      'e5f6a7b feat: new feature',
+      'c9d0a1b typo in readme',
     ]
     const summary = generateSummaryContent(commits)
     expect(summary).toContain('🚀 new feature')
@@ -37,7 +37,7 @@ describe('generateSummaryContent', () => {
   })
 
   it('should remove duplicates', () => {
-    const commits = ['a1b2c3d fix: bug', 'e5f6g7h fix: bug']
+    const commits = ['a1b2c3d fix: bug', 'e5f6a7b fix: bug']
     const summary = generateSummaryContent(commits)
     const lines = summary.split('\n')
     expect(lines).toHaveLength(1)
@@ -73,7 +73,7 @@ describe('generateSummaryContent', () => {
   })
 
   it('should match keywords case-insensitively', () => {
-    const commits = ['a1b2c3d FEAT: uppercase feature', 'e5f6g7h FiX: mixed case']
+    const commits = ['a1b2c3d FEAT: uppercase feature', 'e5f6a7b FiX: mixed case']
     const summary = generateSummaryContent(commits)
     expect(summary).toContain('🚀 FEAT: uppercase feature')
     expect(summary).toContain('🐛 FiX: mixed case')
