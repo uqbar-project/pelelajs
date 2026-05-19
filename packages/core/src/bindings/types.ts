@@ -36,12 +36,14 @@ export type StyleBinding = {
 export type ForEachBinding = {
   collectionName: string
   itemName: string
+  indexName: string | null
   template: HTMLElement
   placeholder: Comment
   renderedElements: {
     element: HTMLElement
     viewModel: ViewModel
     itemRef: { current: unknown }
+    indexRef: { current: number }
     render: () => void
   }[]
   previousLength: number

@@ -129,14 +129,20 @@ describe('bindForEach', () => {
       }).toThrowError(/element has no parent node/)
     })
 
-    it('should set item value through proxy', () => {
+    it('should make the item variable read-only through proxy (no index)', () => {
       const itemRef = { current: 'initial' }
       const viewModel = { items: ['initial'] }
-      const extendedViewModel = createExtendedViewModel(viewModel, 'item', itemRef)
+      const extendedViewModel = createExtendedViewModel({
+        parentViewModel: viewModel,
+        itemName: 'item',
+        itemRef,
+        indexName: null,
+        indexRef: { current: 0 },
+      })
 
-      // Test proxy set handler for item (lines 47-49)
+      // item is read-only — assignment has no effect
       extendedViewModel.item = 'updated'
-      expect(itemRef.current).toBe('updated')
+      expect(itemRef.current).toBe('initial')
     })
 
     describe('isBindingAttribute', () => {
@@ -148,6 +154,7 @@ describe('bindForEach', () => {
         expect(isBindingAttribute('click')).toBe(true)
         expect(isBindingAttribute('if')).toBe(true)
         expect(isBindingAttribute('for-each')).toBe(true)
+        expect(isBindingAttribute('index')).toBe(true)
       })
 
       it('should reject standard HTML attributes with hyphens', () => {
@@ -192,7 +199,13 @@ describe('bindForEach', () => {
     it('should handle setting nested properties through proxy', () => {
       const itemRef = { current: { name: 'initial' } }
       const viewModel = { items: [{ name: 'initial' }] }
-      const extendedViewModel = createExtendedViewModel(viewModel, 'item', itemRef)
+      const extendedViewModel = createExtendedViewModel({
+        parentViewModel: viewModel,
+        itemName: 'item',
+        itemRef,
+        indexName: null,
+        indexRef: { current: 0 },
+      })
 
       // Test proxy set handler for nested property (line 51)
       extendedViewModel['item.name'] = 'updated'
@@ -219,7 +232,13 @@ describe('bindForEach', () => {
     it('should handle setting parent viewModel properties through proxy', () => {
       const itemRef = { current: 1 }
       const viewModel = { items: [1], parentProp: 'initial' }
-      const extendedViewModel = createExtendedViewModel(viewModel, 'item', itemRef)
+      const extendedViewModel = createExtendedViewModel({
+        parentViewModel: viewModel,
+        itemName: 'item',
+        itemRef,
+        indexName: null,
+        indexRef: { current: 0 },
+      })
 
       // Test proxy set handler for parent property (lines 52-53)
       extendedViewModel.parentProp = 'updated'
@@ -702,6 +721,162 @@ describe('bindForEach', () => {
 
       expect(spans[0].classList.contains('active')).toBe(false)
       expect(spans[1].classList.contains('active')).toBe(true)
+    })
+  })
+
+  describe('index attribute in for-each', () => {
+    it('should expose the index variable in the for-each scope', () => {
+      container.innerHTML = `
+        <ul>
+          <li for-each="item of items" index="i">
+            <span bind-content="item.name"></span>
+            <span bind-content="i"></span>
+          </li>
+        </ul>
+      `
+
+      const viewModel = {
+        items: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Carol' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const listItems = container.querySelectorAll('li')
+      expect(listItems).toHaveLength(3)
+      expect(listItems[0].querySelectorAll('span')[1].innerHTML).toBe('0')
+      expect(listItems[1].querySelectorAll('span')[1].innerHTML).toBe('1')
+      expect(listItems[2].querySelectorAll('span')[1].innerHTML).toBe('2')
+    })
+
+    it('should update index values when the array grows', () => {
+      container.innerHTML = `
+        <ul>
+          <li for-each="item of items" index="i">
+            <span bind-content="i"></span>
+          </li>
+        </ul>
+      `
+
+      const viewModel = { items: [{ name: 'Alice' }] }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      expect(container.querySelector('li span')?.innerHTML).toBe('0')
+
+      viewModel.items.push({ name: 'Bob' })
+      renderForEachBindings(bindings, viewModel)
+
+      const spans = container.querySelectorAll('li span')
+      expect(spans[0].innerHTML).toBe('0')
+      expect(spans[1].innerHTML).toBe('1')
+    })
+
+    it('should keep index values consistent when the array shrinks', () => {
+      container.innerHTML = `
+        <ul>
+          <li for-each="item of items" index="i">
+            <span bind-content="i"></span>
+          </li>
+        </ul>
+      `
+
+      const viewModel = { items: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Carol' }] }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      viewModel.items.pop()
+      renderForEachBindings(bindings, viewModel)
+
+      const spans = container.querySelectorAll('li span')
+      expect(spans).toHaveLength(2)
+      expect(spans[0].innerHTML).toBe('0')
+      expect(spans[1].innerHTML).toBe('1')
+    })
+
+    it('should make the index variable read-only (assignment has no effect)', () => {
+      const itemRef = { current: 'item' }
+      const indexRef = { current: 0 }
+      const viewModel = { items: ['item'] }
+      const extendedViewModel = createExtendedViewModel({
+        parentViewModel: viewModel,
+        itemName: 'item',
+        itemRef,
+        indexName: 'i',
+        indexRef,
+      })
+
+      extendedViewModel.i = 99
+      expect(indexRef.current).toBe(0)
+    })
+
+    it('should make the item variable read-only (assignment has no effect)', () => {
+      const itemRef = { current: 'original' }
+      const indexRef = { current: 0 }
+      const viewModel = { items: ['original'] }
+      const extendedViewModel = createExtendedViewModel({
+        parentViewModel: viewModel,
+        itemName: 'item',
+        itemRef,
+        indexName: 'i',
+        indexRef,
+      })
+
+      extendedViewModel.item = 'mutated'
+      expect(itemRef.current).toBe('original')
+    })
+
+    it('should work without index attribute (backward compatible)', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span bind-content="item.text"></span>
+        </div>
+      `
+
+      const viewModel = { items: [{ text: 'Hello' }, { text: 'World' }] }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans[0].innerHTML).toBe('Hello')
+      expect(spans[1].innerHTML).toBe('World')
+    })
+
+    it('should remove the index attribute from rendered DOM elements', () => {
+      container.innerHTML = `
+        <ul>
+          <li for-each="item of items" index="i">
+            <span bind-content="item.name"></span>
+          </li>
+        </ul>
+      `
+
+      const viewModel = { items: [{ name: 'Alice' }] }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const renderedLi = container.querySelector('li')
+      expect(renderedLi?.hasAttribute('index')).toBe(false)
+    })
+
+    it('should not register index as an external dependency', () => {
+      container.innerHTML = `
+        <div for-each="item of items" index="i">
+          <span bind-content="item.name"></span>
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Alice' }] }
+      const binding = setupSingleForEachBinding(
+        container.querySelector('[for-each]') as HTMLElement,
+        viewModel,
+      )
+
+      expect(binding).not.toBeNull()
+      expect(binding!.extraDependencies).not.toContain('i')
     })
   })
 })

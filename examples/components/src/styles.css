@@ -95,3 +95,7 @@ h2 {
   min-width: 40px;
   text-align: center;
 }
+
+.even {
+  background-color: rgb(249, 248, 232);
+}
