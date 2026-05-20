@@ -111,7 +111,11 @@ export function setupSingleForEachBinding<T extends object>(
   const parsed = parseForEachExpression(expression)
   if (!parsed) throw new InvalidBindingSyntaxError('for-each', expression, 'item of collection')
   const { itemName, collectionName } = parsed
-  const indexName = element.getAttribute('index') || null
+  const rawIndexName = element.getAttribute('index')
+  const indexName = rawIndexName?.trim() ? rawIndexName.trim() : null
+  if (indexName && !/^\w+$/.test(indexName)) {
+    throw new InvalidBindingSyntaxError('index', rawIndexName ?? '', 'valid identifier')
+  }
   assertViewModelProperty(viewModel, collectionName, 'for-each', element)
   const collection = viewModel[collectionName]
   if (!Array.isArray(collection)) {

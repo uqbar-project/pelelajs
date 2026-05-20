@@ -828,6 +828,51 @@ describe('bindForEach', () => {
       expect(itemRef.current).toBe('original')
     })
 
+    it('should return correct property descriptors via proxy traps', () => {
+      const itemRef = { current: { nested: 'value' } }
+      const indexRef = { current: 0 }
+      const viewModel = { items: [], parentProp: 'parent-value' }
+      const extendedViewModel = createExtendedViewModel({
+        parentViewModel: viewModel,
+        itemName: 'item',
+        itemRef,
+        indexName: 'i',
+        indexRef,
+      })
+
+      // Test descriptor for indexName
+      const indexDesc = Object.getOwnPropertyDescriptor(extendedViewModel, 'i')
+      expect(indexDesc).toEqual({
+        configurable: true,
+        enumerable: true,
+        value: undefined,
+        writable: false,
+      })
+
+      // Test descriptor for itemName
+      const itemDesc = Object.getOwnPropertyDescriptor(extendedViewModel, 'item')
+      expect(itemDesc).toEqual({
+        configurable: true,
+        enumerable: true,
+        value: undefined,
+        writable: false,
+      })
+
+      // Test descriptor for nested property path on itemName
+      const nestedDesc = Object.getOwnPropertyDescriptor(extendedViewModel, 'item.nested')
+      expect(nestedDesc).toEqual({
+        configurable: true,
+        enumerable: true,
+        value: undefined,
+        writable: false,
+      })
+
+      // Test descriptor for parent property
+      const parentDesc = Object.getOwnPropertyDescriptor(extendedViewModel, 'parentProp')
+      expect(parentDesc).toBeDefined()
+      expect(parentDesc?.value).toBe('parent-value')
+    })
+
     it('should work without index attribute (backward compatible)', () => {
       container.innerHTML = `
         <div for-each="item of items">
@@ -877,6 +922,34 @@ describe('bindForEach', () => {
 
       expect(binding).not.toBeNull()
       expect(binding!.extraDependencies).not.toContain('i')
+    })
+
+    it('should ignore empty or whitespace-only index attribute', () => {
+      container.innerHTML = `
+        <div for-each="item of items" index="   ">
+          <span bind-content="item.name"></span>
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Alice' }] }
+      const binding = setupSingleForEachBinding(
+        container.querySelector('[for-each]') as HTMLElement,
+        viewModel,
+      )
+
+      expect(binding).not.toBeNull()
+      expect(binding!.indexName).toBeNull()
+    })
+
+    it('should throw InvalidBindingSyntaxError if index is not a valid JS identifier', () => {
+      container.innerHTML = `
+        <div for-each="item of items" index="foo-bar">
+          <span bind-content="item.name"></span>
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Alice' }] }
+      expect(() => {
+        setupSingleForEachBinding(container.querySelector('[for-each]') as HTMLElement, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
     })
   })
 })
