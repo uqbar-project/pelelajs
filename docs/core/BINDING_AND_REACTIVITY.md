@@ -32,7 +32,7 @@ Updates flow exclusively from the model to the view. Used by directives like `bi
 
 ### 2. Two-Way Binding (Model <-> View)
 
-Typically used in input elements (`bind:value="user.name"`).
+Typically used in input elements (`bind-value="user.name"`).
 
 - **Mechanism:** It sets up a One-Way binding (Model -> View) for the visual representation, and simultaneously attaches a native DOM event listener (like `input` or `change`) to the element. When the event fires, the framework updates the model, completing the cycle.
 
