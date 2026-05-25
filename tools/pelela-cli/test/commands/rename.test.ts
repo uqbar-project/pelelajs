@@ -156,4 +156,18 @@ describe('renameCommand (Integration)', () => {
     expect(updatedRoutes).toContain("import { New } from './src/new'")
     expect(updatedRoutes).toContain('component: New')
   })
+
+  it('does not rename classes with similar prefix (word boundary)', async () => {
+    mkdirSync('src')
+    const tsContent = 'export class Old {}\nexport class OldHelper {}'
+    writeFileSync('src/old.ts', tsContent)
+    writeFileSync('src/old.pelela', OLD_CONTENT_PELELA)
+    writeFileSync('src/old.css', '/* old css */')
+
+    await renameCommand({ oldName: 'Old', newName: 'New' })
+
+    const updatedTs = readFileSync('src/new.ts', 'utf-8')
+    expect(updatedTs).toContain('export class New {}')
+    expect(updatedTs).toContain('export class OldHelper {}')
+  })
 })

@@ -7,6 +7,7 @@ import {
   prepareRenamePaths,
   resolveExistingComponentPath,
   toKebabCase,
+  toPascalCase,
 } from '../../src/utils/componentFiles'
 
 describe('resolveExistingComponentPath', () => {
@@ -95,6 +96,31 @@ describe('toKebabCase', () => {
 
   it('handles already kebab-case', () => {
     expect(toKebabCase('my-component')).toBe('my-component')
+  })
+})
+
+describe('toPascalCase', () => {
+  it('converts kebab-case to PascalCase', () => {
+    expect(toPascalCase('my-component')).toBe('MyComponent')
+    expect(toPascalCase('foo-bar')).toBe('FooBar')
+    expect(toPascalCase('test-case')).toBe('TestCase')
+  })
+
+  it('converts snake_case to PascalCase', () => {
+    expect(toPascalCase('my_component')).toBe('MyComponent')
+    expect(toPascalCase('foo_bar')).toBe('FooBar')
+  })
+
+  it('handles single word', () => {
+    expect(toPascalCase('hello')).toBe('Hello')
+  })
+
+  it('handles multiple words', () => {
+    expect(toPascalCase('my-long-component-name')).toBe('MyLongComponentName')
+  })
+
+  it('handles already PascalCase', () => {
+    expect(toPascalCase('MyComponent')).toBe('MyComponent')
   })
 })
 

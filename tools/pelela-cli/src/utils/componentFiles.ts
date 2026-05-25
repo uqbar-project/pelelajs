@@ -4,6 +4,7 @@ import {
   readdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs'
@@ -71,20 +72,29 @@ export function resolveExistingComponentPath(
 }
 
 export function normalizeComponentName(name: string, targetDir: string): string {
-  const normalized = name.replace(/\\/g, '/')
+  let normalized = name.replace(/\\/g, '/')
   const srcPath = `${SRC_DIR}/`
   if (targetDir === SRC_DIR && normalized.startsWith(srcPath)) {
-    return normalized.slice(srcPath.length)
+    normalized = normalized.slice(srcPath.length)
   }
-  return normalized
+  const folder = dirname(normalized)
+  const base = basename(normalized)
+  const pascalBase = toPascalCase(base)
+  return folder === '.' ? pascalBase : `${folder}/${pascalBase}`
 }
 
 function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-export function toKebabCase(str: string): string {
-  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+export function toKebabCase(string: string): string {
+  return string.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+}
+
+export function toPascalCase(str: string): string {
+  return str
+    .replace(/[-_](.)/g, (_, char) => char.toUpperCase())
+    .replace(/^(.)/, (_, char) => char.toUpperCase())
 }
 
 interface PrepareFileParams {
@@ -153,7 +163,7 @@ export function createPelelaFile(name: string, targetDir: string): void {
   const { path, normalizedName } = prepareFile({ name, extension: 'pelela', targetDir })
 
   const componentName = basename(normalizedName)
-  const content = `<div class="container">
+  const content = `<div>
   <pelela view-model="${componentName}">
     <h1>${componentName} Component</h1>
     <!-- Add your template here -->
@@ -168,11 +178,22 @@ export function createCssFile(name: string, targetDir: string): void {
 
   const componentName = basename(normalizedName)
   const content = `/* Styles for ${componentName} component */
-.container {
-  padding: 1rem;
-}
 `
   writeFileSync(path, content)
+}
+
+interface ModifyContentParams {
+  oldPath: string
+  newPath: string
+  contentModifier: (content: string) => string
+}
+
+function modifyAndRenameFile(params: ModifyContentParams): void {
+  const { oldPath, newPath, contentModifier } = params
+  let content = readFileSync(oldPath, 'utf-8')
+  content = contentModifier(content)
+  writeFileSync(newPath, content)
+  rmSync(oldPath)
 }
 
 export function renameTsFile(oldName: string, newName: string, targetDir: string): void {
@@ -184,13 +205,15 @@ export function renameTsFile(oldName: string, newName: string, targetDir: string
   })
   if (!existsSync(oldPath)) return
 
-  let content = readFileSync(oldPath, 'utf-8')
-  content = content.replace(
-    new RegExp(`class\\s+${escapeRegExp(oldClassName)}`, 'g'),
-    () => `class ${newClassName}`,
-  )
-  writeFileSync(oldPath, content)
-  renameSync(oldPath, newPath)
+  modifyAndRenameFile({
+    oldPath,
+    newPath,
+    contentModifier: (content) =>
+      content.replace(
+        new RegExp(`class\\s+${escapeRegExp(oldClassName)}\\b`, 'g'),
+        () => `class ${newClassName}`,
+      ),
+  })
 }
 
 export function renamePelelaFile(oldName: string, newName: string, targetDir: string): void {
@@ -207,13 +230,15 @@ export function renamePelelaFile(oldName: string, newName: string, targetDir: st
   })
   if (!existsSync(oldPath)) return
 
-  let content = readFileSync(oldPath, 'utf-8')
-  content = content.replace(
-    new RegExp(`view-model="${escapeRegExp(oldComponentName)}"`, 'g'),
-    () => `view-model="${newComponentName}"`,
-  )
-  writeFileSync(oldPath, content)
-  renameSync(oldPath, newPath)
+  modifyAndRenameFile({
+    oldPath,
+    newPath,
+    contentModifier: (content) =>
+      content.replace(
+        new RegExp(`view-model="${escapeRegExp(oldComponentName)}"`, 'g'),
+        () => `view-model="${newComponentName}"`,
+      ),
+  })
 }
 
 export function renameCssFile(oldName: string, newName: string, targetDir: string): void {
