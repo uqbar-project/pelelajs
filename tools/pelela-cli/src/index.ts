@@ -41,7 +41,7 @@ async function main(): Promise<void> {
     })
 
   program
-    .command('new <componentName>')
+    .command('new <path/componentName>')
     .description(t('commands.new.description'))
     .option('--no-css', t('commands.new.options.noCss'))
     .action(async (componentName: string, options: { css: boolean }) => {
@@ -55,7 +55,7 @@ async function main(): Promise<void> {
     })
 
   program
-    .command('rename <oldName> <newName>')
+    .command('rename <oldComponentName> <newComponentName>')
     .description(t('commands.rename.description'))
     .action(async (oldName: string, newName: string) => {
       try {

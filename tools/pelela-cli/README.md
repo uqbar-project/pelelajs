@@ -52,10 +52,10 @@ Este comando realizará:
 pelela init [projectName]
 
 # Crear un nuevo componente
-pelela new [componentName]
+pelela new [path/componentName]
 
 # Renombrar un componente existente
-pelela rename [oldName] [newName]
+pelela rename [oldComponentName] [newComponentName]
 
 # Mostrar versión
 pelela --version
