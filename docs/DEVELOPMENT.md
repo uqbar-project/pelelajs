@@ -4,7 +4,7 @@ This guide provides the necessary steps to set up the PelelaJS monorepo for loca
 
 ## Prerequisites
 
-- **Node.js**: Ensure you have Node `v20` or higher.
+- **Node.js**: Ensure you have Node `v22` or higher.
 
 - **pnpm**: This project strictly uses `pnpm` as the package manager (`npm` or `yarn` will fail).
 
@@ -60,7 +60,7 @@ PelelaJS uses **Biome** as its primary toolchain for formatting and linting.
 - To automatically fix format and safe lint errors:
 
   ```bash
-  pnpm run biome:format
+  pnpm run biome:check:fix
   ```
 
 ### Type Checking
@@ -78,18 +78,18 @@ Testing is a core requirement (>90% coverage). We use **Vitest**.
 - Run all tests:
 
   ```bash
-  pnpm run test
+  pnpm run test --run
   ```
 
 - Run tests in watch mode during development:
 
   ```bash
-  pnpm run test:watch
+  pnpm run test
   ```
 
 ### Architecture Conventions
 
-- **Module System**: We use CommonJS (CJS) for backward compatibility, though modern TS syntax is encouraged.
+- **Module System**: The source is written in ESM; the build emits both ESM and CommonJS (CJS) bundles for compatibility.
 
 - **Type Safety**: Strict typing is mandatory. The use of `any` or `never` is prohibited; prefer `unknown` with type narrowing.
 

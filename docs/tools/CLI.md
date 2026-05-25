@@ -1,6 +1,6 @@
 # CLI Architecture
 
-The PelelaJS Command Line Interface (`pelela-cli`) is a standalone tool designed to scaffold projects and components seamlessly. It is intended to be run globally via `npx` (e.g., `npx create-pelela-app`).
+The PelelaJS Command Line Interface (`pelela-cli`) is a tool designed to scaffold projects and components seamlessly. It is developed as its own package inside the monorepo, bundled with `pelelajs`, and exposed through the `pelela` binary (e.g., `pnpm add -g pelelajs` and then `pelela init MyApp`).
 
 ## Design Philosophy
 
@@ -12,7 +12,7 @@ When a developer invokes the CLI, the execution follows this structured path:
 
 ```mermaid
 graph TD
-    A[User executes CLI command] --> B[Argument Parsing (Commander.js)]
+    A[User executes CLI command] --> B["Argument Parsing (Commander.js)"]
     B --> C{Action Router}
     C -->|Project Generation| D[Template Copier]
     C -->|Component Scaffold| E[Component Generator]

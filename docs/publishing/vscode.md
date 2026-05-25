@@ -109,7 +109,7 @@ The extension is also available on [OpenVSX](https://open-vsx.org/) for editors 
 
 ### From VSIX (Development)
 
-For local development or testing, see the [root README](../../README.md#vscode-extension).
+For local development or testing, see the [root README](../tools/VSCODE.md).
 
 ---
 

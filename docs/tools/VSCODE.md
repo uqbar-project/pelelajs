@@ -6,7 +6,7 @@ The PelelaJS extension provides Language Server Protocol (LSP) features to enhan
 
 The extension is designed to bridge the gap between the declarative `.pelela` template and the underlying `.ts` ViewModel, providing:
 
-- **Syntax Highlighting:** Custom grammar rules for Pelela-specific syntax (e.g., `{{ }}`, `bind:`, `(click)`).
+- **Syntax Highlighting:** Custom grammar rules for Pelela-specific syntax (e.g., `bind-content`, `bind-value`, `click`).
 
 - **Autocomplete & Intellisense:** Intelligent suggestions for model properties and methods inside the template.
 

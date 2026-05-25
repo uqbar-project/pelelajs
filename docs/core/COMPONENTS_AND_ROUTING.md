@@ -95,13 +95,13 @@ export class UserDetail {
 
 The resolution process is handled by the internal **Router Engine**:
 
-1. **The Router Outlet:** The root application defines a `<pelela-router>` tag, which acts as a placeholder for dynamic content.
+1. **Router Initialization:** The application calls `router.start(container, routeDefinitions)`, where `container` is a regular DOM element (typically a `<div>`) that will serve as the outlet for rendering route components. The router mounts the component matching the current URL into this container.
 
 2. **Path Resolution:** When the browser URL changes (via History API), the Router parses the path and matches it against the provided `RouteDefinition` array using the logic described above.
 
 3. **Component Retrieval:** Once a match is found, the Router uses the ViewModel class to look up the corresponding template in the `ComponentRegistry`.
 
-4. **Dynamic Swapping:** The current component inside the `<pelela-router>` is destroyed (cleaning up its subscriptions in the `DependencyTracker`), and the new matched component is instantiated and injected.
+4. **Dynamic Swapping:** The current component inside the container is destroyed, and the new matched component is instantiated and injected into the container's DOM.
 
 ```mermaid
 graph TD
@@ -110,7 +110,7 @@ graph TD
     C -->|Match found| D[Query Registry for Template]
     D --> E[Destroy Old Component]
     E --> F[Instantiate New Component VM]
-    F --> G[Inject into pelela-router DOM node]
+    F --> G[Mount into Container<br/>e.g. &lt;div id='app'&gt;]
     C -->|No match| H[Render Fallback/404]
 ```
 

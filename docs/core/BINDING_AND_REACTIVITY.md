@@ -18,7 +18,7 @@ graph TD
     C -->|Triggers| E[DOM Update Function 2]
 ```
 
-When a template is parsed, any interpolation or binding reads from the `ReactiveProxy`. The `get` trap is triggered, allowing the `DependencyTracker` to register the current DOM update function as a subscriber to that specific property.
+When a template is parsed, any binding reads from the `ReactiveProxy`. The `get` trap is triggered, allowing the `DependencyTracker` to register the current DOM update function as a subscriber to that specific property.
 
 ## Binding Types
 

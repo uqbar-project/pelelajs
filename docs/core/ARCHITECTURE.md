@@ -87,17 +87,17 @@ The following diagram illustrates the sequence of events when a PelelaJS applica
 sequenceDiagram
     participant Main as main.ts
     participant Core as Pelela Core
-    participant Registry as Component Registry
+    participant Registry as ViewModel Registry
     participant VM as ViewModel Instance
     participant Proxy as Reactive Proxy
     participant Tracker as Dependency Tracker
-
-    Main->>Core: bootstrap(rootViewModel)
-    Core->>Registry: Resolve root component template
-    Registry-->>Core: Return HTML template string
+    Main->>Core: mountTemplate(root, template)
+    Core->>Core: Scan DOM for <pelela view-model="..."> elements
+    Core->>Registry: Look up ViewModel class by name
+    Registry-->>Core: Return ViewModel class
     Core->>VM: Instantiate root ViewModel class
     Core->>Proxy: Wrap VM in ReactiveProxy
-    Core->>Core: Parse HTML for bindings ({{}}, bind, etc.)
+    Core->>Core: Parse HTML for bindings (bind-content, bind-value, etc.)
     
     loop For each binding found
         Core->>Tracker: Register DOM update function
