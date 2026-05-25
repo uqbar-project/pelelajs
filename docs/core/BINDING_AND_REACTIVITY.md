@@ -26,7 +26,7 @@ The framework supports distinct binding mechanisms to connect the View to the Vi
 
 ### 1. One-Way Binding (Model -> View)
 
-Updates flow exclusively from the model to the view. Used for interpolations (`{{ value }}`) or property bindings (e.g., `value="user.name"` without two-way modifiers).
+Updates flow exclusively from the model to the view. Used by directives like `bind-content` (text), `bind-class` (CSS classes) and `bind-style` (inline styles).
 
 - **Mechanism:** The DOM node is subscribed to the property's changes. When the property updates, the DOM node's `textContent` or attribute is overwritten.
 
