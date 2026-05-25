@@ -10,7 +10,7 @@ A component in PelelaJS encapsulates a self-contained View and ViewModel. When t
 
 Data flow between components is handled strictly through state synchronization, maintaining a single source of truth within the reactive tree.
 
-1. **One-Way Binding (`prop:key`)**: Data flows exclusively from the parent to the child. The child receives the property and its updates, but any change to the child's property will not affect the parent.
+1. **One-Way Binding (`prop-key`)**: Data flows exclusively from the parent to the child. The child receives the property and its updates, but any change to the child's property will not affect the parent.
 
 2. **Two-Way Binding (`link:key`)**: Synchronizes the state between parent and child. Changes in the parent's property are reflected in the child, and importantly, if the child modifies its own property, the change is automatically propagated back to the parent. This mechanism replaces the need for custom events for most common interactions.
 
