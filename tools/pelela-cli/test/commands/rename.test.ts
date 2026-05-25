@@ -1,33 +1,40 @@
-import * as fs from 'node:fs'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { renameCommand } from '../../src/commands/rename'
 import { initializeI18n, t } from '../../src/utils/i18n'
 
-vi.mock('node:fs')
-const mockedFs = vi.mocked(fs)
-
-const OLD_TS = 'src/Old.ts'
-const OLD_PELELA = 'src/Old.pelela'
-const OLD_CSS = 'src/Old.css'
-const NEW_TS = 'src/New.ts'
-const NEW_PELELA = 'src/New.pelela'
-const NEW_CSS = 'src/New.css'
-const NEW_DIR = 'src/new-dir'
+const OLD_TS = 'src/old.ts'
+const OLD_PELELA = 'src/old.pelela'
+const OLD_CSS = 'src/old.css'
+const NEW_TS = 'src/new.ts'
+const NEW_PELELA = 'src/new.pelela'
+const NEW_CSS = 'src/new.css'
 
 const OLD_CONTENT_TS = 'export class Old {}'
 const OLD_CONTENT_PELELA = '<pelela view-model="Old"></pelela>'
-const NEW_CONTENT_TS = 'export class New {}'
-const NEW_CONTENT_PELELA = '<pelela view-model="New"></pelela>'
+const ROUTES_CONTENT = "import { Old } from './src/old'\nexport const r = [{ component: Old }]"
 
 beforeAll(async () => {
   await initializeI18n('en')
 })
 
-afterEach(() => {
-  vi.clearAllMocks()
-})
+describe('renameCommand (Integration)', () => {
+  let tempDir: string
+  let originalCwd: string
 
-describe('renameCommand', () => {
+  beforeEach(() => {
+    originalCwd = process.cwd()
+    tempDir = mkdtempSync(join(tmpdir(), 'rename-test-'))
+    process.chdir(tempDir)
+  })
+
+  afterEach(() => {
+    process.chdir(originalCwd)
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
   it('throws for empty old name', async () => {
     await expect(renameCommand({ oldName: '', newName: 'New' })).rejects.toThrow(
       t('commands.rename.error.oldNameEmpty'),
@@ -47,15 +54,15 @@ describe('renameCommand', () => {
   })
 
   it('throws if old files do not exist', async () => {
-    mockedFs.existsSync.mockReturnValue(false)
     await expect(renameCommand({ oldName: 'Old', newName: 'New' })).rejects.toThrow(
       t('commands.rename.error.oldNotFound', { name: 'Old' }),
     )
   })
 
   it('throws if new files already exist', async () => {
-    const existing = ['src', OLD_TS, NEW_TS]
-    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
+    mkdirSync('src')
+    writeFileSync(OLD_TS, OLD_CONTENT_TS)
+    writeFileSync(NEW_TS, 'export class New {}')
 
     await expect(renameCommand({ oldName: 'Old', newName: 'New' })).rejects.toThrow(
       t('commands.rename.error.newNameExists', { name: 'New' }),
@@ -63,59 +70,90 @@ describe('renameCommand', () => {
   })
 
   it('renames files and updates content successfully', async () => {
-    const existing = ['src', OLD_TS, OLD_PELELA, OLD_CSS]
-    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
-
-    mockedFs.readFileSync.mockImplementation((path) => {
-      const pathString = path.toString()
-      if (pathString === OLD_TS) return OLD_CONTENT_TS
-      if (pathString === OLD_PELELA) return OLD_CONTENT_PELELA
-      return ''
-    })
+    // Setup real file system
+    mkdirSync('src')
+    writeFileSync(OLD_TS, OLD_CONTENT_TS)
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+    writeFileSync(OLD_CSS, '/* old css */')
+    writeFileSync('routes.ts', ROUTES_CONTENT)
 
     await renameCommand({ oldName: 'Old', newName: 'New' })
 
+    // Check old files are gone
+    expect(existsSync(OLD_TS)).toBe(false)
+    expect(existsSync(OLD_PELELA)).toBe(false)
+    expect(existsSync(OLD_CSS)).toBe(false)
+
+    // Check new files exist
+    expect(existsSync(NEW_TS)).toBe(true)
+    expect(existsSync(NEW_PELELA)).toBe(true)
+    expect(existsSync(NEW_CSS)).toBe(true)
+
     // Check content update
-    expect(mockedFs.writeFileSync).toHaveBeenCalledWith(OLD_TS, NEW_CONTENT_TS)
-    expect(mockedFs.writeFileSync).toHaveBeenCalledWith(OLD_PELELA, NEW_CONTENT_PELELA)
+    const updatedTs = readFileSync(NEW_TS, 'utf-8')
+    const updatedPelela = readFileSync(NEW_PELELA, 'utf-8')
+    const updatedRoutes = readFileSync('routes.ts', 'utf-8')
 
-    // Check renaming
-    expect(mockedFs.renameSync).toHaveBeenCalledWith(OLD_TS, NEW_TS)
-    expect(mockedFs.renameSync).toHaveBeenCalledWith(OLD_PELELA, NEW_PELELA)
-    expect(mockedFs.renameSync).toHaveBeenCalledWith(OLD_CSS, NEW_CSS)
+    expect(updatedTs).toContain('export class New {}')
+    expect(updatedPelela).toContain('<pelela view-model="New"></pelela>')
+    expect(updatedRoutes).toContain("import { New } from './src/new'")
+    expect(updatedRoutes).toContain('component: New')
   })
 
-  it('creates new directory if it does not exist', async () => {
-    const existing = ['src', OLD_TS]
-    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
+  it('renames lowercase template files when user provides PascalCase name', async () => {
+    // Reproduces the Linux bug: the template creates lowercase filenames (base.ts),
+    // but the user passes a PascalCase name (Base). On a case-sensitive FS this used
+    // to fail with "Could not find files for component Base".
+    mkdirSync('src')
+    writeFileSync('src/base.ts', 'export class Base {}')
+    writeFileSync('src/base.pelela', '<pelela view-model="Base"></pelela>')
+    writeFileSync('src/base.css', '/* base css */')
 
-    await renameCommand({ oldName: 'Old', newName: 'new-dir/New' })
+    await renameCommand({ oldName: 'Base', newName: 'Home' })
 
-    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(NEW_DIR, {
-      recursive: true,
-    })
+    expect(existsSync('src/base.ts')).toBe(false)
+    expect(existsSync('src/base.pelela')).toBe(false)
+    expect(existsSync('src/base.css')).toBe(false)
+
+    expect(existsSync('src/home.ts')).toBe(true)
+    expect(existsSync('src/home.pelela')).toBe(true)
+    expect(existsSync('src/home.css')).toBe(true)
+
+    expect(readFileSync('src/home.ts', 'utf-8')).toContain('class Home')
+    expect(readFileSync('src/home.pelela', 'utf-8')).toContain('view-model="Home"')
   })
 
-  it('creates new directory for pelela file if it does not exist', async () => {
-    const existing = ['src', OLD_PELELA]
-    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
+  it('renames component in subdirectory', async () => {
+    mkdirSync('src')
+    mkdirSync('src/subdir')
+    writeFileSync('src/subdir/old.ts', OLD_CONTENT_TS)
+    writeFileSync('src/subdir/old.pelela', OLD_CONTENT_PELELA)
+    writeFileSync('src/subdir/old.css', '/* old css */')
 
-    await renameCommand({ oldName: 'Old', newName: 'new-dir/New' })
+    await renameCommand({ oldName: 'Old', newName: 'New' })
 
-    expect(mockedFs.mkdirSync).toHaveBeenCalledWith(NEW_DIR, {
-      recursive: true,
-    })
+    expect(existsSync('src/subdir/old.ts')).toBe(false)
+    expect(existsSync('src/subdir/old.pelela')).toBe(false)
+    expect(existsSync('src/subdir/old.css')).toBe(false)
+
+    expect(existsSync('src/subdir/new.ts')).toBe(true)
+    expect(existsSync('src/subdir/new.pelela')).toBe(true)
+    expect(existsSync('src/subdir/new.css')).toBe(true)
   })
 
-  it('throws error when rename fails', async () => {
-    const existing = ['src', OLD_TS]
-    mockedFs.existsSync.mockImplementation((path) => existing.includes(path.toString()))
-    mockedFs.readFileSync.mockImplementation(() => {
-      throw new Error('Read failed')
-    })
+  it('updates import path when filename is lowercase in import statement', async () => {
+    mkdirSync('src')
+    writeFileSync(OLD_TS, OLD_CONTENT_TS)
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+    writeFileSync(OLD_CSS, '/* old css */')
+    // Import with lowercase filename
+    const routesContent = "import { Old } from './src/old'\nexport const r = [{ component: Old }]"
+    writeFileSync('routes.ts', routesContent)
 
-    await expect(renameCommand({ oldName: 'Old', newName: 'New' })).rejects.toThrow(
-      t('commands.rename.error.renameFailed', { error: 'Read failed' }),
-    )
+    await renameCommand({ oldName: 'Old', newName: 'New' })
+
+    const updatedRoutes = readFileSync('routes.ts', 'utf-8')
+    expect(updatedRoutes).toContain("import { New } from './src/new'")
+    expect(updatedRoutes).toContain('component: New')
   })
 })

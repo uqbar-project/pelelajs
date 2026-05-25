@@ -39,15 +39,15 @@ describe('newCommand', () => {
 
     expect(mockedFs.writeFileSync).toHaveBeenCalledTimes(3)
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('src/MyComponent.ts'),
+      expect.stringContaining('src/my-component.ts'),
       expect.stringContaining('export class MyComponent {'),
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('src/MyComponent.pelela'),
+      expect.stringContaining('src/my-component.pelela'),
       expect.stringContaining('view-model="MyComponent"'),
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('src/MyComponent.css'),
+      expect.stringContaining('src/my-component.css'),
       expect.stringContaining('Styles for MyComponent component'),
     )
   })
@@ -58,15 +58,15 @@ describe('newCommand', () => {
     await newCommand({ name: 'MyComponent' })
 
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-      'MyComponent.ts',
+      'my-component.ts',
       expect.stringContaining('export class MyComponent {'),
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-      'MyComponent.pelela',
+      'my-component.pelela',
       expect.stringContaining('view-model="MyComponent"'),
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-      'MyComponent.css',
+      'my-component.css',
       expect.stringContaining('Styles for MyComponent component'),
     )
   })
@@ -78,7 +78,7 @@ describe('newCommand', () => {
 
     expect(mockedFs.writeFileSync).toHaveBeenCalledTimes(2)
     expect(mockedFs.writeFileSync).not.toHaveBeenCalledWith(
-      expect.stringContaining('src/MyComponent.css'),
+      expect.stringContaining('src/my-component.css'),
       expect.any(String),
     )
   })
@@ -89,7 +89,7 @@ describe('newCommand', () => {
     await newCommand({ name: 'src/MyComponent' })
 
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('src/MyComponent.ts'),
+      expect.stringContaining('src/my-component.ts'),
       expect.stringContaining('export class MyComponent {'),
     )
   })

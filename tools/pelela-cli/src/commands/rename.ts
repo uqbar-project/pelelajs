@@ -1,12 +1,14 @@
 import { existsSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import chalk from 'chalk'
 import {
-  getComponentTargetDir,
+  findComponentFile,
   normalizeComponentName,
   renameCssFile,
   renamePelelaFile,
   renameTsFile,
+  toKebabCase,
+  updateImports,
 } from '../utils/componentFiles'
 import { t } from '../utils/i18n'
 
@@ -30,20 +32,18 @@ export async function renameCommand(options: RenameCommandOptions): Promise<void
     throw new Error(t('commands.rename.error.nameInvalid'))
   }
 
-  const targetDir = getComponentTargetDir()
-  const normalizedOldName = normalizeComponentName(oldName, targetDir)
-  const normalizedNewName = normalizeComponentName(newName, targetDir)
-
-  const oldTsFile = join(targetDir, `${normalizedOldName}.ts`)
-  const oldPelelaFile = join(targetDir, `${normalizedOldName}.pelela`)
-  const oldCssFile = join(targetDir, `${normalizedOldName}.css`)
-  const newTsFile = join(targetDir, `${normalizedNewName}.ts`)
-  const newPelelaFile = join(targetDir, `${normalizedNewName}.pelela`)
-  const newCssFile = join(targetDir, `${normalizedNewName}.css`)
-
-  if (!existsSync(oldTsFile) && !existsSync(oldPelelaFile) && !existsSync(oldCssFile)) {
+  const oldTsFile = findComponentFile(oldName, '.ts')
+  if (!oldTsFile) {
     throw new Error(t('commands.rename.error.oldNotFound', { name: oldName }))
   }
+
+  const targetDir = dirname(oldTsFile)
+  const normalizedNewName = normalizeComponentName(newName, targetDir)
+  const kebabNewName = toKebabCase(normalizedNewName)
+
+  const newTsFile = join(targetDir, `${kebabNewName}.ts`)
+  const newPelelaFile = join(targetDir, `${kebabNewName}.pelela`)
+  const newCssFile = join(targetDir, `${kebabNewName}.css`)
 
   if (existsSync(newTsFile) || existsSync(newPelelaFile) || existsSync(newCssFile)) {
     throw new Error(t('commands.rename.error.newNameExists', { name: newName }))
@@ -53,6 +53,7 @@ export async function renameCommand(options: RenameCommandOptions): Promise<void
     renameTsFile(oldName, newName, targetDir)
     renamePelelaFile(oldName, newName, targetDir)
     renameCssFile(oldName, newName, targetDir)
+    updateImports(oldName, newName)
 
     console.log(chalk.green(t('commands.rename.messages.success', { oldName, newName })))
   } catch (error) {
