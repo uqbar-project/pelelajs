@@ -38,7 +38,7 @@ Typically used in input elements (`bind-value="user.name"`).
 
 ### 3. Event Binding (View -> Model)
 
-Used to trigger ViewModel methods from user actions (`click="submit()"`).
+Used to trigger ViewModel methods from user actions (`click="submit"`).
 
 - **Mechanism:** The framework parses the event name and attaches a standard `addEventListener` to the DOM node, delegating the execution context to the ViewModel instance.
 
