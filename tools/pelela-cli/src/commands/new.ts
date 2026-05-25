@@ -7,6 +7,7 @@ import {
   createTsFile,
   getComponentTargetDir,
   normalizeComponentName,
+  toKebabCase,
 } from '../utils/componentFiles'
 import { t } from '../utils/i18n'
 
@@ -29,9 +30,10 @@ export async function newCommand(options: NewCommandOptions): Promise<void> {
 
   const targetDir = getComponentTargetDir()
   const normalizedName = normalizeComponentName(name, targetDir)
-  const tsFile = join(targetDir, `${normalizedName}.ts`)
-  const pelelaFile = join(targetDir, `${normalizedName}.pelela`)
-  const cssFile = join(targetDir, `${normalizedName}.css`)
+  const kebabName = toKebabCase(normalizedName)
+  const tsFile = join(targetDir, `${kebabName}.ts`)
+  const pelelaFile = join(targetDir, `${kebabName}.pelela`)
+  const cssFile = join(targetDir, `${kebabName}.css`)
 
   if (existsSync(tsFile) || existsSync(pelelaFile) || (css && existsSync(cssFile))) {
     throw new Error(t('commands.new.error.filesExist', { name }))

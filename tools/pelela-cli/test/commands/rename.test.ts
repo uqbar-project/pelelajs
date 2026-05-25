@@ -70,7 +70,6 @@ describe('renameCommand (Integration)', () => {
   })
 
   it('renames files and updates content successfully', async () => {
-    // Setup real file system
     mkdirSync('src')
     writeFileSync(OLD_TS, OLD_CONTENT_TS)
     writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
@@ -79,17 +78,14 @@ describe('renameCommand (Integration)', () => {
 
     await renameCommand({ oldName: 'Old', newName: 'New' })
 
-    // Check old files are gone
     expect(existsSync(OLD_TS)).toBe(false)
     expect(existsSync(OLD_PELELA)).toBe(false)
     expect(existsSync(OLD_CSS)).toBe(false)
 
-    // Check new files exist
     expect(existsSync(NEW_TS)).toBe(true)
     expect(existsSync(NEW_PELELA)).toBe(true)
     expect(existsSync(NEW_CSS)).toBe(true)
 
-    // Check content update
     const updatedTs = readFileSync(NEW_TS, 'utf-8')
     const updatedPelela = readFileSync(NEW_PELELA, 'utf-8')
     const updatedRoutes = readFileSync('routes.ts', 'utf-8')
@@ -101,9 +97,6 @@ describe('renameCommand (Integration)', () => {
   })
 
   it('renames lowercase template files when user provides PascalCase name', async () => {
-    // Reproduces the Linux bug: the template creates lowercase filenames (base.ts),
-    // but the user passes a PascalCase name (Base). On a case-sensitive FS this used
-    // to fail with "Could not find files for component Base".
     mkdirSync('src')
     writeFileSync('src/base.ts', 'export class Base {}')
     writeFileSync('src/base.pelela', '<pelela view-model="Base"></pelela>')
@@ -146,7 +139,6 @@ describe('renameCommand (Integration)', () => {
     writeFileSync(OLD_TS, OLD_CONTENT_TS)
     writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
     writeFileSync(OLD_CSS, '/* old css */')
-    // Import with lowercase filename
     const routesContent = "import { Old } from './src/old'\nexport const r = [{ component: Old }]"
     writeFileSync('routes.ts', routesContent)
 
