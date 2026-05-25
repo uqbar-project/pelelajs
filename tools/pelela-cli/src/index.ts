@@ -46,7 +46,7 @@ async function main(): Promise<void> {
     .option('--no-css', t('commands.new.options.noCss'))
     .action(async (componentName: string, options: { css: boolean }) => {
       try {
-        await newCommand({ name: componentName, css: options.css })
+        await newCommand({ componentName, css: options.css })
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))
@@ -57,9 +57,9 @@ async function main(): Promise<void> {
   program
     .command('rename <oldComponentName> <newComponentName>')
     .description(t('commands.rename.description'))
-    .action(async (oldName: string, newName: string) => {
+    .action(async (oldComponentName: string, newComponentName: string) => {
       try {
-        await renameCommand({ oldName, newName })
+        await renameCommand({ oldComponentName, newComponentName })
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))

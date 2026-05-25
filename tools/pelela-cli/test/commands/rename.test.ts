@@ -36,27 +36,27 @@ describe('renameCommand (Integration)', () => {
   })
 
   it('throws for empty old name', async () => {
-    await expect(renameCommand({ oldName: '', newName: 'New' })).rejects.toThrow(
+    await expect(renameCommand({ oldComponentName: '', newComponentName: 'New' })).rejects.toThrow(
       t('commands.rename.error.oldNameEmpty'),
     )
   })
 
   it('throws for empty new name', async () => {
-    await expect(renameCommand({ oldName: 'Old', newName: '' })).rejects.toThrow(
+    await expect(renameCommand({ oldComponentName: 'Old', newComponentName: '' })).rejects.toThrow(
       t('commands.rename.error.newNameEmpty'),
     )
   })
 
   it('throws for invalid new name', async () => {
-    await expect(renameCommand({ oldName: 'Old', newName: 'invalid-name' })).rejects.toThrow(
-      t('commands.rename.error.nameInvalid'),
-    )
+    await expect(
+      renameCommand({ oldComponentName: 'Old', newComponentName: 'invalid-name' }),
+    ).rejects.toThrow(t('commands.rename.error.nameInvalid'))
   })
 
   it('throws if old files do not exist', async () => {
-    await expect(renameCommand({ oldName: 'Old', newName: 'New' })).rejects.toThrow(
-      t('commands.rename.error.oldNotFound', { name: 'Old' }),
-    )
+    await expect(
+      renameCommand({ oldComponentName: 'Old', newComponentName: 'New' }),
+    ).rejects.toThrow(t('commands.rename.error.oldNotFound', { name: 'Old' }))
   })
 
   it('throws if new files already exist', async () => {
@@ -64,9 +64,9 @@ describe('renameCommand (Integration)', () => {
     writeFileSync(OLD_TS, OLD_CONTENT_TS)
     writeFileSync(NEW_TS, 'export class New {}')
 
-    await expect(renameCommand({ oldName: 'Old', newName: 'New' })).rejects.toThrow(
-      t('commands.rename.error.newNameExists', { name: 'New' }),
-    )
+    await expect(
+      renameCommand({ oldComponentName: 'Old', newComponentName: 'New' }),
+    ).rejects.toThrow(t('commands.rename.error.newNameExists', { name: 'New' }))
   })
 
   it('renames files and updates content successfully', async () => {
@@ -76,7 +76,7 @@ describe('renameCommand (Integration)', () => {
     writeFileSync(OLD_CSS, '/* old css */')
     writeFileSync('routes.ts', ROUTES_CONTENT)
 
-    await renameCommand({ oldName: 'Old', newName: 'New' })
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
 
     expect(existsSync(OLD_TS)).toBe(false)
     expect(existsSync(OLD_PELELA)).toBe(false)
@@ -102,7 +102,7 @@ describe('renameCommand (Integration)', () => {
     writeFileSync('src/base.pelela', '<pelela view-model="Base"></pelela>')
     writeFileSync('src/base.css', '/* base css */')
 
-    await renameCommand({ oldName: 'Base', newName: 'Home' })
+    await renameCommand({ oldComponentName: 'Base', newComponentName: 'Home' })
 
     expect(existsSync('src/base.ts')).toBe(false)
     expect(existsSync('src/base.pelela')).toBe(false)
@@ -123,7 +123,7 @@ describe('renameCommand (Integration)', () => {
     writeFileSync('src/subdir/old.pelela', OLD_CONTENT_PELELA)
     writeFileSync('src/subdir/old.css', '/* old css */')
 
-    await renameCommand({ oldName: 'Old', newName: 'New' })
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
 
     expect(existsSync('src/subdir/old.ts')).toBe(false)
     expect(existsSync('src/subdir/old.pelela')).toBe(false)
@@ -142,7 +142,7 @@ describe('renameCommand (Integration)', () => {
     const routesContent = "import { Old } from './src/old'\nexport const r = [{ component: Old }]"
     writeFileSync('routes.ts', routesContent)
 
-    await renameCommand({ oldName: 'Old', newName: 'New' })
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
 
     const updatedRoutes = readFileSync('routes.ts', 'utf-8')
     expect(updatedRoutes).toContain("import { New } from './src/new'")
@@ -156,7 +156,7 @@ describe('renameCommand (Integration)', () => {
     writeFileSync('src/old.pelela', OLD_CONTENT_PELELA)
     writeFileSync('src/old.css', '/* old css */')
 
-    await renameCommand({ oldName: 'Old', newName: 'New' })
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
 
     const updatedTs = readFileSync('src/new.ts', 'utf-8')
     expect(updatedTs).toContain('export class New {}')
