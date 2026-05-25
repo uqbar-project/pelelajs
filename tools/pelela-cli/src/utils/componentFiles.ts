@@ -203,7 +203,6 @@ export function renameTsFile(oldName: string, newName: string, targetDir: string
     extension: 'ts',
     targetDir,
   })
-  if (!existsSync(oldPath)) return
 
   modifyAndRenameFile({
     oldPath,
@@ -228,7 +227,6 @@ export function renamePelelaFile(oldName: string, newName: string, targetDir: st
     extension: 'pelela',
     targetDir,
   })
-  if (!existsSync(oldPath)) return
 
   modifyAndRenameFile({
     oldPath,
