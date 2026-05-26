@@ -19,65 +19,13 @@ This installs both the library and the `pelela` CLI tool.
 ### Requirements
 
 - **Node.js >= 22.0.0**
-- **pnpm** (recommended package manager)
+
+- **pnpm** (required package manager)
 
 ## Development (for Contributors)
 
-### Setup the project
+If you are looking to contribute to the framework, understand its architecture, or see how to publish new releases, please refer to our **[Developer Documentation](./docs/README.md)**.
 
-If you want to contribute to the framework, follow these steps:
-
-```bash
-# Clone the repo and enter the directory
-git clone https://github.com/uqbar-project/pelelajs.git
-cd pelelajs
-
-# Install dependencies
-pnpm install
-
-# Build all packages
-pnpm build
-```
-
-### Release
-
-For detailed information on how to publish new versions:
-- **NPM packages:** [Publishing Process (NPM)](./docs/publishing-npm.md)
-- **VSCode Extension:** [Publishing Process (VSCode)](./docs/publishing-vscode.md)
-
-⚠️ **This project requires pnpm** (uses the `workspace:*` protocol which npm doesn't support)
-
-### VSCode Extension
-
-#### Installation (for Students)
-
-1. Open VSCode.
-2. Go to the **Extensions** view (`Ctrl+Shift+X` / `Cmd+Shift+X`).
-3. Search for **"Pelela Templates"**.
-4. Click **Install**.
-
-The extension is also available on [OpenVSX](https://open-vsx.org/) for editors like VSCodium.
-
-#### Development and Debugging
-
-To develop and test the Pelela VSCode extension:
-
-##### 1. Debugging (Recommended)
-
-1. Open this monorepo in VSCode.
-2. Press **F5** (or go to **Run and Debug** -> **Launch Pelela Extension**).
-3. A new window will open with the extension active. You can test it using the `examples/hello-world` folder which is opened by default.
-
-##### 2. Manual Installation (.vsix)
-
-If you prefer to generate and install the extension manually:
-
-1. Build and package the extension:
-   ```bash
-   pnpm -C tools/pelela-vscode package
-   ```
-2. In VSCode, go to the **Extensions** view, click the `...` (Views and More Actions), and select **Install from VSIX...**.
-3. Select the generated `.vsix` file in `tools/pelela-vscode/`.
 
 ## Getting Started with CLI
 
@@ -147,6 +95,7 @@ Coverage report will be generated in `coverage/lcov.info` (consolidated for all 
 To include a new package in the test suite and coverage report:
 
 1. Create `packages/new-package/vitest.config.ts`:
+
    ```typescript
    import { defineProject } from "vitest/config";
 
