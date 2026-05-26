@@ -24,19 +24,11 @@ export function updateChangelogContent(
   return header + newEntry + releases
 }
 
-if (
-  import.meta.url === `file://${process.argv[1]}` ||
-  process.argv[1]?.endsWith('update-changelog.ts')
-) {
-  const version = process.argv[2]
-  const type = process.argv[3] || 'npm'
-  const changelogFile = process.argv[4] || 'CHANGELOG.md'
-
-  if (!version) {
-    console.error('Usage: tsx update-changelog.ts <version> <type> [file]')
-    process.exit(1)
-  }
-
+export function updateChangelog(
+  version: string,
+  type: 'npm' | 'vscode' = 'npm',
+  changelogFile: string = 'CHANGELOG.md',
+): void {
   const allowedTypes = ['npm', 'vscode']
   if (!allowedTypes.includes(type)) {
     console.error(`Invalid release type: "${type}". Allowed values are: ${allowedTypes.join(', ')}`)
@@ -47,23 +39,34 @@ if (
     let summary = (process.env.RELEASE_IT_NOTES || '').trim()
 
     if (!summary) {
-      summary = generateSummary(type as 'npm' | 'vscode')
+      summary = generateSummary(type)
     }
 
     let currentContent = ''
     if (existsSync(changelogFile)) {
       currentContent = readFileSync(changelogFile, 'utf-8')
     }
-    const newContent = updateChangelogContent(
-      version,
-      currentContent,
-      summary,
-      type as 'npm' | 'vscode',
-    )
+    const newContent = updateChangelogContent(version, currentContent, summary, type)
 
     writeFileSync(changelogFile, newContent)
   } catch (error) {
     console.error('Failed to update changelog:', error)
     process.exit(1)
   }
+}
+
+if (
+  import.meta.url === `file://${process.argv[1]}` ||
+  process.argv[1]?.endsWith('update-changelog.ts')
+) {
+  const version = process.argv[2]
+  const type = (process.argv[3] as 'npm' | 'vscode') || 'npm'
+  const changelogFile = process.argv[4] || 'CHANGELOG.md'
+
+  if (!version) {
+    console.error('Usage: tsx update-changelog.ts <version> <type> [file]')
+    process.exit(1)
+  }
+
+  updateChangelog(version, type, changelogFile)
 }

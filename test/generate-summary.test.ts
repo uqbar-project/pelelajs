@@ -1,6 +1,11 @@
 import { execFileSync } from 'node:child_process'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { generateSummaryContent, getCommits, getLatestTag } from '../scripts/generate-summary'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  generateSummary,
+  generateSummaryContent,
+  getCommits,
+  getLatestTag,
+} from '../scripts/generate-summary'
 
 vi.mock('node:child_process', () => ({
   execFileSync: vi.fn(),
@@ -169,5 +174,80 @@ describe('getCommits', () => {
         encoding: 'utf-8',
       },
     )
+  })
+})
+
+describe('generateSummary', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should generate summary for npm type with correct tag prefix and path specs', () => {
+    const mockedExecFileSync = vi.mocked(execFileSync)
+    mockedExecFileSync
+      .mockReturnValueOnce('npm-v0.1.0')
+      .mockReturnValueOnce('abc123 feat: new feature')
+
+    const result = generateSummary('npm')
+
+    expect(result).toContain('🚀')
+    expect(mockedExecFileSync).toHaveBeenCalledWith(
+      'git',
+      ['tag', '-l', 'npm-v*', '--sort=-v:refname'],
+      { encoding: 'utf-8' },
+    )
+    expect(mockedExecFileSync).toHaveBeenCalledWith(
+      'git',
+      ['log', 'npm-v0.1.0..HEAD', '--oneline', '--', '.', ':^tools/pelela-vscode'],
+      { encoding: 'utf-8' },
+    )
+  })
+
+  it('should generate summary for vscode type with correct tag prefix and path specs', () => {
+    const mockedExecFileSync = vi.mocked(execFileSync)
+    mockedExecFileSync
+      .mockReturnValueOnce('vscode-v0.1.0')
+      .mockReturnValueOnce('abc123 feat: vscode feature')
+
+    const result = generateSummary('vscode')
+
+    expect(result).toContain('🚀')
+    expect(mockedExecFileSync).toHaveBeenCalledWith(
+      'git',
+      ['tag', '-l', 'vscode-v*', '--sort=-v:refname'],
+      { encoding: 'utf-8' },
+    )
+    expect(mockedExecFileSync).toHaveBeenCalledWith(
+      'git',
+      ['log', 'vscode-v0.1.0..HEAD', '--oneline', '--', 'tools/pelela-vscode'],
+      { encoding: 'utf-8' },
+    )
+  })
+
+  it('should filter out vscode-related commits for npm type', () => {
+    const mockedExecFileSync = vi.mocked(execFileSync)
+    mockedExecFileSync
+      .mockReturnValueOnce('npm-v0.1.0')
+      .mockReturnValueOnce(
+        'abc123 feat: new feature\ndef456 chore: vscode extension update\nghi789 fix: marketplace issue',
+      )
+
+    const result = generateSummary('npm')
+
+    expect(result).toContain('new feature')
+    expect(result).not.toContain('vscode')
+    expect(result).not.toContain('marketplace')
+  })
+
+  it('should not filter commits for vscode type', () => {
+    const mockedExecFileSync = vi.mocked(execFileSync)
+    mockedExecFileSync
+      .mockReturnValueOnce('vscode-v0.1.0')
+      .mockReturnValueOnce('abc123 feat: vscode feature\ndef456 chore: marketplace update')
+
+    const result = generateSummary('vscode')
+
+    expect(result).toContain('vscode')
+    expect(result).toContain('marketplace')
   })
 })
