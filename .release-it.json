@@ -1,14 +1,14 @@
 {
   "git": {
     "changelog": "tsx scripts/generate-summary.ts npm",
-    "commitMessage": "chore: release v${version}",
-    "tagName": "v${version}",
+    "commitMessage": "chore: release npm-v${version}",
+    "tagName": "npm-v${version}",
     "requireCleanWorkingDir": true,
     "requireBranch": "main"
   },
   "github": {
     "release": true,
-    "releaseName": "v${version}"
+    "releaseName": "npm-v${version}"
   },
   "npm": {
     "publish": false
@@ -25,7 +25,7 @@
       "pnpm -C packages/core publish --no-git-checks --access public",
       "pnpm -C packages/vite-plugin-pelelajs publish --no-git-checks --access public",
       "pnpm -C tools/pelela-cli publish --no-git-checks --access public",
-      "echo \"✅ Successfully published v${version} to NPM and GitHub!\""
+      "echo \"✅ Successfully published npm-v${version} to NPM and GitHub!\""
     ]
   }
 }

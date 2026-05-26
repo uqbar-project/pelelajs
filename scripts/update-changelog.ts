@@ -5,12 +5,14 @@ export function updateChangelogContent(
   version: string,
   currentContent: string,
   summary: string,
+  type: 'npm' | 'vscode' = 'npm',
 ): string {
   const date = new Date().toISOString().split('T')[0]
-  const newEntry = `## v${version} - ${date}\n${summary}\n\n`
+  const tagPrefix = type === 'vscode' ? 'vscode-v' : 'npm-v'
+  const newEntry = `## ${tagPrefix}${version} - ${date}\n${summary}\n\n`
 
-  // Split content into header (before first ## v...) and releases
-  const firstVersionHeaderIndex = currentContent.search(/^## v/m)
+  // Split content into header (before first ## ...) and releases
+  const firstVersionHeaderIndex = currentContent.search(/^## /m)
   if (firstVersionHeaderIndex === -1) {
     // No existing version headers, prepend new entry
     return newEntry + currentContent
@@ -52,7 +54,12 @@ if (
     if (existsSync(changelogFile)) {
       currentContent = readFileSync(changelogFile, 'utf-8')
     }
-    const newContent = updateChangelogContent(version, currentContent, summary)
+    const newContent = updateChangelogContent(
+      version,
+      currentContent,
+      summary,
+      type as 'npm' | 'vscode',
+    )
 
     writeFileSync(changelogFile, newContent)
   } catch (error) {

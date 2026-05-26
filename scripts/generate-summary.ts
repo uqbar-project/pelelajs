@@ -74,7 +74,7 @@ type ReleaseType = 'npm' | 'vscode'
 
 export function generateSummary(type: ReleaseType = 'npm'): string {
   const isVsCode = type === 'vscode'
-  const tagPrefix = isVsCode ? 'vscode-v' : 'v'
+  const tagPrefix = isVsCode ? 'vscode-v' : 'npm-v'
 
   const pathSpecs = isVsCode ? ['tools/pelela-vscode'] : ['.', ':^tools/pelela-vscode']
 
