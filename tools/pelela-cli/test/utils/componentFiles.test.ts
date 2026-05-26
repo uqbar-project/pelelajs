@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -8,6 +8,7 @@ import {
   resolveExistingComponentPath,
   toKebabCase,
   toPascalCase,
+  updateImports,
 } from '../../src/utils/componentFiles'
 
 describe('resolveExistingComponentPath', () => {
@@ -221,5 +222,49 @@ describe('prepareRenamePaths', () => {
     expect(result.newPath).toBe('src/sub/new.ts')
     expect(result.oldClassName).toBe('Old')
     expect(result.newClassName).toBe('New')
+  })
+})
+
+describe('updateImports', () => {
+  let tempDir: string
+  let originalCwd: string
+
+  beforeEach(() => {
+    originalCwd = process.cwd()
+    tempDir = mkdtempSync(join(tmpdir(), 'update-imports-test-'))
+    process.chdir(tempDir)
+  })
+
+  afterEach(() => {
+    process.chdir(originalCwd)
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  it('updates import paths with kebab-case file names when renaming component', () => {
+    // Create a file with an import using kebab-case path
+    mkdirSync('src')
+    writeFileSync(
+      'src/app.ts',
+      "import { MyComponent } from './src/my-component'\nconst comp = new MyComponent()",
+    )
+
+    updateImports('MyComponent', 'OtherComponent')
+
+    const content = readFileSync('src/app.ts', 'utf-8')
+    expect(content).toContain("import { OtherComponent } from './src/other-component'")
+    expect(content).not.toContain('my-component')
+  })
+
+  it('updates import paths with .ts extension when renaming component', () => {
+    mkdirSync('src')
+    writeFileSync(
+      'src/app.ts',
+      "import { MyComponent } from './src/my-component.ts'\nconst comp = new MyComponent()",
+    )
+
+    updateImports('MyComponent', 'OtherComponent')
+
+    const content = readFileSync('src/app.ts', 'utf-8')
+    expect(content).toContain("import { OtherComponent } from './src/other-component.ts'")
   })
 })

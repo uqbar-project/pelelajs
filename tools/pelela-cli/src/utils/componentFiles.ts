@@ -270,7 +270,7 @@ function replaceImportPath(importPath: string, oldClass: string, newClass: strin
 
   const extensions = ['.ts', '.js', '']
   const matchedExtension = extensions.find(
-    (extension) => fileNameFromPath.toLowerCase() === `${oldClass.toLowerCase()}${extension}`,
+    (extension) => fileNameFromPath === `${toKebabCase(oldClass)}${extension}`,
   )
 
   if (matchedExtension !== undefined) {
