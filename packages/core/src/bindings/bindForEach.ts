@@ -3,7 +3,9 @@ import {
   extractElementSnippet,
   filterOwnElements,
   findAllElements,
+  IDENTIFIER_PATTERN,
   isPropertyOrNestedPath,
+  isValidIdentifier,
 } from '../commons/helpers'
 import {
   InvalidBindingSyntaxError,
@@ -25,7 +27,8 @@ import type { ForEachBinding, ViewModel } from './types'
 function parseForEachExpression(
   expression: string,
 ): { itemName: string; collectionName: string } | null {
-  const match = expression.trim().match(/^(\w+)\s+of\s+(\w+)$/)
+  const identifier = IDENTIFIER_PATTERN.source.replace(/^\^|\$$/g, '')
+  const match = expression.trim().match(new RegExp(`^(${identifier})\\s+of\\s+(${identifier})$`))
   if (!match) return null
   return { itemName: match[1], collectionName: match[2] }
 }
@@ -113,7 +116,7 @@ export function setupSingleForEachBinding<T extends object>(
   const { itemName, collectionName } = parsed
   const rawIndexName = element.getAttribute('index')
   const indexName = rawIndexName?.trim() ? rawIndexName.trim() : null
-  if (indexName && !/^\w+$/.test(indexName)) {
+  if (indexName && !isValidIdentifier(indexName)) {
     throw new InvalidBindingSyntaxError('index', rawIndexName ?? '', 'valid identifier')
   }
   assertViewModelProperty(viewModel, collectionName, 'for-each', element)
@@ -131,7 +134,7 @@ export function setupSingleForEachBinding<T extends object>(
   // Remove framework-specific attributes from the template so they don't appear
   // as raw HTML attributes on every cloned element rendered in the DOM.
   template.removeAttribute('for-each')
-  if (indexName) template.removeAttribute('index')
+  if (rawIndexName !== null) template.removeAttribute('index')
   if (!element.parentNode)
     throw new InvalidDOMStructureError('for-each', 'element has no parent node')
   const placeholder = document.createComment(`for-each: ${itemName} of ${collectionName}`)

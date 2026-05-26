@@ -951,5 +951,29 @@ describe('bindForEach', () => {
         setupSingleForEachBinding(container.querySelector('[for-each]') as HTMLElement, viewModel)
       }).toThrow(InvalidBindingSyntaxError)
     })
+
+    it('should throw InvalidBindingSyntaxError if index starts with a number (0foo)', () => {
+      container.innerHTML = `
+        <div for-each="item of items" index="0foo">
+          <span bind-content="item.name"></span>
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Alice' }] }
+      expect(() => {
+        setupSingleForEachBinding(container.querySelector('[for-each]') as HTMLElement, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
+    })
+
+    it('should throw InvalidBindingSyntaxError if index is only numbers (123)', () => {
+      container.innerHTML = `
+        <div for-each="item of items" index="123">
+          <span bind-content="item.name"></span>
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Alice' }] }
+      expect(() => {
+        setupSingleForEachBinding(container.querySelector('[for-each]') as HTMLElement, viewModel)
+      }).toThrow(InvalidBindingSyntaxError)
+    })
   })
 })

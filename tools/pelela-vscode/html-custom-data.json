@@ -62,6 +62,11 @@
       "name": "for-each",
       "description": "Pelela: Iterates over a collection from the ViewModel (syntax: item of collection)",
       "valueSet": "v"
+    },
+    {
+      "name": "index",
+      "description": "Pelela: Specifies the index variable name for for-each loops",
+      "valueSet": "v"
     }
   ]
 }
