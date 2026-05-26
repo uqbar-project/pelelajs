@@ -3,8 +3,7 @@
     "changelog": "tsx scripts/generate-summary.ts npm",
     "commitMessage": "chore: release npm-v${version}",
     "tagName": "npm-v${version}",
-    "requireCleanWorkingDir": true,
-    "requireBranch": "main"
+    "requireCleanWorkingDir": true
   },
   "github": {
     "release": true,
