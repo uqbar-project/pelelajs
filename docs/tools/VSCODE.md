@@ -33,7 +33,7 @@ To provide intelligent feedback, the Language Server must understand both the HT
 
 1. **Document Synchronization:** As the user types in a `.pelela` file, the server receives text document synchronization events.
 
-2. **Context Resolution:** When a user requests autocomplete or definition (e.g., hovering over `{{ user.name }}`), the server identifies the exact position in the document.
+2. **Context Resolution:** When a user requests autocomplete or definition (e.g., hovering over `user.name` inside `bind-content="user.name"`), the server identifies the exact position in the document.
 
 3. **TypeScript Integration:** The server uses the TypeScript Compiler API to analyze the companion `.ts` file. It traverses the AST to find public properties, methods, and types defined within the ViewModel class.
 

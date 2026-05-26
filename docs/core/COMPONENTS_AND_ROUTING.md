@@ -20,7 +20,7 @@ sequenceDiagram
     participant View as Parent Template
     participant Child as Child ViewModel
     
-    Parent->>View: Binds state (prop: or link:)
+    Parent->>View: Binds state (prop- or link-)
     View->>Child: Injects property into child instance
     
     Note over Child: Child modifies property

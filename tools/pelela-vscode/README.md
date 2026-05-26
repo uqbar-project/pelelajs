@@ -43,7 +43,7 @@ pelela-vscode/
 
 ## Development
 
-For instructions on how to build, run, and debug the extension, please refer to the [root README](../../README.md#vscode-extension).
+For instructions on how to build, run, and debug the extension, please refer to the [VSCode extension documentation](../../README.md#vscode-extension).
 
 
 ### Install dependencies
