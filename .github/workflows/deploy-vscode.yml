@@ -48,6 +48,7 @@ jobs:
 
       - name: Release
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
           RELEASE_IT_NOTES: ${{ github.event.inputs.changelog_notes }}

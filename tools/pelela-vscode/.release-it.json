@@ -1,6 +1,6 @@
 {
   "git": {
-    "changelog": "tsx ../../scripts/generate-summary.ts vscode",
+    "changelog": "tsx scripts/generate-summary.ts vscode",
     "commitMessage": "chore: release vscode-v${version}",
     "tagName": "vscode-v${version}",
     "requireCleanWorkingDir": true,
@@ -15,13 +15,13 @@
   },
   "hooks": {
     "after:bump": [
-      "pnpm tsx ../../scripts/update-changelog.ts ${version} vscode CHANGELOG.md",
-      "pnpm run build",
-      "pnpm run package"
+      "pnpm tsx scripts/update-changelog.ts ${version} vscode CHANGELOG.md",
+      "pnpm -C tools/pelela-vscode run build",
+      "pnpm -C tools/pelela-vscode run package"
     ],
     "after:release": [
-      "pnpm run publish:marketplace",
-      "pnpm run publish:openvsx",
+      "pnpm -C tools/pelela-vscode run publish:marketplace",
+      "pnpm -C tools/pelela-vscode run publish:openvsx",
       "echo \"✅ Successfully published vscode-v${version} to Marketplace and OpenVSX!\""
     ]
   }

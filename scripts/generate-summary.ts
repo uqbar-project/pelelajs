@@ -72,11 +72,7 @@ export function generateSummaryContent(commits: string[]): string {
 
 type ReleaseType = 'npm' | 'vscode'
 
-if (
-  import.meta.url === `file://${process.argv[1]}` ||
-  process.argv[1]?.endsWith('generate-summary.ts')
-) {
-  const type = (process.argv[2] as ReleaseType) || 'npm'
+export function generateSummary(type: ReleaseType = 'npm'): string {
   const isVsCode = type === 'vscode'
   const tagPrefix = isVsCode ? 'vscode-v' : 'v'
 
@@ -92,5 +88,20 @@ if (
     return !vscodeKeywords.some((keyword) => lowerCommit.includes(keyword))
   })
 
-  console.log(generateSummaryContent(filteredCommits))
+  return generateSummaryContent(filteredCommits)
+}
+
+if (
+  import.meta.url === `file://${process.argv[1]}` ||
+  process.argv[1]?.endsWith('generate-summary.ts')
+) {
+  const type = (process.argv[2] as ReleaseType) || 'npm'
+
+  const allowedTypes = ['npm', 'vscode']
+  if (!allowedTypes.includes(type)) {
+    console.error(`Invalid release type: "${type}". Allowed values are: ${allowedTypes.join(', ')}`)
+    process.exit(1)
+  }
+
+  console.log(generateSummary(type))
 }

@@ -1,13 +1,25 @@
-import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { generateSummary } from './generate-summary'
 
 export function updateChangelogContent(
   version: string,
   currentContent: string,
   summary: string,
 ): string {
-  const newEntry = `## v${version}\n${summary}\n\n`
-  return newEntry + currentContent
+  const date = new Date().toISOString().split('T')[0]
+  const newEntry = `## v${version} - ${date}\n${summary}\n\n`
+
+  // Split content into header (before first ## v...) and releases
+  const firstVersionHeaderIndex = currentContent.search(/^## v/m)
+  if (firstVersionHeaderIndex === -1) {
+    // No existing version headers, prepend new entry
+    return newEntry + currentContent
+  }
+
+  const header = currentContent.slice(0, firstVersionHeaderIndex)
+  const releases = currentContent.slice(firstVersionHeaderIndex)
+
+  return header + newEntry + releases
 }
 
 if (
@@ -33,9 +45,7 @@ if (
     let summary = (process.env.RELEASE_IT_NOTES || '').trim()
 
     if (!summary) {
-      summary = execFileSync('pnpm', ['tsx', 'scripts/generate-summary.ts', type], {
-        encoding: 'utf-8',
-      }).trim()
+      summary = generateSummary(type as 'npm' | 'vscode')
     }
 
     let currentContent = ''

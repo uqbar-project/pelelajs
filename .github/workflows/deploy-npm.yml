@@ -52,5 +52,6 @@ jobs:
 
       - name: Release
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_IT_NOTES: ${{ github.event.inputs.changelog_notes }}
         run: pnpm run release:npm -- ${{ github.event.inputs.version_type }}
