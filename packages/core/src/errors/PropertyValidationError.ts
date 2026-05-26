@@ -8,6 +8,7 @@ export type BindingKind =
   | 'bind-style'
   | 'for-each'
   | 'if'
+  | 'index'
 
 interface PropertyValidationErrorParams {
   propertyName: string

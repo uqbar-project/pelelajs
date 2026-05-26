@@ -3,7 +3,9 @@ import {
   extractElementSnippet,
   filterOwnElements,
   findAllElements,
+  IDENTIFIER_PATTERN,
   isPropertyOrNestedPath,
+  isValidIdentifier,
 } from '../commons/helpers'
 import {
   InvalidBindingSyntaxError,
@@ -25,30 +27,43 @@ import type { ForEachBinding, ViewModel } from './types'
 function parseForEachExpression(
   expression: string,
 ): { itemName: string; collectionName: string } | null {
-  const match = expression.trim().match(/^(\w+)\s+of\s+(\w+)$/)
+  const identifier = IDENTIFIER_PATTERN.source.replace(/^\^|\$$/g, '')
+  const match = expression.trim().match(new RegExp(`^(${identifier})\\s+of\\s+(${identifier})$`))
   if (!match) return null
   return { itemName: match[1], collectionName: match[2] }
 }
 
-export function createExtendedViewModel<T extends object>(
-  parentViewModel: ViewModel<T>,
-  itemName: string,
-  itemRef: { current: unknown },
-): ViewModel {
+type ExtendedViewModelOptions<T extends object> = {
+  parentViewModel: ViewModel<T>
+  itemName: string
+  itemRef: { current: unknown }
+  indexName: string | null
+  indexRef: { current: number }
+}
+
+export function createExtendedViewModel<T extends object>({
+  parentViewModel,
+  itemName,
+  itemRef,
+  indexName,
+  indexRef,
+}: ExtendedViewModelOptions<T>): ViewModel {
   return new Proxy(
     {},
     {
       has(_target, prop) {
+        if (prop === indexName) return true
         if (isPropertyOrNestedPath(prop, itemName)) return true
         return prop in parentViewModel
       },
       getOwnPropertyDescriptor(_target, prop) {
-        if (isPropertyOrNestedPath(prop, itemName)) {
+        if (prop === indexName || isPropertyOrNestedPath(prop, itemName)) {
           return { configurable: true, enumerable: true, value: undefined } // value isn't strictly needed for hasOwn, but we provide a valid descriptor
         }
         return Object.getOwnPropertyDescriptor(parentViewModel, prop)
       },
       get(_target, prop) {
+        if (prop === indexName) return indexRef.current
         if (prop === itemName) return itemRef.current
         if (isPropertyOrNestedPath(prop, itemName)) {
           const itemProp = (prop as string).substring(itemName.length + 1)
@@ -57,11 +72,8 @@ export function createExtendedViewModel<T extends object>(
         return parentViewModel[prop as string]
       },
       set(_target, prop, value) {
-        if (prop === itemName) {
-          itemRef.current = value
-          return true
-        }
-        if (isPropertyOrNestedPath(prop, itemName)) return true
+        // Both index and item variables are read-only within the for-each scope
+        if (prop === indexName || isPropertyOrNestedPath(prop, itemName)) return true
         ;(parentViewModel as Record<string, unknown>)[prop as string] = value
         return true
       },
@@ -102,6 +114,11 @@ export function setupSingleForEachBinding<T extends object>(
   const parsed = parseForEachExpression(expression)
   if (!parsed) throw new InvalidBindingSyntaxError('for-each', expression, 'item of collection')
   const { itemName, collectionName } = parsed
+  const rawIndexName = element.getAttribute('index')
+  const indexName = rawIndexName?.trim() ? rawIndexName.trim() : null
+  if (indexName && !isValidIdentifier(indexName)) {
+    throw new InvalidBindingSyntaxError('index', rawIndexName ?? '', 'valid identifier')
+  }
   assertViewModelProperty(viewModel, collectionName, 'for-each', element)
   const collection = viewModel[collectionName]
   if (!Array.isArray(collection)) {
@@ -114,16 +131,20 @@ export function setupSingleForEachBinding<T extends object>(
     })
   }
   const template = element.cloneNode(true) as HTMLElement
+  // Remove framework-specific attributes from the template so they don't appear
+  // as raw HTML attributes on every cloned element rendered in the DOM.
   template.removeAttribute('for-each')
+  if (rawIndexName !== null) template.removeAttribute('index')
   if (!element.parentNode)
     throw new InvalidDOMStructureError('for-each', 'element has no parent node')
   const placeholder = document.createComment(`for-each: ${itemName} of ${collectionName}`)
   element.parentNode.insertBefore(placeholder, element)
-  const extraDependencies = extractExtraDependencies(element, itemName, collectionName)
+  const extraDependencies = extractExtraDependencies(element, itemName, collectionName, indexName)
   element.remove()
   return {
     collectionName,
     itemName,
+    indexName,
     template,
     placeholder,
     renderedElements: [],
@@ -131,6 +152,9 @@ export function setupSingleForEachBinding<T extends object>(
     extraDependencies,
   }
 }
+
+const EXACT_BINDING_ATTRIBUTES = ['click', 'if', 'for-each', 'index'] as const
+type ExactBindingAttribute = (typeof EXACT_BINDING_ATTRIBUTES)[number]
 
 export function isBindingAttribute(attrName: string): boolean {
   // Exclude standard HTML attributes that contain hyphens
@@ -147,9 +171,7 @@ export function isBindingAttribute(attrName: string): boolean {
     attrName.startsWith('bind-') ||
     attrName.startsWith(LINK_PREFIX) ||
     attrName.startsWith(PROP_PREFIX) ||
-    attrName === 'click' ||
-    attrName === 'if' ||
-    attrName === 'for-each'
+    EXACT_BINDING_ATTRIBUTES.includes(attrName as ExactBindingAttribute)
   )
 }
 
@@ -158,14 +180,24 @@ export function isCustomComponent(element: HTMLElement): boolean {
   return getComponentByTag(tagName) !== undefined
 }
 
-function isExternalDependency(propPath: string, itemName: string, collectionName: string): boolean {
-  return !isPropertyOrNestedPath(propPath, itemName) && propPath !== collectionName
+function isExternalDependency(
+  propPath: string,
+  itemName: string,
+  collectionName: string,
+  indexName: string | null,
+): boolean {
+  return (
+    !isPropertyOrNestedPath(propPath, itemName) &&
+    (indexName === null || !isPropertyOrNestedPath(propPath, indexName)) &&
+    propPath !== collectionName
+  )
 }
 
 function extractExtraDependencies(
   parentElement: HTMLElement,
   itemName: string,
   collectionName: string,
+  indexName: string | null,
 ): string[] {
   const allElements = [
     parentElement,
@@ -175,13 +207,20 @@ function extractExtraDependencies(
 
   return allAttributes
     .filter((attr) => {
+      // Exclude loop definition attributes on the parent element itself
+      const isParentLoopDefinition =
+        attr.ownerElement === parentElement && (attr.name === 'for-each' || attr.name === 'index')
+      if (isParentLoopDefinition) return false
+
       const isFrameworkBinding = isBindingAttribute(attr.name)
       const isKebabCaseProp = attr.name.includes('-') && !isFrameworkBinding
       const element = attr.ownerElement as HTMLElement
       return isFrameworkBinding || (isKebabCaseProp && isCustomComponent(element))
     })
     .map((attr) => attr.value)
-    .filter((propPath) => propPath && isExternalDependency(propPath, itemName, collectionName))
+    .filter(
+      (propPath) => propPath && isExternalDependency(propPath, itemName, collectionName, indexName),
+    )
     .map((propPath) => propPath.split('.')[0])
 }
 
@@ -200,14 +239,28 @@ function createNewElement<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
   item: unknown,
+  index: number,
 ): void {
   const element = binding.template.cloneNode(true) as HTMLElement
   const itemRef = { current: item }
-  const extendedViewModel = createExtendedViewModel(viewModel, binding.itemName, itemRef)
+  const indexRef = { current: index }
+  const extendedViewModel = createExtendedViewModel({
+    parentViewModel: viewModel,
+    itemName: binding.itemName,
+    itemRef,
+    indexName: binding.indexName,
+    indexRef,
+  })
   const render = setupBindingsForElement(element, extendedViewModel)
   const lastElement =
     binding.renderedElements[binding.renderedElements.length - 1]?.element || binding.placeholder
-  binding.renderedElements.push({ element, viewModel: extendedViewModel, itemRef, render })
+  binding.renderedElements.push({
+    element,
+    viewModel: extendedViewModel,
+    itemRef,
+    indexRef,
+    render,
+  })
   if (lastElement.parentNode) {
     lastElement.parentNode.insertBefore(element, lastElement.nextSibling)
     render()
@@ -220,8 +273,8 @@ function addNewElements<T extends object>(
   collection: unknown[],
   previousLength: number,
 ): void {
-  collection.slice(previousLength).forEach((item) => {
-    createNewElement(binding, viewModel, item)
+  collection.slice(previousLength).forEach((item, sliceIndex) => {
+    createNewElement(binding, viewModel, item, previousLength + sliceIndex)
   })
 }
 
@@ -234,6 +287,7 @@ function removeExtraElements(binding: ForEachBinding, currentLength: number): vo
 function updateExistingElements(binding: ForEachBinding, collection: unknown[]): void {
   binding.renderedElements.forEach((rendered, index) => {
     rendered.itemRef.current = collection[index]
+    rendered.indexRef.current = index
     rendered.render()
   })
 }

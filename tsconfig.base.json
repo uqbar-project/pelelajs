@@ -9,9 +9,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
     "paths": {
-      "pelelajs": ["packages/core/src/index.ts"]
+      "pelelajs": ["./packages/core/src/index.ts"]
     }
   }
 }

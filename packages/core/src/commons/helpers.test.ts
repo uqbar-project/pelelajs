@@ -6,6 +6,7 @@ import {
   findAllElements,
   isObject,
   isPropertyOrNestedPath,
+  isValidIdentifier,
   toCamelCase,
   toKebabCase,
   unwrapTemplate,
@@ -255,6 +256,52 @@ describe('helpers', () => {
 
       const result = findAllElements(root, '[bind-class]')
       expect(result).toHaveLength(0)
+    })
+  })
+
+  describe('isValidIdentifier', () => {
+    it('should return true for valid identifiers starting with letters', () => {
+      expect(isValidIdentifier('item')).toBe(true)
+      expect(isValidIdentifier('myVar')).toBe(true)
+    })
+
+    it('should return true for valid identifiers starting with underscore', () => {
+      expect(isValidIdentifier('_private')).toBe(true)
+    })
+
+    it('should return true for valid identifiers starting with dollar sign', () => {
+      expect(isValidIdentifier('$jquery')).toBe(true)
+    })
+
+    it('should return true for valid identifiers with numbers after first character', () => {
+      expect(isValidIdentifier('item1')).toBe(true)
+    })
+
+    it('should return false for identifiers starting with numbers', () => {
+      expect(isValidIdentifier('0foo')).toBe(false)
+      expect(isValidIdentifier('123')).toBe(false)
+    })
+
+    it('should return false for empty string', () => {
+      expect(isValidIdentifier('')).toBe(false)
+    })
+
+    it('should return false for identifiers with hyphens', () => {
+      expect(isValidIdentifier('my-var')).toBe(false)
+    })
+
+    it('should return false for identifiers with spaces', () => {
+      expect(isValidIdentifier('my var')).toBe(false)
+    })
+
+    it('should return false for identifiers with special characters', () => {
+      expect(isValidIdentifier('my@var')).toBe(false)
+    })
+
+    it('should return false for unsafe prototype pollution keys', () => {
+      expect(isValidIdentifier('__proto__')).toBe(false)
+      expect(isValidIdentifier('constructor')).toBe(false)
+      expect(isValidIdentifier('prototype')).toBe(false)
     })
   })
 })

@@ -3,8 +3,8 @@
     <h2>Ejemplo de Componentización Bidireccional</h2>
     <div class="layout">
       <div class="list">
-        <div for-each="person of people">
-          <person-row prop-person="person" prop-selected-index="selectedIndex"></person-row>
+        <div for-each="person of people" index="index">
+          <person-row prop-person="person" prop-index="index" prop-selected-index="selectedIndex"></person-row>
         </div>
       </div>
       <div class="sidebar">

@@ -1,7 +1,10 @@
 import { getRegisteredTags } from '../registry/componentRegistry'
 import { t } from './i18n'
+import { isUnsafeKey } from './sanitization'
 
 export const ELEMENT_SNIPPET_MAX_LENGTH = 100
+
+export const IDENTIFIER_PATTERN = /^[A-Za-z_$][A-Za-z0-9_$]*$/
 
 export function isObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object'
@@ -76,4 +79,8 @@ export function findAllElements(
     ...(includeRoot && root.matches(selector) ? [root] : []),
     ...Array.from(root.querySelectorAll<HTMLElement>(selector)),
   ]
+}
+
+export function isValidIdentifier(value: string): boolean {
+  return IDENTIFIER_PATTERN.test(value) && !isUnsafeKey(value)
 }

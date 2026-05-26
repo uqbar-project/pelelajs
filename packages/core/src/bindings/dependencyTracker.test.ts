@@ -211,6 +211,7 @@ describe('DependencyTracker', () => {
       const forEachBinding = {
         collectionName: 'users',
         itemName: 'user',
+        indexName: null,
         template: document.createElement('div'),
         placeholder: document.createComment(''),
         renderedElements: [],
@@ -350,6 +351,7 @@ describe('DependencyTracker', () => {
       const forEachBinding = {
         collectionName: 'people',
         itemName: 'person',
+        indexName: null,
         template: document.createElement('div'),
         placeholder: document.createComment(''),
         renderedElements: [],
@@ -453,6 +455,7 @@ describe('DependencyTracker', () => {
       const forEachBinding = {
         collectionName: 'items',
         itemName: 'item',
+        indexName: null,
         template: document.createElement('div'),
         placeholder: document.createComment(''),
         renderedElements: [],
