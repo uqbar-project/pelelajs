@@ -17,6 +17,35 @@
         "packageJsonUpdateFailed": "Error al leer/escribir package.json en {{path}}: {{error}}",
         "initializationFailed": "Error al inicializar el proyecto: {{error}}"
       }
+    },
+    "new": {
+      "description": "✨ Crear un nuevo componente PelelaJS",
+      "options": {
+        "noCss": "No generar el archivo CSS"
+      },
+      "error": {
+        "nameEmpty": "El nombre del componente no puede estar vacío",
+        "nameInvalid": "El nombre del componente debe ser PascalCase (ej: MiComponente)",
+        "filesExist": "Los archivos del componente \"{{name}}\" ya existen",
+        "creationFailed": "Error al crear el componente: {{error}}"
+      },
+      "messages": {
+        "success": "✅ Componente \"{{name}}\" creado exitosamente"
+      }
+    },
+    "rename": {
+      "description": "🔄 Renombrar un componente existente",
+      "error": {
+        "oldNameEmpty": "El nombre actual del componente no puede estar vacío",
+        "newNameEmpty": "El nuevo nombre del componente no puede estar vacío",
+        "nameInvalid": "El nuevo nombre del componente debe ser PascalCase (ej: MiComponente)",
+        "oldNotFound": "No se encontraron los archivos para el componente \"{{name}}\"",
+        "newNameExists": "Ya existen archivos con el nombre \"{{name}}\"",
+        "renameFailed": "Error al renombrar el componente: {{error}}"
+      },
+      "messages": {
+        "success": "✅ Componente \"{{oldName}}\" renombrado a \"{{newName}}\" exitosamente"
+      }
     }
   },
   "messages": {

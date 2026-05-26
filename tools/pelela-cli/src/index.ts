@@ -2,6 +2,8 @@ import chalk from 'chalk'
 import { Command } from 'commander'
 import semver from 'semver'
 import { initCommand } from './commands/init'
+import { newCommand } from './commands/new'
+import { renameCommand } from './commands/rename'
 import { initializeI18n, t } from './utils/i18n'
 import { getRequiredNodeVersion } from './utils/nodeVersion'
 import { checkNewVersion, getCliVersion } from './utils/version'
@@ -31,6 +33,33 @@ async function main(): Promise<void> {
     .action(async (projectName: string | undefined) => {
       try {
         await initCommand({ projectName })
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))
+        process.exit(1)
+      }
+    })
+
+  program
+    .command('new <path/componentName>')
+    .description(t('commands.new.description'))
+    .option('--no-css', t('commands.new.options.noCss'))
+    .action(async (componentName: string, options: { css: boolean }) => {
+      try {
+        await newCommand({ componentName, css: options.css })
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))
+        process.exit(1)
+      }
+    })
+
+  program
+    .command('rename <oldComponentName> <newComponentName>')
+    .description(t('commands.rename.description'))
+    .action(async (oldComponentName: string, newComponentName: string) => {
+      try {
+        await renameCommand({ oldComponentName, newComponentName })
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))
