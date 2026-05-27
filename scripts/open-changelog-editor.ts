@@ -9,14 +9,19 @@ const __dirname = dirname(__filename)
 const type = process.argv[2] || 'npm'
 
 // Generate the changelog content
-const summary = execSync(`tsx ${join(__dirname, 'generate-summary.ts')} ${type}`, { encoding: 'utf-8' }).trim()
+const summary = execSync(`tsx ${join(__dirname, 'generate-summary.ts')} ${type}`, {
+  encoding: 'utf-8',
+}).trim()
 
 // Read current version from package.json
 const packageJson = JSON.parse(readFileSync('package.json', 'utf-8'))
 const version = packageJson.version
 
 // Determine changelog path based on type
-const changelogPath = type === 'vscode' ? join(__dirname, '../tools/pelela-vscode/CHANGELOG.md') : join(__dirname, '../CHANGELOG.md')
+const changelogPath =
+  type === 'vscode'
+    ? join(__dirname, '../tools/pelela-vscode/CHANGELOG.md')
+    : join(__dirname, '../CHANGELOG.md')
 
 // Read current CHANGELOG.md
 let currentContent = ''

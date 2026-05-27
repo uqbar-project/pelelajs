@@ -4,7 +4,7 @@ let needsLogin = false
 
 // Check Marketplace (vsce)
 try {
-  execSync('npx vsce show-token', { stdio: 'pipe' })
+  execSync('npx vsce verify-pat uqbar', { stdio: 'pipe' })
 } catch {
   console.log('\n❌ Not authenticated in VSCode Marketplace.')
   console.log('Please run "npx vsce login uqbar" to authenticate.')
@@ -13,10 +13,10 @@ try {
 
 // Check OpenVSX (ovsx)
 try {
-  execSync('npx ovsx show-token', { stdio: 'pipe' })
+  execSync('npx ovsx verify-pat uqbar', { stdio: 'pipe' })
 } catch {
   console.log('\n❌ Not authenticated in OpenVSX.')
-  console.log('Please run "npx ovsx login" to authenticate.')
+  console.log('Please run "npx ovsx login uqbar" to authenticate.')
   needsLogin = true
 }
 
