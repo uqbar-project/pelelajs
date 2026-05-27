@@ -9,7 +9,8 @@
     "releaseName": "npm-v${version}"
   },
   "npm": {
-    "publish": false
+    "publish": false,
+    "version": false
   },
   "hooks": {
     "before:release": [
