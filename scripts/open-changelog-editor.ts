@@ -9,7 +9,7 @@ const __dirname = dirname(__filename)
 const type = process.argv[2] || 'npm'
 
 // Generate the changelog content
-const summary = execSync(`tsx scripts/generate-summary.ts ${type}`, { encoding: 'utf-8' }).trim()
+const summary = execSync(`tsx ${join(__dirname, 'generate-summary.ts')} ${type}`, { encoding: 'utf-8' }).trim()
 
 // Read current version from package.json
 const packageJson = JSON.parse(readFileSync('package.json', 'utf-8'))

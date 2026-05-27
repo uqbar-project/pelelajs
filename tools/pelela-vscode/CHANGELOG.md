@@ -1,6 +1,9 @@
 # CHANGELOG - Pelela VSCode Extension
 
-## v0.1.3
+## vscode-v0.2.1 - 2026-05-27
+- 👉 Add index highlight in for-each
+
+## vscode-v0.1.3
 - 🚀 Support for `.pelela` template syntax (syntax highlighting)
 - 📝 Basic snippets for components and bindings
 - 🔍 Autocompletion for HTML tags and Pelela-specific attributes
