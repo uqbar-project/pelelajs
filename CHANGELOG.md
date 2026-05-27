@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## npm-v0.6.5 - 2026-05-27
+- 📝 Force npm publish interactively
+
 ## npm-v0.6.4 - 2026-05-27
 - ⚙️ publish outside release-it
 
