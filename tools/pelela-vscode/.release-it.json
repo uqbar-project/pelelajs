@@ -2,9 +2,7 @@
   "git": {
     "changelog": "pnpm tsx ../../scripts/generate-summary.ts vscode",
     "commitMessage": "chore: release vscode-v${version}",
-    "tagName": "vscode-v${version}",
-    "requireCleanWorkingDir": true,
-    "requireBranch": "main"
+    "tagName": "vscode-v${version}"
   },
   "github": {
     "release": true,
@@ -14,8 +12,11 @@
     "publish": false
   },
   "hooks": {
+    "before:release": [
+      "pnpm tsx ../../scripts/check-vscode-auth.ts"
+    ],
     "after:bump": [
-      "pnpm tsx ../../scripts/update-changelog.ts ${version} vscode CHANGELOG.md",
+      "pnpm tsx ../../scripts/open-changelog-editor.ts vscode",
       "pnpm run build",
       "pnpm run package"
     ],

@@ -1,8 +1,14 @@
 import { execSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 
+const type = process.argv[2] || 'npm'
+
 // Generate the changelog content
-const summary = execSync('tsx scripts/generate-summary.ts npm', { encoding: 'utf-8' }).trim()
+const summary = execSync(`tsx scripts/generate-summary.ts ${type}`, { encoding: 'utf-8' }).trim()
+
+// Read current version from package.json
+const packageJson = JSON.parse(readFileSync('package.json', 'utf-8'))
+const version = packageJson.version
 
 // Read current CHANGELOG.md
 let currentContent = ''
@@ -13,9 +19,10 @@ try {
   currentContent = '# CHANGELOG\n\n'
 }
 
-// Add new entry at the top (after header) with placeholder version
+// Add new entry at the top (after header) with actual version
 const date = new Date().toISOString().split('T')[0]
-const newEntry = `## npm-vNEXT_VERSION - ${date}\n${summary}\n\n`
+const tagPrefix = type === 'vscode' ? 'vscode-v' : 'npm-v'
+const newEntry = `## ${tagPrefix}${version} - ${date}\n${summary}\n\n`
 
 // Find first version header or append after header
 const firstVersionHeaderIndex = currentContent.search(/^## /m)
