@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## npm-v0.6.2 - 2026-05-27
+- 🚀 Additional fix for npm publishing script
+
 ## npm-v0.6.1 - 2026-05-27
 - 🚀 Fix npm publishing script
 
