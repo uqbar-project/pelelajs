@@ -17,9 +17,6 @@
       "tsx scripts/open-changelog-editor.ts npm",
       "pnpm --filter pelelajs version ${version} --no-git-tag-version --no-git-checks",
       "pnpm run build"
-    ],
-    "after:release": [
-      "echo \"✅ Release npm-v${version} created on GitHub. Run 'cd packages/core && npm publish --access public' to publish to NPM.\""
     ]
   }
 }
