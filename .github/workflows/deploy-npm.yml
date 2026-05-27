@@ -35,7 +35,8 @@ jobs:
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
-      - uses: pnpm/action-setup@v4
+      - name: Enable corepack and install pnpm
+        run: corepack enable && corepack prepare pnpm@11.3.0 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
