@@ -62,6 +62,7 @@ describe('updateChangelog', () => {
       unlinkSync(tempFile)
     }
     mockedExit.mockClear()
+    delete process.env.RELEASE_IT_NOTES
   })
 
   it('should reject invalid release types', () => {
