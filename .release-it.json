@@ -14,7 +14,7 @@
   },
   "hooks": {
     "before:bump": [
-      "node -e \"const { execSync } = require('child_process'); const editor = process.env.EDITOR || 'code'; execSync(`${editor} CHANGELOG.md`, { stdio: 'inherit' });\""
+      "tsx scripts/open-changelog-editor.ts"
     ],
     "after:bump": [
       "pnpm --filter pelelajs version ${version} --no-git-tag-version",
