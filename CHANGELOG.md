@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## npm-v0.6.6 - 2026-05-27
+- 🚀 Add CHANGELOG to npm published folder
+
 ## npm-v0.6.5 - 2026-05-27
 - 📝 Force npm publish interactively
 
