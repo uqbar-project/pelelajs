@@ -2,8 +2,7 @@
   "git": {
     "changelog": "tsx scripts/generate-summary.ts npm",
     "commitMessage": "chore: release npm-v${version}",
-    "tagName": "npm-v${version}",
-    "requireCleanWorkingDir": true
+    "tagName": "npm-v${version}"
   },
   "github": {
     "release": true,
