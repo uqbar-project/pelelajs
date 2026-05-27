@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## npm-vNEXT_VERSION - 2026-05-27
+
+- 🆕 Add commands new & rename for CLI (#104)
+- 👉 Task for each index (#109)
+- 📖 Fix #73 - enhance doc (#103)
+- 📏 Task migrate agent to linter rules (#99)
+- 🐛 Fixes for npm & CLI (#96)
+- 🎬 Create script and instructions for publishing to npm registry (#92)
+
 ## v0.5.13
 - 🚀 Support for CSS file generation in the CLI `new` command (`--no-css` to skip)
 - 🛠 Component name normalization in `new` and `rename` for better consistency
