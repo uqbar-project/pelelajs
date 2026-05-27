@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## npm-v0.6.3 - 2026-05-27
+- 📝 Publish via npm instead of pnpm
+
 ## npm-v0.6.2 - 2026-05-27
 - 🚀 Additional fix for npm publishing script
 
