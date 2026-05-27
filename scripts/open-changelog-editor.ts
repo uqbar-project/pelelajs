@@ -1,5 +1,10 @@
 import { execSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const type = process.argv[2] || 'npm'
 
@@ -10,10 +15,13 @@ const summary = execSync(`tsx scripts/generate-summary.ts ${type}`, { encoding: 
 const packageJson = JSON.parse(readFileSync('package.json', 'utf-8'))
 const version = packageJson.version
 
+// Determine changelog path based on type
+const changelogPath = type === 'vscode' ? join(__dirname, '../tools/pelela-vscode/CHANGELOG.md') : join(__dirname, '../CHANGELOG.md')
+
 // Read current CHANGELOG.md
 let currentContent = ''
 try {
-  currentContent = readFileSync('CHANGELOG.md', 'utf-8')
+  currentContent = readFileSync(changelogPath, 'utf-8')
 } catch {
   // File doesn't exist, create empty
   currentContent = '# CHANGELOG\n\n'
@@ -37,8 +45,8 @@ if (firstVersionHeaderIndex === -1) {
 }
 
 // Write updated CHANGELOG.md
-writeFileSync('CHANGELOG.md', newContent)
+writeFileSync(changelogPath, newContent)
 
 // Open editor and wait for it to close
 const editor = process.env.EDITOR || 'code'
-execSync(`${editor} --wait CHANGELOG.md`, { stdio: 'inherit' })
+execSync(`${editor} --wait ${changelogPath}`, { stdio: 'inherit' })

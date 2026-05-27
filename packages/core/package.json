@@ -24,6 +24,7 @@
   "files": [
     "dist",
     "icons",
+    "CHANGELOG.md",
     "!dist/**/node_modules"
   ],
   "keywords": [],

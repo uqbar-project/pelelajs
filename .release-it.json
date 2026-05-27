@@ -16,6 +16,7 @@
     "after:bump": [
       "tsx scripts/open-changelog-editor.ts npm",
       "pnpm --filter pelelajs version ${version} --no-git-tag-version --no-git-checks",
+      "cp CHANGELOG.md packages/core/CHANGELOG.md",
       "pnpm run build"
     ]
   }
