@@ -13,9 +13,6 @@
     "version": false
   },
   "hooks": {
-    "before:release": [
-      "tsx scripts/check-npm-auth.ts"
-    ],
     "after:bump": [
       "tsx scripts/open-changelog-editor.ts npm",
       "pnpm --filter pelelajs version ${version} --no-git-tag-version --no-git-checks",

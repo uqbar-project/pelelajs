@@ -3,7 +3,7 @@
 ## npm-v0.6.1 - 2026-05-27
 - 🚀 Fix npm publishing script
 
-## npm-0.6.0 - 2026-05-27
+## npm-v0.6.0 - 2026-05-27
 - 🆕 Add commands new & rename for CLI (#104)
 - 👉 Task for each index (#109)
 - 📖 Fix #73 - enhance doc (#103)

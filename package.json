@@ -22,7 +22,7 @@
     "biome:check": "biome check .",
     "biome:check:fix": "biome check --write .",
     "install:vscode": "node scripts/install-pelela-vscode.cjs",
-    "release:npm": "release-it",
+    "release:npm": "tsx scripts/check-npm-auth.ts && release-it",
     "release:vscode": "pnpm -C tools/pelela-vscode run release",
     "audit": "pnpm audit --audit-level moderate",
     "ci:local": "pnpm install && pnpm run biome:check && pnpm run typecheck && pnpm run build && pnpm run test:coverage",
