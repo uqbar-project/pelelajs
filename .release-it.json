@@ -16,9 +16,9 @@
       "tsx scripts/open-changelog-editor.ts"
     ],
     "after:bump": [
-      "pnpm --filter pelelajs version ${version} --no-git-tag-version",
-      "pnpm --filter vite-plugin-pelelajs version ${version} --no-git-tag-version",
-      "pnpm --filter pelela-cli version ${version} --no-git-tag-version",
+      "pnpm --filter pelelajs version ${version} --no-git-tag-version --no-git-checks",
+      "pnpm --filter vite-plugin-pelelajs version ${version} --no-git-tag-version --no-git-checks",
+      "pnpm --filter pelela-cli version ${version} --no-git-tag-version --no-git-checks",
       "pnpm run build"
     ],
     "after:release": [
