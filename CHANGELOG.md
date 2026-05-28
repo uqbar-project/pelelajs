@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## npm-v0.6.8 - 2026-05-28
+- 🐛 Fix release-it configuration
+
 ## npm-v0.6.7 - 2026-05-28
 - 🚀 Remove deprecated script and add check prior to start deploying
 
