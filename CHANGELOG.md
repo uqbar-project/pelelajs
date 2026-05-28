@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## npm-v0.6.7 - 2026-05-28
+- 🚀 Remove deprecated script and add check prior to start deploying
+
 ## npm-v0.6.6 - 2026-05-27
 - 🚀 Add CHANGELOG to npm published folder
 
