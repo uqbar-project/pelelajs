@@ -9,8 +9,13 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "types": [
+      "node"
+    ],
     "paths": {
-      "pelelajs": ["./packages/core/src/index.ts"]
+      "pelelajs": [
+        "./packages/core/src/index.ts"
+      ]
     }
   }
 }

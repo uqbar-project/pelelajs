@@ -7,7 +7,8 @@
   },
   "github": {
     "release": true,
-    "releaseName": "vscode-v${version}"
+    "releaseName": "vscode-v${version}",
+    "releaseNotes": "pnpm tsx ../../scripts/extract-changelog.ts ${version} ../../CHANGELOG.md"
   },
   "npm": {
     "publish": false

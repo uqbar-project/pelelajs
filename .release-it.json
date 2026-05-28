@@ -6,7 +6,8 @@
   },
   "github": {
     "release": true,
-    "releaseName": "npm-v${version}"
+    "releaseName": "npm-v${version}",
+    "releaseNotes": "tsx scripts/extract-changelog.ts ${version}"
   },
   "npm": {
     "publish": false,
