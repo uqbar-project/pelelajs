@@ -1,11 +1,3 @@
-const { readFileSync } = require('node:fs')
-const { resolve } = require('node:path')
-const { fileURLToPath } = require('node:url')
-
-// Get the CHANGELOG path - one level up from tools/pelela-vscode
-const __filename = fileURLToPath(new URL(import.meta.url))
-const changelogPath = resolve(__filename, '../../..', 'CHANGELOG.md')
-
 module.exports = {
   git: {
     changelog: 'pnpm tsx ../../scripts/generate-summary.ts vscode',
@@ -19,19 +11,8 @@ module.exports = {
     release: true,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
     releaseName: 'vscode-v${version}',
-    releaseNotes(context) {
-      // Read the root CHANGELOG.md that the user edited
-      const changelog = readFileSync(changelogPath, 'utf-8')
-
-      // Extract the section for the current version
-      const version = context.version
-      const regex = new RegExp(
-        `## (?:npm-v|vscode-v)?${version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*?\\n([\\s\\S]*?)(?=\\n## |$)`
-      )
-      const match = changelog.match(regex)
-
-      return match ? match[1].trim() : ''
-    },
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
+    releaseNotes: 'tsx ../../scripts/extract-changelog.ts ${version} ../../CHANGELOG.md',
   },
   npm: {
     publish: false,
