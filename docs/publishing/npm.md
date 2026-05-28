@@ -59,6 +59,10 @@ Before running the release script, ensure:
    pnpm login
    ```
 
+2. **Working directory state**: By default `release-it` requires a clean working directory and will abort if there are uncommitted changes. Choose one of the following:
+
+- Commit or stash your changes before running the release.
+
 ### 1. Run the Release Script
 
 Execute from the root directory:
