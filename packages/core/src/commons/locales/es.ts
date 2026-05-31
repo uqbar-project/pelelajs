@@ -56,7 +56,7 @@ const errors = {
     foreignPropertyBinding:
       'Pelela template "{{filePath}}" contiene property binding tipo Angular ("[property]=value"). En PelelaJS no se admiten construcciones JS en HTML. Pase atributos estáticos y delegue lógica al ViewModel.',
     invalidComponentAttribute:
-      'Componente <{{tag}}>: el atributo "{{attr}}" debe usar el prefijo "prop-" (one-way) o "link-" (two-way)',
+      'Componente <{{tag}}>: el atributo "{{attr}}" debe usar el prefijo "prop-" (one-way), "link-" (two-way) o "const-"',
     missingParentProperty:
       'Componente <{{tag}}>: la propiedad padre "{{parentKey}}" no existe en el view model padre',
     missingViewModel: 'Pelela template "{{filePath}}" debe contener atributo view-model="..."',

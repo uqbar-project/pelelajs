@@ -97,6 +97,11 @@ function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
       item.insertText = new vscode.SnippetString(`${name}="\${1:propiedad}"`)
       item.detail = 'Pelela: binding al view model'
       item.sortText = `!0_${name}`
+    } else if (name.startsWith('const-')) {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
+      item.insertText = new vscode.SnippetString('const-${1:field-name}="${2:value}"')
+      item.detail = 'Pelela: valor constante para un componente'
+      item.sortText = `!0_${name}`
     }
 
     items.push(item)

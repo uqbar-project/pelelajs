@@ -1,0 +1,7 @@
+<pelela view-model="Validator">
+  <ul class="error-list" if="filteredErrors.length">
+    <li for-each="error of filteredErrors">
+      <span bind-content="error.errorMessage"></span>
+    </li>
+  </ul>
+</pelela>

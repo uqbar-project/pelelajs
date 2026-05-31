@@ -376,6 +376,50 @@ describe('bindComponent', () => {
       expect(bindings[0].mappings[0].parentKey).toBe('parentValue')
     })
 
+    it('should accept const-* prefix for string constants without reactive mappings', () => {
+      class ChildVM {
+        message = ''
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="message"></span></component>',
+      )
+
+      container.innerHTML = '<test-comp const-message="Hello"></test-comp>'
+
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.message).toBe('Hello')
+      expect(bindings).toHaveLength(1)
+      expect(bindings[0].mappings).toEqual([])
+    })
+
+    it('should accept const-* prefix for number constants without reactive mappings', () => {
+      class ChildVM {
+        count = 0
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="count"></span></component>',
+      )
+
+      container.innerHTML = '<test-comp const-count="42"></test-comp>'
+
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.count).toBe(42)
+      expect(bindings).toHaveLength(1)
+      expect(bindings[0].mappings).toEqual([])
+    })
+
     it('should accept mix of prop-* and link-* prefixes', () => {
       class ChildVM {
         oneWay = ''

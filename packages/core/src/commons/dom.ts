@@ -25,6 +25,7 @@ export function isPelelaRootTag(tagName: string): boolean {
 
 export const LINK_PREFIX = 'link-'
 export const PROP_PREFIX = 'prop-'
+export const CONST_PREFIX = 'const-'
 
 function isValidBindingAttrForComponent(attrName: string): boolean {
   return attrName === 'if'
@@ -34,6 +35,7 @@ export function isValidComponentAttribute(attrName: string): boolean {
   return (
     attrName.startsWith(LINK_PREFIX) ||
     attrName.startsWith(PROP_PREFIX) ||
+    attrName.startsWith(CONST_PREFIX) ||
     isValidBindingAttrForComponent(attrName)
   )
 }

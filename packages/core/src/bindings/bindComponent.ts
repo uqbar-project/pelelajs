@@ -1,4 +1,5 @@
 import {
+  CONST_PREFIX,
   isPelelaRootTag,
   isStandardHtmlTag,
   isValidComponentAttribute,
@@ -24,6 +25,18 @@ function isProps(attr: Attr): boolean {
   return attr.name.startsWith(PROP_PREFIX)
 }
 
+function isConst(attr: Attr): boolean {
+  return attr.name.startsWith(CONST_PREFIX)
+}
+
+function isNumberConstant(value: string): boolean {
+  return value.trim() !== '' && !Number.isNaN(Number(value))
+}
+
+function parseConstant(value: string): string | number {
+  return isNumberConstant(value) ? Number(value) : value
+}
+
 function extractLinkBindings(
   attributes: NamedNodeMap,
 ): Array<{ parentKey: string; childKey: string }> {
@@ -43,6 +56,17 @@ function extractOneWayBindings(
     .map((attr) => ({
       childKey: toCamelCase(attr.name.substring(PROP_PREFIX.length)),
       parentKey: attr.value,
+    }))
+}
+
+function extractConstantBindings(
+  attributes: NamedNodeMap,
+): Array<{ childKey: string; value: string | number }> {
+  return Array.from(attributes)
+    .filter(isConst)
+    .map((attr) => ({
+      childKey: toCamelCase(attr.name.substring(CONST_PREFIX.length)),
+      value: parseConstant(attr.value),
     }))
 }
 
@@ -118,9 +142,22 @@ export function setupComponentBindings<T extends object>(
     assertOnlyValidComponentAttributes(element)
 
     const instance = new componentDef.creator() as Record<string, unknown>
+    const constantBindings = extractConstantBindings(element.attributes)
     const linkBindings = extractLinkBindings(element.attributes)
     const oneWayBindings = extractOneWayBindings(element.attributes)
     const allMappings = [...linkBindings, ...oneWayBindings]
+
+    constantBindings.forEach(({ childKey, value }) => {
+      if (isUnsafeKey(childKey)) {
+        throw new Error(
+          t('errors.security.prototypePollution', {
+            keys: childKey,
+          }),
+        )
+      }
+
+      instance[childKey] = value
+    })
 
     allMappings.forEach(({ parentKey, childKey }) => {
       if (isUnsafeKey(parentKey) || isUnsafeKey(childKey)) {

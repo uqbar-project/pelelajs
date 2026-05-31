@@ -1,16 +1,35 @@
+type ValidationError = {
+  fieldName: string
+  errorMessage: string
+}
+
 export class BetModel {
+  date: Date | null = null
   amount = ''
-  errors: string[] = []
+  errors: ValidationError[] = []
 
   validate() {
     this.errors.length = 0
+    if (!this.date) {
+      this.errors.push({
+        fieldName: 'date',
+        errorMessage: 'Date is required',
+      })
+    }
+
     if (this.amount) {
       const amountValue = Number(this.amount)
       if (!Number.isFinite(amountValue) || amountValue <= 0) {
-        this.errors.push('Amount must be greater than zero')
+        this.errors.push({
+          fieldName: 'amount',
+          errorMessage: 'Amount must be greater than zero',
+        })
       }
     } else {
-      this.errors.push('You must enter a bet amount')
+      this.errors.push({
+        fieldName: 'amount',
+        errorMessage: 'You must enter a bet amount',
+      })
     }
     return this.errors.length === 0
   }

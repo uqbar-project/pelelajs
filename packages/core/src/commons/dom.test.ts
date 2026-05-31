@@ -48,6 +48,11 @@ describe('dom utilities', () => {
       expect(isValidComponentAttribute('prop-data')).toBe(true)
     })
 
+    it('returns true for const- prefix', () => {
+      expect(isValidComponentAttribute('const-value')).toBe(true)
+      expect(isValidComponentAttribute('const-field-name')).toBe(true)
+    })
+
     it('returns true for "if" attribute', () => {
       expect(isValidComponentAttribute('if')).toBe(true)
     })
