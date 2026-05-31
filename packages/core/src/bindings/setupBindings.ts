@@ -86,6 +86,7 @@ function registerAllBindingDependencies(
 function executeRenderPipeline<T extends object>(
   targetBindings: BindingsCollection,
   viewModel: ViewModel<T>,
+  changedPath?: string,
 ): void {
   const renderActions: Array<{
     condition: () => boolean
@@ -117,7 +118,8 @@ function executeRenderPipeline<T extends object>(
     },
     {
       condition: () => targetBindings.componentBindings.length > 0,
-      render: () => renderComponentBindings(targetBindings.componentBindings, viewModel),
+      render: () =>
+        renderComponentBindings(targetBindings.componentBindings, viewModel, changedPath),
     },
   ]
 
@@ -153,7 +155,7 @@ export function setupBindings<T extends object>(
       ? tracker.getDependentBindingsWithGetterSupport(changedPath, bindings)
       : bindings
 
-    executeRenderPipeline(targetBindings, viewModel)
+    executeRenderPipeline(targetBindings, viewModel, changedPath)
   }
 
   render()

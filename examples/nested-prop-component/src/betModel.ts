@@ -3,11 +3,14 @@ export class BetModel {
   errors: string[] = []
 
   validate() {
-    this.errors.length = 0 // clear errors
-    if (!this.amount) {
+    this.errors.length = 0
+    if (this.amount) {
+      const amountValue = Number(this.amount)
+      if (!Number.isFinite(amountValue) || amountValue <= 0) {
+        this.errors.push('Amount must be greater than zero')
+      }
+    } else {
       this.errors.push('You must enter a bet amount')
-    } else if (Number(this.amount) <= 0) {
-      this.errors.push('Amount must be greater than zero')
     }
     return this.errors.length === 0
   }

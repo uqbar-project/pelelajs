@@ -1,8 +1,7 @@
 {
   "name": "pelelajs-example-nested-prop-component",
   "version": "1.0.0",
-  "description": "Ejemplo mínimo reproduciendo bug de reactividad en prop- anidadas",
-  "main": "index.js",
+  "description": "Nested property example for components",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

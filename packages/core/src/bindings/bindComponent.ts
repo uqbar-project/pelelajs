@@ -194,6 +194,7 @@ export function setupComponentBindings<T extends object>(
 export function renderComponentBindings<T extends object>(
   bindings: ComponentBinding[],
   parentViewModel: ViewModel<T>,
+  changedPath?: string,
 ): void {
   bindings.forEach((binding) => {
     binding.mappings.forEach(({ parentKey, childKey }) => {
@@ -208,11 +209,22 @@ export function renderComponentBindings<T extends object>(
 
       if (parentValue !== childValue) {
         ;(binding.childViewModel as Record<string, unknown>)[childKey] = parentValue
-        // Force re-render of child when value changes
         binding.renderChild?.(childKey)
-      } else if (isObject(parentValue)) {
+      } else if (
+        isObject(parentValue) &&
+        changedPath !== undefined &&
+        isPathAffected(parentKey, changedPath)
+      ) {
         binding.renderChild?.(childKey)
       }
     })
   })
+}
+
+function isPathAffected(parentKey: string, changedPath: string): boolean {
+  return (
+    changedPath === parentKey ||
+    changedPath.startsWith(`${parentKey}.`) ||
+    changedPath.startsWith(`${parentKey}[`)
+  )
 }
