@@ -1,0 +1,12 @@
+<pelela view-model="Bet">
+  <div class="container">
+    <h1>Place Bet</h1>
+    <div class="form-group">
+      <label for="amount">Amount:</label>
+      <input id="amount" type="number" bind-value="bet.amount" placeholder="Enter your bet..." />
+    </div>
+    <button click="place">Bet</button>
+    
+    <error-list prop-errors="bet.errors"></error-list>
+  </div>
+</pelela>

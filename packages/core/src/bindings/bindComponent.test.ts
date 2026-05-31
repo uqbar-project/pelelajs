@@ -22,6 +22,135 @@ describe('bindComponent', () => {
     clearComponentRegistry()
   })
 
+  describe('nested properties reactivity', () => {
+    it('should initialize child component with a nested parent property path (prop-errors="bet.errors")', () => {
+      class ChildVM {
+        errors: string[] = []
+      }
+      defineComponent(
+        'error-list',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="errors"></span></component>',
+      )
+
+      container.innerHTML = '<error-list prop-errors="bet.errors"></error-list>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          bet: {
+            errors: ['error1'],
+          },
+        },
+        () => {},
+      )
+
+      const bindings = setupComponentBindings(container, parentVM)
+
+      expect(bindings).toHaveLength(1)
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+      expect(childVM.errors).toEqual(['error1'])
+    })
+
+    it('should re-render child component when nested array prop is mutated via push()', () => {
+      class ChildVM {
+        errors: string[] = []
+      }
+      defineComponent('error-list', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<error-list prop-errors="bet.errors"></error-list>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          bet: {
+            errors: [] as string[],
+          },
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const childEl = container.querySelector('error-list') as PelelaElement<ChildVM>
+      const childVM = childEl.__pelelaViewModel
+
+      expect(childVM.errors).toEqual([])
+
+      parentVM.bet.errors.push('Debe ingresar monto')
+
+      expect(childVM.errors).toEqual(['Debe ingresar monto'])
+    })
+
+    it('should re-render child component when nested array prop is cleared via length = 0', () => {
+      class ChildVM {
+        errors: string[] = []
+      }
+      defineComponent('error-list', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<error-list prop-errors="bet.errors"></error-list>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          bet: {
+            errors: ['Error 1', 'Error 2'] as string[],
+          },
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const childEl = container.querySelector('error-list') as PelelaElement<ChildVM>
+      const childVM = childEl.__pelelaViewModel
+
+      expect(childVM.errors).toEqual(['Error 1', 'Error 2'])
+
+      parentVM.bet.errors.length = 0
+
+      expect(childVM.errors).toEqual([])
+    })
+
+    it('should re-render child DOM when nested array prop is mutated via push()', () => {
+      class ChildVM {
+        errors: string[] = []
+      }
+      defineComponent(
+        'error-list',
+        ChildVM,
+        '<component view-model="ChildVM"><ul><li for-each="error of errors"><span bind-content="error"></span></li></ul></component>',
+      )
+
+      container.innerHTML = '<error-list prop-errors="bet.errors"></error-list>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          bet: {
+            errors: [] as string[],
+          },
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const childEl = container.querySelector('error-list') as PelelaElement<ChildVM>
+      const listItems = childEl.querySelectorAll('li')
+
+      expect(listItems.length).toBe(0)
+
+      parentVM.bet.errors.push('Error 1')
+
+      const updatedListItems = childEl.querySelectorAll('li')
+      expect(updatedListItems.length).toBe(1)
+      expect(updatedListItems[0].textContent).toBe('Error 1')
+    })
+  })
+
   it('should initialize component with parent properties', () => {
     class ChildVM {
       message = ''

@@ -53,6 +53,7 @@ export type ForEachBinding = {
 export type ComponentBinding = {
   childViewModel: ViewModel
   mappings: Array<{ parentKey: string; childKey: string }>
+  renderChild?: (changedPath?: string) => void
 }
 
 export type BindingsCollection = {

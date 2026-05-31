@@ -5,13 +5,14 @@ import {
   LINK_PREFIX,
   PROP_PREFIX,
 } from '../commons/dom'
-import { findAllElements, toCamelCase, unwrapTemplate } from '../commons/helpers'
+import { findAllElements, isObject, toCamelCase, unwrapTemplate } from '../commons/helpers'
 import { t } from '../commons/i18n'
 import { hasProperty, isUnsafeKey, sanitizeHTML } from '../commons/sanitization'
 import { UnknownComponentError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
 import type { PelelaElement } from '../types'
+import { getNestedProperty, setNestedProperty } from './nestedProperties'
 import { setupBindings } from './setupBindings'
 import type { ComponentBinding, ViewModel } from './types'
 
@@ -74,6 +75,25 @@ function validateTags(root: HTMLElement, registeredTags: string[]): void {
   })
 }
 
+function handleLinkPropagation(
+  linkBindings: Array<{ parentKey: string; childKey: string }>,
+  parentViewModel: ViewModel<object>,
+  reactiveInstance: ViewModel<object>,
+  changedPath: string,
+): void {
+  const linkBinding = linkBindings.find((binding) => binding.childKey === changedPath)
+  if (!linkBinding) return
+
+  if (isUnsafeKey(linkBinding.parentKey)) return
+
+  if (linkBinding.parentKey.includes('.')) {
+    setNestedProperty(parentViewModel, linkBinding.parentKey, reactiveInstance[changedPath])
+  } else {
+    ;(parentViewModel as Record<string, unknown>)[linkBinding.parentKey] =
+      reactiveInstance[changedPath]
+  }
+}
+
 export function setupComponentBindings<T extends object>(
   root: HTMLElement,
   parentViewModel: ViewModel<T>,
@@ -111,33 +131,36 @@ export function setupComponentBindings<T extends object>(
         )
       }
 
-      if (!parentKey.includes('.') && !hasProperty(parentViewModel, parentKey)) {
-        throw new Error(
-          t('errors.compiler.missingParentProperty', {
-            tag: element.tagName.toLowerCase(),
-            parentKey,
-          }),
-        )
+      const pathSegments = parentKey.split('.')
+      let current: unknown = parentViewModel
+      for (const segment of pathSegments) {
+        if (!isObject(current) || !hasProperty(current as object, segment)) {
+          throw new Error(
+            t('errors.compiler.missingParentProperty', {
+              tag: element.tagName.toLowerCase(),
+              parentKey,
+            }),
+          )
+        }
+        current = (current as Record<string, unknown>)[segment]
       }
-      instance[childKey] = (parentViewModel as Record<string, unknown>)[parentKey]
+
+      instance[childKey] = parentKey.includes('.')
+        ? getNestedProperty(parentViewModel, parentKey)
+        : (parentViewModel as Record<string, unknown>)[parentKey]
     })
 
     // Buffer change paths during setup to avoid losing reactive updates
     const bufferedPaths: string[] = []
-    let isSetupComplete = false
+    const isSetupComplete = { value: false }
     let renderChild: (changedPath?: string) => void = () => {}
     const reactiveInstance = createReactiveViewModel(instance, (changedPath: string) => {
       if (isUnsafeKey(changedPath)) return
 
-      const linkBinding = linkBindings.find((binding) => binding.childKey === changedPath)
-      if (linkBinding) {
-        if (isUnsafeKey(linkBinding.parentKey)) return
-        ;(parentViewModel as Record<string, unknown>)[linkBinding.parentKey] =
-          reactiveInstance[changedPath]
-      }
+      handleLinkPropagation(linkBindings, parentViewModel, reactiveInstance, changedPath)
 
       // Buffer changes during setup, render directly after setup
-      if (isSetupComplete) {
+      if (isSetupComplete.value) {
         renderChild(changedPath)
       } else {
         bufferedPaths.push(changedPath)
@@ -151,7 +174,7 @@ export function setupComponentBindings<T extends object>(
     // The component tag's own 'if' belongs to the parent's view model.
     // Pass skipRootIf so the child binding setup doesn't try to validate it.
     renderChild = setupBindings(element, reactiveInstance, { skipRootIf: true })
-    isSetupComplete = true
+    isSetupComplete.value = true
 
     // Flush buffered changes after setupBindings assigns renderChild
     bufferedPaths.forEach((path) => {
@@ -161,6 +184,7 @@ export function setupComponentBindings<T extends object>(
     bindings.push({
       childViewModel: reactiveInstance,
       mappings: allMappings,
+      renderChild,
     })
   })
 
@@ -177,11 +201,17 @@ export function renderComponentBindings<T extends object>(
         return
       }
 
-      const parentValue = (parentViewModel as Record<string, unknown>)[parentKey]
+      const parentValue = parentKey.includes('.')
+        ? getNestedProperty(parentViewModel, parentKey)
+        : (parentViewModel as Record<string, unknown>)[parentKey]
       const childValue = (binding.childViewModel as Record<string, unknown>)[childKey]
 
       if (parentValue !== childValue) {
         ;(binding.childViewModel as Record<string, unknown>)[childKey] = parentValue
+        // Force re-render of child when value changes
+        binding.renderChild?.(childKey)
+      } else if (isObject(parentValue)) {
+        binding.renderChild?.(childKey)
       }
     })
   })

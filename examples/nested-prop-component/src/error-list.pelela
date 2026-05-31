@@ -1,0 +1,7 @@
+<pelela view-model="ErrorList">
+  <ul class="error-list" if="errors.length">
+    <li for-each="error of errors">
+      <span bind-content="error"></span>
+    </li>
+  </ul>
+</pelela>
