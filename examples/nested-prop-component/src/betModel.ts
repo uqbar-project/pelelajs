@@ -1,10 +1,7 @@
-type ValidationError = {
-  fieldName: string
-  errorMessage: string
-}
+import type { ValidationError } from './validationError'
 
 export class BetModel {
-  date: Date | null = null
+  date: string = ''
   amount = ''
   errors: ValidationError[] = []
 

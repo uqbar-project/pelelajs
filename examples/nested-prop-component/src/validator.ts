@@ -1,7 +1,4 @@
-type ValidationError = {
-  fieldName: string
-  errorMessage: string
-}
+import type { ValidationError } from './validationError'
 
 export class Validator {
   fieldName = ''
