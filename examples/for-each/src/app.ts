@@ -14,7 +14,7 @@ interface BetType {
   active?: boolean
 }
 
-interface Type {
+interface SelectableType {
   description: string
   value: number
 }
@@ -72,13 +72,13 @@ export class App {
   }
 
   // 9) Ejemplo Select con objetos
-  types: Type[] = [
+  types: SelectableType[] = [
     { description: 'Type A', value: 1 },
     { description: 'Type B', value: 2 },
     { description: 'Type C', value: 3 },
   ]
 
-  selectedType: Type = this.types[0]
+  selectedType: SelectableType = this.types[0]
 
   addUser() {
     if (!this.newUserName || !this.newUserEmail) return

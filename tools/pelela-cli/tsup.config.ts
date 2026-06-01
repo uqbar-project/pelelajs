@@ -6,4 +6,5 @@ export default defineConfig({
   target: 'node22',
   clean: true,
   banner: { js: '#!/usr/bin/env node' },
+  publicDir: 'templates',
 })
