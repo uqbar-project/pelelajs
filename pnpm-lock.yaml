@@ -123,7 +123,7 @@ importers:
         version: 5.9.3
       vite:
         specifier: 7.2.4
-        version: 7.2.4(@types/node@24.10.1)(tsx@4.21.0)
+        version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
 
   examples/routing:
     dependencies:
