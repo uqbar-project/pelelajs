@@ -2,7 +2,7 @@
   "name": "pelela",
   "type": "module",
   "private": true,
-  "version": "0.5.13",
+  "version": "0.6.8",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -22,8 +22,8 @@
     "biome:check": "biome check .",
     "biome:check:fix": "biome check --write .",
     "install:vscode": "node scripts/install-pelela-vscode.cjs",
-    "release:npm": "tsx scripts/release-npm.ts",
-    "release:vscode": "tsx scripts/release-vscode.ts",
+    "release:npm": "tsx scripts/check-npm-auth.ts && release-it && pnpm --filter pelelajs publish --no-git-checks --access public",
+    "release:vscode": "tsx scripts/check-vscode-auth.ts && pnpm -C tools/pelela-vscode run release",
     "audit": "pnpm audit --audit-level moderate",
     "ci:local": "pnpm install && pnpm run biome:check && pnpm run typecheck && pnpm run build && pnpm run test:coverage",
     "ci:act": "act -j ci"
@@ -35,7 +35,7 @@
     "node": ">=22.0.0",
     "pnpm": ">=10.0.0"
   },
-  "packageManager": "pnpm@10.33.2",
+  "packageManager": "pnpm@11.3.0",
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
     "@types/node": "24.10.1",
@@ -43,6 +43,7 @@
     "@vitest/coverage-v8": "4.0.14",
     "chalk": "5.6.2",
     "jsdom": "27.2.0",
+    "release-it": "20.0.1",
     "semver": "7.7.0",
     "tsup": "8.5.1",
     "tsx": "4.21.0",

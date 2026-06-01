@@ -12,6 +12,10 @@ on:
           - patch
           - minor
           - major
+      changelog_notes:
+        description: 'Custom notes for the CHANGELOG (optional)'
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -25,9 +29,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - name: Install pnpm (compatible with runner Node.js)
+        uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -47,4 +50,7 @@ jobs:
         run: npm install -g npm@latest
 
       - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_IT_NOTES: ${{ github.event.inputs.changelog_notes }}
         run: pnpm run release:npm -- ${{ github.event.inputs.version_type }}

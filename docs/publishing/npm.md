@@ -26,13 +26,17 @@ This method uses GitHub Actions and is the preferred way to publish. It is alrea
 
 4. Choose the version increment type: `patch`, `minor`, or `major`.
 
-5. Click **"Run workflow"**.
+5. (Optional) Provide custom notes for the CHANGELOG in the `changelog_notes` input. If left empty, a summary will be automatically generated from the commits.
+
+6. Click **"Run workflow"**.
 
 The workflow will:
 
 - Run quality checks (Lint, Typecheck, Tests).
 
 - Handle versioning automatically based on input.
+
+- Update CHANGELOG with auto-generated summary (or custom notes if provided).
 
 - Build the unified bundle.
 
@@ -46,29 +50,52 @@ The workflow will:
 
 Use this method only for emergency hotfixes or local testing.
 
+### Prerequisites for Manual Publishing
+
+Before running the release script, ensure:
+
+1. **You are logged in to npm** (or will be prompted to login):
+   ```bash
+   pnpm login
+   ```
+
+2. **Working directory state**: By default `release-it` requires a clean working directory and will abort if there are uncommitted changes. Choose one of the following:
+
+- Commit or stash your changes before running the release.
+
 ### 1. Run the Release Script
 
-The release process is fully automated via a single script. Execute it from the root directory:
+Execute from the root directory:
 
 ```bash
 pnpm run release:npm
 ```
 
-The script will:
+If you are not already logged in to npm, the script will:
 
-- **Validate Git Status**: Ensures your working directory is clean.
+- Detect that you're not authenticated (via `pnpm whoami`).
 
-- **Run Quality Checks**: Executes `biome:check`, `typecheck`, and `test:coverage`.
+- **Prompt you to login**: Answer `y` to proceed with `pnpm login` interactively.
 
-- **Prompt for Version**: Asks you to select `patch`, `minor`, or `major`.
+- Once authenticated, continue with the release process.
 
-- **Sync Versions**: Automatically updates `package.json` in root, `packages/core`, `packages/vite-plugin-pelelajs`, and `tools/pelela-cli`.
+### 2. What the Script Does
 
-- **Build**: Compiles all packages.
+The release script will:
 
-- **Publish**: Deploys `pelelajs` to the NPM registry.
+1. **Authenticate**: Verifies you are logged in to npm (prompts to login if needed).
 
-- **Commit, Tag & Push**: Creates a release commit, a git tag (e.g., `v0.5.4`), and pushes everything to GitHub's `main` branch.
+2. **Bumps Version**: Automatically increments the version based on release-it prompt.
+
+3. **Updates CHANGELOG**: Generates a summary from recent commits and opens an editor for manual refinement.
+
+4. **Syncs Versions**: Updates `package.json` in `packages/core`, `packages/vite-plugin-pelelajs`, and `tools/pelela-cli`.
+
+5. **Build**: Compiles all packages.
+
+6. **Publish**: Deploys `pelelajs` to the NPM registry.
+
+7. **Git Operations**: Creates a release commit, a git tag (e.g., `npm-v0.5.4`), and pushes to `main` with tags.
 
 ---
 

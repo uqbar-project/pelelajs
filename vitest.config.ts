@@ -2,7 +2,17 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    projects: ['packages/*', 'tools/pelela-cli'],
+    projects: [
+      'packages/*',
+      'tools/pelela-cli',
+      {
+        test: {
+          name: 'release-scripts',
+          environment: 'node',
+          include: ['test/**/*.test.ts'],
+        },
+      },
+    ],
     globals: true,
     coverage: {
       provider: 'v8',

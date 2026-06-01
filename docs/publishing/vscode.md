@@ -32,15 +32,17 @@ This method uses GitHub Actions and is the preferred way to publish.
 
 4. Choose the version increment type: `patch`, `minor`, or `major`.
 
-5. Click **"Run workflow"**.
+5. (Optional) Provide custom notes for the CHANGELOG in the `changelog_notes` input. If left empty, a summary will be automatically generated from the commits.
+
+6. Click **"Run workflow"**.
 
 The workflow will:
 
 - Install all dependencies.
 
-- Run extension tests.
-
 - Handle versioning automatically based on input.
+
+- Update CHANGELOG with auto-generated summary (or custom notes if provided).
 
 - Build and package the extension (.vsix).
 
@@ -58,29 +60,7 @@ The workflow will:
 
 Use this method only for emergency hotfixes or local testing.
 
-### 1. Run the Release Script
-
-Execute from the root directory:
-
-```bash
-pnpm run release:vscode
-```
-
-The script will:
-
-- **Validate Git Status**: Ensures your working directory is clean and you're on `main`.
-
-- **Run Extension Tests**: Executes the Mocha test suite.
-
-- **Prompt for Version**: Asks you to select `patch`, `minor`, or `major`.
-
-- **Build & Package**: Compiles the extension and generates a `.vsix` file.
-
-- **Publish**: Deploys to both VSCode Marketplace and OpenVSX.
-
-- **Commit, Tag & Push**: Creates a release commit, a git tag (e.g., `vscode-v0.1.0`), and pushes to `main`.
-
-### 2. Environment Variables
+### 1. Environment Variables
 
 For manual publishing, you must set the following environment variables:
 
@@ -88,6 +68,28 @@ For manual publishing, you must set the following environment variables:
 export VSCE_PAT="your-azure-devops-pat"
 export OVSX_PAT="your-openvsx-pat"
 ```
+
+### 2. Run the Release Script
+
+Execute from the root directory:
+
+```bash
+pnpm run release:vscode
+```
+
+This triggers a workflow that:
+
+1. **Authenticates**: Verifies credentials with VSCode Marketplace and OpenVSX.
+
+2. **Bumps Version**: Automatically increments the version in `tools/pelela-vscode/package.json`.
+
+3. **Updates CHANGELOG**: Generates a summary from recent commits and opens an editor for manual refinement.
+
+4. **Build & Package**: Compiles the extension and generates a `.vsix` file.
+
+5. **Publish**: Deploys to both VSCode Marketplace and OpenVSX.
+
+6. **Git Operations**: Creates a release commit, a git tag (e.g., `vscode-v0.2.3`), and pushes to `main` with tags.
 
 ---
 

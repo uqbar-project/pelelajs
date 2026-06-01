@@ -12,6 +12,10 @@ on:
           - patch
           - minor
           - major
+      changelog_notes:
+        description: 'Custom notes for the CHANGELOG (optional)'
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -44,6 +48,8 @@ jobs:
 
       - name: Release
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
+          RELEASE_IT_NOTES: ${{ github.event.inputs.changelog_notes }}
         run: pnpm run release:vscode -- ${{ github.event.inputs.version_type }}
