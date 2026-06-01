@@ -976,4 +976,84 @@ describe('bindForEach', () => {
       }).toThrow(InvalidBindingSyntaxError)
     })
   })
+
+  describe('Issue #113 - nested paths and option value', () => {
+    it('should support nested paths in for-each collection', () => {
+      container.innerHTML = `
+        <div>
+          <span for-each="value of parent.nested.values" bind-content="value"></span>
+        </div>
+      `
+
+      const viewModel = {
+        parent: {
+          nested: {
+            values: [10, 20, 30],
+          },
+        },
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(3)
+      expect(spans[0].textContent).toBe('10')
+      expect(spans[1].textContent).toBe('20')
+      expect(spans[2].textContent).toBe('30')
+    })
+
+    it('should react to changes in nested for-each collection', () => {
+      container.innerHTML = `
+        <div>
+          <span for-each="value of parent.nested.values" bind-content="value"></span>
+        </div>
+      `
+
+      const viewModel = {
+        parent: {
+          nested: {
+            values: [10, 20],
+          },
+        },
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      let spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+
+      viewModel.parent.nested.values.push(30)
+      renderForEachBindings(bindings, viewModel)
+
+      spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(3)
+    })
+
+    it('should set option value to the for-each item object', () => {
+      container.innerHTML = `
+        <select>
+          <option for-each="type of types" bind-content="type.description"></option>
+        </select>
+      `
+
+      const viewModel = {
+        types: [
+          { description: 'Type A', value: 1 },
+          { description: 'Type B', value: 2 },
+        ],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const options = container.querySelectorAll('option')
+      expect(options).toHaveLength(2)
+      expect(options[0].textContent).toBe('Type A')
+      expect(options[0].value).toBe('[{"description":1,"value":2},"Type A",1]')
+      expect(options[1].textContent).toBe('Type B')
+      expect(options[1].value).toBe('[{"description":1,"value":2},"Type B",2]')
+    })
+  })
 })

@@ -1,3 +1,4 @@
+import { parse, stringify } from 'devalue'
 import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
 import { getDecimalSeparator, getThousandsSeparator } from '../commons/i18n'
 import { UnsupportedElementError } from '../errors'
@@ -32,6 +33,17 @@ function setupSingleValueBinding<T extends object>(
     }
 
     const inputValue = target.value
+
+    if (typeof currentValue === 'object' && currentValue !== null) {
+      try {
+        const parsed = parse(inputValue)
+        setNestedProperty(viewModel, propertyName, parsed)
+        return
+      } catch {
+        setNestedProperty(viewModel, propertyName, inputValue)
+        return
+      }
+    }
 
     if (typeof currentValue === 'number') {
       const separator = getDecimalSeparator()
@@ -78,8 +90,14 @@ function renderSingleValueBinding<T extends object>(
     ;(input as HTMLInputElement).checked = !!value
   } else {
     const newValue = value ?? ''
-    if (input.value !== String(newValue)) {
-      input.value = String(newValue)
+    let stringValue = String(newValue)
+
+    if (typeof newValue === 'object' && newValue !== null) {
+      stringValue = stringify(newValue)
+    }
+
+    if (input.value !== stringValue) {
+      input.value = stringValue
     }
   }
 }
