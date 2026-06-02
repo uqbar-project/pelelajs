@@ -1,0 +1,3 @@
+<component view-model="Row">
+  <span bind-content="dato"/>
+</component>
