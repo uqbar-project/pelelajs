@@ -19,7 +19,7 @@
       }
     },
     "new": {
-      "description": "✨ Create a new PelelaJS component",
+      "description": "✨ Create a new component (a path can be specified for the location)",
       "options": {
         "noCss": "Do not generate a CSS file"
       },
@@ -34,7 +34,7 @@
       }
     },
     "rename": {
-      "description": "🔄 Rename an existing component",
+      "description": "🔄 Rename a component (use path/name to disambiguate if necessary)",
       "error": {
         "oldNameEmpty": "Current component name cannot be empty",
         "newNameEmpty": "New component name cannot be empty",

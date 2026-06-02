@@ -9,6 +9,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
+import { t } from './i18n'
 
 const SRC_DIR = 'src'
 
@@ -16,30 +17,44 @@ export function getComponentTargetDir(): string {
   return existsSync(SRC_DIR) ? SRC_DIR : '.'
 }
 
+export function validateBasename(name: string, errorKey: string): void {
+  const nameBasename = basename(name)
+  if (!/^[A-Z][a-zA-Z0-9]*$/.test(nameBasename)) {
+    throw new Error(t(errorKey))
+  }
+}
+
 export function findComponentFile(componentName: string, extension: string): string | null {
   const targetDir = getComponentTargetDir()
-  const kebabName = toKebabCase(componentName)
-  const fileName = `${kebabName}${extension}`
+  const normalizedInput = componentName.replace(/\\/g, '/')
+  const kebabInput = normalizedInput
+    .split('/')
+    .map((part) => toKebabCase(part))
+    .join('/')
+  const searchFileName = basename(kebabInput) + extension
   const ignoredDirs = ['node_modules', 'dist']
+
+  const matchesPath = (fullPath: string): boolean => {
+    const normalizedFullPath = fullPath.replace(/\\/g, '/')
+    return normalizedFullPath.endsWith(`${kebabInput}${extension}`)
+  }
 
   function searchDirectory(dir: string): string | null {
     if (!existsSync(dir)) return null
 
-    const files = readdirSync(dir)
-    const validFiles = files.filter((file) => !ignoredDirs.includes(file))
-
-    for (const file of validFiles) {
-      const fullPath = join(dir, file)
-      const stat = statSync(fullPath)
-
-      if (stat.isDirectory()) {
-        const result = searchDirectory(fullPath)
-        if (result !== null) return result
-      } else if (file === fileName) {
-        return fullPath
-      }
-    }
-    return null
+    return (
+      readdirSync(dir)
+        .filter((file) => !ignoredDirs.includes(file))
+        .map((file) => {
+          const fullPath = join(dir, file)
+          return statSync(fullPath).isDirectory()
+            ? searchDirectory(fullPath)
+            : file === searchFileName && matchesPath(fullPath)
+              ? fullPath
+              : null
+        })
+        .find((result) => result !== null) ?? null
+    )
   }
 
   return searchDirectory(targetDir)

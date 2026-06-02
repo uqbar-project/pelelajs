@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { join } from 'node:path'
 import chalk from 'chalk'
 import {
   createCssFile,
@@ -8,6 +8,7 @@ import {
   getComponentTargetDir,
   normalizeComponentName,
   toKebabCase,
+  validateBasename,
 } from '../utils/componentFiles'
 import { t } from '../utils/i18n'
 
@@ -23,10 +24,7 @@ export async function newCommand(options: NewCommandOptions): Promise<void> {
     throw new Error(t('commands.new.error.nameEmpty'))
   }
 
-  const basenameComponentName = basename(componentName)
-  if (!/^[A-Z][a-zA-Z0-9]*$/.test(basenameComponentName)) {
-    throw new Error(t('commands.new.error.nameInvalid'))
-  }
+  validateBasename(componentName, 'commands.new.error.nameInvalid')
 
   const targetDir = getComponentTargetDir()
   const normalizedName = normalizeComponentName(componentName, targetDir)

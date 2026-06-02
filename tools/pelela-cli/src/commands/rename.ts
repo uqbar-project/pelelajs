@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import { dirname, join } from 'node:path'
 import chalk from 'chalk'
 import {
   findComponentFile,
@@ -9,6 +9,7 @@ import {
   renameTsFile,
   toKebabCase,
   updateImports,
+  validateBasename,
 } from '../utils/componentFiles'
 import { t } from '../utils/i18n'
 
@@ -27,10 +28,8 @@ export async function renameCommand(options: RenameCommandOptions): Promise<void
     throw new Error(t('commands.rename.error.newNameEmpty'))
   }
 
-  const basenameNewComponentName = basename(newComponentName)
-  if (!/^[A-Z][a-zA-Z0-9]*$/.test(basenameNewComponentName)) {
-    throw new Error(t('commands.rename.error.nameInvalid'))
-  }
+  validateBasename(oldComponentName, 'commands.rename.error.nameInvalid')
+  validateBasename(newComponentName, 'commands.rename.error.nameInvalid')
 
   const oldTsFile = findComponentFile(oldComponentName, '.ts')
   if (!oldTsFile) {

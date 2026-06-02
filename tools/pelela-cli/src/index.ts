@@ -55,7 +55,7 @@ async function main(): Promise<void> {
     })
 
   program
-    .command('rename <oldComponentName> <newComponentName>')
+    .command('rename <path/oldComponentName> <path/newComponentName>')
     .description(t('commands.rename.description'))
     .action(async (oldComponentName: string, newComponentName: string) => {
       try {

@@ -19,7 +19,7 @@
       }
     },
     "new": {
-      "description": "✨ Crear un nuevo componente PelelaJS",
+      "description": "✨ Crear un nuevo componente (se puede especificar un path para la ubicación)",
       "options": {
         "noCss": "No generar el archivo CSS"
       },
@@ -34,7 +34,7 @@
       }
     },
     "rename": {
-      "description": "🔄 Renombrar un componente existente",
+      "description": "🔄 Renombrar un componente (usar path/nombre para desambiguar si es necesario)",
       "error": {
         "oldNameEmpty": "El nombre actual del componente no puede estar vacío",
         "newNameEmpty": "El nuevo nombre del componente no puede estar vacío",
