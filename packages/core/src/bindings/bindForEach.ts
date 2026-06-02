@@ -229,7 +229,8 @@ function extractExtraDependencies(
     )
     .map((propPath) => {
       const collectionFirstSegment = collectionName.split('.')[0]
-      return propPath.startsWith(collectionFirstSegment) ? collectionFirstSegment : propPath
+      const propFirstSegment = propPath.split('.')[0]
+      return propFirstSegment === collectionFirstSegment ? collectionFirstSegment : propPath
     })
 }
 
@@ -242,6 +243,10 @@ export function setupForEachBindings<T extends object>(
   return ownElements
     .map((element) => setupSingleForEachBinding(element, viewModel))
     .filter((binding): binding is ForEachBinding => binding !== null)
+}
+
+function serializeOptionValue(item: unknown): string {
+  return typeof item === 'object' && item !== null ? stringify(item) : String(item)
 }
 
 function createNewElement<T extends object>(
@@ -263,11 +268,7 @@ function createNewElement<T extends object>(
   const render = setupBindingsForElement(element, extendedViewModel)
 
   if (element.tagName === 'OPTION') {
-    if (typeof item === 'object' && item !== null) {
-      ;(element as HTMLOptionElement).value = stringify(item)
-    } else {
-      ;(element as HTMLOptionElement).value = String(item)
-    }
+    ;(element as HTMLOptionElement).value = serializeOptionValue(item)
   }
 
   const lastElement =
@@ -308,12 +309,7 @@ function updateExistingElements(binding: ForEachBinding, collection: unknown[]):
     rendered.indexRef.current = index
 
     if (rendered.element.tagName === 'OPTION') {
-      const item = collection[index]
-      if (typeof item === 'object' && item !== null) {
-        ;(rendered.element as HTMLOptionElement).value = stringify(item)
-      } else {
-        ;(rendered.element as HTMLOptionElement).value = String(item)
-      }
+      ;(rendered.element as HTMLOptionElement).value = serializeOptionValue(collection[index])
     }
 
     rendered.render()

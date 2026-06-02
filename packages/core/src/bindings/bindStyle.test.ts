@@ -28,7 +28,7 @@ describe('bindStyle', () => {
       expect(bindings).toHaveLength(2)
     })
 
-    it('should return null for empty bind-style attribute', () => {
+    it('should return empty bindings for empty bind-style attribute', () => {
       container.innerHTML = '<div bind-style=""></div>'
       const viewModel = {}
 
@@ -37,7 +37,7 @@ describe('bindStyle', () => {
       expect(bindings).toHaveLength(0)
     })
 
-    it('should return null for whitespace-only bind-style attribute', () => {
+    it('should return empty bindings for whitespace-only bind-style attribute', () => {
       container.innerHTML = '<div bind-style="   "></div>'
       const viewModel = {}
 

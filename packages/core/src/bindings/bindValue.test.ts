@@ -302,6 +302,19 @@ describe('bindValue', () => {
       expect(viewModel.data).toBe('invalid json')
     })
 
+    it('should parse valid devalue strings into objects when current value is object', () => {
+      container.innerHTML = '<input bind-value="data" />'
+      const viewModel = { data: { key: 'initial' } }
+
+      setupValueBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      input.value = '[{"key":1},"updated"]'
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.data).toEqual({ key: 'updated' })
+    })
+
     it('should stringify objects when rendering in input', () => {
       container.innerHTML = '<input bind-value="data" />'
       const viewModel = { data: { key: 'value' } }

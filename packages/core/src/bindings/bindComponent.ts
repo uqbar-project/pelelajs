@@ -169,22 +169,19 @@ export function setupComponentBindings<T extends object>(
       }
 
       const pathSegments = parentKey.split('.')
-      let current: unknown = parentViewModel
-      for (const segment of pathSegments) {
+      const parentValue = pathSegments.reduce((current, segment, index) => {
         if (!isObject(current) || !hasProperty(current as object, segment)) {
           throw new Error(
             t('errors.compiler.missingParentProperty', {
               tag: element.tagName.toLowerCase(),
-              parentKey,
+              parentKey: pathSegments.slice(0, index + 1).join('.'),
             }),
           )
         }
-        current = (current as Record<string, unknown>)[segment]
-      }
+        return (current as Record<string, unknown>)[segment]
+      }, parentViewModel as unknown)
 
-      instance[childKey] = parentKey.includes('.')
-        ? getNestedProperty(parentViewModel, parentKey)
-        : (parentViewModel as Record<string, unknown>)[parentKey]
+      instance[childKey] = parentValue
     })
 
     // Buffer change paths during setup to avoid losing reactive updates

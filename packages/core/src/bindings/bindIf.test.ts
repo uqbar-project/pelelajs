@@ -28,7 +28,7 @@ describe('bindIf', () => {
       expect(bindings).toHaveLength(2)
     })
 
-    it('should return null for empty if attribute', () => {
+    it('should return empty bindings for empty if attribute', () => {
       container.innerHTML = '<div if=""></div>'
       const viewModel = {}
 
@@ -37,7 +37,7 @@ describe('bindIf', () => {
       expect(bindings).toHaveLength(0)
     })
 
-    it('should return null for whitespace-only if attribute', () => {
+    it('should return empty bindings for whitespace-only if attribute', () => {
       container.innerHTML = '<div if="   "></div>'
       const viewModel = {}
 

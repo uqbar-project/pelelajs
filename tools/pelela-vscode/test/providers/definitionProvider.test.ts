@@ -88,6 +88,7 @@ describe('definitionProvider - Component Tag Navigation', () => {
 
   it('should fallback to workspace search when local file does not exist', async () => {
     const mockUri = vscode.Uri.file('/some/other/workspace-comp.pelela')
+    const EXPECTED_GLOB = '**/workspace-comp.pelela'
 
     // Save original findFiles
     const originalFindFiles = vscode.workspace.findFiles
@@ -96,7 +97,7 @@ describe('definitionProvider - Component Tag Navigation', () => {
       // Mock workspace.findFiles
       vscode.workspace.findFiles = (include: vscode.GlobPattern) => {
         const globStr = typeof include === 'string' ? include : include.pattern
-        assert.ok(globStr.includes('workspace-comp.pelela'))
+        assert.strictEqual(globStr, EXPECTED_GLOB)
         return Promise.resolve([mockUri])
       }
 
@@ -104,8 +105,7 @@ describe('definitionProvider - Component Tag Navigation', () => {
       const posWorkspace = new vscode.Position(6, 10)
       const result = provideDefinition(mockDocument, posWorkspace, {} as vscode.CancellationToken)
 
-      assert.ok(result instanceof Promise || (result && typeof (result as any).then === 'function'))
-      const location = (await result) as vscode.Location
+      const location = (await Promise.resolve(result)) as vscode.Location
 
       assert.ok(location instanceof vscode.Location)
       assert.strictEqual(location.uri.fsPath, mockUri.fsPath)

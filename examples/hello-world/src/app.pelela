@@ -7,6 +7,5 @@
     <button click="decrement">-</button>
     <p bind-content="counter"></p>
     <button click="increment">+</button>
-    <row const-dato="eso"></row>
   </div>
 </pelela>

@@ -61,8 +61,10 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
     const oldValue = Reflect.get(targetObject, propertyKey, receiver)
 
     // Always notify for array property assignments (like .length) to catch in-place mutations
-    const isArrayProperty = Array.isArray(targetObject) && typeof propertyKey === 'string'
-    if (!isArrayProperty && oldValue === value) {
+    const isArrayMutation =
+      Array.isArray(targetObject) &&
+      (propertyKey === 'length' || (typeof propertyKey === 'string' && /^\d+$/.test(propertyKey)))
+    if (!isArrayMutation && oldValue === value) {
       return true
     }
 

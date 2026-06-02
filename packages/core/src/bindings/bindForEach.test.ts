@@ -924,6 +924,23 @@ describe('bindForEach', () => {
       expect(binding!.extraDependencies).not.toContain('i')
     })
 
+    it('should not produce false positives in dependency normalization when first segment matches as prefix but not exactly', () => {
+      container.innerHTML = `
+        <div for-each="item of userItems">
+          <span bind-content="username"></span>
+        </div>
+      `
+      const viewModel = { userItems: [], username: 'test' }
+      const binding = setupSingleForEachBinding(
+        container.querySelector('[for-each]') as HTMLElement,
+        viewModel,
+      )
+
+      expect(binding).not.toBeNull()
+      expect(binding!.extraDependencies).toContain('username')
+      expect(binding!.extraDependencies).not.toContain('user')
+    })
+
     it('should ignore empty or whitespace-only index attribute', () => {
       container.innerHTML = `
         <div for-each="item of items" index="   ">

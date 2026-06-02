@@ -60,7 +60,7 @@ function addHtmlAttributeCompletions(items: vscode.CompletionItem[]): void {
   })
 }
 
-function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
+export function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
   const attrNames = getPelelaAttributes()
 
   const attributeSnippets: Record<string, { text: string; detail: string }> = {

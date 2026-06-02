@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { existsSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { initCommand } from '../../src/commands/init'
@@ -24,6 +24,16 @@ describe('initCommand (Integration)', () => {
     const gitignorePath = join(testDir, '.gitignore')
     expect(existsSync(gitignorePath)).toBe(true)
 
-    rmSync(testDir, { recursive: true, force: true })
+    const packageJsonPath = join(testDir, 'package.json')
+    expect(existsSync(packageJsonPath)).toBe(true)
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+    expect(packageJson.name).toBe(testDir)
+
+    const biomeJsonPath = join(testDir, 'biome.json')
+    expect(existsSync(biomeJsonPath)).toBe(true)
+
+    expect(existsSync(join(testDir, 'src'))).toBe(true)
+    expect(existsSync(join(testDir, 'index.html'))).toBe(true)
+    expect(existsSync(join(testDir, 'main.ts'))).toBe(true)
   })
 })
