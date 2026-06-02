@@ -44,9 +44,10 @@ async function main(): Promise<void> {
     .command('new <path/componentName>')
     .description(t('commands.new.description'))
     .option('--no-css', t('commands.new.options.noCss'))
-    .action(async (componentName: string, options: { css: boolean }) => {
+    .option('-c, --component', t('commands.new.options.component'))
+    .action(async (componentName: string, options: { css: boolean; component: boolean }) => {
       try {
-        await newCommand({ componentName, css: options.css })
+        await newCommand({ componentName, css: options.css, component: options.component })
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))

@@ -90,9 +90,9 @@ createPelelaFile(componentName, targetDir, rootTag)
 
 - **Actualizar** los tests existentes que chequeaban `<div>` como parte del contenido del `.pelela` (ya no existirá).
 - **Agregar** test: sin `--component`, el template usa `<pelela>`.
-- **Agregar** test: con `component: true`, el template usa `<component>`.
+- **Agregar** test: con `--component`, el template usa `<component>`.
 - **Agregar** test: sin `--component`, NO se agrega el componente a routes.ts.
-- **Agregar** test: con `component: true`, NO se agrega el componente a routes.ts.
+- **Agregar** test: con `--component`, NO se agrega el componente a routes.ts.
 
 ---
 
@@ -109,6 +109,7 @@ createPelelaFile(componentName, targetDir, rootTag)
 
 ## Verificación
 
+Es manual, NO LO PODES EJECUTAR SI SOS UNA IA. Pedís autorización al usuario.
 ```bash
 pnpm --filter pelela-cli test
 pnpm run biome:check

@@ -174,16 +174,18 @@ export function createTsFile(name: string, targetDir: string): void {
   writeFileSync(path, content)
 }
 
-export function createPelelaFile(name: string, targetDir: string): void {
+export function createPelelaFile(
+  name: string,
+  targetDir: string,
+  rootTag: 'pelela' | 'component' = 'pelela',
+): void {
   const { path, normalizedName } = prepareFile({ name, extension: 'pelela', targetDir })
 
   const componentName = basename(normalizedName)
-  const content = `<div>
-  <pelela view-model="${componentName}">
-    <h1>${componentName} Component</h1>
-    <!-- Add your template here -->
-  </pelela>
-</div>
+  const content = `<${rootTag} view-model="${componentName}">
+  <h1>${componentName} Component</h1>
+  <!-- Add your template here -->
+</${rootTag}>
 `
   writeFileSync(path, content)
 }

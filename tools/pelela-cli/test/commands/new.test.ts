@@ -11,7 +11,7 @@ beforeAll(async () => {
 })
 
 afterEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
 })
 
 describe('newCommand', () => {
@@ -46,7 +46,11 @@ describe('newCommand', () => {
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('src/my-component.pelela'),
-      expect.stringContaining('view-model="MyComponent"'),
+      expect.stringMatching(/^<pelela view-model="MyComponent">/),
+    )
+    expect(mockedFs.writeFileSync).not.toHaveBeenCalledWith(
+      expect.stringContaining('src/my-component.pelela'),
+      expect.stringContaining('<div>'),
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('src/my-component.css'),
@@ -65,7 +69,7 @@ describe('newCommand', () => {
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       'my-component.pelela',
-      expect.stringContaining('view-model="MyComponent"'),
+      expect.stringMatching(/^<pelela view-model="MyComponent">/),
     )
     expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
       'my-component.css',
@@ -104,6 +108,17 @@ describe('newCommand', () => {
 
     await expect(newCommand({ componentName: 'MyComponent' })).rejects.toThrow(
       t('commands.new.error.creationFailed', { error: 'Write failed' }),
+    )
+  })
+
+  it('uses <component> tag when component option is true', async () => {
+    mockedFs.existsSync.mockImplementation((path) => path === 'src')
+
+    await newCommand({ componentName: 'MyComponent', component: true })
+
+    expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('src/my-component.pelela'),
+      expect.stringMatching(/^<component view-model="MyComponent">/),
     )
   })
 })

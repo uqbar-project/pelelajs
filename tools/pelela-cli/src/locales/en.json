@@ -21,7 +21,8 @@
     "new": {
       "description": "✨ Create a new component (a path can be specified for the location)",
       "options": {
-        "noCss": "Do not generate a CSS file"
+        "noCss": "Do not generate a CSS file",
+        "component": "Generate with root tag <component> instead of <pelela>"
       },
       "error": {
         "nameEmpty": "Component name cannot be empty",

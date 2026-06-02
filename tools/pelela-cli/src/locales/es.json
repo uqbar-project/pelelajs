@@ -21,7 +21,8 @@
     "new": {
       "description": "✨ Crear un nuevo componente (se puede especificar un path para la ubicación)",
       "options": {
-        "noCss": "No generar el archivo CSS"
+        "noCss": "No generar el archivo CSS",
+        "component": "Generar con tag raíz <component> en lugar de <pelela>"
       },
       "error": {
         "nameEmpty": "El nombre del componente no puede estar vacío",

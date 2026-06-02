@@ -15,10 +15,11 @@ import { t } from '../utils/i18n'
 export interface NewCommandOptions {
   componentName: string
   css?: boolean
+  component?: boolean
 }
 
 export async function newCommand(options: NewCommandOptions): Promise<void> {
-  const { componentName, css = true } = options
+  const { componentName, css = true, component = false } = options
 
   if (!componentName) {
     throw new Error(t('commands.new.error.nameEmpty'))
@@ -39,7 +40,7 @@ export async function newCommand(options: NewCommandOptions): Promise<void> {
 
   try {
     createTsFile(componentName, targetDir)
-    createPelelaFile(componentName, targetDir)
+    createPelelaFile(componentName, targetDir, component ? 'component' : 'pelela')
     if (css) {
       createCssFile(componentName, targetDir)
     }
