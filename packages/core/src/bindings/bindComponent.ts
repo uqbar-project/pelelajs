@@ -169,8 +169,11 @@ export function setupComponentBindings<T extends object>(
       }
 
       const pathSegments = parentKey.split('.')
+      const isNested = pathSegments.length > 1
       const parentValue = pathSegments.reduce((current, segment, index) => {
         if (!isObject(current) || !hasProperty(current as object, segment)) {
+          if (isNested) return undefined
+
           throw new Error(
             t('errors.compiler.missingParentProperty', {
               tag: element.tagName.toLowerCase(),

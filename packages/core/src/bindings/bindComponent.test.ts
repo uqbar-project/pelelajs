@@ -51,6 +51,40 @@ describe('bindComponent', () => {
       expect(childVM.errors).toEqual(['error1'])
     })
 
+    it('should initialize child component with a dotted parent key provided by a for-each context (item.name)', () => {
+      class ChildVM {
+        name = ''
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="name"></span></component>',
+      )
+
+      container.innerHTML = `
+        <div for-each="item of items">
+          <test-comp prop-name="item.name"></test-comp>
+        </div>
+      `
+
+      const parentVM = createReactiveViewModel(
+        {
+          items: [{ name: 'Alice' }],
+        },
+        () => {},
+      )
+
+      // setupBindings will internally call setupForEachBindings and then renderForEachBindings,
+      // which in turn calls setupComponentBindings for each item's template.
+      setupBindings(container, parentVM)
+
+      const childEl = container.querySelector('test-comp') as PelelaElement<Record<string, unknown>>
+      const childVM = childEl.__pelelaViewModel
+
+      expect(childVM).toBeDefined()
+      expect(childVM.name).toBe('Alice')
+    })
+
     it('should re-render child component when nested array prop is mutated via push()', () => {
       class ChildVM {
         errors: string[] = []
@@ -427,54 +461,19 @@ describe('bindComponent', () => {
       )
     })
 
-    it('should throw error when a nested parent property segment does not exist (bet.errors)', () => {
-      class ChildVM {
-        errors = []
-      }
-      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
-
-      container.innerHTML = '<test-comp prop-errors="bet.errors"></error-list>'
-
-      const parentVM = createReactiveViewModel(
-        {
-          bet: {},
-        },
-        () => {},
-      )
-
-      expect(() => {
-        setupComponentBindings(container, parentVM)
-      }).toThrow(
-        t('errors.compiler.missingParentProperty', {
-          tag: 'test-comp',
-          parentKey: 'bet.errors',
-        }),
-      )
-    })
-
-    it('should throw error when an intermediate nested property segment does not exist (bet.profile.name)', () => {
+    it('should not throw error when a nested parent property path is missing (lenient validation)', () => {
       class ChildVM {
         name = ''
       }
       defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
 
-      container.innerHTML = '<test-comp prop-name="bet.profile.name"></test-comp>'
+      container.innerHTML = '<test-comp prop-name="missing.nested.path"></test-comp>'
 
-      const parentVM = createReactiveViewModel(
-        {
-          bet: {},
-        },
-        () => {},
-      )
+      const parentVM = createReactiveViewModel({}, () => {})
 
       expect(() => {
         setupComponentBindings(container, parentVM)
-      }).toThrow(
-        t('errors.compiler.missingParentProperty', {
-          tag: 'test-comp',
-          parentKey: 'bet.profile',
-        }),
-      )
+      }).not.toThrow()
     })
   })
 
