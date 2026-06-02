@@ -571,5 +571,93 @@ describe('bindComponent', () => {
       expect(childViewModel.items).toBe(parentViewModel.parentItems)
       expect(childViewModel.config).toBe(parentViewModel.parentConfig)
     })
+
+    it('should skip propagation for unsafe keys (prototype pollution protection)', () => {
+      class ChildVM {
+        value: string = ''
+      }
+
+      const parentViewModel = { __proto__: 'unsafe' }
+      const childViewModel = new ChildVM()
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: '__proto__', childKey: 'value' }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel, 'value')
+
+      expect(renderChild).not.toHaveBeenCalled()
+    })
+
+    it('should skip rendering child for unsafe keys in mappings', () => {
+      class ChildVM {
+        value: string = ''
+      }
+
+      const parentViewModel = { constructor: 'unsafe' }
+      const childViewModel = new ChildVM()
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: 'constructor', childKey: 'value' }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel, 'value')
+
+      expect(renderChild).not.toHaveBeenCalled()
+    })
+
+    it('should propagate changes from child to parent with link bindings', () => {
+      class ChildVM {
+        name: string = ''
+      }
+
+      const parentViewModel = { childName: '' }
+      const childViewModel = new ChildVM()
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: 'childName', childKey: 'name' }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel, 'name')
+
+      expect(parentViewModel.childName).toBe('')
+    })
+
+    it('should render buffered paths after setupBindings assigns renderChild', () => {
+      class ChildVM {
+        value: string = ''
+      }
+
+      const parentViewModel = { value: 'test' }
+      const childViewModel = new ChildVM()
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: 'value', childKey: 'value' }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel, 'value')
+
+      expect(renderChild).toHaveBeenCalled()
+    })
   })
 })

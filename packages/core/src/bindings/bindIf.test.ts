@@ -28,6 +28,24 @@ describe('bindIf', () => {
       expect(bindings).toHaveLength(2)
     })
 
+    it('should return null for empty if attribute', () => {
+      container.innerHTML = '<div if=""></div>'
+      const viewModel = {}
+
+      const bindings = setupIfBindings(container, viewModel)
+
+      expect(bindings).toHaveLength(0)
+    })
+
+    it('should return null for whitespace-only if attribute', () => {
+      container.innerHTML = '<div if="   "></div>'
+      const viewModel = {}
+
+      const bindings = setupIfBindings(container, viewModel)
+
+      expect(bindings).toHaveLength(0)
+    })
+
     it('should save original display of element', () => {
       container.innerHTML = '<div if="show" style="display: flex;"></div>'
 

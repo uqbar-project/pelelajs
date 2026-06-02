@@ -1055,5 +1055,89 @@ describe('bindForEach', () => {
       expect(options[1].textContent).toBe('Type B')
       expect(options[1].value).toBe('[{"description":1,"value":2},"Type B",2]')
     })
+
+    it('should set option value to string when item is not object', () => {
+      container.innerHTML = `
+        <select bind-value="selected">
+          <option for-each="item of values" bind-content="item"></option>
+        </select>
+      `
+      const viewModel = { values: [1, 2, 3], selected: null }
+
+      setupBindings(container, viewModel)
+
+      const options = container.querySelectorAll('option')
+      expect(options).toHaveLength(3)
+      expect(options[0].value).toBe('1')
+      expect(options[1].value).toBe('2')
+      expect(options[2].value).toBe('3')
+    })
+
+    it('should access nested properties of item in for-each', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span bind-content="item.name"></span>
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Item 1' }, { name: 'Item 2' }] }
+
+      setupBindings(container, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+      expect(spans[0].textContent).toBe('Item 1')
+      expect(spans[1].textContent).toBe('Item 2')
+    })
+
+    it('should access deeply nested properties of item in for-each', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span bind-content="item.details.name"></span>
+        </div>
+      `
+      const viewModel = {
+        items: [{ details: { name: 'Item 1' } }, { details: { name: 'Item 2' } }],
+      }
+
+      setupBindings(container, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+      expect(spans[0].textContent).toBe('Item 1')
+      expect(spans[1].textContent).toBe('Item 2')
+    })
+
+    it('should bind to nested properties of item in for-each', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <input bind-value="item.name" />
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Item 1' }, { name: 'Item 2' }] }
+
+      setupBindings(container, viewModel)
+
+      const inputs = container.querySelectorAll('input')
+      expect(inputs).toHaveLength(2)
+      expect(inputs[0].value).toBe('Item 1')
+      expect(inputs[1].value).toBe('Item 2')
+    })
+
+    it('should update nested properties of item in for-each', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <input bind-value="item.name" />
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Item 1' }, { name: 'Item 2' }] }
+
+      setupBindings(container, viewModel)
+
+      const inputs = container.querySelectorAll('input')
+      inputs[0].value = 'Updated Item 1'
+      inputs[0].dispatchEvent(new Event('input'))
+
+      expect(viewModel.items[0].name).toBe('Updated Item 1')
+    })
   })
 })
