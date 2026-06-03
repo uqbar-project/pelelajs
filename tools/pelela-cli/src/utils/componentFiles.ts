@@ -8,7 +8,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { t } from './i18n'
 
 const SRC_DIR = 'src'
@@ -18,6 +18,10 @@ export function getComponentTargetDir(): string {
 }
 
 export function validateBasename(name: string, errorKey: string): void {
+  if (isAbsolute(name) || name.includes('..')) {
+    throw new Error(t(errorKey))
+  }
+
   const nameBasename = basename(name)
   if (!/^[A-Z][a-zA-Z0-9]*$/.test(nameBasename)) {
     throw new Error(t(errorKey))
@@ -35,24 +39,29 @@ export function findComponentFile(componentName: string, extension: string): str
   const ignoredDirs = ['node_modules', 'dist']
 
   const matchesPath = (fullPath: string): boolean => {
-    const normalizedFullPath = fullPath.replace(/\\/g, '/')
+    const normalizedFullPath = relative(resolve(targetDir), resolve(fullPath)).replace(/\\/g, '/')
     return normalizedFullPath.endsWith(`${kebabInput}${extension}`)
   }
 
   function searchDirectory(dir: string): string | null {
     if (!existsSync(dir)) return null
 
+    const findMatchInEntry = (file: string): string | null => {
+      const fullPath = join(dir, file)
+      const isDirectory = statSync(fullPath).isDirectory()
+
+      if (isDirectory) {
+        return searchDirectory(fullPath)
+      }
+
+      const isMatch = file === searchFileName && matchesPath(fullPath)
+      return isMatch ? fullPath : null
+    }
+
     return (
       readdirSync(dir)
         .filter((file) => !ignoredDirs.includes(file))
-        .map((file) => {
-          const fullPath = join(dir, file)
-          return statSync(fullPath).isDirectory()
-            ? searchDirectory(fullPath)
-            : file === searchFileName && matchesPath(fullPath)
-              ? fullPath
-              : null
-        })
+        .map(findMatchInEntry)
         .find((result) => result !== null) ?? null
     )
   }
