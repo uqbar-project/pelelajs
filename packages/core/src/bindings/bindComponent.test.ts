@@ -330,6 +330,31 @@ describe('bindComponent', () => {
     expect(bindings[0].mappings[0].parentKey).toBe('parentVal')
   })
 
+  it('should call initialize() on child component after setup', () => {
+    const initSpy = vi.fn()
+    class ChildVM {
+      message = 'Initial'
+      initialize() {
+        initSpy()
+        this.message = 'Initialized'
+      }
+    }
+    defineComponent(
+      'init-child',
+      ChildVM,
+      '<component view-model="ChildVM"><span bind-content="message"></span></component>',
+    )
+
+    container.innerHTML = '<init-child></init-child>'
+
+    const parentVM = createReactiveViewModel({}, () => {})
+    setupComponentBindings(container, parentVM)
+
+    expect(initSpy).toHaveBeenCalled()
+    const span = container.querySelector('span')!
+    expect(span.innerHTML).toBe('Initialized')
+  })
+
   describe('prop-* prefix validation', () => {
     it('should throw error when component attribute lacks prop-* or link-* prefix', () => {
       class ChildVM {

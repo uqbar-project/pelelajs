@@ -8,8 +8,8 @@ export class Home {
   title = 'Página Principal'
   users: User[] = [
     { id: 1, name: 'Ana García' },
-    { id: 2, name: 'Carlos López' },
-    { id: 3, name: 'María Martínez' },
+    { id: 3, name: 'Carlos López' },
+    { id: 5, name: 'María Martínez' },
   ]
 
   viewUserDetails({ user }: { user: User }) {

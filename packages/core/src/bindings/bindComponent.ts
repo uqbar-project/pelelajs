@@ -223,6 +223,10 @@ export function setupComponentBindings<T extends object>(
       mappings: allMappings,
       renderChild,
     })
+
+    if (typeof reactiveInstance.initialize === 'function') {
+      reactiveInstance.initialize()
+    }
   })
 
   return bindings

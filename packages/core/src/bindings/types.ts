@@ -1,4 +1,5 @@
 export type ViewModel<T extends object = object> = T & {
+  initialize?: () => void | Promise<void>
   [key: string]: unknown
 }
 

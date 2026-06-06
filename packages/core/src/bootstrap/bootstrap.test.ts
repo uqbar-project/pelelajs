@@ -100,6 +100,30 @@ describe('bootstrap', () => {
     }).toThrow(ViewModelRegistrationError)
   })
 
+  it('should call initialize() if it exists in the view model', () => {
+    document.body.innerHTML = `
+      <pelela view-model="InitVM">
+        <span bind-content="message"></span>
+      </pelela>
+    `
+
+    const initSpy = vi.fn()
+    class InitViewModel {
+      message = 'Initial'
+      initialize() {
+        initSpy()
+        this.message = 'Initialized'
+      }
+    }
+
+    registerViewModel('InitVM', InitViewModel)
+    bootstrap()
+
+    expect(initSpy).toHaveBeenCalled()
+    const span = document.querySelector('span')!
+    expect(span.innerHTML).toBe('Initialized')
+  })
+
   it('should show warning if no pelela elements found', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     document.body.innerHTML = '<div>No pelela elements</div>'
