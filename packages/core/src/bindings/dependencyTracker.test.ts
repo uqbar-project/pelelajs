@@ -2,6 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { DependencyTracker } from './dependencyTracker'
 import type { BindingsCollection, ComponentBinding } from './types'
 
+const emptyBindings = (): BindingsCollection => ({
+  valueBindings: [],
+  contentBindings: [],
+  srcBindings: [],
+  ifBindings: [],
+  classBindings: [],
+  styleBindings: [],
+  forEachBindings: [],
+  componentBindings: [],
+})
+
 describe('DependencyTracker', () => {
   describe('registerDependency', () => {
     it('should register a dependency for a binding', () => {
@@ -14,13 +25,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding, 'users')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [binding],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -38,13 +44,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding, 'user.name')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [binding],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affectedByUser = tracker.getDependentBindings('user', bindings)
@@ -72,13 +73,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding2, 'items')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [binding1, binding2],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -97,13 +93,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding, 'users')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [binding],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users.0.name', bindings)
@@ -121,13 +112,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding, 'users.0.name')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [binding],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -150,13 +136,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding2, 'items')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [binding1, binding2],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('newUserName', bindings)
@@ -186,13 +167,10 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(classBinding, 'classes')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [valueBinding],
-        contentBindings: [],
         ifBindings: [ifBinding],
         classBindings: [classBinding],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affectedByMessage = tracker.getDependentBindings('message', bindings)
@@ -222,13 +200,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(forEachBinding, 'users')
 
       const bindings: BindingsCollection = {
-        valueBindings: [],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
+        ...emptyBindings(),
         forEachBindings: [forEachBinding],
-        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindings('users', bindings)
@@ -247,13 +220,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding, 'user.profile.name')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [binding],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affectedByUser = tracker.getDependentBindings('user', bindings)
@@ -275,13 +243,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding, 'user')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [binding],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affectedByName = tracker.getDependentBindings('user.name', bindings)
@@ -307,13 +270,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding2, 'prueba.direccion.calle.nombre')
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [binding1, binding2],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       // Cambio en prueba.nombre → solo debe afectar binding1
@@ -363,13 +321,8 @@ describe('DependencyTracker', () => {
       tracker.markAsGetterBinding(forEachBinding)
 
       const bindings: BindingsCollection = {
-        valueBindings: [],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
+        ...emptyBindings(),
         forEachBindings: [forEachBinding],
-        componentBindings: [],
       }
 
       // Change in primitive property should trigger getter binding
@@ -396,12 +349,7 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(componentBinding, 'selectedPersonName', viewModel)
 
       const bindings: BindingsCollection = {
-        valueBindings: [],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
+        ...emptyBindings(),
         componentBindings: [componentBinding],
       }
 
@@ -428,13 +376,8 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(valueBinding, 'selectedPersonName', viewModel)
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [valueBinding],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
-        forEachBindings: [],
-        componentBindings: [],
       }
 
       const affected = tracker.getDependentBindingsWithGetterSupport('selectedIndex', bindings)
@@ -482,11 +425,8 @@ describe('DependencyTracker', () => {
       tracker.markAsGetterBinding(forEachBinding)
 
       const bindings: BindingsCollection = {
+        ...emptyBindings(),
         valueBindings: [valueBinding],
-        contentBindings: [],
-        ifBindings: [],
-        classBindings: [],
-        styleBindings: [],
         forEachBindings: [forEachBinding],
         componentBindings: [componentBinding],
       }

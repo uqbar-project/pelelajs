@@ -4,6 +4,7 @@ const errors = {
   bindings: {
     invalidSyntax:
       '[pelela] Invalid {{kind}} expression: "{{expression}}". Expected format: {{format}}',
+    srcOnlyForImg: 'bind-src can only be used on <img> elements. Found on <{{tag}}>.',
     value: {
       invalidElement:
         'bind-value can only be used on input, textarea, or select elements. Found on <{{tagName}}>. Use bind-content for display elements.\nElement: {{snippet}}',
