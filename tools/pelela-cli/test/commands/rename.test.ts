@@ -53,6 +53,12 @@ describe('renameCommand (Integration)', () => {
     ).rejects.toThrow(t('commands.rename.error.nameInvalid'))
   })
 
+  it('throws for invalid old name', async () => {
+    await expect(
+      renameCommand({ oldComponentName: 'old', newComponentName: 'New' }),
+    ).rejects.toThrow(t('commands.rename.error.nameInvalid'))
+  })
+
   it('throws if old files do not exist', async () => {
     await expect(
       renameCommand({ oldComponentName: 'Old', newComponentName: 'New' }),

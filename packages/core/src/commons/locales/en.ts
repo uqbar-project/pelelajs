@@ -4,6 +4,7 @@ const errors = {
   bindings: {
     invalidSyntax:
       '[pelela] Invalid {{kind}} expression: "{{expression}}". Expected format: {{format}}',
+    srcOnlyForImg: 'bind-src can only be used on <img> elements. Found on <{{tag}}>.',
     value: {
       invalidElement:
         'bind-value can only be used on input, textarea, or select elements. Found on <{{tagName}}>. Use bind-content for display elements.\nElement: {{snippet}}',
@@ -52,7 +53,7 @@ const errors = {
     foreignPropertyBinding:
       'Pelela template "{{filePath}}" contains Angular-like property binding ("[property]=value"). PelelaJS does not support JS constructs in HTML. Pass static attributes and delegate logic to the ViewModel.',
     invalidComponentAttribute:
-      'Component <{{tag}}>: attribute "{{attr}}" must use "prop-" (one-way) or "link-" (two-way) prefix',
+      'Component <{{tag}}>: attribute "{{attr}}" must use "prop-" (one-way), "link-" (two-way) or "const-" prefix',
     missingParentProperty:
       'Component <{{tag}}>: parent property "{{parentKey}}" does not exist in parent view model',
     missingViewModel: 'Pelela template "{{filePath}}" must contain view-model="..." attribute',

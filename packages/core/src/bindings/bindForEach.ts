@@ -1,3 +1,4 @@
+import { stringify } from 'devalue'
 import { LINK_PREFIX, PROP_PREFIX } from '../commons/dom'
 import {
   extractElementSnippet,
@@ -28,7 +29,9 @@ function parseForEachExpression(
   expression: string,
 ): { itemName: string; collectionName: string } | null {
   const identifier = IDENTIFIER_PATTERN.source.replace(/^\^|\$$/g, '')
-  const match = expression.trim().match(new RegExp(`^(${identifier})\\s+of\\s+(${identifier})$`))
+  const match = expression
+    .trim()
+    .match(new RegExp(`^(${identifier})\\s+of\\s+(${identifier}(\\.${identifier})*)$`))
   if (!match) return null
   return { itemName: match[1], collectionName: match[2] }
 }
@@ -119,8 +122,11 @@ export function setupSingleForEachBinding<T extends object>(
   if (indexName && !isValidIdentifier(indexName)) {
     throw new InvalidBindingSyntaxError('index', rawIndexName ?? '', 'valid identifier')
   }
-  assertViewModelProperty(viewModel, collectionName, 'for-each', element)
-  const collection = viewModel[collectionName]
+  const collectionFirstSegment = collectionName.split('.')[0]
+  assertViewModelProperty(viewModel, collectionFirstSegment, 'for-each', element)
+  const collection = collectionName.includes('.')
+    ? getNestedProperty(viewModel, collectionName)
+    : viewModel[collectionName]
   if (!Array.isArray(collection)) {
     throw new InvalidPropertyTypeError({
       propertyName: collectionName,
@@ -221,7 +227,11 @@ function extractExtraDependencies(
     .filter(
       (propPath) => propPath && isExternalDependency(propPath, itemName, collectionName, indexName),
     )
-    .map((propPath) => propPath.split('.')[0])
+    .map((propPath) => {
+      const collectionFirstSegment = collectionName.split('.')[0]
+      const propFirstSegment = propPath.split('.')[0]
+      return propFirstSegment === collectionFirstSegment ? collectionFirstSegment : propPath
+    })
 }
 
 export function setupForEachBindings<T extends object>(
@@ -233,6 +243,10 @@ export function setupForEachBindings<T extends object>(
   return ownElements
     .map((element) => setupSingleForEachBinding(element, viewModel))
     .filter((binding): binding is ForEachBinding => binding !== null)
+}
+
+function serializeOptionValue(item: unknown): string {
+  return typeof item === 'object' && item !== null ? stringify(item) : String(item)
 }
 
 function createNewElement<T extends object>(
@@ -252,6 +266,11 @@ function createNewElement<T extends object>(
     indexRef,
   })
   const render = setupBindingsForElement(element, extendedViewModel)
+
+  if (element.tagName === 'OPTION') {
+    ;(element as HTMLOptionElement).value = serializeOptionValue(item)
+  }
+
   const lastElement =
     binding.renderedElements[binding.renderedElements.length - 1]?.element || binding.placeholder
   binding.renderedElements.push({
@@ -288,6 +307,11 @@ function updateExistingElements(binding: ForEachBinding, collection: unknown[]):
   binding.renderedElements.forEach((rendered, index) => {
     rendered.itemRef.current = collection[index]
     rendered.indexRef.current = index
+
+    if (rendered.element.tagName === 'OPTION') {
+      ;(rendered.element as HTMLOptionElement).value = serializeOptionValue(collection[index])
+    }
+
     rendered.render()
   })
 }
@@ -296,7 +320,9 @@ function renderSingleForEachBinding<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const collection = viewModel[binding.collectionName]
+  const collection = binding.collectionName.includes('.')
+    ? getNestedProperty(viewModel, binding.collectionName)
+    : viewModel[binding.collectionName]
   if (!Array.isArray(collection)) return
   const currentLength = collection.length
   const previousLength = binding.previousLength

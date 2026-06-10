@@ -1,6 +1,7 @@
 export { bootstrap } from './bootstrap/bootstrap'
 export { mountTemplate } from './bootstrap/mountTemplate'
 export {
+  CONST_PREFIX,
   isPelelaRootTag,
   isStandardHtmlTag,
   isValidComponentAttribute,

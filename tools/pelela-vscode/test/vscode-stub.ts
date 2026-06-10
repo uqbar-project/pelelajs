@@ -94,6 +94,7 @@ export const vscodeStub = {
 
   workspace: {
     onDidOpenTextDocument: () => ({ dispose: () => {} }),
+    findFiles: (_glob: string) => Promise.resolve([]),
   },
 
   window: {

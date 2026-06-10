@@ -28,6 +28,24 @@ describe('bindStyle', () => {
       expect(bindings).toHaveLength(2)
     })
 
+    it('should return empty bindings for empty bind-style attribute', () => {
+      container.innerHTML = '<div bind-style=""></div>'
+      const viewModel = {}
+
+      const bindings = setupStyleBindings(container, viewModel)
+
+      expect(bindings).toHaveLength(0)
+    })
+
+    it('should return empty bindings for whitespace-only bind-style attribute', () => {
+      container.innerHTML = '<div bind-style="   "></div>'
+      const viewModel = {}
+
+      const bindings = setupStyleBindings(container, viewModel)
+
+      expect(bindings).toHaveLength(0)
+    })
+
     it('should throw error if property does not exist', () => {
       container.innerHTML = '<div bind-style="missing"></div>'
       const viewModel = {}

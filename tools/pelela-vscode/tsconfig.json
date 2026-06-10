@@ -5,7 +5,6 @@
     "moduleResolution": "Bundler",
     "outDir": "dist",
     "sourceMap": true,
-    "rootDir": ".",
     "types": ["node", "vscode", "mocha"]
   },
   "include": ["src", "test"],

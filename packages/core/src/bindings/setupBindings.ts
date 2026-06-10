@@ -4,6 +4,7 @@ import { renderComponentBindings, setupComponentBindings } from './bindComponent
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderIfBindings, setupIfBindings } from './bindIf'
+import { renderSrcBindings, setupSrcBindings } from './bindSrc'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import { DependencyTracker } from './dependencyTracker'
@@ -14,6 +15,7 @@ import type {
   ContentBinding,
   ForEachBinding,
   IfBinding,
+  SrcBinding,
   StyleBinding,
   ValueBinding,
   ViewModel,
@@ -23,6 +25,7 @@ type AnyBinding =
   | ForEachBinding
   | ValueBinding
   | ContentBinding
+  | SrcBinding
   | IfBinding
   | ClassBinding
   | StyleBinding
@@ -52,6 +55,10 @@ function registerAllBindingDependencies(
     {
       list: bindings.contentBindings,
       getPath: (binding) => (binding as ContentBinding).propertyName,
+    },
+    {
+      list: bindings.srcBindings,
+      getPath: (binding) => (binding as SrcBinding).propertyName,
     },
     {
       list: bindings.ifBindings,
@@ -86,6 +93,7 @@ function registerAllBindingDependencies(
 function executeRenderPipeline<T extends object>(
   targetBindings: BindingsCollection,
   viewModel: ViewModel<T>,
+  changedPath?: string,
 ): void {
   const renderActions: Array<{
     condition: () => boolean
@@ -104,6 +112,10 @@ function executeRenderPipeline<T extends object>(
       render: () => renderContentBindings(targetBindings.contentBindings, viewModel),
     },
     {
+      condition: () => targetBindings.srcBindings.length > 0,
+      render: () => renderSrcBindings(targetBindings.srcBindings, viewModel),
+    },
+    {
       condition: () => targetBindings.ifBindings.length > 0,
       render: () => renderIfBindings(targetBindings.ifBindings, viewModel),
     },
@@ -117,7 +129,8 @@ function executeRenderPipeline<T extends object>(
     },
     {
       condition: () => targetBindings.componentBindings.length > 0,
-      render: () => renderComponentBindings(targetBindings.componentBindings, viewModel),
+      render: () =>
+        renderComponentBindings(targetBindings.componentBindings, viewModel, changedPath),
     },
   ]
 
@@ -138,6 +151,7 @@ export function setupBindings<T extends object>(
     componentBindings: setupComponentBindings(root, viewModel),
     valueBindings: setupValueBindings(root, viewModel),
     contentBindings: setupContentBindings(root, viewModel),
+    srcBindings: setupSrcBindings(root, viewModel),
     ifBindings: setupIfBindings(root, viewModel, skipRootIf),
     classBindings: setupClassBindings(root, viewModel),
     styleBindings: setupStyleBindings(root, viewModel),
@@ -153,7 +167,7 @@ export function setupBindings<T extends object>(
       ? tracker.getDependentBindingsWithGetterSupport(changedPath, bindings)
       : bindings
 
-    executeRenderPipeline(targetBindings, viewModel)
+    executeRenderPipeline(targetBindings, viewModel, changedPath)
   }
 
   render()

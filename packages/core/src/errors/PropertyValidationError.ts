@@ -5,6 +5,7 @@ export type BindingKind =
   | 'bind-class'
   | 'bind-value'
   | 'bind-content'
+  | 'bind-src'
   | 'bind-style'
   | 'for-each'
   | 'if'

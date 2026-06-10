@@ -1,4 +1,5 @@
 export type ViewModel<T extends object = object> = T & {
+  initialize?: () => void | Promise<void>
   [key: string]: unknown
 }
 
@@ -13,6 +14,11 @@ export type ValueBinding = {
 
 export type ContentBinding = {
   element: HTMLElement
+  propertyName: string
+}
+
+export type SrcBinding = {
+  element: HTMLImageElement
   propertyName: string
 }
 
@@ -53,11 +59,13 @@ export type ForEachBinding = {
 export type ComponentBinding = {
   childViewModel: ViewModel
   mappings: Array<{ parentKey: string; childKey: string }>
+  renderChild?: (changedPath?: string) => void
 }
 
 export type BindingsCollection = {
   valueBindings: ValueBinding[]
   contentBindings: ContentBinding[]
+  srcBindings: SrcBinding[]
   ifBindings: IfBinding[]
   classBindings: ClassBinding[]
   styleBindings: StyleBinding[]

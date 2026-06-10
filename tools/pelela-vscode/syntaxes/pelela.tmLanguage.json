@@ -270,8 +270,29 @@
     "binding-attribute": {
       "patterns": [
         {
+          "name": "meta.attribute.pelela.const",
+          "match": "\\b(const-[a-zA-Z0-9_-]+)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
+          "captures": {
+            "1": {
+              "name": "entity.other.attribute-name.pelela.binding"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "3": {
+              "name": "string.quoted.pelela"
+            },
+            "4": {
+              "name": "string.quoted.pelela"
+            },
+            "5": {
+              "name": "string.quoted.pelela"
+            }
+          }
+        },
+        {
           "name": "meta.attribute.pelela.binding",
-          "match": "\\b(bind-[a-zA-Z0-9_-]+|link-[a-zA-Z0-9_-]+|prop-[a-zA-Z0-9_-]+)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
+          "match": "\\b(bind-src|bind-[a-zA-Z0-9_-]+|link-[a-zA-Z0-9_-]+|prop-[a-zA-Z0-9_-]+)\\s*(=)\\s*(\"([^\"]*)\"|'([^']*)')",
           "captures": {
             "1": {
               "name": "entity.other.attribute-name.pelela.binding"

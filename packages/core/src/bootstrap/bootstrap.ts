@@ -40,5 +40,9 @@ export function bootstrap(options: PelelaOptions = {}): void {
     ;(root as HTMLElement & { __pelelaViewModel: unknown }).__pelelaViewModel = reactiveInstance
     render = setupBindings(root, reactiveInstance)
     console.log(`[pelela] View model "${name}" instantiated and bound`, reactiveInstance)
+
+    if (typeof reactiveInstance.initialize === 'function') {
+      reactiveInstance.initialize()
+    }
   })
 }

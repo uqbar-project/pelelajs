@@ -60,7 +60,7 @@ function addHtmlAttributeCompletions(items: vscode.CompletionItem[]): void {
   })
 }
 
-function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
+export function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
   const attrNames = getPelelaAttributes()
 
   const attributeSnippets: Record<string, { text: string; detail: string }> = {
@@ -96,6 +96,11 @@ function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
     } else if (name.startsWith('bind-')) {
       item.insertText = new vscode.SnippetString(`${name}="\${1:propiedad}"`)
       item.detail = 'Pelela: binding al view model'
+      item.sortText = `!0_${name}`
+    } else if (name.startsWith('const-')) {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
+      item.insertText = new vscode.SnippetString('const-${1:field-name}="${2:value}"')
+      item.detail = 'Pelela: valor constante para un componente'
       item.sortText = `!0_${name}`
     }
 

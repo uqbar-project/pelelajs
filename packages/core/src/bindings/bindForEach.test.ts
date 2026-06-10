@@ -924,6 +924,23 @@ describe('bindForEach', () => {
       expect(binding!.extraDependencies).not.toContain('i')
     })
 
+    it('should not produce false positives in dependency normalization when first segment matches as prefix but not exactly', () => {
+      container.innerHTML = `
+        <div for-each="item of userItems">
+          <span bind-content="username"></span>
+        </div>
+      `
+      const viewModel = { userItems: [], username: 'test' }
+      const binding = setupSingleForEachBinding(
+        container.querySelector('[for-each]') as HTMLElement,
+        viewModel,
+      )
+
+      expect(binding).not.toBeNull()
+      expect(binding!.extraDependencies).toContain('username')
+      expect(binding!.extraDependencies).not.toContain('user')
+    })
+
     it('should ignore empty or whitespace-only index attribute', () => {
       container.innerHTML = `
         <div for-each="item of items" index="   ">
@@ -974,6 +991,170 @@ describe('bindForEach', () => {
       expect(() => {
         setupSingleForEachBinding(container.querySelector('[for-each]') as HTMLElement, viewModel)
       }).toThrow(InvalidBindingSyntaxError)
+    })
+  })
+
+  describe('Issue #113 - nested paths and option value', () => {
+    it('should support nested paths in for-each collection', () => {
+      container.innerHTML = `
+        <div>
+          <span for-each="value of parent.nested.values" bind-content="value"></span>
+        </div>
+      `
+
+      const viewModel = {
+        parent: {
+          nested: {
+            values: [10, 20, 30],
+          },
+        },
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(3)
+      expect(spans[0].textContent).toBe('10')
+      expect(spans[1].textContent).toBe('20')
+      expect(spans[2].textContent).toBe('30')
+    })
+
+    it('should react to changes in nested for-each collection', () => {
+      container.innerHTML = `
+        <div>
+          <span for-each="value of parent.nested.values" bind-content="value"></span>
+        </div>
+      `
+
+      const viewModel = {
+        parent: {
+          nested: {
+            values: [10, 20],
+          },
+        },
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      let spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+
+      viewModel.parent.nested.values.push(30)
+      renderForEachBindings(bindings, viewModel)
+
+      spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(3)
+    })
+
+    it('should set option value to the for-each item object', () => {
+      container.innerHTML = `
+        <select>
+          <option for-each="type of types" bind-content="type.description"></option>
+        </select>
+      `
+
+      const viewModel = {
+        types: [
+          { description: 'Type A', value: 1 },
+          { description: 'Type B', value: 2 },
+        ],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const options = container.querySelectorAll('option')
+      expect(options).toHaveLength(2)
+      expect(options[0].textContent).toBe('Type A')
+      expect(options[0].value).toBe('[{"description":1,"value":2},"Type A",1]')
+      expect(options[1].textContent).toBe('Type B')
+      expect(options[1].value).toBe('[{"description":1,"value":2},"Type B",2]')
+    })
+
+    it('should set option value to string when item is not object', () => {
+      container.innerHTML = `
+        <select bind-value="selected">
+          <option for-each="item of values" bind-content="item"></option>
+        </select>
+      `
+      const viewModel = { values: [1, 2, 3], selected: null }
+
+      setupBindings(container, viewModel)
+
+      const options = container.querySelectorAll('option')
+      expect(options).toHaveLength(3)
+      expect(options[0].value).toBe('1')
+      expect(options[1].value).toBe('2')
+      expect(options[2].value).toBe('3')
+    })
+
+    it('should access nested properties of item in for-each', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span bind-content="item.name"></span>
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Item 1' }, { name: 'Item 2' }] }
+
+      setupBindings(container, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+      expect(spans[0].textContent).toBe('Item 1')
+      expect(spans[1].textContent).toBe('Item 2')
+    })
+
+    it('should access deeply nested properties of item in for-each', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span bind-content="item.details.name"></span>
+        </div>
+      `
+      const viewModel = {
+        items: [{ details: { name: 'Item 1' } }, { details: { name: 'Item 2' } }],
+      }
+
+      setupBindings(container, viewModel)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+      expect(spans[0].textContent).toBe('Item 1')
+      expect(spans[1].textContent).toBe('Item 2')
+    })
+
+    it('should bind to nested properties of item in for-each', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <input bind-value="item.name" />
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Item 1' }, { name: 'Item 2' }] }
+
+      setupBindings(container, viewModel)
+
+      const inputs = container.querySelectorAll('input')
+      expect(inputs).toHaveLength(2)
+      expect(inputs[0].value).toBe('Item 1')
+      expect(inputs[1].value).toBe('Item 2')
+    })
+
+    it('should update nested properties of item in for-each', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <input bind-value="item.name" />
+        </div>
+      `
+      const viewModel = { items: [{ name: 'Item 1' }, { name: 'Item 2' }] }
+
+      setupBindings(container, viewModel)
+
+      const inputs = container.querySelectorAll('input')
+      inputs[0].value = 'Updated Item 1'
+      inputs[0].dispatchEvent(new Event('input'))
+
+      expect(viewModel.items[0].name).toBe('Updated Item 1')
     })
   })
 })

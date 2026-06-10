@@ -29,7 +29,7 @@
     - **Comentarios:** Explicar el "porqué", no el "qué". No agregar comentarios inline en internas. Evitar comentarios inútiles. Prohibido usar comentarios inline en el medio de un método. Se permiten y deben preservarse los comentarios que describan el propósito o comportamiento de un método o test.
     - **Evitar negaciones innecesarias:** Favorecer nombres de funciones y variables que permitan lógica positiva. Evitar la doble negación (ej: facilitar `isValid` o `isUnsafe` para evitar `!isInvalid` o `!isSafe`).
     - **Consistencia:** Mantener estilo uniforme en todo el proyecto.
-    - **Markdown Formatting:** Siempre incluir una línea en blanco antes de cada encabezado (headings) y antes de los bloques de código dentro de listas (bullets/numbered lists).
+    - **Markdown Formatting:** Siempre incluir una línea en blanco antes de cada encabezado (headings) y antes de los bloques de código dentro de listas (bullets/numbered lists). Asegurar que todos los bloques de código declaren un lenguaje (ej. ```typescript o ```json) en lugar de dejarlos sin tipo. **SE RESPETA markdownlint** cuando se trabaja con archivos markdown **salvo para los planes de AI**.
     - **Linting CSS:** Seguir estándares de Stylelint: preferir strings en `@import` (sin `url()`) y evitar comillas en nombres de fuentes de una sola palabra (ej: usar `Inter` en lugar de `'Inter'`).
   </style_and_clean_code>
 

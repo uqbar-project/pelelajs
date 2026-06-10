@@ -1,3 +1,6 @@
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import { isPelelaRootTag, isStandardHtmlTag } from 'pelelajs/dom'
 import * as vscode from 'vscode'
 import {
   findClassDefinition,
@@ -11,18 +14,65 @@ import { findViewModelFile } from '../utils/fileUtils'
 const BIND_ATTRIBUTE_PATTERN = /(?:bind-[a-zA-Z0-9_-]+|if|for-each)=["']([^"']+)["']/g
 const CLICK_ATTRIBUTE_PATTERN = /click=["']([^"']+)["']/g
 
-function provideDefinition(
+export function provideDefinition(
   document: vscode.TextDocument,
   position: vscode.Position,
   _token: vscode.CancellationToken
 ): vscode.ProviderResult<vscode.Definition> {
   const lineText = document.lineAt(position.line).text
 
-  return (
+  const syncResult =
     checkViewModelDefinition(document, position, lineText) ||
     checkBindAttributeDefinitions(document, position, lineText) ||
     checkClickAttributeDefinition(document, position, lineText)
-  )
+
+  return syncResult ?? checkComponentTagDefinition(document, position, lineText)
+}
+
+function findActiveTagMatch(
+  lineText: string,
+  characterPosition: number
+): RegExpMatchArray | undefined {
+  const tagRegex = /<\/?([a-zA-Z0-9-]+)/g
+  const matches = Array.from(lineText.matchAll(tagRegex))
+
+  return matches.find((match) => {
+    const tagName = match[1]
+    const startPos = (match.index ?? 0) + match[0].indexOf(tagName)
+    const endPos = startPos + tagName.length
+    return characterPosition >= startPos && characterPosition <= endPos
+  })
+}
+
+function resolveComponentDefinition(
+  document: vscode.TextDocument,
+  tagName: string
+): vscode.ProviderResult<vscode.Definition> {
+  if (isStandardHtmlTag(tagName) || isPelelaRootTag(tagName)) {
+    return null
+  }
+
+  const currentDir = path.dirname(document.uri.fsPath)
+  const localPelelaPath = path.join(currentDir, `${tagName}.pelela`)
+  if (fs.existsSync(localPelelaPath)) {
+    return new vscode.Location(vscode.Uri.file(localPelelaPath), new vscode.Position(0, 0))
+  }
+
+  return vscode.workspace.findFiles(`**/${tagName}.pelela`).then((uris) => {
+    if (uris && uris.length > 0) {
+      return new vscode.Location(uris[0], new vscode.Position(0, 0))
+    }
+    return null
+  })
+}
+
+function checkComponentTagDefinition(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  lineText: string
+): vscode.ProviderResult<vscode.Definition> {
+  const activeMatch = findActiveTagMatch(lineText, position.character)
+  return activeMatch ? resolveComponentDefinition(document, activeMatch[1]) : null
 }
 
 function checkViewModelDefinition(
@@ -104,6 +154,57 @@ function handleForEachDefinition(
   return null
 }
 
+function buildPropertyPartPositions(
+  fullValue: string,
+  pathParts: string[]
+): Array<{ part: string; partStart: number; partEnd: number; partIndex: number }> {
+  return pathParts.reduce<
+    Array<{
+      part: string
+      partStart: number
+      partEnd: number
+      partIndex: number
+      nextSearchPos: number
+    }>
+  >((acc, rawPart, partIndex) => {
+    const part = rawPart.trim()
+    const searchFrom = acc.length > 0 ? acc[acc.length - 1].nextSearchPos : 0
+    const partStart = fullValue.indexOf(part, searchFrom)
+    const partEnd = partStart + part.length
+    acc.push({ part, partStart, partEnd, partIndex, nextSearchPos: partEnd + 1 })
+    return acc
+  }, [])
+}
+
+function resolvePropertyPartDefinition(
+  document: vscode.TextDocument,
+  fullValue: string,
+  pathParts: string[],
+  cursorOffsetInValue: number,
+  typescriptFilePath: string,
+  forEachInElement: ForEachResult | null
+): vscode.Location | null {
+  const partPositions = buildPropertyPartPositions(fullValue, pathParts)
+
+  const activePart = partPositions.find(
+    ({ partStart, partEnd }) => cursorOffsetInValue >= partStart && cursorOffsetInValue <= partEnd
+  )
+
+  if (!activePart) return null
+
+  if (forEachInElement && activePart.part === forEachInElement.itemName) {
+    return new vscode.Location(
+      document.uri,
+      new vscode.Position(forEachInElement.line, forEachInElement.itemPos)
+    )
+  }
+
+  return findNestedPropertyDefinition(
+    typescriptFilePath,
+    pathParts.slice(0, activePart.partIndex + 1)
+  )
+}
+
 function handlePropertyPathDefinition(
   document: vscode.TextDocument,
   fullValue: string,
@@ -112,28 +213,14 @@ function handlePropertyPathDefinition(
   forEachInElement: ForEachResult | null
 ): vscode.Location | null {
   const pathParts = fullValue.split('.')
-  let currentSearchPos = 0
-
-  for (let partIndex = 0; partIndex < pathParts.length; partIndex++) {
-    const part = pathParts[partIndex].trim()
-    const partStart = fullValue.indexOf(part, currentSearchPos)
-    const partEnd = partStart + part.length
-
-    if (cursorOffsetInValue >= partStart && cursorOffsetInValue <= partEnd) {
-      if (forEachInElement && part === forEachInElement.itemName) {
-        return new vscode.Location(
-          document.uri,
-          new vscode.Position(forEachInElement.line, forEachInElement.itemPos)
-        )
-      }
-
-      return findNestedPropertyDefinition(typescriptFilePath, pathParts.slice(0, partIndex + 1))
-    }
-
-    currentSearchPos = partEnd + 1
-  }
-
-  return null
+  return resolvePropertyPartDefinition(
+    document,
+    fullValue,
+    pathParts,
+    cursorOffsetInValue,
+    typescriptFilePath,
+    forEachInElement
+  )
 }
 
 function checkClickAttributeDefinition(

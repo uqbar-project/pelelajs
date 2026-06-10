@@ -11,7 +11,8 @@
     "resolveJsonModule": true,
     "types": ["node"],
     "paths": {
-      "pelelajs": ["./packages/core/src/index.ts"]
+      "pelelajs": ["./packages/core/src/index.ts"],
+      "pelelajs/dom": ["./packages/core/src/commons/dom.ts"]
     }
   }
 }

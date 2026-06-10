@@ -1,6 +1,7 @@
 type ErrorTranslations = {
   bindings: {
     invalidSyntax: string
+    srcOnlyForImg: string
     value: {
       invalidElement: string
     }

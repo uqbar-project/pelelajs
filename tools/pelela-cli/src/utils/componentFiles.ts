@@ -8,7 +8,8 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { t } from './i18n'
 
 const SRC_DIR = 'src'
 
@@ -16,30 +17,53 @@ export function getComponentTargetDir(): string {
   return existsSync(SRC_DIR) ? SRC_DIR : '.'
 }
 
+export function validateBasename(name: string, errorKey: string): void {
+  if (isAbsolute(name) || name.includes('..')) {
+    throw new Error(t(errorKey))
+  }
+
+  const nameBasename = basename(name)
+  if (!/^[A-Z][a-zA-Z0-9]*$/.test(nameBasename)) {
+    throw new Error(t(errorKey))
+  }
+}
+
 export function findComponentFile(componentName: string, extension: string): string | null {
   const targetDir = getComponentTargetDir()
-  const kebabName = toKebabCase(componentName)
-  const fileName = `${kebabName}${extension}`
+  const normalizedInput = componentName.replace(/\\/g, '/')
+  const kebabInput = normalizedInput
+    .split('/')
+    .map((part) => toKebabCase(part))
+    .join('/')
+  const searchFileName = basename(kebabInput) + extension
   const ignoredDirs = ['node_modules', 'dist']
+
+  const matchesPath = (fullPath: string): boolean => {
+    const normalizedFullPath = relative(resolve(targetDir), resolve(fullPath)).replace(/\\/g, '/')
+    return normalizedFullPath.endsWith(`${kebabInput}${extension}`)
+  }
 
   function searchDirectory(dir: string): string | null {
     if (!existsSync(dir)) return null
 
-    const files = readdirSync(dir)
-    const validFiles = files.filter((file) => !ignoredDirs.includes(file))
-
-    for (const file of validFiles) {
+    const findMatchInEntry = (file: string): string | null => {
       const fullPath = join(dir, file)
-      const stat = statSync(fullPath)
+      const isDirectory = statSync(fullPath).isDirectory()
 
-      if (stat.isDirectory()) {
-        const result = searchDirectory(fullPath)
-        if (result !== null) return result
-      } else if (file === fileName) {
-        return fullPath
+      if (isDirectory) {
+        return searchDirectory(fullPath)
       }
+
+      const isMatch = file === searchFileName && matchesPath(fullPath)
+      return isMatch ? fullPath : null
     }
-    return null
+
+    return (
+      readdirSync(dir)
+        .filter((file) => !ignoredDirs.includes(file))
+        .map(findMatchInEntry)
+        .find((result) => result !== null) ?? null
+    )
   }
 
   return searchDirectory(targetDir)
@@ -159,16 +183,18 @@ export function createTsFile(name: string, targetDir: string): void {
   writeFileSync(path, content)
 }
 
-export function createPelelaFile(name: string, targetDir: string): void {
+export function createPelelaFile(
+  name: string,
+  targetDir: string,
+  rootTag: 'pelela' | 'component' = 'pelela',
+): void {
   const { path, normalizedName } = prepareFile({ name, extension: 'pelela', targetDir })
 
   const componentName = basename(normalizedName)
-  const content = `<div>
-  <pelela view-model="${componentName}">
-    <h1>${componentName} Component</h1>
-    <!-- Add your template here -->
-  </pelela>
-</div>
+  const content = `<${rootTag} view-model="${componentName}">
+  <h1>${componentName} Component</h1>
+  <!-- Add your template here -->
+</${rootTag}>
 `
   writeFileSync(path, content)
 }

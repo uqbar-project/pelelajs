@@ -26,9 +26,9 @@ function copyRecursive(src: string, dest: string): void {
     if (!existsSync(dest)) {
       mkdirSync(dest, { recursive: true })
     }
-    readdirSync(src).forEach((child) => {
-      if (child !== 'node_modules') {
-        copyRecursive(join(src, child), join(dest, child))
+    readdirSync(src, { withFileTypes: true }).forEach((dirent) => {
+      if (dirent.name !== 'node_modules') {
+        copyRecursive(join(src, dirent.name), join(dest, dirent.name))
       }
     })
   } else {

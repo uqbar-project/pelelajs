@@ -14,6 +14,7 @@ class ProductCatalog {
 class ProductDetail {
   name = 'Laptop Pro'
   price = 1299
+  imageUrl = 'laptop.png'
   isAvailable() {
     return this.price > 0
   }
@@ -26,7 +27,8 @@ class NotFoundPage {
 
 const CATALOG_TEMPLATE =
   '<pelela view-model="ProductCatalog"><h1 bind-content="count"></h1></pelela>'
-const DETAIL_TEMPLATE = '<pelela view-model="ProductDetail"><p bind-content="name"></p></pelela>'
+const DETAIL_TEMPLATE =
+  '<pelela view-model="ProductDetail"><p bind-content="name"></p><img bind-src="imageUrl" /></pelela>'
 const NOT_FOUND_TEMPLATE =
   '<pelela view-model="NotFoundPage"><p bind-content="message"></p></pelela>'
 
@@ -122,6 +124,8 @@ describe('router', () => {
 
       expect(container.querySelector('h1')).toBeNull()
       expect(container.querySelector('p')).toBeInstanceOf(HTMLParagraphElement)
+      expect(container.querySelector('img')).toBeInstanceOf(HTMLImageElement)
+      expect(container.querySelector('img')!.getAttribute('src')).toBe('laptop.png')
     })
 
     it('should update the browser URL', () => {

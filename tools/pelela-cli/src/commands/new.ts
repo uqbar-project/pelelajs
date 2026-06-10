@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { join } from 'node:path'
 import chalk from 'chalk'
 import {
   createCssFile,
@@ -8,25 +8,24 @@ import {
   getComponentTargetDir,
   normalizeComponentName,
   toKebabCase,
+  validateBasename,
 } from '../utils/componentFiles'
 import { t } from '../utils/i18n'
 
 export interface NewCommandOptions {
   componentName: string
   css?: boolean
+  component?: boolean
 }
 
 export async function newCommand(options: NewCommandOptions): Promise<void> {
-  const { componentName, css = true } = options
+  const { componentName, css = true, component = false } = options
 
   if (!componentName) {
     throw new Error(t('commands.new.error.nameEmpty'))
   }
 
-  const basenameComponentName = basename(componentName)
-  if (!/^[A-Z][a-zA-Z0-9]*$/.test(basenameComponentName)) {
-    throw new Error(t('commands.new.error.nameInvalid'))
-  }
+  validateBasename(componentName, 'commands.new.error.nameInvalid')
 
   const targetDir = getComponentTargetDir()
   const normalizedName = normalizeComponentName(componentName, targetDir)
@@ -41,7 +40,7 @@ export async function newCommand(options: NewCommandOptions): Promise<void> {
 
   try {
     createTsFile(componentName, targetDir)
-    createPelelaFile(componentName, targetDir)
+    createPelelaFile(componentName, targetDir, component ? 'component' : 'pelela')
     if (css) {
       createCssFile(componentName, targetDir)
     }

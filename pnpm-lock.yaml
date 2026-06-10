@@ -109,6 +109,22 @@ importers:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
 
+  examples/nested-prop-component:
+    dependencies:
+      pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/core
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 7.2.4
+        version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+
   examples/routing:
     dependencies:
       pelelajs:
@@ -136,6 +152,9 @@ importers:
       commander:
         specifier: 12.1.0
         version: 12.1.0
+      devalue:
+        specifier: ^5.1.0
+        version: 5.8.1
       i18next:
         specifier: ^23.7.6
         version: 23.16.8
@@ -1936,6 +1955,9 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
+
+  devalue@5.8.1:
+    resolution: {integrity: sha512-4CXDYRBGqN+57wVJkuXBYmpAVUSg3L6JAQa/DFqm238G73E1wuyc/JhGQJzN7vUf/CMphYau2zXbfWzDR5aTEw==}
 
   diff@5.0.0:
     resolution: {integrity: sha512-/VTCrvm5Z0JGty/BWHljh+BAiw3IK+2j87NGMu8Nwc/f48WoDAC395uomO9ZD117ZOBaHmkX1oyLvkVM/aIT3w==}
@@ -5515,6 +5537,8 @@ snapshots:
 
   detect-libc@2.1.2:
     optional: true
+
+  devalue@5.8.1: {}
 
   diff@5.0.0: {}
 

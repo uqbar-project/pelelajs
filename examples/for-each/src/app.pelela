@@ -97,5 +97,28 @@
     <button click="searchUser">Buscar</button>
   </div>
   <p bind-content="userSearched" class="result-text"></p>
-  
+
+  <hr/>
+
+  <h2>8) Paths anidados en for-each</h2>
+
+  <p>Iterar sobre una propiedad anidada del ViewModel (filtrando pares con un getter)</p>
+
+  <div for-each="value of evenValues" class="card">
+    <span bind-content="value" class="result-text"></span>
+  </div>
+
+  <hr/>
+
+  <h2>9) Select con objetos (valor automático de option)</h2>
+
+  <p>El valor del option es el objeto completo, no solo el texto</p>
+
+  <select bind-value="selectedType">
+    <option for-each="type of types" bind-content="type.description"></option>
+  </select>
+
+  <p>Objeto seleccionado: <span bind-content="selectedType.description"></span></p>
+  <p>Valor numérico: <span bind-content="selectedType.value"></span></p>
+
 </pelela>

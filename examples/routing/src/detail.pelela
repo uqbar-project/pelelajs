@@ -1,7 +1,9 @@
 <pelela view-model="Detail">
   <h1>Detalle de Usuario</h1>
+  <img bind-src="avatarUrl" alt="Avatar del usuario" style="width: 100px; height: 100px; border-radius: 50%;" />
   <p>Estás viendo el detalle del ID: <strong bind-content="id"></strong></p>
   <p>Nombre recuperado por Query Params: <strong bind-content="name"></strong></p>
+  <p>Pokemon favorito: <strong bind-content="favoritePokemonName"></strong></p>
   
   <br />
   <button click="goBack">Volver al inicio</button>

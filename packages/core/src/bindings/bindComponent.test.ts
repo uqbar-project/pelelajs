@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initializeI18n, t } from '../commons/i18n'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
@@ -20,6 +20,200 @@ describe('bindComponent', () => {
   afterEach(() => {
     container.remove()
     clearComponentRegistry()
+  })
+
+  describe('nested properties reactivity', () => {
+    it('should initialize child component with a nested parent property path (prop-errors="bet.errors")', () => {
+      class ChildVM {
+        errors: string[] = []
+      }
+      defineComponent(
+        'error-list',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="errors"></span></component>',
+      )
+
+      container.innerHTML = '<error-list prop-errors="bet.errors"></error-list>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          bet: {
+            errors: ['error1'],
+          },
+        },
+        () => {},
+      )
+
+      const bindings = setupComponentBindings(container, parentVM)
+
+      expect(bindings).toHaveLength(1)
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+      expect(childVM.errors).toEqual(['error1'])
+    })
+
+    it('should initialize child component with a dotted parent key provided by a for-each context (item.name)', () => {
+      class ChildVM {
+        name = ''
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="name"></span></component>',
+      )
+
+      container.innerHTML = `
+        <div for-each="item of items">
+          <test-comp prop-name="item.name"></test-comp>
+        </div>
+      `
+
+      const parentVM = createReactiveViewModel(
+        {
+          items: [{ name: 'Alice' }],
+        },
+        () => {},
+      )
+
+      // setupBindings will internally call setupForEachBindings and then renderForEachBindings,
+      // which in turn calls setupComponentBindings for each item's template.
+      setupBindings(container, parentVM)
+
+      const childEl = container.querySelector('test-comp') as PelelaElement<Record<string, unknown>>
+      const childVM = childEl.__pelelaViewModel
+
+      expect(childVM).toBeDefined()
+      expect(childVM.name).toBe('Alice')
+    })
+
+    it('should re-render child component when nested array prop is mutated via push()', () => {
+      class ChildVM {
+        errors: string[] = []
+      }
+      defineComponent('error-list', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<error-list prop-errors="bet.errors"></error-list>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          bet: {
+            errors: [] as string[],
+          },
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const childEl = container.querySelector('error-list') as PelelaElement<ChildVM>
+      const childVM = childEl.__pelelaViewModel
+
+      expect(childVM.errors).toEqual([])
+
+      parentVM.bet.errors.push('Debe ingresar monto')
+
+      expect(childVM.errors).toEqual(['Debe ingresar monto'])
+    })
+
+    it('should re-render child component when nested array prop is cleared via length = 0', () => {
+      class ChildVM {
+        errors: string[] = []
+      }
+      defineComponent('error-list', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<error-list prop-errors="bet.errors"></error-list>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          bet: {
+            errors: ['Error 1', 'Error 2'] as string[],
+          },
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const childEl = container.querySelector('error-list') as PelelaElement<ChildVM>
+      const childVM = childEl.__pelelaViewModel
+
+      expect(childVM.errors).toEqual(['Error 1', 'Error 2'])
+
+      parentVM.bet.errors.length = 0
+
+      expect(childVM.errors).toEqual([])
+    })
+
+    it('should re-render child DOM when nested array prop is mutated via push()', () => {
+      class ChildVM {
+        errors: string[] = []
+      }
+      defineComponent(
+        'error-list',
+        ChildVM,
+        '<component view-model="ChildVM"><ul><li for-each="error of errors"><span bind-content="error"></span></li></ul></component>',
+      )
+
+      container.innerHTML = '<error-list prop-errors="bet.errors"></error-list>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          bet: {
+            errors: [] as string[],
+          },
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const childEl = container.querySelector('error-list') as PelelaElement<ChildVM>
+      const listItems = childEl.querySelectorAll('li')
+
+      expect(listItems.length).toBe(0)
+
+      parentVM.bet.errors.push('Error 1')
+
+      const updatedListItems = childEl.querySelectorAll('li')
+      expect(updatedListItems.length).toBe(1)
+      expect(updatedListItems[0].textContent).toBe('Error 1')
+    })
+
+    it('should propagate child changes to a nested parent property path with link-*', () => {
+      class ChildVM {
+        amount = ''
+      }
+      defineComponent('error-list', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<error-list link-amount="bet.amount"></error-list>'
+
+      const parentVM = createReactiveViewModel(
+        {
+          bet: {
+            amount: '10',
+          },
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const childEl = container.querySelector('error-list') as PelelaElement<ChildVM>
+      const childVM = childEl.__pelelaViewModel
+
+      expect(childVM.amount).toBe('10')
+
+      childVM.amount = '20'
+
+      expect(parentVM.bet.amount).toBe('20')
+    })
   })
 
   it('should initialize component with parent properties', () => {
@@ -134,6 +328,31 @@ describe('bindComponent', () => {
     expect(bindings[0].mappings).toHaveLength(1)
     expect(bindings[0].mappings[0].childKey).toBe('val')
     expect(bindings[0].mappings[0].parentKey).toBe('parentVal')
+  })
+
+  it('should call initialize() on child component after setup', () => {
+    const initSpy = vi.fn()
+    class ChildVM {
+      message = 'Initial'
+      initialize() {
+        initSpy()
+        this.message = 'Initialized'
+      }
+    }
+    defineComponent(
+      'init-child',
+      ChildVM,
+      '<component view-model="ChildVM"><span bind-content="message"></span></component>',
+    )
+
+    container.innerHTML = '<init-child></init-child>'
+
+    const parentVM = createReactiveViewModel({}, () => {})
+    setupComponentBindings(container, parentVM)
+
+    expect(initSpy).toHaveBeenCalled()
+    const span = container.querySelector('span')!
+    expect(span.innerHTML).toBe('Initialized')
   })
 
   describe('prop-* prefix validation', () => {
@@ -266,9 +485,128 @@ describe('bindComponent', () => {
         }),
       )
     })
+
+    it('should not throw error when a nested parent property path is missing (lenient validation)', () => {
+      class ChildVM {
+        name = ''
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp prop-name="missing.nested.path"></test-comp>'
+
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => {
+        setupComponentBindings(container, parentVM)
+      }).not.toThrow()
+    })
+  })
+
+  describe('const-* bindings', () => {
+    it('should accept const-* prefix for string constants without reactive mappings', () => {
+      class ChildVM {
+        message = ''
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="message"></span></component>',
+      )
+
+      container.innerHTML = '<test-comp const-message="Hello"></test-comp>'
+
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.message).toBe('Hello')
+      expect(bindings).toHaveLength(1)
+      expect(bindings[0].mappings).toEqual([])
+    })
+
+    it('should accept const-* prefix for number constants without reactive mappings', () => {
+      class ChildVM {
+        count = 0
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="count"></span></component>',
+      )
+
+      container.innerHTML = '<test-comp const-count="42"></test-comp>'
+
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.count).toBe(42)
+      expect(bindings).toHaveLength(1)
+      expect(bindings[0].mappings).toEqual([])
+    })
   })
 
   describe('renderComponentBindings', () => {
+    it('should skip child render for object props on initial render when references match', () => {
+      const boundParentKey = 'parentConfig'
+      const boundChildKey = 'config'
+
+      class ChildVM {
+        config: Record<string, unknown> = {}
+      }
+
+      const parentViewModel = {
+        parentConfig: { value: 'test' } as Record<string, unknown>,
+      }
+      const childViewModel = new ChildVM()
+      childViewModel.config = parentViewModel.parentConfig
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: boundParentKey, childKey: boundChildKey }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel)
+
+      expect(renderChild).not.toHaveBeenCalled()
+    })
+
+    it('should skip child render for object props when changedPath does not affect the bound parent path', () => {
+      const boundParentKey = 'parentConfig'
+      const boundChildKey = 'config'
+      const unrelatedChangedPath = 'otherValue'
+
+      class ChildVM {
+        config: Record<string, unknown> = {}
+      }
+
+      const parentViewModel = {
+        parentConfig: { value: 'test' } as Record<string, unknown>,
+        otherValue: 'changed',
+      }
+      const childViewModel = new ChildVM()
+      childViewModel.config = parentViewModel.parentConfig
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: boundParentKey, childKey: boundChildKey }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel, unrelatedChangedPath)
+
+      expect(renderChild).not.toHaveBeenCalled()
+    })
+
     it('should share object and array props by reference', () => {
       class ChildVM {
         items: string[] = []
@@ -308,6 +646,94 @@ describe('bindComponent', () => {
       // Verify references are still equal after mutation
       expect(childViewModel.items).toBe(parentViewModel.parentItems)
       expect(childViewModel.config).toBe(parentViewModel.parentConfig)
+    })
+
+    it('should skip propagation for unsafe keys (prototype pollution protection)', () => {
+      class ChildVM {
+        value: string = ''
+      }
+
+      const parentViewModel = { __proto__: 'unsafe' }
+      const childViewModel = new ChildVM()
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: '__proto__', childKey: 'value' }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel, 'value')
+
+      expect(renderChild).not.toHaveBeenCalled()
+    })
+
+    it('should skip rendering child for unsafe keys in mappings', () => {
+      class ChildVM {
+        value: string = ''
+      }
+
+      const parentViewModel = { constructor: 'unsafe' }
+      const childViewModel = new ChildVM()
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: 'constructor', childKey: 'value' }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel, 'value')
+
+      expect(renderChild).not.toHaveBeenCalled()
+    })
+
+    it('should propagate changes from child to parent with link bindings', () => {
+      class ChildVM {
+        name: string = ''
+      }
+
+      const parentViewModel = { childName: '' }
+      const childViewModel = new ChildVM()
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: 'childName', childKey: 'name' }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel, 'name')
+
+      expect(parentViewModel.childName).toBe('')
+    })
+
+    it('should render buffered paths after setupBindings assigns renderChild', () => {
+      class ChildVM {
+        value: string = ''
+      }
+
+      const parentViewModel = { value: 'test' }
+      const childViewModel = new ChildVM()
+      const renderChild = vi.fn()
+
+      const bindings: ComponentBinding[] = [
+        {
+          childViewModel: childViewModel as unknown as ViewModel<ChildVM>,
+          mappings: [{ parentKey: 'value', childKey: 'value' }],
+          renderChild,
+        },
+      ]
+
+      renderComponentBindings(bindings, parentViewModel, 'value')
+
+      expect(renderChild).toHaveBeenCalled()
     })
   })
 })

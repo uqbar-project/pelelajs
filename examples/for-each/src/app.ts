@@ -14,6 +14,11 @@ interface BetType {
   active?: boolean
 }
 
+interface SelectableType {
+  description: string
+  value: number
+}
+
 export class App {
   // 1) Ejemplo Select
   // 3) Ejemplo de filtros dinámicos (if + for-each)
@@ -56,6 +61,24 @@ export class App {
   newUserEmail: string = ''
   userSearch: string = ''
   userSearched: string = ''
+
+  // 8) Ejemplo Paths anidados en for-each
+  nested: { values: number[] } = {
+    values: [1, 2, 3, 4],
+  }
+
+  get evenValues(): number[] {
+    return this.nested.values.filter((value) => value % 2 === 0)
+  }
+
+  // 9) Ejemplo Select con objetos
+  types: SelectableType[] = [
+    { description: 'Type A', value: 1 },
+    { description: 'Type B', value: 2 },
+    { description: 'Type C', value: 3 },
+  ]
+
+  selectedType: SelectableType = this.types[0]
 
   addUser() {
     if (!this.newUserName || !this.newUserEmail) return
