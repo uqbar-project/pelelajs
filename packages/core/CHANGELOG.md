@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## npm-v0.7.1 - 2026-06-12
+- 🐛 Fix vite-plugin-pelelajs not publishing with pelelajs
+
 ## npm-v0.7.0 - 2026-06-12
 - 🪆 Component properties (props) are not reactive when nested #114
 - 📍 Allow passing constants between components #115
