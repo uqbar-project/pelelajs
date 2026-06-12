@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## npm-v0.7.0 - 2026-06-12
+- 🪆 Component properties (props) are not reactive when nested #114
+- 📍 Allow passing constants between components #115
+- 🔗 for-each does not support nested attributes #113
+- 🚀 Improvements to the CLI base example #110
+- 🔀 Renaming a component must include the routes.ts file #112
+- 🗺️ Allow navigating to a child component #117
+- 🧱 Add an option so 'pelela new Component' can be added as <component> #119
+- 🖼️ Add bind-src for img tags #121
+- ⚙️ Add an initialize() mechanism for the view model #122
+- 🚀 Task add changelog to release (#107)
+
 ## npm-v0.6.8 - 2026-05-28
 - 🐛 Fix release-it configuration
 
