@@ -12,7 +12,7 @@ module.exports = {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
     releaseName: 'vscode-v${version}',
     // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
-    releaseNotes: 'tsx ../../scripts/extract-changelog.ts ${version} ../../CHANGELOG.md',
+    releaseNotes: 'tsx ../../scripts/extract-changelog.ts ${version} CHANGELOG.md',
   },
   npm: {
     publish: false,
