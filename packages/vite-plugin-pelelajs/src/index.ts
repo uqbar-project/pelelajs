@@ -11,6 +11,14 @@ import {
 
 import type { Plugin } from 'vite'
 
+interface ComponentFileMetadata {
+  name: string
+  tsPath: string
+  pelelaPath: string
+  viewModelName: string
+  cssPaths: string[]
+}
+
 export function escapeTemplateForLiteral(html: string): string {
   return html.replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
 }
@@ -203,13 +211,7 @@ export default template;
 `
 }
 
-function findComponentFiles(srcDir: string): Array<{
-  name: string
-  tsPath: string
-  pelelaPath: string
-  viewModelName: string
-  cssPaths: string[]
-}> {
+function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
   if (!fs.existsSync(srcDir)) return []
 
   return fs
@@ -252,40 +254,38 @@ export function kebabToCamelCase(name: string): string {
   return name.replace(/[-.]([a-z])/g, (_, letter) => letter.toUpperCase())
 }
 
-function generateAutoRegistrationCode(
-  components: Array<{
-    name: string
-    tsPath: string
-    pelelaPath: string
-    viewModelName: string
-    cssPaths: string[]
-  }>,
-): string {
-  const componentImports = components
-    .map(({ tsPath, viewModelName }) => `import { ${viewModelName} } from "${tsPath}";`)
+function generateComponentMetadata(component: ComponentFileMetadata) {
+  const { name, viewModelName, tsPath, pelelaPath, cssPaths } = component
+  const baseName = kebabToCamelCase(name)
+  const templateVar = `${baseName}Template`
+  const cssUrlsVar = `${baseName}CssUrls`
+  const hasCss = cssPaths.length > 0
+
+  return {
+    componentImport: `import { ${viewModelName} } from "${tsPath}";`,
+
+    templateImport: `import ${templateVar}${
+      hasCss ? `, { __pelelaCssUrls as ${cssUrlsVar} }` : ''
+    } from "${pelelaPath}";`,
+
+    registration: hasCss
+      ? `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar}, { cssUrls: ${cssUrlsVar} });`
+      : `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar});`,
+  }
+}
+
+function generateAutoRegistrationCode(components: ComponentFileMetadata[]): string {
+  const processedComponents = components.map(generateComponentMetadata)
+
+  const componentImports = processedComponents
+    .map((processed) => processed.componentImport)
     .join('\n')
 
-  const templateImports = components
-    .map(({ name, pelelaPath, cssPaths }) => {
-      const templateVar = `${kebabToCamelCase(name)}Template`
-      if (cssPaths.length > 0) {
-        const cssUrlsVar = `${kebabToCamelCase(name)}CssUrls`
-        return `import ${templateVar}, { __pelelaCssUrls as ${cssUrlsVar} } from "${pelelaPath}";`
-      }
-      return `import ${templateVar} from "${pelelaPath}";`
-    })
+  const templateImports = processedComponents
+    .map((processed) => processed.templateImport)
     .join('\n')
 
-  const registrations = components
-    .map(({ viewModelName, name, cssPaths }) => {
-      const templateVar = `${kebabToCamelCase(name)}Template`
-      if (cssPaths.length > 0) {
-        const cssUrlsVar = `${kebabToCamelCase(name)}CssUrls`
-        return `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar}, { cssUrls: ${cssUrlsVar} });`
-      }
-      return `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar})`
-    })
-    .join('\n')
+  const registrations = processedComponents.map((processed) => processed.registration).join('\n')
 
   return `
 ${componentImports}
