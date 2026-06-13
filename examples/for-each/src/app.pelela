@@ -128,7 +128,7 @@
   <p>Ejemplo de bind-src funcionando dentro de un for-each para mostrar imágenes dinámicamente</p>
 
   <div for-each="character of characters" class="card">
-    <img bind-src="character.image" width="50" height="50" />
+    <img bind-src="character.image" alt="character image" width="50" height="50" />
     <span bind-content="character.name" class="result-text"></span>
   </div>
 
