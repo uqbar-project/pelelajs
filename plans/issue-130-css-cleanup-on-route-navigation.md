@@ -28,22 +28,31 @@ El vite-plugin-pelelajs genera automáticamente imports de CSS para cada compone
 - **Acción**: Modificar `packages/core/src/router/router.ts` para limpiar CSS de la ruta anterior al navegar, sin requerir cambios manuales en los ejemplos
 - **Archivo**: `/Users/fernando/workspace/algo3/pelelajs/packages/core/src/router/router.ts`
 - **Cambios**:
-  1. Agregar un `Set` para trackear los CSS asociados a la ruta actual mediante la metadata que provea el plugin
-  2. Modificar `renderPath` para:
-     - Remover los CSS asociados a la ruta anterior antes de montar la nueva
-     - Agregar los CSS asociados a la ruta actual
-  3. Modificar `resetRouter` para limpiar el `Set` de CSS asociados
-- **Nota**: El router debe funcionar con CSS auto-importados desde los `.ts` de Pelela sin que los ejemplos llamen manualmente a `registerCss`.
+  1. Agregar un `Set` para trackear los CSS asociados a la ruta actual mediante `cssUrls` metadata
+  2. Agregar función `registerCss` exportada para permitir registro manual si es necesario
+  3. Agregar función `createStylesheetLink` para crear links con atributo `data-pelela-css-url`
+  4. Agregar función `removeCssElements` para remover links basándose en el atributo `data-pelela-css-url`
+  5. Modificar `renderPath` para:
+     - Remover los CSS asociados a la ruta anterior usando `removeCssElements`
+     - Limpiar el Set de CSS asociados
+     - Agregar los CSS asociados a la ruta actual desde `entry.cssUrls`
+     - Crear links solo si no existen ya en el DOM
+  6. Modificar `resetRouter` para limpiar el `Set` de CSS asociados
+- **Nota**: El router usa `entry.cssUrls` que viene del componentRegistry, no requiere llamadas manuales a `registerCss` en los ejemplos.
 - **Confirmación requerida**: ¿Proceder a modificar router.ts?
 
-### Paso 4: Modificar vite-plugin para interceptar imports CSS
-- **Acción**: Modificar `packages/vite-plugin-pelelajs/src/index.ts` para detectar e inyectar automáticamente los imports de CSS asociados a los componentes Pelela
+### Paso 4: Modificar vite-plugin para detectar CSS y exponer metadata
+- **Acción**: Modificar `packages/vite-plugin-pelelajs/src/index.ts` para detectar archivos CSS asociados a componentes y exponer metadata
 - **Archivo**: `/Users/fernando/workspace/algo3/pelelajs/packages/vite-plugin-pelelajs/src/index.ts`
 - **Cambios**:
-  1. Detectar imports de archivos `.css` en los módulos de Pelela durante la transformación
-  2. Exponer metadata que indique qué CSS pertenece a cada componente o página cargada por el router
-  3. Asegurar que esta metadata se use para cargar y limpiar estilos sin cambios manuales en los ejemplos
-- **Nota**: No se debe basar en atributos `data-*` en `<link>`; la identificación debe ocurrir a partir de la intercepción de imports CSS en Vite.
+  1. Agregar interfaz `ComponentFileMetadata` con propiedad `cssPaths`
+  2. Modificar `getCssImport` para exportar `__pelelaCssUrls` array con URLs absolutas de CSS en lugar de importar directamente
+  3. Modificar `findComponentFiles` para detectar archivos `.css` asociados a componentes y agregarlos a `cssPaths`
+  4. Modificar `generateAutoRegistrationCode` para:
+     - Importar `__pelelaCssUrls` de los templates cuando existan CSS
+     - Pasar `cssUrls` como opción a `defineComponent`
+  5. Modificar `generateComponentMetadata` helper para manejar imports de CSS URLs
+- **Nota**: Los CSS se identifican por su nombre de archivo (ej: home.css, detail.css) y se exponen como URLs absolutas usando `import.meta.url`.
 - **Confirmación requerida**: ¿Proceder a modificar el vite-plugin?
 
 ### Paso 5: Crear tests para el cleanup de CSS
