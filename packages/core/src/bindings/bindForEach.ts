@@ -20,6 +20,7 @@ import { setupClickBindings } from './bindClick'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
+import { renderSrcBindings, setupSrcBindings } from './bindSrc'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import { getNestedProperty } from './nestedProperties'
@@ -92,6 +93,7 @@ function setupBindingsForElement<T extends object>(
   const bindings = {
     valueBindings: setupValueBindings(element, viewModel),
     contentBindings: setupContentBindings(element, viewModel),
+    srcBindings: setupSrcBindings(element, viewModel),
     ifBindings: setupIfBindings(element, viewModel),
     classBindings: setupClassBindings(element, viewModel),
     styleBindings: setupStyleBindings(element, viewModel),
@@ -101,6 +103,7 @@ function setupBindingsForElement<T extends object>(
   return () => {
     renderValueBindings(bindings.valueBindings, viewModel)
     renderContentBindings(bindings.contentBindings, viewModel)
+    renderSrcBindings(bindings.srcBindings, viewModel)
     renderIfBindings(bindings.ifBindings, viewModel)
     renderClassBindings(bindings.classBindings, viewModel)
     renderStyleBindings(bindings.styleBindings, viewModel)

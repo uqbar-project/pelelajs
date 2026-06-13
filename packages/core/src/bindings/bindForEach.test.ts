@@ -1157,4 +1157,170 @@ describe('bindForEach', () => {
       expect(viewModel.items[0].name).toBe('Updated Item 1')
     })
   })
+
+  describe('Issue #131 - bind-src within for-each', () => {
+    it('should render bind-src with simple item properties', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'image1.png' }, { image: 'image2.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('image1.png')
+      expect(images[1].getAttribute('src')).toBe('image2.png')
+    })
+
+    it('should render bind-src with nested item properties', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.profile.avatar" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ profile: { avatar: 'avatar1.png' } }, { profile: { avatar: 'avatar2.png' } }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('avatar1.png')
+      expect(images[1].getAttribute('src')).toBe('avatar2.png')
+    })
+
+    it('should update bind-src when item property changes', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'old.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const img = container.querySelector('img')!
+      expect(img.getAttribute('src')).toBe('old.png')
+
+      viewModel.people[0].image = 'new.png'
+      renderForEachBindings(bindings, viewModel)
+
+      expect(img.getAttribute('src')).toBe('new.png')
+    })
+
+    it('should handle null and undefined values in bind-src', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'initial.png' as string | null | undefined }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const img = container.querySelector('img')!
+      expect(img.getAttribute('src')).toBe('initial.png')
+
+      viewModel.people[0].image = null
+      renderForEachBindings(bindings, viewModel)
+      expect(img.getAttribute('src')).toBeNull()
+
+      viewModel.people[0].image = undefined
+      renderForEachBindings(bindings, viewModel)
+      expect(img.getAttribute('src')).toBeNull()
+    })
+
+    it('should handle bind-src when array grows', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'image1.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      expect(container.querySelectorAll('img')).toHaveLength(1)
+
+      viewModel.people.push({ image: 'image2.png' })
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('image1.png')
+      expect(images[1].getAttribute('src')).toBe('image2.png')
+    })
+
+    it('should handle bind-src when array shrinks', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'image1.png' }, { image: 'image2.png' }, { image: 'image3.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      expect(container.querySelectorAll('img')).toHaveLength(3)
+
+      viewModel.people.pop()
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('image1.png')
+      expect(images[1].getAttribute('src')).toBe('image2.png')
+    })
+
+    it('should render bind-src with index attribute', () => {
+      container.innerHTML = `
+        <div for-each="person of people" index="i">
+          <img bind-src="person.image" />
+          <span bind-content="i"></span>
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'image1.png' }, { image: 'image2.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('image1.png')
+      expect(images[1].getAttribute('src')).toBe('image2.png')
+
+      const spans = container.querySelectorAll('span')
+      expect(spans[0].textContent).toBe('0')
+      expect(spans[1].textContent).toBe('1')
+    })
+  })
 })

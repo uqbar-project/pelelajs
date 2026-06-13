@@ -19,6 +19,11 @@ interface SelectableType {
   value: number
 }
 
+interface Character {
+  name: string
+  image: string
+}
+
 export class App {
   // 1) Ejemplo Select
   // 3) Ejemplo de filtros dinámicos (if + for-each)
@@ -79,6 +84,22 @@ export class App {
   ]
 
   selectedType: SelectableType = this.types[0]
+
+  // 10) Ejemplo bind-src dentro de for-each (Issue #131)
+  characters: Character[] = [
+    {
+      name: 'Mario',
+      image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f935.svg',
+    },
+    {
+      name: 'Luigi',
+      image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f935.svg',
+    },
+    {
+      name: 'Peach',
+      image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f478.svg',
+    },
+  ]
 
   addUser() {
     if (!this.newUserName || !this.newUserEmail) return
