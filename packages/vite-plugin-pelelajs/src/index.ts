@@ -19,9 +19,9 @@ function getCssImport(pelelaFilePath: string): string {
   const cssFile = pelelaFilePath.replace(/\.pelela$/, '.css')
   if (fs.existsSync(cssFile)) {
     const cssBase = path.basename(cssFile)
-    return `import "./${cssBase}";\n`
+    return `export const __pelelaCssUrls = [new URL("./${cssBase}", import.meta.url).href];\n`
   }
-  return ''
+  return 'export const __pelelaCssUrls = [];\n'
 }
 
 const TAG_PATTERN = /<([\w-]+)([^>]*)>/g
@@ -203,9 +203,13 @@ export default template;
 `
 }
 
-function findComponentFiles(
-  srcDir: string,
-): Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }> {
+function findComponentFiles(srcDir: string): Array<{
+  name: string
+  tsPath: string
+  pelelaPath: string
+  viewModelName: string
+  cssPaths: string[]
+}> {
   if (!fs.existsSync(srcDir)) return []
 
   return fs
@@ -215,16 +219,19 @@ function findComponentFiles(
       const componentName = tsFile.replace(/\.ts$/, '')
       const pelelaFile = `${componentName}.pelela`
       const pelelaPath = path.join(srcDir, pelelaFile)
+      const cssPath = path.join(srcDir, `${componentName}.css`)
+      const cssPaths = fs.existsSync(cssPath) ? [`./${componentName}.css`] : []
 
       return {
         componentName,
         tsFile,
         pelelaFile,
         pelelaPath,
+        cssPaths,
       }
     })
     .filter(({ pelelaPath }) => fs.existsSync(pelelaPath))
-    .map(({ componentName, tsFile, pelelaFile, pelelaPath }) => {
+    .map(({ componentName, tsFile, pelelaFile, pelelaPath, cssPaths }) => {
       const templateContent = fs.readFileSync(pelelaPath, 'utf-8')
       const viewModelMatch = templateContent.match(
         /<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/,
@@ -236,6 +243,7 @@ function findComponentFiles(
         tsPath: `./src/${tsFile}`,
         pelelaPath: `./src/${pelelaFile}`,
         viewModelName,
+        cssPaths,
       }
     })
 }
@@ -245,23 +253,37 @@ export function kebabToCamelCase(name: string): string {
 }
 
 function generateAutoRegistrationCode(
-  components: Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }>,
+  components: Array<{
+    name: string
+    tsPath: string
+    pelelaPath: string
+    viewModelName: string
+    cssPaths: string[]
+  }>,
 ): string {
   const componentImports = components
     .map(({ tsPath, viewModelName }) => `import { ${viewModelName} } from "${tsPath}";`)
     .join('\n')
 
   const templateImports = components
-    .map(({ name, pelelaPath }) => {
+    .map(({ name, pelelaPath, cssPaths }) => {
       const templateVar = `${kebabToCamelCase(name)}Template`
+      if (cssPaths.length > 0) {
+        const cssUrlsVar = `${kebabToCamelCase(name)}CssUrls`
+        return `import ${templateVar}, { __pelelaCssUrls as ${cssUrlsVar} } from "${pelelaPath}";`
+      }
       return `import ${templateVar} from "${pelelaPath}";`
     })
     .join('\n')
 
   const registrations = components
-    .map(({ viewModelName, name }) => {
+    .map(({ viewModelName, name, cssPaths }) => {
       const templateVar = `${kebabToCamelCase(name)}Template`
-      return `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar});`
+      if (cssPaths.length > 0) {
+        const cssUrlsVar = `${kebabToCamelCase(name)}CssUrls`
+        return `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar}, { cssUrls: ${cssUrlsVar} });`
+      }
+      return `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar})`
     })
     .join('\n')
 

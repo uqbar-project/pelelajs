@@ -259,7 +259,9 @@ describe('pelelajsPlugin', () => {
       const mockContext = { error: () => {} }
       const result = handler.call(mockContext as never, pelelaPath, {} as never) as string
 
-      expect(result).toContain('import "./styled.css"')
+      expect(result).toContain(
+        'export const __pelelaCssUrls = [new URL("./styled.css", import.meta.url).href]',
+      )
     })
 
     it('reports error when multiple root tags exist', () => {

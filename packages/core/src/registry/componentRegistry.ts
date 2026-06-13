@@ -5,6 +5,11 @@ import { getViewModel, registerViewModel, replaceViewModel } from './viewModelRe
 type ComponentEntry = {
   name: string
   template: string
+  cssUrls?: string[]
+}
+
+type DefineComponentOptions = {
+  cssUrls?: string[]
 }
 
 const templatesByConstructor = new Map<ViewModelConstructor, ComponentEntry>()
@@ -14,7 +19,9 @@ export function defineComponent(
   name: string,
   creator: ViewModelConstructor,
   template: string,
+  options: DefineComponentOptions = {},
 ): void {
+  const { cssUrls = [] } = options
   const existingCreator = getViewModel(name)
   if (existingCreator && existingCreator !== creator) {
     console.warn(`[pelela] Component "${name}" re-evaluated. Replacing old constructor.`)
@@ -30,7 +37,11 @@ export function defineComponent(
   } else if (!existingCreator) {
     registerViewModel(name, creator)
   }
-  const entry = { name, template }
+  const entry = {
+    name,
+    template,
+    ...(cssUrls.length > 0 && { cssUrls }),
+  }
   templatesByConstructor.set(creator, entry)
   const tag = toKebabCase(name)
   componentsByTag.set(tag, { creator, entry })

@@ -8,6 +8,29 @@ let container: HTMLElement | null = null
 let routes: RouteDefinition[] = []
 let currentMatch: MatchedRoute | null = null
 let popstateHandler: (() => void) | null = null
+const currentRouteCss = new Set<string>()
+
+export function registerCss(cssPath: string): void {
+  currentRouteCss.add(cssPath)
+}
+
+function createStylesheetLink(cssUrl: string): HTMLLinkElement {
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = cssUrl
+  link.setAttribute('data-pelela-css-url', cssUrl)
+  return link
+}
+
+function removeCssElements(cssUrl: string): void {
+  const matchingLinks = Array.from(
+    document.querySelectorAll(`link[rel="stylesheet"][data-pelela-css-url="${cssUrl}"]`),
+  )
+
+  for (const element of matchingLinks) {
+    void element.remove()
+  }
+}
 
 function renderPath(pathname: string, search: string, nextPath?: string): void {
   const match = matchRoute(pathname, search, routes)
@@ -15,6 +38,23 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
   const entry = getComponentEntry(match.route.component)
   if (!entry) {
     throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
+  }
+
+  for (const cssUrl of currentRouteCss) {
+    removeCssElements(cssUrl)
+  }
+
+  currentRouteCss.clear()
+  const routeCssUrls = entry.cssUrls ?? []
+  for (const cssUrl of routeCssUrls) {
+    currentRouteCss.add(cssUrl)
+    const existingLink = document.querySelector(
+      `link[rel="stylesheet"][data-pelela-css-url="${cssUrl}"]`,
+    ) as HTMLLinkElement | null
+    if (!existingLink) {
+      const linkElement = createStylesheetLink(cssUrl)
+      document.head.appendChild(linkElement)
+    }
   }
 
   currentMatch = match
@@ -93,6 +133,10 @@ export const router = {
   searchParameters(): Record<string, string> {
     return currentMatch?.searchParameters ?? {}
   },
+
+  registerCss(cssPath: string): void {
+    registerCss(cssPath)
+  },
 }
 
 /**
@@ -106,4 +150,5 @@ export function resetRouter(): void {
   routes = []
   currentMatch = null
   popstateHandler = null
+  currentRouteCss.clear()
 }
