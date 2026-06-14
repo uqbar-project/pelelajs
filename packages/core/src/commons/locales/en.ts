@@ -33,6 +33,7 @@ const errors = {
   security: {
     domEnvironmentRequired: 'sanitizeHTML requires a DOM environment (document and DOMParser)',
     prototypePollution: '[pelela] Prototype pollution blocked on key: {{keys}}',
+    selfClosingError: 'Malformed HTML5: Element "{{element}}" accepts content and cannot be self-closed. Error found near: "...{{context}}..."',
   },
   routing: {
     routeNotFound: '[pelela] No route defined for "{{path}}"',

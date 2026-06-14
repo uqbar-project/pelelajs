@@ -93,5 +93,55 @@ describe('sanitization', () => {
         global.DOMParser = originalDOMParser
       }
     })
+
+    describe('self-closing tag validation', () => {
+      it('should throw error for self-closing textarea', () => {
+        expect(() => sanitizeHTML('<textarea bind-value="message" />')).toThrow(
+          /Malformed HTML5.*textarea.*cannot be self-closed/,
+        )
+      })
+
+      it('should throw error for self-closing div', () => {
+        expect(() => sanitizeHTML('<div class="container" />')).toThrow(
+          /Malformed HTML5.*div.*cannot be self-closed/,
+        )
+      })
+
+      it('should throw error for self-closing span', () => {
+        expect(() => sanitizeHTML('<span bind-content="text" />')).toThrow(
+          /Malformed HTML5.*span.*cannot be self-closed/,
+        )
+      })
+
+      it('should allow valid void elements like br', () => {
+        expect(() => sanitizeHTML('<br />')).not.toThrow()
+      })
+
+      it('should allow valid void elements like img', () => {
+        expect(() => sanitizeHTML('<img src="test.jpg" />')).not.toThrow()
+      })
+
+      it('should allow valid void elements like input', () => {
+        expect(() => sanitizeHTML('<input type="text" />')).not.toThrow()
+      })
+
+      it('should allow valid void elements like hr', () => {
+        expect(() => sanitizeHTML('<hr />')).not.toThrow()
+      })
+
+      it('should allow valid void elements like link', () => {
+        expect(() => sanitizeHTML('<link rel="stylesheet" href="style.css" />')).not.toThrow()
+      })
+
+      it('should allow valid void elements like meta', () => {
+        expect(() => sanitizeHTML('<meta charset="utf-8" />')).not.toThrow()
+      })
+
+      it('should throw error for custom tag self-closing', () => {
+        expect(() => sanitizeHTML('<custom-component />')).toThrow(
+          /Malformed HTML5.*custom-component.*cannot be self-closed/,
+        )
+      })
+    })
   })
 })

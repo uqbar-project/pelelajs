@@ -26,6 +26,7 @@ type ErrorTranslations = {
   security: {
     domEnvironmentRequired: string
     prototypePollution: string
+    selfClosingError: string
   }
   routing: {
     routeNotFound: string
