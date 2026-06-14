@@ -124,12 +124,12 @@ function validateNoInvalidSelfClosingTags(htmlContent: string): void {
       Math.min(htmlContent.length, matchIndex + 40),
     )
 
-    throw new Error(
-      t('errors.security.selfClosingError', '', {
-        element: invalidMatch[1],
-        context: contextSnippet.trim(),
-      }),
-    )
+    const errorMessage = t('errors.security.selfClosingError', '', {
+      element: invalidMatch[1],
+      context: contextSnippet.trim(),
+    })
+
+    throw new Error(`[pelela] ${errorMessage}`)
   }
 }
 
