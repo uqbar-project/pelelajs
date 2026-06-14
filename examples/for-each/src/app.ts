@@ -14,9 +14,25 @@ interface BetType {
   active?: boolean
 }
 
+class BetClass {
+  constructor(
+    public description: string,
+    public multiplier: number,
+  ) {}
+
+  getLabel(): string {
+    return `${this.description} x${this.multiplier}`
+  }
+}
+
 interface SelectableType {
   description: string
   value: number
+}
+
+interface Character {
+  name: string
+  image: string
 }
 
 export class App {
@@ -80,6 +96,22 @@ export class App {
 
   selectedType: SelectableType = this.types[0]
 
+  // 10) Ejemplo bind-src dentro de for-each (Issue #131)
+  characters: Character[] = [
+    {
+      name: 'Mario',
+      image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f935.svg',
+    },
+    {
+      name: 'Luigi',
+      image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f935.svg',
+    },
+    {
+      name: 'Peach',
+      image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f478.svg',
+    },
+  ]
+
   addUser() {
     if (!this.newUserName || !this.newUserEmail) return
 
@@ -93,6 +125,19 @@ export class App {
 
     this.newUserName = ''
     this.newUserEmail = ''
+  }
+
+  // 10) Ejemplo Select con class instances
+  betClasses: BetClass[] = [
+    new BetClass('Ganador', 3),
+    new BetClass('Segundo Puesto', 2),
+    new BetClass('Tercero', 1.5),
+  ]
+
+  selectedBetClass: BetClass = this.betClasses[0]
+
+  get selectedBetLabel(): string {
+    return this.selectedBetClass.getLabel()
   }
 
   // 7) Interacción del usuario con lógica interna

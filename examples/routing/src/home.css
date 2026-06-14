@@ -1,19 +1,7 @@
-body {
-  font-family: system-ui, -apple-system, sans-serif;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-  background-color: #f9fafb;
-  color: #111827;
-}
+/* Home page specific styles */
 
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  margin-bottom: 0.5rem;
+h1 {
+  color: #2563eb;
 }
 
 button {
@@ -38,4 +26,13 @@ button.secondary {
 
 button.secondary:hover {
   background-color: #e5e7eb;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  margin-bottom: 0.5rem;
 }

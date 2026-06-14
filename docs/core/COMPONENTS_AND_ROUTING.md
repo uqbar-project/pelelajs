@@ -115,3 +115,42 @@ graph TD
 ```
 
 This design keeps the developer experience declarative, minimizing the need for manual setup while still allowing complex single-page application (SPA) architectures.
+
+## CSS Management in Routing
+
+When navigating between routes, PelelaJS automatically manages component-specific CSS to prevent style conflicts and accumulation.
+
+### Automatic CSS Loading
+
+Each component can have an associated CSS file (e.g., `home.css` for `home.ts`, `detail.css` for `detail.ts`). The Vite plugin detects these files during build time and exposes their URLs as metadata.
+
+When a route is activated:
+
+1. The router retrieves the CSS URLs associated with the matched component from the component registry
+2. For each CSS URL, the router creates a `<link rel="stylesheet">` element in the document head with a `data-pelela-css-url` attribute
+3. The CSS is loaded and applied to the page
+
+### CSS Cleanup on Navigation
+
+To prevent style conflicts where CSS from previous routes interferes with the current route, the router automatically cleans up CSS before mounting a new component.
+
+When navigating to a new route:
+
+1. The router identifies all `<link>` elements with the `data-pelela-css-url` attribute that belong to the previous route
+2. These elements are removed from the DOM
+3. The CSS URLs Set is cleared
+4. The new component's CSS URLs are registered and their corresponding `<link>` elements are created
+
+This ensures that only the CSS relevant to the current route is active, preventing unintended style inheritance.
+
+### Internal Implementation
+
+The router maintains a Set of CSS URLs for the current route. This Set is:
+
+- Cleared before each navigation
+- Populated with the CSS URLs of the newly activated component
+- Used to identify which `<link>` elements to remove during cleanup
+
+CSS URLs are not cached across route changes. Each navigation triggers a fresh CSS load for the target component, ensuring style isolation between pages.
+
+Global CSS files (imported in the main entry point) are not affected by this cleanup mechanism and remain active throughout the application lifecycle.

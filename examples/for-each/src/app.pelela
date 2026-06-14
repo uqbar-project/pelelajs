@@ -121,4 +121,27 @@
   <p>Objeto seleccionado: <span bind-content="selectedType.description"></span></p>
   <p>Valor numérico: <span bind-content="selectedType.value"></span></p>
 
+  <hr/>
+
+  <h2>10) bind-src dentro de for-each (Issue #131)</h2>
+
+  <p>Ejemplo de bind-src funcionando dentro de un for-each para mostrar imágenes dinámicamente</p>
+
+  <div for-each="character of characters" class="card">
+    <img bind-src="character.image" alt="character image" width="50" height="50" />
+    <span bind-content="character.name" class="result-text"></span>
+  </div>
+
+  <hr/>
+
+  <h2>11) Select con class instances (comportamiento preservado)</h2>
+
+  <p>Al seleccionar, el objeto conserva sus métodos porque se guarda la referencia original.</p>
+
+  <select bind-value="selectedBetClass">
+    <option for-each="betClass of betClasses" bind-content="betClass.description"></option>
+  </select>
+
+  <p>Etiqueta calculada con método: <span bind-content="selectedBetLabel"></span></p>
+
 </pelela>

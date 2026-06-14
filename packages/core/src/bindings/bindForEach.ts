@@ -1,4 +1,3 @@
-import { stringify } from 'devalue'
 import { LINK_PREFIX, PROP_PREFIX } from '../commons/dom'
 import {
   extractElementSnippet,
@@ -20,9 +19,11 @@ import { setupClickBindings } from './bindClick'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderIfBindings, setupIfBindings } from './bindIf'
+import { renderSrcBindings, setupSrcBindings } from './bindSrc'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import { getNestedProperty } from './nestedProperties'
+import { setOptionValue } from './optionValues'
 import type { ForEachBinding, ViewModel } from './types'
 
 function parseForEachExpression(
@@ -92,6 +93,7 @@ function setupBindingsForElement<T extends object>(
   const bindings = {
     valueBindings: setupValueBindings(element, viewModel),
     contentBindings: setupContentBindings(element, viewModel),
+    srcBindings: setupSrcBindings(element, viewModel),
     ifBindings: setupIfBindings(element, viewModel),
     classBindings: setupClassBindings(element, viewModel),
     styleBindings: setupStyleBindings(element, viewModel),
@@ -101,6 +103,7 @@ function setupBindingsForElement<T extends object>(
   return () => {
     renderValueBindings(bindings.valueBindings, viewModel)
     renderContentBindings(bindings.contentBindings, viewModel)
+    renderSrcBindings(bindings.srcBindings, viewModel)
     renderIfBindings(bindings.ifBindings, viewModel)
     renderClassBindings(bindings.classBindings, viewModel)
     renderStyleBindings(bindings.styleBindings, viewModel)
@@ -245,8 +248,9 @@ export function setupForEachBindings<T extends object>(
     .filter((binding): binding is ForEachBinding => binding !== null)
 }
 
-function serializeOptionValue(item: unknown): string {
-  return typeof item === 'object' && item !== null ? stringify(item) : String(item)
+function setOptionElementValue(element: HTMLOptionElement, item: unknown, index: number): void {
+  element.value = typeof item === 'object' && item !== null ? String(index) : String(item)
+  setOptionValue(element, item)
 }
 
 function createNewElement<T extends object>(
@@ -268,7 +272,7 @@ function createNewElement<T extends object>(
   const render = setupBindingsForElement(element, extendedViewModel)
 
   if (element.tagName === 'OPTION') {
-    ;(element as HTMLOptionElement).value = serializeOptionValue(item)
+    setOptionElementValue(element as HTMLOptionElement, item, index)
   }
 
   const lastElement =
@@ -309,7 +313,7 @@ function updateExistingElements(binding: ForEachBinding, collection: unknown[]):
     rendered.indexRef.current = index
 
     if (rendered.element.tagName === 'OPTION') {
-      ;(rendered.element as HTMLOptionElement).value = serializeOptionValue(collection[index])
+      setOptionElementValue(rendered.element as HTMLOptionElement, collection[index], index)
     }
 
     rendered.render()

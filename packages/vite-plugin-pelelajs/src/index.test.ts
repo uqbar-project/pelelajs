@@ -166,6 +166,35 @@ describe('pelelajsPlugin', () => {
 
       process.cwd = originalCwd
     })
+
+    it('generates registration code with cssUrls when component has adjacent css file', () => {
+      const srcDir = path.join(tempDir, 'src')
+      fs.mkdirSync(srcDir, { recursive: true })
+      fs.writeFileSync(path.join(srcDir, 'styled.ts'), 'export class Styled {}')
+      fs.writeFileSync(
+        path.join(srcDir, 'styled.pelela'),
+        '<pelela view-model="Styled"><h1>Styled</h1></pelela>',
+      )
+      fs.writeFileSync(path.join(srcDir, 'styled.css'), 'h1 { color: red; }')
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+
+        const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+
+        expect(result).toContain(
+          'import styledTemplate, { __pelelaCssUrls as styledCssUrls } from "./src/styled.pelela"',
+        )
+        expect(result).toContain(
+          'defineComponent("Styled", Styled, styledTemplate, { cssUrls: styledCssUrls })',
+        )
+      } finally {
+        process.cwd = originalCwd
+      }
+    })
   })
 
   describe('load - pelela files', () => {
@@ -259,7 +288,9 @@ describe('pelelajsPlugin', () => {
       const mockContext = { error: () => {} }
       const result = handler.call(mockContext as never, pelelaPath, {} as never) as string
 
-      expect(result).toContain('import "./styled.css"')
+      expect(result).toContain(
+        'export const __pelelaCssUrls = [new URL("./styled.css", import.meta.url).href]',
+      )
     })
 
     it('reports error when multiple root tags exist', () => {

@@ -1,4 +1,10 @@
+import { setRouterActive } from '../bootstrap/bootstrap'
 import { mountTemplate } from '../bootstrap/mountTemplate'
+import {
+  createStylesheetLink,
+  findExistingStylesheetLink,
+  removeStylesheetLinks,
+} from '../commons/cssLoader'
 import { RoutingError } from '../errors/RoutingError'
 import { getComponentEntry } from '../registry/componentRegistry'
 import { matchRoute } from './routeMatcher'
@@ -8,6 +14,11 @@ let container: HTMLElement | null = null
 let routes: RouteDefinition[] = []
 let currentMatch: MatchedRoute | null = null
 let popstateHandler: (() => void) | null = null
+const currentRouteCss = new Set<string>()
+
+export function registerCss(cssPath: string): void {
+  currentRouteCss.add(cssPath)
+}
 
 function renderPath(pathname: string, search: string, nextPath?: string): void {
   const match = matchRoute(pathname, search, routes)
@@ -15,6 +26,21 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
   const entry = getComponentEntry(match.route.component)
   if (!entry) {
     throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
+  }
+
+  for (const cssUrl of currentRouteCss) {
+    removeStylesheetLinks(cssUrl)
+  }
+
+  currentRouteCss.clear()
+  const routeCssUrls = entry.cssUrls ?? []
+  for (const cssUrl of routeCssUrls) {
+    currentRouteCss.add(cssUrl)
+    const existingLink = findExistingStylesheetLink(cssUrl)
+    if (!existingLink) {
+      const linkElement = createStylesheetLink(cssUrl)
+      document.head.appendChild(linkElement)
+    }
   }
 
   currentMatch = match
@@ -44,6 +70,7 @@ export const router = {
    * All components must be registered with defineComponent() before calling start().
    */
   start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
+    setRouterActive()
     validateRoutesHaveTemplates(routeDefs)
 
     if (popstateHandler) {
@@ -93,6 +120,10 @@ export const router = {
   searchParameters(): Record<string, string> {
     return currentMatch?.searchParameters ?? {}
   },
+
+  registerCss(cssPath: string): void {
+    currentRouteCss.add(cssPath)
+  },
 }
 
 /**
@@ -106,4 +137,5 @@ export function resetRouter(): void {
   routes = []
   currentMatch = null
   popstateHandler = null
+  currentRouteCss.clear()
 }
