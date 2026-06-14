@@ -150,6 +150,23 @@ describe('router', () => {
       expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(RoutingError))
     })
 
+    it('should call handleError when renderPath fails during navigateTo', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      const handleErrorSpy = vi.spyOn(mountTemplate, 'handleError')
+      const mountTemplateSpy = vi.spyOn(mountTemplate, 'mountTemplate').mockImplementation(() => {
+        throw new Error('Mount failed')
+      })
+
+      router.navigateTo('/')
+
+      expect(handleErrorSpy).toHaveBeenCalledWith(expect.any(Error))
+
+      mountTemplateSpy.mockRestore()
+      handleErrorSpy.mockRestore()
+    })
+
     it('should NOT update the browser URL when navigation fails (atomicity)', () => {
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
@@ -323,6 +340,19 @@ describe('router', () => {
       // We can't directly access currentRouteCss, but we can verify it doesn't throw
       expect(() => {
         router.registerCss('/styles/another.css')
+      }).not.toThrow()
+    })
+
+    it('should add CSS path when called before start', () => {
+      registerTestComponents()
+      // Call registerCss before start
+      router.registerCss('/styles/before-start.css')
+
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      // Verify it doesn't throw
+      expect(() => {
+        router.registerCss('/styles/after-start.css')
       }).not.toThrow()
     })
   })
