@@ -14,14 +14,23 @@ interface BetType {
   active?: boolean
 }
 
+type Bet = number | string
+
 class BetClass {
   constructor(
-    public description: string,
-    public multiplier: number,
+    public description: string
   ) {}
+}
 
-  getLabel(): string {
-    return `${this.description} x${this.multiplier}`
+class NumericBet extends BetClass {
+  get bets(): Bet[] {
+    return [1, 2, 3, 4]
+  }
+}
+
+class DozenBet extends BetClass {
+  get bets(): Bet[] {
+    return ['1-12', '13-24', '25-36']
   }
 }
 
@@ -129,16 +138,12 @@ export class App {
 
   // 10) Ejemplo Select con class instances
   betClasses: BetClass[] = [
-    new BetClass('Ganador', 3),
-    new BetClass('Segundo Puesto', 2),
-    new BetClass('Tercero', 1.5),
+    new NumericBet('Pleno'),
+    new DozenBet('Docena'),
   ]
 
   selectedBetClass: BetClass = this.betClasses[0]
-
-  get selectedBetLabel(): string {
-    return this.selectedBetClass.getLabel()
-  }
+  selectedBet: Bet | null = null
 
   // 7) Interacción del usuario con lógica interna
   async searchUser() {

@@ -57,9 +57,9 @@
   <table>
     <tbody>
       <tr for-each="user of users">
-        <td bind-content="user.id"/>
-        <td bind-content="user.name"/>
-        <td bind-content="user.email"/>
+        <td bind-content="user.id">
+        <td bind-content="user.name">
+        <td bind-content="user.email">
       </tr>
     </tbody>
   </table>
@@ -138,10 +138,16 @@
 
   <p>Al seleccionar, el objeto conserva sus métodos porque se guarda la referencia original.</p>
 
-  <select bind-value="selectedBetClass">
-    <option for-each="betClass of betClasses" bind-content="betClass.description"></option>
-  </select>
+  <div class="card">
+    <select bind-value="selectedBetClass">
+      <option for-each="betClass of betClasses" bind-content="betClass.description"></option>
+    </select>
+  </div>
 
-  <p>Etiqueta calculada con método: <span bind-content="selectedBetLabel"></span></p>
+  <div class="card">
+    <select bind-value="selectedBet">
+      <option for-each="bet of selectedBetClass.bets" bind-content="bet"></option>
+    </select>
+  </div>
 
 </pelela>
