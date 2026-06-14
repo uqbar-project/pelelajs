@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ViewModelRegistrationError } from '../errors/index'
+import { defineComponent } from '../registry/componentRegistry'
 import { clearRegistry, registerViewModel } from '../registry/viewModelRegistry'
 import type { PelelaElement } from '../types'
 import { bootstrap } from './bootstrap'
@@ -224,5 +225,53 @@ describe('bootstrap', () => {
     )
 
     logSpy.mockRestore()
+  })
+
+  describe('CSS loading', () => {
+    beforeEach(() => {
+      document.head.innerHTML = ''
+      clearRegistry()
+    })
+
+    it('should load CSS when component has cssUrls', () => {
+      const cssUrl = 'http://example.com/style.css'
+      defineComponent(
+        'CssComponent',
+        TestViewModel,
+        '<pelela view-model="CssComponent"></pelela>',
+        {
+          cssUrls: [cssUrl],
+        },
+      )
+
+      document.body.innerHTML = `
+        <pelela view-model="CssComponent"></pelela>
+      `
+
+      bootstrap()
+
+      const link = document.querySelector(`link[data-pelela-css-url="${cssUrl}"]`)
+      expect(link).not.toBeNull()
+      expect(link?.getAttribute('rel')).toBe('stylesheet')
+      expect(link?.getAttribute('href')).toBe(cssUrl)
+    })
+
+    it('should not load CSS when component has no cssUrls', () => {
+      defineComponent(
+        'CssComponent',
+        TestViewModel,
+        '<pelela view-model="CssComponent"></pelela>',
+        {},
+      )
+
+      document.body.innerHTML = `
+        <pelela view-model="CssComponent"></pelela>
+      `
+
+      bootstrap()
+
+      const links = document.querySelectorAll('link[data-pelela-css-url]')
+      expect(links.length).toBe(0)
+    })
   })
 })

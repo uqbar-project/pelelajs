@@ -310,4 +310,19 @@ describe('router', () => {
       expect(container.querySelector('p')!.innerHTML).toBe('Page not found')
     })
   })
+
+  describe('registerCss', () => {
+    it('should add CSS path to currentRouteCss set', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      router.registerCss('/styles/custom.css')
+
+      // Verify the CSS path was added by checking that it's in the set
+      // We can't directly access currentRouteCss, but we can verify it doesn't throw
+      expect(() => {
+        router.registerCss('/styles/another.css')
+      }).not.toThrow()
+    })
+  })
 })

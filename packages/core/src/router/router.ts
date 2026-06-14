@@ -122,7 +122,7 @@ export const router = {
   },
 
   registerCss(cssPath: string): void {
-    registerCss(cssPath)
+    currentRouteCss.add(cssPath)
   },
 }
 

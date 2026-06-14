@@ -475,5 +475,80 @@ describe('bindValue', () => {
       const select = container.querySelector('select')!
       expect(select.selectedIndex).toBe(1)
     })
+
+    it('should handle textarea elements', () => {
+      container.innerHTML = '<textarea bind-value="description"></textarea>'
+      const viewModel = { description: 'initial' }
+
+      setupValueBindings(container, viewModel)
+
+      const textarea = container.querySelector('textarea')!
+      textarea.value = 'updated'
+      textarea.dispatchEvent(new Event('input'))
+
+      expect(viewModel.description).toBe('updated')
+    })
+
+    it('should render textarea values', () => {
+      container.innerHTML = '<textarea bind-value="description"></textarea>'
+      const viewModel = { description: 'initial' }
+      const bindings = setupValueBindings(container, viewModel)
+
+      viewModel.description = 'updated'
+      renderValueBindings(bindings, viewModel)
+
+      const textarea = container.querySelector('textarea')!
+      expect(textarea.value).toBe('updated')
+    })
+
+    it('should handle select with static options (no for-each)', () => {
+      container.innerHTML = `
+        <select bind-value="selectedValue">
+          <option value="a">Option A</option>
+          <option value="b">Option B</option>
+        </select>
+      `
+      const viewModel = { selectedValue: 'a' }
+      const bindings = setupValueBindings(container, viewModel)
+
+      renderValueBindings(bindings, viewModel)
+
+      const select = container.querySelector('select')!
+      expect(select.value).toBe('a')
+    })
+
+    it('should update viewModel when static option is selected', () => {
+      container.innerHTML = `
+        <select bind-value="selectedValue">
+          <option value="a">Option A</option>
+          <option value="b">Option B</option>
+        </select>
+      `
+      const viewModel = { selectedValue: 'a' }
+
+      setupValueBindings(container, viewModel)
+
+      const select = container.querySelector('select')!
+      select.value = 'b'
+      select.dispatchEvent(new Event('input'))
+
+      expect(viewModel.selectedValue).toBe('b')
+    })
+
+    it('should handle select with no matching option', () => {
+      container.innerHTML = `
+        <select bind-value="selectedValue">
+          <option value="a">Option A</option>
+          <option value="b">Option B</option>
+        </select>
+      `
+      const viewModel = { selectedValue: 'c' }
+      const bindings = setupValueBindings(container, viewModel)
+
+      renderValueBindings(bindings, viewModel)
+
+      const select = container.querySelector('select')!
+      expect(select.selectedIndex).toBe(-1)
+    })
   })
 })

@@ -169,7 +169,7 @@ describe('pelelajsPlugin', () => {
 
     it('generates registration code with cssUrls when component has adjacent css file', () => {
       const srcDir = path.join(tempDir, 'src')
-      fs.mkdirSync(srcDir, { recursive: true }) // idempotente: si ya existe, no falla
+      fs.mkdirSync(srcDir, { recursive: true })
       fs.writeFileSync(path.join(srcDir, 'styled.ts'), 'export class Styled {}')
       fs.writeFileSync(
         path.join(srcDir, 'styled.pelela'),
@@ -180,18 +180,20 @@ describe('pelelajsPlugin', () => {
       const plugin = pelelajsPlugin()
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
-      process.cwd = () => tempDir
+      try {
+        process.cwd = () => tempDir
 
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+        const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
 
-      expect(result).toContain(
-        'import styledTemplate, { __pelelaCssUrls as styledCssUrls } from "./src/styled.pelela"',
-      )
-      expect(result).toContain(
-        'defineComponent("Styled", Styled, styledTemplate, { cssUrls: styledCssUrls })',
-      )
-
-      process.cwd = originalCwd
+        expect(result).toContain(
+          'import styledTemplate, { __pelelaCssUrls as styledCssUrls } from "./src/styled.pelela"',
+        )
+        expect(result).toContain(
+          'defineComponent("Styled", Styled, styledTemplate, { cssUrls: styledCssUrls })',
+        )
+      } finally {
+        process.cwd = originalCwd
+      }
     })
   })
 
