@@ -17,9 +17,7 @@ interface BetType {
 type Bet = number | string
 
 class BetClass {
-  constructor(
-    public description: string
-  ) {}
+  constructor(public description: string) {}
 }
 
 class NumericBet extends BetClass {
@@ -137,10 +135,7 @@ export class App {
   }
 
   // 10) Ejemplo Select con class instances
-  betClasses: BetClass[] = [
-    new NumericBet('Pleno'),
-    new DozenBet('Docena'),
-  ]
+  betClasses: BetClass[] = [new NumericBet('Pleno'), new DozenBet('Docena')]
 
   selectedBetClass: BetClass = this.betClasses[0]
   selectedBet: Bet | null = null
