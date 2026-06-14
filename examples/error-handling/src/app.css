@@ -1,0 +1,21 @@
+.option {
+  height: 3rem;
+  width: 100vw;
+  padding: 0.5rem;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--menu-bg-color);
+  border-radius: 4px;
+  margin: 0.5rem 0;
+}
+
+.option:hover {
+  background-color: var(--menu-bg-color-hover);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}

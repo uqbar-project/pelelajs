@@ -1,0 +1,15 @@
+<pelela view-model="TextArea">
+  <div class="card">
+    <h1>Textarea Test</h1>
+    <p>This example tests the textarea self-closing validation.</p>
+    
+    <div class="input-group">
+      <label for="message-input">Message</label>
+      <textarea id="message-input" bind-value="message" placeholder="Type something..." rows="4"/>
+    </div>
+    
+    <div class="result">
+      <p>Character count: <span bind-content="message.length"></span></p>
+    </div>
+  </div>
+</pelela>

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as mountTemplate from '../bootstrap/mountTemplate'
 import { RoutingError } from '../errors/index'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import { clearRegistry } from '../registry/viewModelRegistry'
@@ -40,6 +41,7 @@ function registerTestComponents(): void {
 
 describe('router', () => {
   let container: HTMLElement
+  let renderErrorPageSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     resetRouter()
@@ -48,6 +50,7 @@ describe('router', () => {
     container = document.createElement('div')
     document.body.appendChild(container)
     window.history.replaceState(null, '', '/')
+    renderErrorPageSpy = vi.spyOn(mountTemplate, 'renderErrorPage')
   })
 
   describe('start', () => {
@@ -105,10 +108,9 @@ describe('router', () => {
       }
 
       // Verify cleanup: should not have a container or routes set internally
-      // We check this indirectly by seeing if navigateTo fails as if start() was never called
-      expect(() => {
-        router.navigateTo('/')
-      }).toThrow(RoutingError) // Should throw saying container is null (the root path mismatch)
+      // We check this indirectly by seeing if navigateTo calls renderErrorPage (container is null)
+      router.navigateTo('/')
+      expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(RoutingError))
     })
   })
 
@@ -140,13 +142,12 @@ describe('router', () => {
       expect(window.location.pathname).toBe('/product/42')
     })
 
-    it('should throw RoutingError when navigating to an undefined route', () => {
+    it('should call renderErrorPage when navigating to an undefined route', () => {
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      expect(() => {
-        router.navigateTo('/unknown')
-      }).toThrow(RoutingError)
+      router.navigateTo('/unknown')
+      expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(RoutingError))
     })
 
     it('should NOT update the browser URL when navigation fails (atomicity)', () => {

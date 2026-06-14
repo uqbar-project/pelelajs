@@ -1,0 +1,11 @@
+<pelela view-model="App">
+  <div class="option">
+    <a href="/text-area">Cierre tag textarea</a>
+  </div>
+  <div class="option">
+    <a href="/bad-binding">Binding inexistente</a>
+  </div>
+  <div class="option">
+    <a href="/non-existent-route">Ruta inexistente</a>
+  </div>
+</pelela>

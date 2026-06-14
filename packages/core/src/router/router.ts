@@ -1,5 +1,5 @@
 import { setRouterActive } from '../bootstrap/bootstrap'
-import { mountTemplate } from '../bootstrap/mountTemplate'
+import { handleError, mountTemplate, renderErrorPage } from '../bootstrap/mountTemplate'
 import {
   createStylesheetLink,
   findExistingStylesheetLink,
@@ -21,33 +21,37 @@ export function registerCss(cssPath: string): void {
 }
 
 function renderPath(pathname: string, search: string, nextPath?: string): void {
-  const match = matchRoute(pathname, search, routes)
+  try {
+    const match = matchRoute(pathname, search, routes)
 
-  const entry = getComponentEntry(match.route.component)
-  if (!entry) {
-    throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
-  }
-
-  for (const cssUrl of currentRouteCss) {
-    removeStylesheetLinks(cssUrl)
-  }
-
-  currentRouteCss.clear()
-  const routeCssUrls = entry.cssUrls ?? []
-  for (const cssUrl of routeCssUrls) {
-    currentRouteCss.add(cssUrl)
-    const existingLink = findExistingStylesheetLink(cssUrl)
-    if (!existingLink) {
-      const linkElement = createStylesheetLink(cssUrl)
-      document.head.appendChild(linkElement)
+    const entry = getComponentEntry(match.route.component)
+    if (!entry) {
+      throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
     }
-  }
 
-  currentMatch = match
-  mountTemplate(container!, entry.template)
+    for (const cssUrl of currentRouteCss) {
+      removeStylesheetLinks(cssUrl)
+    }
 
-  if (nextPath) {
-    history.pushState(null, '', nextPath)
+    currentRouteCss.clear()
+    const routeCssUrls = entry.cssUrls ?? []
+    for (const cssUrl of routeCssUrls) {
+      currentRouteCss.add(cssUrl)
+      const existingLink = findExistingStylesheetLink(cssUrl)
+      if (!existingLink) {
+        const linkElement = createStylesheetLink(cssUrl)
+        document.head.appendChild(linkElement)
+      }
+    }
+
+    currentMatch = match
+    mountTemplate(container!, entry.template)
+
+    if (nextPath) {
+      history.pushState(null, '', nextPath)
+    }
+  } catch (error) {
+    handleError(error as Error)
   }
 }
 
@@ -60,7 +64,13 @@ function validateRoutesHaveTemplates(routeDefs: RouteDefinition[]): void {
   const missingComponent = routeDefs.find((routeDef) => !getComponentEntry(routeDef.component))
 
   if (missingComponent) {
-    throw new RoutingError(missingComponent.component.name || 'Unknown', 'component-not-registered')
+    const error = new RoutingError(
+      missingComponent.component.name || 'Unknown',
+      'component-not-registered',
+    )
+    console.error(error)
+    renderErrorPage(error)
+    throw error
   }
 }
 
@@ -97,12 +107,16 @@ export const router = {
    * Programmatic navigation. Updates the URL and mounts the matching route.
    */
   navigateTo(path: string): void {
-    if (!container) {
-      throw new RoutingError('navigateTo()', 'router-not-started')
-    }
+    try {
+      if (!container) {
+        throw new RoutingError('navigateTo()', 'router-not-started')
+      }
 
-    const url = new URL(path, window.location.origin)
-    renderPath(url.pathname, url.search, path)
+      const url = new URL(path, window.location.origin)
+      renderPath(url.pathname, url.search, path)
+    } catch (error) {
+      handleError(error as Error)
+    }
   },
 
   /**
