@@ -71,6 +71,17 @@ body {
 `
 
 export function renderErrorPage(error: Error): void {
+  const processedStack =
+    error.stack?.replace(/https?:\/\/localhost:\d+\/(?:@fs\/)?([^\s()]+)/g, (_match, fullPath) => {
+      if (fullPath.includes('/dist/')) {
+        const filenameMatch = fullPath.match(/([^/]+:\d+:\d+)$/)
+        return filenameMatch ? filenameMatch[1] : fullPath
+      }
+      return fullPath
+    }) ||
+    error.stack ||
+    'No stack trace available'
+
   const errorHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -91,7 +102,7 @@ ${ERROR_PAGE_CSS}
     <div class="error-message">${escapeHTML(error.message)}</div>
     <div class="error-stack">
       <div class="error-stack-title">Stack Trace:</div>
-      <div class="error-stack-content">${escapeHTML(error.stack || 'No stack trace available')}</div>
+      <div class="error-stack-content">${escapeHTML(processedStack)}</div>
     </div>
   </div>
 </body>
