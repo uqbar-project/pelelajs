@@ -14,6 +14,17 @@ interface BetType {
   active?: boolean
 }
 
+class BetClass {
+  constructor(
+    public description: string,
+    public multiplier: number,
+  ) {}
+
+  getLabel(): string {
+    return `${this.description} x${this.multiplier}`
+  }
+}
+
 interface SelectableType {
   description: string
   value: number
@@ -114,6 +125,19 @@ export class App {
 
     this.newUserName = ''
     this.newUserEmail = ''
+  }
+
+  // 10) Ejemplo Select con class instances
+  betClasses: BetClass[] = [
+    new BetClass('Ganador', 3),
+    new BetClass('Segundo Puesto', 2),
+    new BetClass('Tercero', 1.5),
+  ]
+
+  selectedBetClass: BetClass = this.betClasses[0]
+
+  get selectedBetLabel(): string {
+    return this.selectedBetClass.getLabel()
   }
 
   // 7) Interacción del usuario con lógica interna

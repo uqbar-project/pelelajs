@@ -132,4 +132,16 @@
     <span bind-content="character.name" class="result-text"></span>
   </div>
 
+  <hr/>
+
+  <h2>11) Select con class instances (comportamiento preservado)</h2>
+
+  <p>Al seleccionar, el objeto conserva sus métodos porque se guarda la referencia original.</p>
+
+  <select bind-value="selectedBetClass">
+    <option for-each="betClass of betClasses" bind-content="betClass.description"></option>
+  </select>
+
+  <p>Etiqueta calculada con método: <span bind-content="selectedBetLabel"></span></p>
+
 </pelela>

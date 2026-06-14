@@ -15,6 +15,7 @@ import {
   setupForEachBindings,
   setupSingleForEachBinding,
 } from './bindForEach'
+import { getOptionValue } from './optionValues'
 import { setupBindings } from './setupBindings'
 
 describe('bindForEach', () => {
@@ -1048,7 +1049,7 @@ describe('bindForEach', () => {
       expect(spans).toHaveLength(3)
     })
 
-    it('should set option value to the for-each item object', () => {
+    it('should set index-based value on options when item is an object', () => {
       container.innerHTML = `
         <select>
           <option for-each="type of types" bind-content="type.description"></option>
@@ -1068,9 +1069,9 @@ describe('bindForEach', () => {
       const options = container.querySelectorAll('option')
       expect(options).toHaveLength(2)
       expect(options[0].textContent).toBe('Type A')
-      expect(options[0].value).toBe('[{"description":1,"value":2},"Type A",1]')
+      expect(options[0].value).toBe('0')
       expect(options[1].textContent).toBe('Type B')
-      expect(options[1].value).toBe('[{"description":1,"value":2},"Type B",2]')
+      expect(options[1].value).toBe('1')
     })
 
     it('should set option value to string when item is not object', () => {
@@ -1088,6 +1089,40 @@ describe('bindForEach', () => {
       expect(options[0].value).toBe('1')
       expect(options[1].value).toBe('2')
       expect(options[2].value).toBe('3')
+    })
+
+    it('should preserve class instance reference through WeakMap when option is selected', () => {
+      container.innerHTML = `
+        <select bind-value="selectedType">
+          <option for-each="type of types" bind-content="type.description"></option>
+        </select>
+      `
+
+      class BetType {
+        constructor(
+          public description: string,
+          public multiplier: number,
+        ) {}
+
+        getLabel(): string {
+          return `${this.description} x${this.multiplier}`
+        }
+      }
+
+      const typeA = new BetType('Type A', 2)
+      const typeB = new BetType('Type B', 3)
+
+      const viewModel = {
+        types: [typeA, typeB],
+        selectedType: null as BetType | null,
+      }
+
+      setupBindings(container, viewModel)
+
+      const options = container.querySelectorAll('option')
+      expect(options).toHaveLength(2)
+      expect(getOptionValue(options[0] as HTMLOptionElement)).toBe(typeA)
+      expect(getOptionValue(options[1] as HTMLOptionElement)).toBe(typeB)
     })
 
     it('should access nested properties of item in for-each', () => {

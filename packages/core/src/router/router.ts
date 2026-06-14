@@ -1,4 +1,10 @@
+import { setRouterActive } from '../bootstrap/bootstrap'
 import { mountTemplate } from '../bootstrap/mountTemplate'
+import {
+  createStylesheetLink,
+  findExistingStylesheetLink,
+  removeStylesheetLinks,
+} from '../commons/cssLoader'
 import { RoutingError } from '../errors/RoutingError'
 import { getComponentEntry } from '../registry/componentRegistry'
 import { matchRoute } from './routeMatcher'
@@ -14,24 +20,6 @@ export function registerCss(cssPath: string): void {
   currentRouteCss.add(cssPath)
 }
 
-function createStylesheetLink(cssUrl: string): HTMLLinkElement {
-  const link = document.createElement('link')
-  link.rel = 'stylesheet'
-  link.href = cssUrl
-  link.setAttribute('data-pelela-css-url', cssUrl)
-  return link
-}
-
-function removeCssElements(cssUrl: string): void {
-  const matchingLinks = Array.from(
-    document.querySelectorAll(`link[rel="stylesheet"][data-pelela-css-url="${cssUrl}"]`),
-  )
-
-  for (const element of matchingLinks) {
-    void element.remove()
-  }
-}
-
 function renderPath(pathname: string, search: string, nextPath?: string): void {
   const match = matchRoute(pathname, search, routes)
 
@@ -41,16 +29,14 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
   }
 
   for (const cssUrl of currentRouteCss) {
-    removeCssElements(cssUrl)
+    removeStylesheetLinks(cssUrl)
   }
 
   currentRouteCss.clear()
   const routeCssUrls = entry.cssUrls ?? []
   for (const cssUrl of routeCssUrls) {
     currentRouteCss.add(cssUrl)
-    const existingLink = document.querySelector(
-      `link[rel="stylesheet"][data-pelela-css-url="${cssUrl}"]`,
-    ) as HTMLLinkElement | null
+    const existingLink = findExistingStylesheetLink(cssUrl)
     if (!existingLink) {
       const linkElement = createStylesheetLink(cssUrl)
       document.head.appendChild(linkElement)
@@ -84,6 +70,7 @@ export const router = {
    * All components must be registered with defineComponent() before calling start().
    */
   start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
+    setRouterActive()
     validateRoutesHaveTemplates(routeDefs)
 
     if (popstateHandler) {
