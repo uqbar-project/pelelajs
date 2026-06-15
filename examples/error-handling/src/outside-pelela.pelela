@@ -1,0 +1,7 @@
+<div>
+  <pelela view-model="OutsidePelela">
+    <h1>OutsidePelela Component</h1>
+    <span bind-content="ok"></span>
+  </pelela>
+  <span bind-content="nok">
+</div>

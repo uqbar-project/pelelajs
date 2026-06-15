@@ -6,6 +6,7 @@ import { BadParentNoChild } from './src/bad-parent-no-child'
 import { BadPropParent } from './src/bad-prop-parent'
 import { InvalidBindingTag } from './src/invalid-binding-tag'
 import { InvalidPropBinding } from './src/invalid-prop-binding'
+import { OutsidePelela } from './src/outside-pelela'
 import { TextArea } from './src/text-area'
 
 export const routes: RouteDefinition[] = [
@@ -17,4 +18,5 @@ export const routes: RouteDefinition[] = [
   { path: '/bad-prop-parent', component: BadPropParent },
   { path: '/bad-parent-no-child', component: BadParentNoChild },
   { path: '/bad-const-parent', component: BadConstParent },
+  { path: '/outside-pelela', component: OutsidePelela },
 ]

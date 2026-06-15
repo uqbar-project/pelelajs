@@ -23,4 +23,7 @@
   <div class="option">
     <a href="/non-existent-route">Ruta inexistente</a>
   </div>
+  <div class="option">
+    <a href="/outside-pelela">Bindings por fuera del contenedor Pelela</a>
+  </div>
 </pelela>
