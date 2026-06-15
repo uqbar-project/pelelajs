@@ -550,5 +550,25 @@ describe('bindValue', () => {
       const select = container.querySelector('select')!
       expect(select.selectedIndex).toBe(-1)
     })
+
+    it('should handle select with no selected option gracefully during input event', () => {
+      container.innerHTML = `
+        <select bind-value="selectedType">
+          <option value="1">Type A</option>
+        </select>
+      `
+      const viewModel = { selectedType: { id: 1 } }
+      setupValueBindings(container, viewModel)
+
+      const select = container.querySelector('select')!
+      // Force selectedIndex to -1
+      select.selectedIndex = -1
+
+      expect(() => {
+        select.dispatchEvent(new Event('input'))
+      }).not.toThrow()
+
+      expect(viewModel.selectedType).toBeUndefined()
+    })
   })
 })

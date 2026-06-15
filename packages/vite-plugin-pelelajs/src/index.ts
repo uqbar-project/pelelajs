@@ -105,10 +105,11 @@ function validateNoForbiddenHtmlAttributes(
 
   invalidMatches.forEach((match) => {
     errorFn(
-      t('errors.compiler.forbiddenRootAttribute', {
+      t('errors.compiler.directiveOutsideRoot', {
         filePath,
         tagName: match.tagName,
-        attr: match.attributeName,
+        directive: match.attributeName,
+        snippet: `<${match.tagName} ${match.attributeName}="...">`,
       }),
     )
   })

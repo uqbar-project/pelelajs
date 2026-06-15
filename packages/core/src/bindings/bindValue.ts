@@ -13,6 +13,11 @@ function handleSelectWithWeakMap<T extends object>(
   propertyName: string,
 ): void {
   const selectedOption = target.options[target.selectedIndex]
+  if (!selectedOption) {
+    setNestedProperty(viewModel, propertyName, undefined)
+    return
+  }
+
   if (hasOptionValue(selectedOption)) {
     setNestedProperty(viewModel, propertyName, getOptionValue(selectedOption))
   } else {

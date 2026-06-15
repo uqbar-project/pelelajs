@@ -1,10 +1,12 @@
-import { initializeI18n } from '../commons/i18n'
+import { initializeI18n, t } from '../commons/i18n'
 import { escapeHTML, sanitizeHTML } from '../commons/sanitization'
 import { bootstrap } from './bootstrap'
 
 const ERROR_PAGE_CSS = `
+@import 'https://fonts.googleapis.com/css2?family=Geist:ital,wght@0,100..900;1,100..900&display=swap';
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: Geist, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   margin: 0;
   padding: 40px 20px;
@@ -71,16 +73,15 @@ body {
 `
 
 export function renderErrorPage(error: Error): void {
+  const stack = error.stack || ''
   const processedStack =
-    error.stack?.replace(/https?:\/\/localhost:\d+\/(?:@fs\/)?([^\s()]+)/g, (_match, fullPath) => {
+    stack.replace(/https?:\/\/localhost:\d+\/(?:@fs\/)?([^\s()]+)/g, (_match, fullPath) => {
       if (fullPath.includes('/dist/')) {
         const filenameMatch = fullPath.match(/([^/]+:\d+:\d+)$/)
         return filenameMatch ? filenameMatch[1] : fullPath
       }
       return fullPath
-    }) ||
-    error.stack ||
-    'No stack trace available'
+    }) || t('errors.ui.errorPage.noStack')
 
   const errorHtml = `
 <!DOCTYPE html>
@@ -88,7 +89,7 @@ export function renderErrorPage(error: Error): void {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pelela Error</title>
+  <title>${t('errors.ui.errorPage.title')}</title>
   <style>
 ${ERROR_PAGE_CSS}
   </style>
@@ -97,11 +98,11 @@ ${ERROR_PAGE_CSS}
   <div class="error-container">
     <div class="error-header">
       <span class="error-icon">❌</span>
-      <span>Pelela Error</span>
+      <span>${t('errors.ui.errorPage.header')}</span>
     </div>
     <div class="error-message">${escapeHTML(error.message)}</div>
     <div class="error-stack">
-      <div class="error-stack-title">Stack Trace:</div>
+      <div class="error-stack-title">${t('errors.ui.errorPage.stackTrace')}</div>
       <div class="error-stack-content">${escapeHTML(processedStack)}</div>
     </div>
   </div>

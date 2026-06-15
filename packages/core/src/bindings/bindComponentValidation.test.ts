@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { initializeI18n } from '../commons/i18n'
+import { UnknownComponentPropertyError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import { setupComponentBindings } from './bindComponent'
@@ -76,5 +77,53 @@ describe('bindComponent validation', () => {
     expect(() => setupComponentBindings(container, vm)).toThrow(
       /attribute "invalid-attr" must use "prop-"/,
     )
+  })
+
+  it('should throw UnknownComponentPropertyError if prop-* property is not in child VM', () => {
+    class ChildVM {}
+    defineComponent('child-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+    container.innerHTML = '<child-comp prop-missing="parentProp"></child-comp>'
+    const vm = createReactiveViewModel({ parentProp: 'value' }, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).toThrow(UnknownComponentPropertyError)
+  })
+
+  it('should throw UnknownComponentPropertyError if link-* property is not in child VM', () => {
+    class ChildVM {}
+    defineComponent('child-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+    container.innerHTML = '<child-comp link-missing="parentProp"></child-comp>'
+    const vm = createReactiveViewModel({ parentProp: 'value' }, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).toThrow(UnknownComponentPropertyError)
+  })
+
+  it('should throw UnknownComponentPropertyError if const-* property is not in child VM', () => {
+    class ChildVM {}
+    defineComponent('child-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+    container.innerHTML = '<child-comp const-missing="42"></child-comp>'
+    const vm = createReactiveViewModel({}, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).toThrow(UnknownComponentPropertyError)
+  })
+
+  it('should NOT throw if property exists in child VM', () => {
+    class ChildVM {
+      existing = ''
+    }
+    defineComponent('child-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+    container.innerHTML = `
+      <child-comp 
+        prop-existing="parentProp" 
+        link-existing="parentProp" 
+        const-existing="value"
+      ></child-comp>
+    `
+    const vm = createReactiveViewModel({ parentProp: 'value' }, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).not.toThrow()
   })
 })

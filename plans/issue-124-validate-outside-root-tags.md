@@ -24,19 +24,45 @@ El comportamiento deseado es que la app falle de forma visible cuando la página
 
 ### 1. Plugin: Validación de alcance de root en `packages/vite-plugin-pelelajs/src/index.ts`
 
-- Renombrar o extender `validateNoForbiddenRootAttributes` hacia una validación más amplia de "uso de directivas fuera del root".
-- Agregar función nueva, por ejemplo `validateInternalDirectivesAreInsideRoot`:
-  - Usar regex para encontrar el primer root `<pelela|component...>` y su cierre correspondiente.
-  - Determinar la zona de plantilla que está fuera de ese root.
-  - Buscar en esa zona cualquier uso de:
-    - `\bprop-[a-zA-Z0-9_-]+\b`
-    - `\blink-[a-zA-Z0-9_-]+\b`
-    - `\bconst-[a-zA-Z0-9_-]+\b`
-    - `\bbind-[a-zA-Z0-9_-]+\b`
-    - `\bfor-each\s*=\s*"` o `\bfor-each\s*=\s*'`
-    - `\bif\s*=\s*"` o `\bif\s*=\s*'`
-  - Opcional: detectar tags fuera del root que usen alguno de esos atributos y reportar el atributo inválido.
-- Si no existe root, el mismo mecanismo debe fallar indicando que esa directiva no puede usarse sin un tag raíz.
+- Implementar una estrategia robusta para identificar contenido fuera del tag raíz (evitando fragilidad de regex simples con tags anidados).
+- Utilizar la siguiente función `extractOuterZones` para obtener las partes del template que no están dentro del tag raíz principal:
+
+```typescript
+function extractOuterZones(template: string, rootTag: 'pelela' | 'component'): string {
+  const openPattern = new RegExp(`<${rootTag}[\\s>]`)
+  const closeTag = `</${rootTag}>`
+
+  const startMatch = openPattern.exec(template)
+  if (!startMatch) return template // sin root, todo es zona exterior
+
+  let depth = 0
+  let i = startMatch.index
+  while (i < template.length) {
+    if (template.startsWith(`<${rootTag}`, i) && /[\s>]/.test(template[i + rootTag.length + 1] ?? '')) {
+      depth++
+    } else if (template.startsWith(closeTag, i)) {
+      depth--
+      if (depth === 0) {
+        const before = template.slice(0, startMatch.index)
+        const after = template.slice(i + closeTag.length)
+        return before + after // zona exterior = concatenación de ambas partes
+      }
+    }
+    i++
+  }
+  return template.slice(0, startMatch.index) // root sin cierre → retornar solo el before
+}
+```
+
+- Escanear la "zona exterior" resultante buscando patrones de directivas prohibidas:
+  - `\bprop-[a-zA-Z0-9_-]+\b`
+  - `\blink-[a-zA-Z0-9_-]+\b`
+  - `\bconst-[a-zA-Z0-9_-]+\b`
+  - `\bbind-[a-zA-Z0-9_-]+\b`
+  - `\bfor-each\s*=\s*"` o `\bfor-each\s*=\s*'`
+  - `\bif\s*=\s*"` o `\bif\s*=\s*'`
+- Si se detecta alguna directiva en la zona exterior, reportar el error `directiveOutsideRoot`.
+- Si no existe root y se encuentran directivas, el mismo mecanismo debe fallar indicando que esas directivas no pueden usarse sin un tag raíz.
 
 ### 2. Plugin: Detección de componentes fuera del root
 
@@ -65,6 +91,7 @@ El comportamiento deseado es que la app falle de forma visible cuando la página
   5. `.pelela` con `for-each` e `if` fuera del root: debe fallar.
   6. `.pelela` con componente custom fuera del root usando `prop-`/`link-`/`const-`: debe fallar.
   7. `.pelela` sin root válido y con directivas inyectadas: debe fallar con mensaje de root faltante o inválido.
+  8. `.pelela` con HTML plano (ej: `<p>texto</p>`) fuera del root: debe pasar (se ignora silenciosamente).
 
 ### 5. Integración con compilación / app bootstrapping
 

@@ -6,10 +6,16 @@ import {
   LINK_PREFIX,
   PROP_PREFIX,
 } from '../commons/dom'
-import { findAllElements, isObject, toCamelCase, unwrapTemplate } from '../commons/helpers'
+import {
+  extractElementSnippet,
+  findAllElements,
+  isObject,
+  toCamelCase,
+  unwrapTemplate,
+} from '../commons/helpers'
 import { t } from '../commons/i18n'
 import { hasProperty, isUnsafeKey, sanitizeHTML } from '../commons/sanitization'
-import { UnknownComponentError } from '../errors'
+import { UnknownComponentError, UnknownComponentPropertyError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
 import type { PelelaElement } from '../types'
@@ -81,6 +87,22 @@ function assertOnlyValidComponentAttributes(element: HTMLElement): void {
       )
     }
   })
+}
+
+function assertChildViewModelProperty(
+  instance: object,
+  childKey: string,
+  tagName: string,
+  element: HTMLElement,
+): void {
+  if (!hasProperty(instance, childKey)) {
+    throw new UnknownComponentPropertyError(
+      childKey,
+      tagName,
+      instance.constructor.name,
+      extractElementSnippet(element),
+    )
+  }
 }
 
 function isPotentialComponent(element: HTMLElement): boolean {
@@ -156,6 +178,7 @@ export function setupComponentBindings<T extends object>(
         )
       }
 
+      assertChildViewModelProperty(instance, childKey, tagName, element)
       instance[childKey] = value
     })
 
@@ -167,6 +190,8 @@ export function setupComponentBindings<T extends object>(
           }),
         )
       }
+
+      assertChildViewModelProperty(instance, childKey, tagName, element)
 
       const pathSegments = parentKey.split('.')
       const isNested = pathSegments.length > 1

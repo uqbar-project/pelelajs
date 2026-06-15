@@ -67,8 +67,20 @@ const errors = {
     missingViewModel: 'Pelela template "{{filePath}}" debe contener atributo view-model="..."',
     forbiddenRootAttribute:
       'Pelela template "{{filePath}}": El atributo "{{attr}}" no está permitido en la etiqueta raíz <{{tagName}}>. Los atributos de lógica y binding solo pueden usarse en elementos internos o invocaciones de componentes.',
+    directiveOutsideRoot:
+      'Pelela template "{{filePath}}": Directiva `{{directive}}` detectada fuera de la etiqueta raíz <{{tagName}}>. Encontrado en: {{snippet}}',
     unknownComponent:
       'Componente desconocido: <{{tagName}}>. ¿Olvidaste registrarlo?\nEncontrado en: {{snippet}}',
+    unknownComponentProperty:
+      'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{propertyName}}" no está definida en el ViewModel hijo.\nEncontrado en: {{snippet}}',
+  },
+  ui: {
+    errorPage: {
+      title: 'Error de Pelela',
+      header: 'Error de Pelela',
+      stackTrace: 'Traza de la pila (Stack Trace):',
+      noStack: 'No hay traza de la pila disponible',
+    },
   },
 } as const satisfies TranslationSchema['errors']
 

@@ -63,8 +63,20 @@ const errors = {
     missingViewModel: 'Pelela template "{{filePath}}" must contain view-model="..." attribute',
     forbiddenRootAttribute:
       'Pelela template "{{filePath}}": Attribute "{{attr}}" is not allowed on root tag <{{tagName}}>. Logic and binding attributes can only be used on internal elements or component invocations.',
+    directiveOutsideRoot:
+      'Pelela template "{{filePath}}": Directive `{{directive}}` detected outside root tag <{{tagName}}>. Found at: {{snippet}}',
     unknownComponent:
       'Unknown component: <{{tagName}}>. Did you forget to register it?\nFound at: {{snippet}}',
+    unknownComponentProperty:
+      'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{propertyName}}" is not defined in the child ViewModel.\nFound at: {{snippet}}',
+  },
+  ui: {
+    errorPage: {
+      title: 'Pelela Error',
+      header: 'Pelela Error',
+      stackTrace: 'Stack Trace:',
+      noStack: 'No stack trace available',
+    },
   },
 } as const satisfies TranslationSchema['errors']
 

@@ -43,8 +43,8 @@ interface Character {
 }
 
 export class App {
-  // 1) Ejemplo Select
-  // 3) Ejemplo de filtros dinámicos (if + for-each)
+  // 1) Select example
+  // 3) Dynamic filters example (if + for-each)
   betTypes: BetType[] = [
     { description: 'Ganador', active: true },
     { description: 'Segundo Puesto', active: true },
@@ -54,10 +54,10 @@ export class App {
   selectedBetType: string = this.betTypes[0].description
 
   testObject: object = {
-    // 2) Ejemplo Binding Objetos anidados
+    // 2) Binding nested objects
     name: 'Nicolas',
     age: 30,
-    // 6) Ejemplo Binding en profundidad sobre un objeto compuesto
+    // 6) Example of binding nested objects
     address: {
       street: {
         name: 'Calle Falsa',
@@ -66,14 +66,14 @@ export class App {
     },
   }
 
-  // 4) Ejemplo combinación de directivas for-each + if en visibilidad
+  // 4) Example of combining directives for-each + if in visibility
   items: Item[] = [
     { text: 'Item 1', visible: true },
     { text: 'Item 2', visible: false },
     { text: 'Item 3', visible: true },
   ]
 
-  // 5) Ejemplo Usuarios
+  // 5) Example of users
   users: User[] = [
     { id: 1, name: 'Alice', email: 'alice@example.com' },
     { id: 2, name: 'Bob', email: 'bob@example.com' },
@@ -85,7 +85,7 @@ export class App {
   userSearch: string = ''
   userSearched: string = ''
 
-  // 8) Ejemplo Paths anidados en for-each
+  // 8) Nested paths example in for-each
   nested: { values: number[] } = {
     values: [1, 2, 3, 4],
   }
@@ -94,7 +94,7 @@ export class App {
     return this.nested.values.filter((value) => value % 2 === 0)
   }
 
-  // 9) Ejemplo Select con objetos
+  // 9) Select example with objects
   types: SelectableType[] = [
     { description: 'Type A', value: 1 },
     { description: 'Type B', value: 2 },
@@ -103,7 +103,7 @@ export class App {
 
   selectedType: SelectableType = this.types[0]
 
-  // 10) Ejemplo bind-src dentro de for-each (Issue #131)
+  // 10) Example of bind-src within for-each (Issue #131)
   characters: Character[] = [
     {
       name: 'Mario',
@@ -134,13 +134,13 @@ export class App {
     this.newUserEmail = ''
   }
 
-  // 10) Ejemplo Select con class instances
+  // 10) Select example with class instances
   betClasses: BetClass[] = [new NumericBet('Pleno'), new DozenBet('Docena')]
 
   selectedBetClass: BetClass = this.betClasses[0]
   selectedBet: Bet | null = null
 
-  // 7) Interacción del usuario con lógica interna
+  // 7) User interaction with internal logic
   async searchUser() {
     this.userSearched = 'Buscando...'
     await new Promise((resolve) => setTimeout(resolve, 500))

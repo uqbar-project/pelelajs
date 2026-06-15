@@ -1098,7 +1098,7 @@ describe('bindForEach', () => {
       expect(options[2].value).toBe('3')
     })
 
-    it('should preserve class instance reference through WeakMap when option is selected', () => {
+    it('should update selectedType with the same class instance when an option is selected', () => {
       container.innerHTML = `
         <select bind-value="selectedType">
           <option for-each="type of types" bind-content="type.description"></option>
@@ -1126,10 +1126,15 @@ describe('bindForEach', () => {
 
       setupBindings(container, viewModel)
 
+      const select = container.querySelector('select') as HTMLSelectElement
       const options = container.querySelectorAll('option')
       expect(options).toHaveLength(2)
       expect(getOptionValue(options[0] as HTMLOptionElement)).toBe(typeA)
       expect(getOptionValue(options[1] as HTMLOptionElement)).toBe(typeB)
+
+      select.selectedIndex = 1
+      select.dispatchEvent(new Event('input'))
+      expect(viewModel.selectedType).toBe(typeB)
     })
 
     it('should access nested properties of item in for-each', () => {
