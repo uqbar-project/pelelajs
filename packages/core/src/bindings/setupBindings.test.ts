@@ -165,24 +165,6 @@ describe('setupBindings', () => {
     expect(submit).toHaveBeenCalled()
   })
 
-  it('should throw error when directives are used outside root tag', () => {
-    container.innerHTML = '<div bind-content="x">Test</div><pelela view-model="Home"></pelela>'
-    const viewModel = {}
-
-    expect(() => {
-      setupBindings(container, viewModel)
-    }).toThrow()
-  })
-
-  it('should throw error when component with prop-* is used outside root tag', () => {
-    container.innerHTML = '<my-comp prop-value="x"></my-comp><pelela view-model="Home"></pelela>'
-    const viewModel = {}
-
-    expect(() => {
-      setupBindings(container, viewModel)
-    }).toThrow()
-  })
-
   it('should accept directives inside root tag', () => {
     container.innerHTML = '<pelela view-model="Home"><div bind-content="x">Test</div></pelela>'
     const viewModel = { x: 'test' }

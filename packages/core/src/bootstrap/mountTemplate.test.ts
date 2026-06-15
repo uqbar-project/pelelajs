@@ -158,6 +158,48 @@ describe('mountTemplate', () => {
     expect(span.innerHTML).toBe('42')
   })
 
+  describe('validation', () => {
+    it('should show error page when directives are used outside root tag', () => {
+      const template =
+        '<div bind-content="x">Test</div><pelela view-model="TestVM"><span bind-content="message"></span></pelela>'
+
+      registerViewModel('TestVM', TestViewModel)
+      mountTemplate(container, template)
+
+      expect(container.innerHTML).toContain('Pelela Error')
+      expect(container.innerHTML).toContain('detected outside root tag')
+    })
+
+    it('should show error page when component with prop-* is used outside root tag', () => {
+      const template =
+        '<my-comp prop-value="x"></my-comp><pelela view-model="TestVM"><span bind-content="message"></span></pelela>'
+
+      registerViewModel('TestVM', TestViewModel)
+      mountTemplate(container, template)
+
+      expect(container.innerHTML).toContain('Pelela Error')
+      expect(container.innerHTML).toContain('detected outside root tag')
+    })
+
+    it('should accept directives inside root tag', () => {
+      const template = '<pelela view-model="TestVM"><div bind-content="message">Test</div></pelela>'
+
+      registerViewModel('TestVM', TestViewModel)
+      expect(() => {
+        mountTemplate(container, template)
+      }).not.toThrow()
+    })
+
+    it('should accept component with prop-* inside root tag', () => {
+      const template = '<pelela view-model="TestVM"><div prop-value="x"></div></pelela>'
+
+      registerViewModel('TestVM', TestViewModel)
+      expect(() => {
+        mountTemplate(container, template)
+      }).not.toThrow()
+    })
+  })
+
   describe('security', () => {
     it('should strip malicious scripts from templates', () => {
       const malicious = `

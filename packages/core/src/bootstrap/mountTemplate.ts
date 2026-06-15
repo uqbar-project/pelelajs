@@ -37,7 +37,6 @@ function isInsideAnyRoot(
 
 function validateNoDirectivesOutsideRoot(templateHtml: string): void {
   const pelelaMatches = Array.from(templateHtml.matchAll(/<(?:pelela|component)\b/g))
-  if (pelelaMatches.length === 0) return
 
   const directivePatterns = [
     /\bprop-[a-zA-Z0-9_-]+\b/g,
@@ -75,7 +74,6 @@ function validateNoDirectivesOutsideRoot(templateHtml: string): void {
 
 function validateNoComponentsOutsideRoot(templateHtml: string): void {
   const pelelaMatches = Array.from(templateHtml.matchAll(/<(?:pelela|component)\b/g))
-  if (pelelaMatches.length === 0) return
 
   const componentPattern = /<([\w-]+)([^>]*)>/g
 
@@ -174,7 +172,7 @@ body {
 }
 `
 
-export function renderErrorPage(error: Error): void {
+export function renderErrorPage(error: Error, container?: HTMLElement): void {
   const stack = error.stack || ''
   const processedStack =
     stack.replace(/https?:\/\/localhost:\d+\/(?:@fs\/)?([^\s()]+)/g, (_match, fullPath) => {
@@ -211,15 +209,19 @@ ${ERROR_PAGE_CSS}
 </body>
 </html>
   `
-  document.body.innerHTML = errorHtml
+  if (container) {
+    container.innerHTML = errorHtml
+  } else {
+    document.body.innerHTML = errorHtml
+  }
 }
 
-export function handleError(error: Error): void {
+export function handleError(error: Error, container?: HTMLElement): void {
   console.error(error)
   if (error instanceof Error) {
-    renderErrorPage(error)
+    renderErrorPage(error, container)
   } else {
-    renderErrorPage(new Error(String(error)))
+    renderErrorPage(new Error(String(error)), container)
   }
 }
 
@@ -232,6 +234,6 @@ export function mountTemplate(container: HTMLElement, templateHtml: string): voi
     container.innerHTML = sanitizedHtml
     bootstrap({ root: container })
   } catch (error) {
-    handleError(error as Error)
+    handleError(error as Error, container)
   }
 }

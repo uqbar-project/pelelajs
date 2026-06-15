@@ -3,5 +3,5 @@
     <h1>OutsidePelela Component</h1>
     <span bind-content="ok"></span>
   </pelela>
-  <span bind-content="nok">
+  <span bind-content="nok"></span>
 </div>
