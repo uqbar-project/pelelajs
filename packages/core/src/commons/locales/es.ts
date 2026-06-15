@@ -9,6 +9,8 @@ const errors = {
       invalidElement:
         'bind-value solo puede usarse en elementos input, textarea o select. Se encontró en <{{tagName}}>. Usá bind-content para elementos de visualización.\nElemento: {{snippet}}',
     },
+    invalidBindingAttribute:
+      '[pelela] Atributo de binding inválido: "{{attributeName}}". Elemento: {{elementSnippet}}',
   },
   dom: {
     invalidStructure: '[pelela] {{kind}}: No se pudo configurar el binding, {{issue}}',

@@ -1,0 +1,6 @@
+<div>
+  <pelela view-model="InvalidPropBinding">
+    <h1>InvalidPropBinding Component</h1>
+    <span bind-what="something"></span>
+  </pelela>
+</div>

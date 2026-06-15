@@ -5,6 +5,7 @@ type ErrorTranslations = {
     value: {
       invalidElement: string
     }
+    invalidBindingAttribute: string
   }
   dom: {
     invalidStructure: string

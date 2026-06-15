@@ -1,3 +1,5 @@
+import { findAllElements } from '../commons/helpers'
+import { assertValidBindingAttribute } from '../validation/assertValidBindingAttribute'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
@@ -146,6 +148,13 @@ export function setupBindings<T extends object>(
   viewModel: ViewModel<T>,
   { skipRootIf = false }: { skipRootIf?: boolean } = {},
 ): (changedPath?: string) => void {
+  const allElements = findAllElements(root, '*', true)
+  for (const element of allElements) {
+    for (const attr of element.attributes) {
+      assertValidBindingAttribute(attr.name, element)
+    }
+  }
+
   const bindings: BindingsCollection = {
     forEachBindings: setupForEachBindings(root, viewModel),
     componentBindings: setupComponentBindings(root, viewModel),

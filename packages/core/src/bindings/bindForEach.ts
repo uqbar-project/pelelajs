@@ -13,6 +13,7 @@ import {
   InvalidPropertyTypeError,
 } from '../errors/index'
 import { getComponentByTag } from '../registry/componentRegistry'
+import { assertValidBindingAttribute } from '../validation/assertValidBindingAttribute'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
@@ -89,6 +90,9 @@ function setupBindingsForElement<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): () => void {
+  for (const attr of element.attributes) {
+    assertValidBindingAttribute(attr.name, element)
+  }
   const componentBindings = setupComponentBindings(element, viewModel)
   const bindings = {
     valueBindings: setupValueBindings(element, viewModel),
@@ -163,7 +167,15 @@ export function setupSingleForEachBinding<T extends object>(
 }
 
 const EXACT_BINDING_ATTRIBUTES = ['click', 'if', 'for-each', 'index'] as const
+const BIND_PREFIX_ATTRIBUTES = [
+  'bind-value',
+  'bind-content',
+  'bind-src',
+  'bind-class',
+  'bind-style',
+] as const
 type ExactBindingAttribute = (typeof EXACT_BINDING_ATTRIBUTES)[number]
+type BindPrefixAttribute = (typeof BIND_PREFIX_ATTRIBUTES)[number]
 
 export function isBindingAttribute(attrName: string): boolean {
   // Exclude standard HTML attributes that contain hyphens
@@ -177,7 +189,7 @@ export function isBindingAttribute(attrName: string): boolean {
   }
   // Accept only framework binding prefixes
   return (
-    attrName.startsWith('bind-') ||
+    BIND_PREFIX_ATTRIBUTES.includes(attrName as BindPrefixAttribute) ||
     attrName.startsWith(LINK_PREFIX) ||
     attrName.startsWith(PROP_PREFIX) ||
     EXACT_BINDING_ATTRIBUTES.includes(attrName as ExactBindingAttribute)

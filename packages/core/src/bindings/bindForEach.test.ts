@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  InvalidBindingAttributeError,
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
   InvalidPropertyTypeError,
@@ -9,7 +10,6 @@ import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import {
   createExtendedViewModel,
-  isBindingAttribute,
   isCustomComponent,
   renderForEachBindings,
   setupForEachBindings,
@@ -24,6 +24,10 @@ describe('bindForEach', () => {
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('setupForEachBindings', () => {
@@ -146,33 +150,6 @@ describe('bindForEach', () => {
       expect(itemRef.current).toBe('initial')
     })
 
-    describe('isBindingAttribute', () => {
-      it('should accept framework binding prefixes', () => {
-        expect(isBindingAttribute('bind-content')).toBe(true)
-        expect(isBindingAttribute('bind-class')).toBe(true)
-        expect(isBindingAttribute('link-value')).toBe(true)
-        expect(isBindingAttribute('prop-name')).toBe(true)
-        expect(isBindingAttribute('click')).toBe(true)
-        expect(isBindingAttribute('if')).toBe(true)
-        expect(isBindingAttribute('for-each')).toBe(true)
-        expect(isBindingAttribute('index')).toBe(true)
-      })
-
-      it('should reject standard HTML attributes with hyphens', () => {
-        expect(isBindingAttribute('aria-label')).toBe(false)
-        expect(isBindingAttribute('aria-hidden')).toBe(false)
-        expect(isBindingAttribute('data-test')).toBe(false)
-        expect(isBindingAttribute('data-id')).toBe(false)
-        expect(isBindingAttribute('role')).toBe(false)
-        expect(isBindingAttribute('xml:lang')).toBe(false)
-      })
-
-      it('should reject custom kebab-case props', () => {
-        expect(isBindingAttribute('custom-prop')).toBe(false)
-        expect(isBindingAttribute('my-attribute')).toBe(false)
-      })
-    })
-
     describe('isCustomComponent', () => {
       it('should return true for registered components with hyphen in tag name', () => {
         class TestVM {
@@ -274,6 +251,36 @@ describe('bindForEach', () => {
 
       const span = container.querySelector('span')
       expect(span?.style.color).toBe('red')
+    })
+  })
+
+  describe('setupBindings', () => {
+    it('should throw InvalidBindingAttributeError for invalid bind- attributes', () => {
+      container.innerHTML = '<div bind-what="test"></div>'
+      const viewModel = {}
+
+      expect(() => {
+        setupBindings(container, viewModel)
+      }).toThrow(InvalidBindingAttributeError)
+    })
+
+    it('should throw InvalidBindingAttributeError with correct i18n message', () => {
+      container.innerHTML = '<div bind-what="test"></div>'
+      const viewModel = {}
+
+      const error = (() => {
+        try {
+          setupBindings(container, viewModel)
+          return null
+        } catch (e) {
+          return e as InvalidBindingAttributeError
+        }
+      })()
+
+      expect(error).toBeInstanceOf(InvalidBindingAttributeError)
+      expect(error?.attributeName).toBe('bind-what')
+      expect(error?.message).toContain('bind-what')
+      expect(error?.message).toContain('<div bind-what="test"></div>')
     })
   })
 

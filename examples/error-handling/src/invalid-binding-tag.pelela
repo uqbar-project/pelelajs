@@ -1,0 +1,6 @@
+<div>
+  <pelela view-model="InvalidBindingTag">
+    <h1>InvalidBindingTag Component</h1>
+    <span bind-value="something"></span>
+  </pelela>
+</div>

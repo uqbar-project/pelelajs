@@ -6,6 +6,12 @@
     <a href="/bad-binding">Binding inexistente</a>
   </div>
   <div class="option">
+    <a href="/invalid-prop-binding">Propiedad del binding inválida</a>
+  </div>
+  <div class="option">
+    <a href="/invalid-binding-tag">Tag con binding inválido</a>
+  </div>
+  <div class="option">
     <a href="/non-existent-route">Ruta inexistente</a>
   </div>
 </pelela>

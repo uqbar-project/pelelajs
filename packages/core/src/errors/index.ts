@@ -1,4 +1,5 @@
 export { DOMEnvironmentError } from './DOMEnvironmentError'
+export { InvalidBindingAttributeError } from './InvalidBindingAttributeError'
 export { InvalidBindingSyntaxError } from './InvalidBindingSyntaxError'
 export { InvalidDOMStructureError } from './InvalidDOMStructureError'
 export type { EventType } from './InvalidHandlerError'
