@@ -72,8 +72,7 @@ function extractOuterZones(template: string, rootTag: 'pelela' | 'component'): s
 
 ### 3. Mensajes del error y severidad
 
-- Reusar la clave existente `errors.compiler.forbiddenRootAttribute` para mensajes generales de atributos inválidos en root.
-- Si hace falta, proponer una nueva clave `errors.compiler.directiveOutsideRoot` para distinguir el caso específico.
+- Proponer una nueva clave `errors.compiler.directiveOutsideRoot` para distinguir el caso específico.
 - El mensaje debe incluir:
   - `filePath`
   - `tagName` del root donde debería estar el contenido
@@ -96,7 +95,7 @@ function extractOuterZones(template: string, rootTag: 'pelela' | 'component'): s
 ### 5. Integración con compilación / app bootstrapping
 
 - El plugin de Vite ya inyecta errores de compilación cuando `validatePelelaStructure` falla.
-- Asegurarse de que la nueva validación lance error dentro del mismo flujo `load` de `.pelela`.
+- Asegurarse de que la nueva validación lance error dentro del mismo flujo `load` de `.pelela`. Lanzar la excepción para que la atrape el mecanismo de routing o el mountTemplate.
 - El fallo debe impedir que el template se transforme a módulo y que la app avance.
 
 ### 6. Opcional: validar también en `packages/core`
