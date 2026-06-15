@@ -1,4 +1,3 @@
 <component view-model="BadPropChild">
   <h1>BadChild Component</h1>
-  <!-- Add your template here -->
 </component>
