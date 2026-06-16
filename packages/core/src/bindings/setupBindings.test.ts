@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { clearComponentRegistry } from '../router/componentRegistry'
 import { testHelpers } from '../test/helpers'
 import { setupBindings } from './setupBindings'
 
@@ -7,6 +8,7 @@ describe('setupBindings', () => {
 
   beforeEach(() => {
     container = testHelpers.createTestContainer()
+    clearComponentRegistry()
   })
 
   afterEach(() => {
@@ -168,15 +170,6 @@ describe('setupBindings', () => {
   it('should accept directives inside root tag', () => {
     container.innerHTML = '<pelela view-model="Home"><div bind-content="x">Test</div></pelela>'
     const viewModel = { x: 'test' }
-
-    expect(() => {
-      setupBindings(container, viewModel)
-    }).not.toThrow()
-  })
-
-  it('should accept component with prop-* inside root tag', () => {
-    container.innerHTML = '<pelela view-model="Home"><div prop-value="x"></div></pelela>'
-    const viewModel = {}
 
     expect(() => {
       setupBindings(container, viewModel)

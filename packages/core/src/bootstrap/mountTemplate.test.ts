@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { clearComponentRegistry } from '../registry/componentRegistry'
 import { clearRegistry, registerViewModel } from '../registry/viewModelRegistry'
+import { defineComponent } from '../router'
 import type { PelelaElement } from '../types'
 import { mountTemplate } from './mountTemplate'
 
@@ -15,6 +17,7 @@ describe('mountTemplate', () => {
     container = document.createElement('div')
     document.body.appendChild(container)
     clearRegistry()
+    clearComponentRegistry()
   })
 
   it('should insert template HTML into container', () => {
@@ -191,12 +194,96 @@ describe('mountTemplate', () => {
     })
 
     it('should accept component with prop-* inside root tag', () => {
-      const template = '<pelela view-model="TestVM"><div prop-value="x"></div></pelela>'
+      class MyComp {
+        value = ''
+      }
+      defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')
+
+      const template = '<pelela view-model="TestVM"><my-comp prop-value="x"></my-comp></pelela>'
 
       registerViewModel('TestVM', TestViewModel)
       expect(() => {
         mountTemplate(container, template)
       }).not.toThrow()
+    })
+
+    it('should render error page when component with prop-* is used outside root tag', () => {
+      class MyComp {
+        value = ''
+      }
+      defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')
+
+      const template = '<pelela view-model="TestVM"></pelela><my-comp prop-value="x"></my-comp>'
+
+      registerViewModel('TestVM', TestViewModel)
+
+      mountTemplate(container, template)
+
+      expect(container.innerHTML).toContain('error-container')
+      expect(container.innerHTML).toContain('error-message')
+      expect(container.innerHTML).toContain('detected outside root tag')
+    })
+
+    it('should accept component with link-* inside root tag', () => {
+      class MyComp {
+        value = ''
+      }
+      defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')
+
+      const template = '<pelela view-model="TestVM"><my-comp link-value="x"></my-comp></pelela>'
+
+      registerViewModel('TestVM', TestViewModel)
+      expect(() => {
+        mountTemplate(container, template)
+      }).not.toThrow()
+    })
+
+    it('should render error page when component with link-* is used outside root tag', () => {
+      class MyComp {
+        value = ''
+      }
+      defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')
+
+      const template = '<my-comp link-value="x"></my-comp><pelela view-model="TestVM"></pelela>'
+
+      registerViewModel('TestVM', TestViewModel)
+
+      mountTemplate(container, template)
+
+      expect(container.innerHTML).toContain('error-container')
+      expect(container.innerHTML).toContain('error-message')
+      expect(container.innerHTML).toContain('detected outside root tag')
+    })
+
+    it('should accept component with const-* inside root tag', () => {
+      class MyComp {
+        value = ''
+      }
+      defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')
+
+      const template = '<pelela view-model="TestVM"><my-comp const-value="HOLA"></my-comp></pelela>'
+
+      registerViewModel('TestVM', TestViewModel)
+      expect(() => {
+        mountTemplate(container, template)
+      }).not.toThrow()
+    })
+
+    it('should render error page when component with const-* is used outside root tag', () => {
+      class MyComp {
+        value = ''
+      }
+      defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')
+
+      const template = '<my-comp const-value="x"></my-comp><pelela view-model="TestVM"></pelela>'
+
+      registerViewModel('TestVM', TestViewModel)
+
+      mountTemplate(container, template)
+
+      expect(container.innerHTML).toContain('error-container')
+      expect(container.innerHTML).toContain('error-message')
+      expect(container.innerHTML).toContain('detected outside root tag')
     })
   })
 

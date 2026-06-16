@@ -172,13 +172,15 @@ function validateNoForbiddenRootAttributes(
   ]
 
   const foundPattern = forbiddenPatterns.find((pattern) => pattern.test(attributes))
+  const foundAttribute = attributes.match(foundPattern ?? '')?.[0]
 
   if (foundPattern) {
     errorFn(
       t('errors.compiler.forbiddenRootAttribute', {
         filePath,
         tagName: rootTagMatch[1],
-        attr: attributes.match(foundPattern)?.[0],
+        attribute: foundAttribute,
+        snippet: `<${rootTagMatch[1]} ${foundAttribute}="...">`,
       }),
     )
   }
