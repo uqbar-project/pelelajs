@@ -261,7 +261,7 @@ describe('mountTemplate', () => {
       }
       defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')
 
-      const template = '<pelela view-model="TestVM"><my-comp const-value="HOLA"></my-comp></pelela>'
+      const template = '<pelela view-model="TestVM"><my-comp const-value="HI"></my-comp></pelela>'
 
       registerViewModel('TestVM', TestViewModel)
       expect(() => {

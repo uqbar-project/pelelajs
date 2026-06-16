@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearComponentRegistry } from '../router/componentRegistry'
 import { testHelpers } from '../test/helpers'
 import { setupBindings } from './setupBindings'
 
@@ -8,7 +7,6 @@ describe('setupBindings', () => {
 
   beforeEach(() => {
     container = testHelpers.createTestContainer()
-    clearComponentRegistry()
   })
 
   afterEach(() => {

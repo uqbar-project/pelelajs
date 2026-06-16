@@ -51,7 +51,7 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
       history.pushState(null, '', nextPath)
     }
   } catch (error) {
-    handleError(error as Error)
+    handleError(error)
   }
 }
 
@@ -115,7 +115,7 @@ export const router = {
       const url = new URL(path, window.location.origin)
       renderPath(url.pathname, url.search, path)
     } catch (error) {
-      handleError(error as Error)
+      handleError(error)
     }
   },
 

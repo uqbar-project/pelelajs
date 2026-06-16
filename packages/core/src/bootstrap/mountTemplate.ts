@@ -216,7 +216,7 @@ ${ERROR_PAGE_CSS}
   }
 }
 
-export function handleError(error: Error, container?: HTMLElement): void {
+export function handleError(error: unknown, container?: HTMLElement): void {
   console.error(error)
   if (error instanceof Error) {
     renderErrorPage(error, container)
@@ -234,6 +234,6 @@ export function mountTemplate(container: HTMLElement, templateHtml: string): voi
     container.innerHTML = sanitizedHtml
     bootstrap({ root: container })
   } catch (error) {
-    handleError(error as Error, container)
+    handleError(error, container)
   }
 }
