@@ -108,7 +108,7 @@ function validateNoForbiddenHtmlAttributes(
       t('errors.compiler.forbiddenRootAttribute', {
         filePath,
         tagName: match.tagName,
-        attribute: match.attributeName,
+        attr: match.attributeName,
         snippet: `<${match.tagName} ${match.attributeName}="...">`,
       }),
     )
@@ -179,7 +179,7 @@ function validateNoForbiddenRootAttributes(
       t('errors.compiler.forbiddenRootAttribute', {
         filePath,
         tagName: rootTagMatch[1],
-        attribute: foundAttribute,
+        attr: foundAttribute,
         snippet: `<${rootTagMatch[1]} ${foundAttribute}="...">`,
       }),
     )

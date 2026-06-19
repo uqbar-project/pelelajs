@@ -21,7 +21,13 @@ function handleSelectWithWeakMap<T extends object>(
   if (hasOptionValue(selectedOption)) {
     setNestedProperty(viewModel, propertyName, getOptionValue(selectedOption))
   } else {
-    setNestedProperty(viewModel, propertyName, selectedOption.value)
+    const currentValue = getNestedProperty(viewModel, propertyName)
+    const rawValue = selectedOption.value
+    if (typeof currentValue === 'number') {
+      setNestedProperty(viewModel, propertyName, Number(rawValue))
+    } else {
+      setNestedProperty(viewModel, propertyName, rawValue)
+    }
   }
 }
 

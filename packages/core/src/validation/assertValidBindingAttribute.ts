@@ -1,6 +1,6 @@
-import { isBindingAttribute } from '../bindings/bindForEach'
 import { extractElementSnippet } from '../commons/helpers'
 import { InvalidBindingAttributeError } from '../errors'
+import { isBindingAttribute } from './bindingAttributeUtils'
 
 export function assertValidBindingAttribute(attributeName: string, element: Element): void {
   if (attributeName.startsWith('bind-') && !isBindingAttribute(attributeName)) {

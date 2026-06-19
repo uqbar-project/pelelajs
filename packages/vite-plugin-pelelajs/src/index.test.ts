@@ -356,6 +356,22 @@ describe('pelelajsPlugin', () => {
       expect(errors.some((e) => e.includes('not allowed on root tag'))).toBe(true)
     })
 
+    it('should interpolate attribute name in forbidden root attribute error', () => {
+      const pelelaPath = path.join(tempDir, 'interpolation.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home" link-value="x"></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors[0]).toContain('"link-value"')
+      expect(errors[0]).not.toContain('{{attr}}')
+      expect(errors[0]).not.toContain('undefined')
+    })
+
     it('reports error when link attributes are on standard HTML tags', () => {
       const pelelaPath = path.join(tempDir, 'html-link.pelela')
       fs.writeFileSync(

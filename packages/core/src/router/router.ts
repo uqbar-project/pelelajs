@@ -1,4 +1,4 @@
-import { setRouterActive } from '../bootstrap/bootstrap'
+import { resetRouterActive, setRouterActive } from '../bootstrap/bootstrap'
 import { handleError, mountTemplate, renderErrorPage } from '../bootstrap/mountTemplate'
 import {
   createStylesheetLink,
@@ -29,11 +29,15 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
       throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
     }
 
-    for (const cssUrl of currentRouteCss) {
+    const oldRouteCss = new Set(currentRouteCss)
+    currentRouteCss.clear()
+
+    currentMatch = match
+    mountTemplate(container!, entry.template)
+
+    for (const cssUrl of oldRouteCss) {
       removeStylesheetLinks(cssUrl)
     }
-
-    currentRouteCss.clear()
     const routeCssUrls = entry.cssUrls ?? []
     for (const cssUrl of routeCssUrls) {
       currentRouteCss.add(cssUrl)
@@ -44,13 +48,11 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
       }
     }
 
-    currentMatch = match
-    mountTemplate(container!, entry.template)
-
     if (nextPath) {
       history.pushState(null, '', nextPath)
     }
   } catch (error) {
+    resetRouterActive()
     handleError(error)
   }
 }
@@ -80,9 +82,6 @@ export const router = {
    * All components must be registered with defineComponent() before calling start().
    */
   start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
-    setRouterActive()
-    validateRoutesHaveTemplates(routeDefs)
-
     if (popstateHandler) {
       window.removeEventListener('popstate', popstateHandler)
     }
@@ -96,6 +95,8 @@ export const router = {
     window.addEventListener('popstate', popstateHandler)
 
     try {
+      setRouterActive()
+      validateRoutesHaveTemplates(routeDefs)
       resolveAndRender()
     } catch (error) {
       resetRouter()
@@ -152,4 +153,5 @@ export function resetRouter(): void {
   currentMatch = null
   popstateHandler = null
   currentRouteCss.clear()
+  resetRouterActive()
 }

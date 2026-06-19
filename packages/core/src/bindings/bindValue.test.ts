@@ -535,6 +535,25 @@ describe('bindValue', () => {
       expect(viewModel.selectedValue).toBe('b')
     })
 
+    it('should preserve numeric type when selecting a static option', () => {
+      container.innerHTML = `
+        <select bind-value="selectedValue">
+          <option value="1">Monotributo</option>
+          <option value="2">Responsable Inscripto</option>
+        </select>
+      `
+      const viewModel = { selectedValue: 1 }
+
+      setupValueBindings(container, viewModel)
+
+      const select = container.querySelector('select')!
+      select.value = '2'
+      select.dispatchEvent(new Event('input'))
+
+      expect(viewModel.selectedValue).toBe(2)
+      expect(typeof viewModel.selectedValue).toBe('number')
+    })
+
     it('should handle select with no matching option', () => {
       container.innerHTML = `
         <select bind-value="selectedValue">

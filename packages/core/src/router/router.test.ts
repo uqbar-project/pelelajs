@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { getRouterActive, setRouterActive } from '../bootstrap/bootstrap'
 import * as mountTemplate from '../bootstrap/mountTemplate'
 import { RoutingError } from '../errors/index'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
@@ -79,6 +80,18 @@ describe('router', () => {
       }).toThrow(RoutingError)
     })
 
+    it('should reset isRouterActive when start fails due to unregistered component', () => {
+      expect(getRouterActive()).toBe(false)
+
+      try {
+        router.start(container, [{ path: '/', component: ProductCatalog }])
+      } catch {
+        // Expected
+      }
+
+      expect(getRouterActive()).toBe(false)
+    })
+
     it('should NOT add duplicate popstate listeners on multiple starts', () => {
       registerTestComponents()
       const addSpy = vi.spyOn(window, 'addEventListener')
@@ -96,21 +109,22 @@ describe('router', () => {
       removeSpy.mockRestore()
     })
 
-    it('should clean up state if initial resolveAndRender fails', () => {
+    it('should render error page when start URL does not match any route', () => {
       registerTestComponents()
       window.history.replaceState(null, '', '/nonexistent')
 
-      // This start will fail because /nonexistent doesn't match and no catch-all exists
-      try {
-        router.start(container, [{ path: '/', component: ProductCatalog }])
-      } catch {
-        // Expected
-      }
+      router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      // Verify cleanup: should not have a container or routes set internally
-      // We check this indirectly by seeing if navigateTo calls renderErrorPage (container is null)
-      router.navigateTo('/')
       expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(RoutingError))
+    })
+
+    it('should reset isRouterActive when route resolution fails', () => {
+      registerTestComponents()
+      window.history.replaceState(null, '', '/nonexistent')
+
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      expect(getRouterActive()).toBe(false)
     })
   })
 
@@ -150,6 +164,15 @@ describe('router', () => {
       expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(RoutingError))
     })
 
+    it('should reset isRouterActive when navigating to an undefined route', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      router.navigateTo('/unknown')
+
+      expect(getRouterActive()).toBe(false)
+    })
+
     it('should call handleError when renderPath fails during navigateTo', () => {
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
@@ -165,6 +188,21 @@ describe('router', () => {
 
       mountTemplateSpy.mockRestore()
       handleErrorSpy.mockRestore()
+    })
+
+    it('should reset isRouterActive when mountTemplate throws during navigateTo', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      const mountTemplateSpy = vi.spyOn(mountTemplate, 'mountTemplate').mockImplementation(() => {
+        throw new Error('Mount failed')
+      })
+
+      router.navigateTo('/')
+
+      expect(getRouterActive()).toBe(false)
+
+      mountTemplateSpy.mockRestore()
     })
 
     it('should NOT update the browser URL when navigation fails (atomicity)', () => {
@@ -326,6 +364,17 @@ describe('router', () => {
       ])
 
       expect(container.querySelector('p')!.innerHTML).toBe('Page not found')
+    })
+  })
+
+  describe('resetRouter', () => {
+    it('should reset isRouterActive flag', () => {
+      setRouterActive()
+      expect(getRouterActive()).toBe(true)
+
+      resetRouter()
+
+      expect(getRouterActive()).toBe(false)
     })
   })
 

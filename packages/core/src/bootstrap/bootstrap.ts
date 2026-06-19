@@ -19,6 +19,10 @@ export function getRouterActive(): boolean {
   return isRouterActive
 }
 
+export function resetRouterActive(): void {
+  isRouterActive = false
+}
+
 const loadedCssUrls = new Set<string>()
 
 function loadCss(cssUrl: string): void {
