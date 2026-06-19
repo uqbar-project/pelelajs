@@ -11,6 +11,14 @@ import {
 
 import type { Plugin } from 'vite'
 
+interface ComponentFileMetadata {
+  name: string
+  tsPath: string
+  pelelaPath: string
+  viewModelName: string
+  cssPaths: string[]
+}
+
 export function escapeTemplateForLiteral(html: string): string {
   return html.replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
 }
@@ -19,9 +27,9 @@ function getCssImport(pelelaFilePath: string): string {
   const cssFile = pelelaFilePath.replace(/\.pelela$/, '.css')
   if (fs.existsSync(cssFile)) {
     const cssBase = path.basename(cssFile)
-    return `import "./${cssBase}";\n`
+    return `export const __pelelaCssUrls = [new URL("./${cssBase}", import.meta.url).href];\n`
   }
-  return ''
+  return 'export const __pelelaCssUrls = [];\n'
 }
 
 const TAG_PATTERN = /<([\w-]+)([^>]*)>/g
@@ -101,6 +109,7 @@ function validateNoForbiddenHtmlAttributes(
         filePath,
         tagName: match.tagName,
         attr: match.attributeName,
+        snippet: `<${match.tagName} ${match.attributeName}="...">`,
       }),
     )
   })
@@ -163,13 +172,15 @@ function validateNoForbiddenRootAttributes(
   ]
 
   const foundPattern = forbiddenPatterns.find((pattern) => pattern.test(attributes))
+  const foundAttribute = attributes.match(foundPattern ?? '')?.[0]
 
   if (foundPattern) {
     errorFn(
       t('errors.compiler.forbiddenRootAttribute', {
         filePath,
         tagName: rootTagMatch[1],
-        attr: attributes.match(foundPattern)?.[0],
+        attr: foundAttribute,
+        snippet: `<${rootTagMatch[1]} ${foundAttribute}="...">`,
       }),
     )
   }
@@ -203,9 +214,7 @@ export default template;
 `
 }
 
-function findComponentFiles(
-  srcDir: string,
-): Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }> {
+function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
   if (!fs.existsSync(srcDir)) return []
 
   return fs
@@ -215,16 +224,19 @@ function findComponentFiles(
       const componentName = tsFile.replace(/\.ts$/, '')
       const pelelaFile = `${componentName}.pelela`
       const pelelaPath = path.join(srcDir, pelelaFile)
+      const cssPath = path.join(srcDir, `${componentName}.css`)
+      const cssPaths = fs.existsSync(cssPath) ? [`./${componentName}.css`] : []
 
       return {
         componentName,
         tsFile,
         pelelaFile,
         pelelaPath,
+        cssPaths,
       }
     })
     .filter(({ pelelaPath }) => fs.existsSync(pelelaPath))
-    .map(({ componentName, tsFile, pelelaFile, pelelaPath }) => {
+    .map(({ componentName, tsFile, pelelaFile, pelelaPath, cssPaths }) => {
       const templateContent = fs.readFileSync(pelelaPath, 'utf-8')
       const viewModelMatch = templateContent.match(
         /<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/,
@@ -236,6 +248,7 @@ function findComponentFiles(
         tsPath: `./src/${tsFile}`,
         pelelaPath: `./src/${pelelaFile}`,
         viewModelName,
+        cssPaths,
       }
     })
 }
@@ -244,26 +257,38 @@ export function kebabToCamelCase(name: string): string {
   return name.replace(/[-.]([a-z])/g, (_, letter) => letter.toUpperCase())
 }
 
-function generateAutoRegistrationCode(
-  components: Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }>,
-): string {
-  const componentImports = components
-    .map(({ tsPath, viewModelName }) => `import { ${viewModelName} } from "${tsPath}";`)
+function generateComponentMetadata(component: ComponentFileMetadata) {
+  const { name, viewModelName, tsPath, pelelaPath, cssPaths } = component
+  const baseName = kebabToCamelCase(name)
+  const templateVar = `${baseName}Template`
+  const cssUrlsVar = `${baseName}CssUrls`
+  const hasCss = cssPaths.length > 0
+
+  return {
+    componentImport: `import { ${viewModelName} } from "${tsPath}";`,
+
+    templateImport: `import ${templateVar}${
+      hasCss ? `, { __pelelaCssUrls as ${cssUrlsVar} }` : ''
+    } from "${pelelaPath}";`,
+
+    registration: hasCss
+      ? `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar}, { cssUrls: ${cssUrlsVar} });`
+      : `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar});`,
+  }
+}
+
+function generateAutoRegistrationCode(components: ComponentFileMetadata[]): string {
+  const processedComponents = components.map(generateComponentMetadata)
+
+  const componentImports = processedComponents
+    .map((processed) => processed.componentImport)
     .join('\n')
 
-  const templateImports = components
-    .map(({ name, pelelaPath }) => {
-      const templateVar = `${kebabToCamelCase(name)}Template`
-      return `import ${templateVar} from "${pelelaPath}";`
-    })
+  const templateImports = processedComponents
+    .map((processed) => processed.templateImport)
     .join('\n')
 
-  const registrations = components
-    .map(({ viewModelName, name }) => {
-      const templateVar = `${kebabToCamelCase(name)}Template`
-      return `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar});`
-    })
-    .join('\n')
+  const registrations = processedComponents.map((processed) => processed.registration).join('\n')
 
   return `
 ${componentImports}

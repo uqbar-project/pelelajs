@@ -164,4 +164,13 @@ describe('setupBindings', () => {
     container.querySelector('button')!.click()
     expect(submit).toHaveBeenCalled()
   })
+
+  it('should accept directives inside root tag', () => {
+    container.innerHTML = '<pelela view-model="Home"><div bind-content="x">Test</div></pelela>'
+    const viewModel = { x: 'test' }
+
+    expect(() => {
+      setupBindings(container, viewModel)
+    }).not.toThrow()
+  })
 })

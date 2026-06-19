@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { initializeI18n } from '../commons/i18n'
 import { PropertyValidationError, UnsupportedElementError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
+import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 
 describe('bindValue', () => {
@@ -324,6 +325,269 @@ describe('bindValue', () => {
 
       const input = container.querySelector('input')!
       expect(input.value).toBe('[{"key":1},"value"]')
+    })
+  })
+
+  describe('SELECT with WeakMap binding', () => {
+    it('should update viewModel with original object reference when option is selected', () => {
+      container.innerHTML = `
+        <select bind-value="selectedType">
+          <option for-each="type of types" bind-content="type.description"></option>
+        </select>
+      `
+
+      const viewModel = {
+        types: [
+          { description: 'Type A', id: 1 },
+          { description: 'Type B', id: 2 },
+        ],
+        selectedType: null as { description: string; id: number } | null,
+      }
+
+      const forEachBindings = setupForEachBindings(container, viewModel)
+      const valueBindings = setupValueBindings(container, viewModel)
+      renderForEachBindings(forEachBindings, viewModel)
+      renderValueBindings(valueBindings, viewModel)
+
+      const select = container.querySelector('select')!
+      select.selectedIndex = 0
+      select.dispatchEvent(new Event('input'))
+
+      expect(viewModel.selectedType).toBe(viewModel.types[0])
+    })
+
+    it('should select the correct option when rendering with a matching object reference', () => {
+      container.innerHTML = `
+        <select bind-value="selectedType">
+          <option for-each="type of types" bind-content="type.description"></option>
+        </select>
+      `
+
+      const viewModel = {
+        types: [
+          { description: 'Type A', id: 1 },
+          { description: 'Type B', id: 2 },
+        ],
+        selectedType: null as { description: string; id: number } | null,
+      }
+
+      const forEachBindings = setupForEachBindings(container, viewModel)
+      const valueBindings = setupValueBindings(container, viewModel)
+      renderForEachBindings(forEachBindings, viewModel)
+
+      viewModel.selectedType = viewModel.types[1]
+      renderValueBindings(valueBindings, viewModel)
+
+      const select = container.querySelector('select')!
+      expect(select.selectedIndex).toBe(1)
+    })
+
+    it('should preserve class instance methods after select event', () => {
+      container.innerHTML = `
+        <select bind-value="selectedType">
+          <option for-each="type of types" bind-content="type.description"></option>
+        </select>
+      `
+
+      class BetType {
+        constructor(
+          public description: string,
+          public multiplier: number,
+        ) {}
+
+        getLabel(): string {
+          return `${this.description} x${this.multiplier}`
+        }
+      }
+
+      const typeA = new BetType('Type A', 2)
+      const typeB = new BetType('Type B', 3)
+
+      const viewModel = {
+        types: [typeA, typeB] as BetType[],
+        selectedType: null as BetType | null,
+      }
+
+      const forEachBindings = setupForEachBindings(container, viewModel)
+      const valueBindings = setupValueBindings(container, viewModel)
+      renderForEachBindings(forEachBindings, viewModel)
+      renderValueBindings(valueBindings, viewModel)
+
+      const select = container.querySelector('select')!
+      select.selectedIndex = 1
+      select.dispatchEvent(new Event('input'))
+
+      expect(viewModel.selectedType).toBe(typeB)
+      expect(viewModel.selectedType?.getLabel()).toBe('Type B x3')
+    })
+
+    it('should match option when ViewModel value is POJO and options have class instances with same properties', () => {
+      container.innerHTML = `
+        <select bind-value="selectedType">
+          <option for-each="type of types" bind-content="type.description"></option>
+        </select>
+      `
+
+      class BetType {
+        constructor(
+          public description: string,
+          public multiplier: number,
+        ) {}
+      }
+
+      const typeA = new BetType('Type A', 2)
+      const typeB = new BetType('Type B', 3)
+
+      const viewModel = {
+        types: [typeA, typeB] as BetType[],
+        selectedType: { description: 'Type B', multiplier: 3 } as BetType,
+      }
+
+      const forEachBindings = setupForEachBindings(container, viewModel)
+      const valueBindings = setupValueBindings(container, viewModel)
+      renderForEachBindings(forEachBindings, viewModel)
+      renderValueBindings(valueBindings, viewModel)
+
+      const select = container.querySelector('select')!
+      expect(select.selectedIndex).toBe(1)
+    })
+
+    it('should match option when both ViewModel value and options are POJOs with same properties', () => {
+      container.innerHTML = `
+        <select bind-value="selectedType">
+          <option for-each="type of types" bind-content="type.description"></option>
+        </select>
+      `
+
+      const typeA = { description: 'Type A', multiplier: 2 }
+      const typeB = { description: 'Type B', multiplier: 3 }
+
+      const viewModel = {
+        types: [typeA, typeB] as (typeof typeB)[],
+        selectedType: { description: 'Type B', multiplier: 3 },
+      }
+
+      const forEachBindings = setupForEachBindings(container, viewModel)
+      const valueBindings = setupValueBindings(container, viewModel)
+      renderForEachBindings(forEachBindings, viewModel)
+      renderValueBindings(valueBindings, viewModel)
+
+      const select = container.querySelector('select')!
+      expect(select.selectedIndex).toBe(1)
+    })
+
+    it('should handle textarea elements', () => {
+      container.innerHTML = '<textarea bind-value="description"></textarea>'
+      const viewModel = { description: 'initial' }
+
+      setupValueBindings(container, viewModel)
+
+      const textarea = container.querySelector('textarea')!
+      textarea.value = 'updated'
+      textarea.dispatchEvent(new Event('input'))
+
+      expect(viewModel.description).toBe('updated')
+    })
+
+    it('should render textarea values', () => {
+      container.innerHTML = '<textarea bind-value="description"></textarea>'
+      const viewModel = { description: 'initial' }
+      const bindings = setupValueBindings(container, viewModel)
+
+      viewModel.description = 'updated'
+      renderValueBindings(bindings, viewModel)
+
+      const textarea = container.querySelector('textarea')!
+      expect(textarea.value).toBe('updated')
+    })
+
+    it('should handle select with static options (no for-each)', () => {
+      container.innerHTML = `
+        <select bind-value="selectedValue">
+          <option value="a">Option A</option>
+          <option value="b">Option B</option>
+        </select>
+      `
+      const viewModel = { selectedValue: 'a' }
+      const bindings = setupValueBindings(container, viewModel)
+
+      renderValueBindings(bindings, viewModel)
+
+      const select = container.querySelector('select')!
+      expect(select.value).toBe('a')
+    })
+
+    it('should update viewModel when static option is selected', () => {
+      container.innerHTML = `
+        <select bind-value="selectedValue">
+          <option value="a">Option A</option>
+          <option value="b">Option B</option>
+        </select>
+      `
+      const viewModel = { selectedValue: 'a' }
+
+      setupValueBindings(container, viewModel)
+
+      const select = container.querySelector('select')!
+      select.value = 'b'
+      select.dispatchEvent(new Event('input'))
+
+      expect(viewModel.selectedValue).toBe('b')
+    })
+
+    it('should preserve numeric type when selecting a static option', () => {
+      container.innerHTML = `
+        <select bind-value="selectedValue">
+          <option value="1">Monotributo</option>
+          <option value="2">Responsable Inscripto</option>
+        </select>
+      `
+      const viewModel = { selectedValue: 1 }
+
+      setupValueBindings(container, viewModel)
+
+      const select = container.querySelector('select')!
+      select.value = '2'
+      select.dispatchEvent(new Event('input'))
+
+      expect(viewModel.selectedValue).toBe(2)
+      expect(typeof viewModel.selectedValue).toBe('number')
+    })
+
+    it('should handle select with no matching option', () => {
+      container.innerHTML = `
+        <select bind-value="selectedValue">
+          <option value="a">Option A</option>
+          <option value="b">Option B</option>
+        </select>
+      `
+      const viewModel = { selectedValue: 'c' }
+      const bindings = setupValueBindings(container, viewModel)
+
+      renderValueBindings(bindings, viewModel)
+
+      const select = container.querySelector('select')!
+      expect(select.selectedIndex).toBe(-1)
+    })
+
+    it('should handle select with no selected option gracefully during input event', () => {
+      container.innerHTML = `
+        <select bind-value="selectedType">
+          <option value="1">Type A</option>
+        </select>
+      `
+      const viewModel = { selectedType: { id: 1 } }
+      setupValueBindings(container, viewModel)
+
+      const select = container.querySelector('select')!
+      // Force selectedIndex to -1
+      select.selectedIndex = -1
+
+      expect(() => {
+        select.dispatchEvent(new Event('input'))
+      }).not.toThrow()
+
+      expect(viewModel.selectedType).toBeUndefined()
     })
   })
 })

@@ -5,6 +5,7 @@ type ErrorTranslations = {
     value: {
       invalidElement: string
     }
+    invalidBindingAttribute: string
   }
   dom: {
     invalidStructure: string
@@ -26,6 +27,7 @@ type ErrorTranslations = {
   security: {
     domEnvironmentRequired: string
     prototypePollution: string
+    selfClosingError: string
   }
   routing: {
     routeNotFound: string
@@ -44,7 +46,17 @@ type ErrorTranslations = {
     missingParentProperty: string
     missingViewModel: string
     forbiddenRootAttribute: string
+    directiveOutsideRoot: string
     unknownComponent: string
+    unknownComponentProperty: string
+  }
+  ui: {
+    errorPage: {
+      title: string
+      header: string
+      stackTrace: string
+      noStack: string
+    }
   }
 }
 

@@ -9,6 +9,8 @@ const errors = {
       invalidElement:
         'bind-value solo puede usarse en elementos input, textarea o select. Se encontró en <{{tagName}}>. Usá bind-content para elementos de visualización.\nElemento: {{snippet}}',
     },
+    invalidBindingAttribute:
+      '[pelela] Atributo de binding inválido: "{{attributeName}}". Elemento: {{elementSnippet}}',
   },
   dom: {
     invalidStructure: '[pelela] {{kind}}: No se pudo configurar el binding, {{issue}}',
@@ -33,6 +35,8 @@ const errors = {
   security: {
     domEnvironmentRequired: 'sanitizeHTML requiere un entorno DOM (document y DOMParser)',
     prototypePollution: '[pelela] Intento de Prototype Pollution bloqueado en la clave: {{keys}}',
+    selfClosingError:
+      'HTML5 malformado: El elemento "{{element}}" acepta contenido y no puede ser auto-cerrado. Error encontrado cerca de: "...{{context}}..."',
   },
   routing: {
     routeNotFound: '[pelela] No hay una ruta definida para "{{path}}"',
@@ -63,8 +67,20 @@ const errors = {
     missingViewModel: 'Pelela template "{{filePath}}" debe contener atributo view-model="..."',
     forbiddenRootAttribute:
       'Pelela template "{{filePath}}": El atributo "{{attr}}" no está permitido en la etiqueta raíz <{{tagName}}>. Los atributos de lógica y binding solo pueden usarse en elementos internos o invocaciones de componentes.',
+    directiveOutsideRoot:
+      'Pelela template "{{filePath}}": Directiva `{{directive}}` detectada fuera de la etiqueta raíz <{{tagName}}>. Encontrado en: {{snippet}}',
     unknownComponent:
       'Componente desconocido: <{{tagName}}>. ¿Olvidaste registrarlo?\nEncontrado en: {{snippet}}',
+    unknownComponentProperty:
+      'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{propertyName}}" no está definida en el ViewModel hijo.\nEncontrado en: {{snippet}}',
+  },
+  ui: {
+    errorPage: {
+      title: 'Error de Pelela',
+      header: 'Error de Pelela',
+      stackTrace: 'Traza de la pila (Stack Trace):',
+      noStack: 'No hay traza de la pila disponible',
+    },
   },
 } as const satisfies TranslationSchema['errors']
 

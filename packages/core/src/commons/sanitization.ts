@@ -1,5 +1,6 @@
 import { DOMEnvironmentError } from '../errors'
 import { isObject } from './helpers'
+import { t } from './i18n'
 
 const BLACKLISTED_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
@@ -8,8 +9,6 @@ export function isUnsafeKey(key: string): boolean {
 }
 
 export function hasProperty(obj: object, key: string): boolean {
-  // Reflect.has safely checks the prototype chain (for getters) and triggers Proxy 'has' traps,
-  // while isUnsafeKey guarantees we block Prototype Pollution.
   if (isUnsafeKey(key)) return false
   return Reflect.has(obj, key)
 }
@@ -90,6 +89,51 @@ function isUnsafeAttribute(name: string, value: string): boolean {
 }
 
 /**
+ * HTML5 Valid Void Elements (The only tags allowed to be self-closed)
+ */
+const VALID_VOID_ELEMENTS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+])
+
+/**
+ * Ensures that normal elements or custom tags are not incorrectly self-closed.
+ */
+function validateNoInvalidSelfClosingTags(htmlContent: string): void {
+  const selfClosingTagPattern = /<([a-zA-Z0-9_-]+)([^>]*)\/>/g
+  const matches = Array.from(htmlContent.matchAll(selfClosingTagPattern))
+
+  const invalidMatch = matches.find((match) => !VALID_VOID_ELEMENTS.has(match[1].toLowerCase()))
+
+  if (invalidMatch) {
+    const matchIndex = invalidMatch.index ?? 0
+    const contextSnippet = htmlContent.substring(
+      Math.max(0, matchIndex - 20),
+      Math.min(htmlContent.length, matchIndex + 40),
+    )
+
+    const errorMessage = t('errors.security.selfClosingError', '', {
+      element: invalidMatch[1],
+      context: contextSnippet.trim(),
+    })
+
+    throw new Error(`[pelela] ${errorMessage}`)
+  }
+}
+
+/**
  * Sanitizes an HTML string by removing dangerous elements and attributes
  * (like <script> and onclick) while preserving the overall structure.
  * Useful for templates.
@@ -98,6 +142,8 @@ export function sanitizeHTML(html: string): string {
   if (typeof document === 'undefined' || typeof DOMParser === 'undefined') {
     throw new DOMEnvironmentError()
   }
+
+  validateNoInvalidSelfClosingTags(html)
 
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')

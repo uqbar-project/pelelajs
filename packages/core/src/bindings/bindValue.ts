@@ -4,7 +4,63 @@ import { getDecimalSeparator, getThousandsSeparator } from '../commons/i18n'
 import { UnsupportedElementError } from '../errors'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
+import { getOptionValue, hasOptionValue } from './optionValues'
 import type { ValueBinding, ViewModel } from './types'
+
+function handleSelectWithWeakMap<T extends object>(
+  target: HTMLSelectElement,
+  viewModel: ViewModel<T>,
+  propertyName: string,
+): void {
+  const selectedOption = target.options[target.selectedIndex]
+  if (!selectedOption) {
+    setNestedProperty(viewModel, propertyName, undefined)
+    return
+  }
+
+  if (hasOptionValue(selectedOption)) {
+    setNestedProperty(viewModel, propertyName, getOptionValue(selectedOption))
+  } else {
+    const currentValue = getNestedProperty(viewModel, propertyName)
+    const rawValue = selectedOption.value
+    if (typeof currentValue === 'number') {
+      setNestedProperty(viewModel, propertyName, Number(rawValue))
+    } else {
+      setNestedProperty(viewModel, propertyName, rawValue)
+    }
+  }
+}
+
+function handleObjectValue<T extends object>(
+  inputValue: string,
+  viewModel: ViewModel<T>,
+  propertyName: string,
+): void {
+  try {
+    const parsed = parse(inputValue)
+    setNestedProperty(viewModel, propertyName, parsed)
+  } catch {
+    setNestedProperty(viewModel, propertyName, inputValue)
+  }
+}
+
+function handleNumericValue<T extends object>(
+  inputValue: string,
+  viewModel: ViewModel<T>,
+  propertyName: string,
+): void {
+  const separator = getDecimalSeparator()
+  const thousandsSeparator = getThousandsSeparator()
+
+  const normalizedValue = inputValue
+    .replace(/\s/g, '')
+    .split(thousandsSeparator)
+    .join('')
+    .replace(separator, '.')
+
+  const numeric = Number(normalizedValue)
+  setNestedProperty(viewModel, propertyName, Number.isNaN(numeric) ? 0 : numeric)
+}
 
 function setupSingleValueBinding<T extends object>(
   element: HTMLElement,
@@ -32,31 +88,20 @@ function setupSingleValueBinding<T extends object>(
       return
     }
 
+    if (target instanceof HTMLSelectElement) {
+      handleSelectWithWeakMap(target, viewModel, propertyName)
+      return
+    }
+
     const inputValue = target.value
 
     if (typeof currentValue === 'object' && currentValue !== null) {
-      try {
-        const parsed = parse(inputValue)
-        setNestedProperty(viewModel, propertyName, parsed)
-        return
-      } catch {
-        setNestedProperty(viewModel, propertyName, inputValue)
-        return
-      }
+      handleObjectValue(inputValue, viewModel, propertyName)
+      return
     }
 
     if (typeof currentValue === 'number') {
-      const separator = getDecimalSeparator()
-      const thousandsSeparator = getThousandsSeparator()
-
-      const normalizedValue = inputValue
-        .replace(/\s/g, '')
-        .split(thousandsSeparator)
-        .join('')
-        .replace(separator, '.')
-
-      const numeric = Number(normalizedValue)
-      setNestedProperty(viewModel, propertyName, Number.isNaN(numeric) ? 0 : numeric)
+      handleNumericValue(inputValue, viewModel, propertyName)
     } else {
       setNestedProperty(viewModel, propertyName, inputValue)
     }
@@ -77,6 +122,40 @@ export function setupValueBindings<T extends object>(
     .filter((binding): binding is ValueBinding => binding !== null)
 }
 
+function renderSelectWithWeakMap(select: HTMLSelectElement, value: unknown): boolean {
+  const matchingIndex = Array.from(select.options).findIndex((opt) => {
+    if (!hasOptionValue(opt)) {
+      return false
+    }
+    const optionValue = getOptionValue(opt)
+    if (optionValue === value) {
+      return true
+    }
+    // If both are objects, compare their properties
+    if (
+      typeof optionValue === 'object' &&
+      optionValue !== null &&
+      typeof value === 'object' &&
+      value !== null
+    ) {
+      const optionKeys = Object.keys(optionValue)
+      const valueKeys = Object.keys(value)
+      if (optionKeys.length !== valueKeys.length) {
+        return false
+      }
+      return optionKeys.every(
+        (key) =>
+          (optionValue as Record<string, unknown>)[key] === (value as Record<string, unknown>)[key],
+      )
+    }
+    return false
+  })
+  if (matchingIndex >= 0 && select.selectedIndex !== matchingIndex) {
+    select.selectedIndex = matchingIndex
+  }
+  return matchingIndex >= 0
+}
+
 function renderSingleValueBinding<T extends object>(
   binding: ValueBinding,
   viewModel: ViewModel<T>,
@@ -89,10 +168,18 @@ function renderSingleValueBinding<T extends object>(
   if (isCheckbox) {
     ;(input as HTMLInputElement).checked = !!value
   } else {
+    if (input instanceof HTMLSelectElement && renderSelectWithWeakMap(input, value)) {
+      return
+    }
+
     const newValue = value ?? ''
     let stringValue = String(newValue)
 
-    if (typeof newValue === 'object' && newValue !== null) {
+    if (
+      typeof newValue === 'object' &&
+      newValue !== null &&
+      !(input instanceof HTMLSelectElement)
+    ) {
       stringValue = stringify(newValue)
     }
 

@@ -1,0 +1,6 @@
+<div>
+  <pelela view-model="BadBinding">
+    <h1>BadBinding Component</h1>
+    <input type="text" bind-value="badProperty" />
+  </pelela>
+</div>

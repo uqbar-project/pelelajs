@@ -1,0 +1,6 @@
+<div>
+  <pelela view-model="BadParentNoChild">
+    <h1>BadParentNoChild Component</h1>
+    <non-existent-child></non-existent-child>
+  </pelela>
+</div>

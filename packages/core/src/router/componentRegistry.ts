@@ -4,6 +4,7 @@ import type { ViewModelConstructor } from '../types'
 type ComponentEntry = {
   name: string
   template: string
+  cssPaths?: string[]
 }
 
 const templatesByConstructor = new Map<ViewModelConstructor, ComponentEntry>()
@@ -17,6 +18,7 @@ export function defineComponent(
   name: string,
   creator: ViewModelConstructor,
   template: string,
+  cssPaths: string[] = [],
 ): void {
   const existingCreator = getViewModel(name)
 
@@ -28,7 +30,11 @@ export function defineComponent(
     registerViewModel(name, creator)
   }
 
-  templatesByConstructor.set(creator, { name, template })
+  templatesByConstructor.set(creator, {
+    name,
+    template,
+    ...(cssPaths.length > 0 && { cssPaths }),
+  })
 }
 
 export function getComponentEntry(creator: ViewModelConstructor): ComponentEntry | undefined {
