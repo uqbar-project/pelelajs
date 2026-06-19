@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## npm-v1.0.0 - 2026-06-19
+- ❌ **`bind-src` in loops:** Fixed an issue where `bind-src` does not work within a `for-each` context. ([#131](https://github.com/your-repo/issues/131))
+- 🎨 **Dynamic CSS loading:** Resolved unexpected side effects caused by CSS files appending dynamically every time a Pelela page loads. ([#130](https://github.com/your-repo/issues/130))
+- 🐦 **Self-closing tags layout break:** Fixed a bug where using a self-closing `<textarea ... />` (similar to the Twitter example) silently breaks the page layout. ([#132](https://github.com/your-repo/issues/132))
+- 🚨 **Error screen:** Created a dedicated error screen for when PelelaJS fails to initialize or start up properly. ([#123](https://github.com/your-repo/issues/123))
+- 🛡️ **Component validation:** Added validation to ensure components are not invoked outside the main `pelela` tag. ([#124](https://github.com/your-repo/issues/124))
+- 📦 **Select option serialization:** Fixed serialization/deserialization limits so that `select` options are no longer strictly restricted to plain Java objects (POJOs). ([#128](https://github.com/your-repo/issues/128))
+
 ## npm-v0.7.1 - 2026-06-12
 - 🐛 Fix vite-plugin-pelelajs not publishing with pelelajs
 
