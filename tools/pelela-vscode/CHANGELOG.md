@@ -1,5 +1,8 @@
 # CHANGELOG - Pelela VSCode Extension
 
+## vscode-v1.0.0 - 2026-06-19
+- 📆 Internal improvements and cleanup
+
 ## vscode-v0.2.5 - 2026-06-12
 - 📆 Internal improvements and cleanup
 
