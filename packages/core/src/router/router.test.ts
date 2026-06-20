@@ -52,6 +52,9 @@ describe('router', () => {
     document.body.appendChild(container)
     window.history.replaceState(null, '', '/')
     renderErrorPageSpy = vi.spyOn(mountTemplate, 'renderErrorPage')
+    document.querySelectorAll('link[data-pelela-css-url]').forEach((link) => {
+      link.remove()
+    })
   })
 
   describe('start', () => {
@@ -375,6 +378,92 @@ describe('router', () => {
       resetRouter()
 
       expect(getRouterActive()).toBe(false)
+    })
+  })
+
+  describe('child component CSS', () => {
+    it('should load CSS from child components used in a route template', () => {
+      class ChildWidget {
+        label = 'Widget'
+      }
+      class Dashboard {
+        title = 'Dashboard'
+      }
+
+      defineComponent(
+        'ChildWidget',
+        ChildWidget,
+        '<pelela view-model="ChildWidget"><span bind-content="label"></span></pelela>',
+        { cssUrls: ['/styles/child-widget.css'] },
+      )
+      defineComponent(
+        'Dashboard',
+        Dashboard,
+        '<pelela view-model="Dashboard"><child-widget></child-widget><h1 bind-content="title"></h1></pelela>',
+        { cssUrls: ['/styles/dashboard.css'] },
+      )
+
+      router.start(container, [{ path: '/', component: Dashboard }])
+
+      const childLink = document.querySelector(
+        'link[data-pelela-css-url="/styles/child-widget.css"]',
+      )
+      const parentLink = document.querySelector('link[data-pelela-css-url="/styles/dashboard.css"]')
+
+      expect(childLink).toBeInstanceOf(HTMLLinkElement)
+      expect(parentLink).toBeInstanceOf(HTMLLinkElement)
+    })
+
+    it('should remove child component CSS when navigating to a different route', () => {
+      class ChildWidget {
+        label = 'Widget'
+      }
+      class Dashboard {
+        title = 'Dashboard'
+      }
+      class Settings {
+        version = '1.0'
+      }
+
+      defineComponent(
+        'ChildWidget',
+        ChildWidget,
+        '<pelela view-model="ChildWidget"><span bind-content="label"></span></pelela>',
+        { cssUrls: ['/styles/child-widget.css'] },
+      )
+      defineComponent(
+        'Dashboard',
+        Dashboard,
+        '<pelela view-model="Dashboard"><child-widget></child-widget><h1 bind-content="title"></h1></pelela>',
+        { cssUrls: ['/styles/dashboard.css'] },
+      )
+      defineComponent(
+        'Settings',
+        Settings,
+        '<pelela view-model="Settings"><p bind-content="version"></p></pelela>',
+        { cssUrls: ['/styles/settings.css'] },
+      )
+
+      router.start(container, [
+        { path: '/', component: Dashboard },
+        { path: '/settings', component: Settings },
+      ])
+
+      const childLink = document.querySelector(
+        'link[data-pelela-css-url="/styles/child-widget.css"]',
+      )
+      expect(childLink).toBeInstanceOf(HTMLLinkElement)
+
+      router.navigateTo('/settings')
+
+      const childLinkAfterNav = document.querySelector(
+        'link[data-pelela-css-url="/styles/child-widget.css"]',
+      )
+      const parentLinkAfterNav = document.querySelector(
+        'link[data-pelela-css-url="/styles/dashboard.css"]',
+      )
+      expect(childLinkAfterNav).toBeNull()
+      expect(parentLinkAfterNav).toBeNull()
     })
   })
 
