@@ -1,0 +1,7 @@
+<pelela view-model="Home">
+  <h1 bind-content="title"></h1>
+  <p>This route loads <strong>Widget A</strong> as a child component:</p>
+  <widget-a></widget-a>
+  <p><em>Widget A's CSS should be visible above (green border + light green background).</em></p>
+  <button click="goToDetail">Ir a Detail</button>
+</pelela>

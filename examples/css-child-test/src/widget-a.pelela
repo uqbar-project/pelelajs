@@ -1,0 +1,5 @@
+<pelela view-model="WidgetA">
+  <div class="widget-a">
+    <span bind-content="text"></span>
+  </div>
+</pelela>
