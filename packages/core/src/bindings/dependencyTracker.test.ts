@@ -10,6 +10,7 @@ const emptyBindings = (): BindingsCollection => ({
   ifBindings: [],
   classBindings: [],
   styleBindings: [],
+  enabledBindings: [],
   forEachBindings: [],
   componentBindings: [],
 })

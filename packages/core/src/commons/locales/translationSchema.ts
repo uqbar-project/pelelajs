@@ -3,6 +3,7 @@ type ErrorTranslations = {
     invalidSyntax: string
     srcOnlyForImg: string
     altOnlyForImg: string
+    enabledOnlyForFormControls: string
     value: {
       invalidElement: string
     }

@@ -27,6 +27,11 @@ export type AltBinding = {
   propertyName: string
 }
 
+export type EnabledBinding = {
+  element: HTMLElement
+  propertyName: string
+}
+
 export type IfBinding = {
   element: HTMLElement
   propertyName: string
@@ -72,6 +77,7 @@ export type BindingsCollection = {
   contentBindings: ContentBinding[]
   srcBindings: SrcBinding[]
   altBindings: AltBinding[]
+  enabledBindings: EnabledBinding[]
   ifBindings: IfBinding[]
   classBindings: ClassBinding[]
   styleBindings: StyleBinding[]

@@ -6,6 +6,8 @@ const errors = {
       '[pelela] Expresión {{kind}} inválida: "{{expression}}". Formato esperado: {{format}}',
     srcOnlyForImg: 'bind-src solo puede usarse en elementos <img>. Se encontró en <{{tag}}>.',
     altOnlyForImg: 'bind-alt solo puede usarse en elementos <img>. Se encontró en <{{tag}}>.',
+    enabledOnlyForFormControls:
+      'bind-enabled solo puede usarse en controles de formulario (input, select, button, textarea, optgroup, option, fieldset). Se encontró en <{{tag}}>.',
     value: {
       invalidElement:
         'bind-value solo puede usarse en elementos input, textarea o select. Se encontró en <{{tagName}}>. Usá bind-content para elementos de visualización.\nElemento: {{snippet}}',

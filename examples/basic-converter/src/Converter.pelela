@@ -3,7 +3,7 @@
 <pelela view-model="Converter" class="pelela">
   <label>
     Millas:
-    <input type="text" bind-value="miles" />
+    <input type="text" bind-value="miles" bind-enabled="inputEnabled" />
   </label>
 
   <button class="button-primary" click="convert">Convertir</button>
@@ -12,6 +12,14 @@
     Kilómetros:
     <span
       bind-content="kilometers"
-      bind-class="kilometersClass" />
+      bind-class="kilometersClass"></span>
   </p>
+
+  <hr/>
+
+  <label class="checkbox-label">
+    <input type="checkbox" bind-value="inputEnabled" class="checkbox" />
+    Millas habilitadas
+  </label>
+
 </pelela>

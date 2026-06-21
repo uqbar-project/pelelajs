@@ -5,6 +5,7 @@ import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
+import { renderEnabledBindings, setupEnabledBindings } from './bindEnabled'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderSrcBindings, setupSrcBindings } from './bindSrc'
@@ -17,6 +18,7 @@ import type {
   ClassBinding,
   ComponentBinding,
   ContentBinding,
+  EnabledBinding,
   ForEachBinding,
   IfBinding,
   SrcBinding,
@@ -31,6 +33,7 @@ type AnyBinding =
   | ContentBinding
   | SrcBinding
   | AltBinding
+  | EnabledBinding
   | IfBinding
   | ClassBinding
   | StyleBinding
@@ -68,6 +71,10 @@ function registerAllBindingDependencies(
     {
       list: bindings.altBindings,
       getPath: (binding) => (binding as AltBinding).propertyName,
+    },
+    {
+      list: bindings.enabledBindings,
+      getPath: (binding) => (binding as EnabledBinding).propertyName,
     },
     {
       list: bindings.ifBindings,
@@ -129,6 +136,10 @@ function executeRenderPipeline<T extends object>(
       render: () => renderAltBindings(targetBindings.altBindings, viewModel),
     },
     {
+      condition: () => targetBindings.enabledBindings.length > 0,
+      render: () => renderEnabledBindings(targetBindings.enabledBindings, viewModel),
+    },
+    {
       condition: () => targetBindings.ifBindings.length > 0,
       render: () => renderIfBindings(targetBindings.ifBindings, viewModel),
     },
@@ -173,6 +184,7 @@ export function setupBindings<T extends object>(
     contentBindings: setupContentBindings(root, viewModel),
     srcBindings: setupSrcBindings(root, viewModel),
     altBindings: setupAltBindings(root, viewModel),
+    enabledBindings: setupEnabledBindings(root, viewModel),
     ifBindings: setupIfBindings(root, viewModel, skipRootIf),
     classBindings: setupClassBindings(root, viewModel),
     styleBindings: setupStyleBindings(root, viewModel),

@@ -49,6 +49,11 @@
       "valueSet": "v"
     },
     {
+      "name": "bind-enabled",
+      "description": "Pelela: Binds the enabled state to a boolean ViewModel property (for input, select, button, textarea, optgroup, option, fieldset)",
+      "valueSet": "v"
+    },
+    {
       "name": "if",
       "description": "Pelela: Conditional rendering based on a ViewModel property",
       "valueSet": "v"

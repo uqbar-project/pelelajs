@@ -6,6 +6,8 @@ const errors = {
       '[pelela] Invalid {{kind}} expression: "{{expression}}". Expected format: {{format}}',
     srcOnlyForImg: 'bind-src can only be used on <img> elements. Found on <{{tag}}>.',
     altOnlyForImg: 'bind-alt can only be used on <img> elements. Found on <{{tag}}>.',
+    enabledOnlyForFormControls:
+      'bind-enabled can only be used on form controls (input, select, button, textarea, optgroup, option, fieldset). Found on <{{tag}}>.',
     value: {
       invalidElement:
         'bind-value can only be used on input, textarea, or select elements. Found on <{{tagName}}>. Use bind-content for display elements.\nElement: {{snippet}}',
