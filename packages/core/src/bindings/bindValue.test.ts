@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { initializeI18n } from '../commons/i18n'
 import { PropertyValidationError, UnsupportedElementError } from '../errors/index'
+import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { testHelpers } from '../test/helpers'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderValueBindings, setupValueBindings } from './bindValue'
@@ -588,6 +589,51 @@ describe('bindValue', () => {
       }).not.toThrow()
 
       expect(viewModel.selectedType).toBeUndefined()
+    })
+
+    it('should select correct option by identity when class has non-enumerable properties', () => {
+      container.innerHTML = `
+        <select bind-value="selectedMultiplier">
+          <option for-each="m of multipliers" bind-content="m.label"></option>
+        </select>
+      `
+
+      class Multiplier {
+        readonly label!: string
+        readonly factor!: number
+        constructor(label: string, factor: number) {
+          Object.defineProperty(this, 'label', { value: label, enumerable: false })
+          Object.defineProperty(this, 'factor', { value: factor, enumerable: false })
+        }
+        getLabel(): string {
+          return `${this.label} x${this.factor}`
+        }
+      }
+
+      const low = new Multiplier('Low', 2)
+      const medium = new Multiplier('Medium', 5)
+
+      const viewModel = createReactiveViewModel(
+        { multipliers: [low, medium], selectedMultiplier: medium },
+        () => {},
+      )
+
+      const forEachBindings = setupForEachBindings(container, viewModel)
+      const valueBindings = setupValueBindings(container, viewModel)
+      renderForEachBindings(forEachBindings, viewModel)
+      renderValueBindings(valueBindings, viewModel)
+
+      const select = container.querySelector('select')!
+      expect(select.selectedIndex).toBe(1)
+
+      select.selectedIndex = 0
+      select.dispatchEvent(new Event('input'))
+
+      renderForEachBindings(forEachBindings, viewModel)
+      renderValueBindings(valueBindings, viewModel)
+
+      expect(select.selectedIndex).toBe(0)
+      expect(viewModel.selectedMultiplier.getLabel()).toBe('Low x2')
     })
   })
 })

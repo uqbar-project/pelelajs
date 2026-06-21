@@ -42,6 +42,18 @@ interface Character {
   image: string
 }
 
+class MultiplierOption {
+  readonly label!: string
+  readonly factor!: number
+  constructor(label: string, factor: number) {
+    Object.defineProperty(this, 'label', { value: label, enumerable: false })
+    Object.defineProperty(this, 'factor', { value: factor, enumerable: false })
+  }
+  get info(): string {
+    return `${this.label} x${this.factor}`
+  }
+}
+
 export class App {
   // 1) Select example
   // 3) Dynamic filters example (if + for-each)
@@ -118,6 +130,15 @@ export class App {
       image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f478.svg',
     },
   ]
+
+  // 12) Select with class instances with non-enumerable properties (Issue #135)
+  multipliers: MultiplierOption[] = [
+    new MultiplierOption('Low', 2),
+    new MultiplierOption('Medium', 5),
+    new MultiplierOption('High', 10),
+  ]
+
+  selectedMultiplier: MultiplierOption = this.multipliers[1]
 
   addUser() {
     if (!this.newUserName || !this.newUserEmail) return

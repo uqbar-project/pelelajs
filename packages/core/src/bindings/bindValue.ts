@@ -140,7 +140,7 @@ function renderSelectWithWeakMap(select: HTMLSelectElement, value: unknown): boo
     ) {
       const optionKeys = Object.keys(optionValue)
       const valueKeys = Object.keys(value)
-      if (optionKeys.length !== valueKeys.length) {
+      if (optionKeys.length !== valueKeys.length || optionKeys.length === 0) {
         return false
       }
       return optionKeys.every(
