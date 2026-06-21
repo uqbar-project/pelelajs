@@ -5,6 +5,7 @@ const BIND_PREFIX_ATTRIBUTES = [
   'bind-value',
   'bind-content',
   'bind-src',
+  'bind-alt',
   'bind-class',
   'bind-style',
 ] as const

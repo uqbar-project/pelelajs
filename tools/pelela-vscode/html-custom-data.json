@@ -39,6 +39,16 @@
       "valueSet": "v"
     },
     {
+      "name": "bind-src",
+      "description": "Pelela: Binds the src attribute to a ViewModel property (for img elements)",
+      "valueSet": "v"
+    },
+    {
+      "name": "bind-alt",
+      "description": "Pelela: Binds the alt attribute to a ViewModel property (for img elements, a11y/WCAG)",
+      "valueSet": "v"
+    },
+    {
       "name": "if",
       "description": "Pelela: Conditional rendering based on a ViewModel property",
       "valueSet": "v"

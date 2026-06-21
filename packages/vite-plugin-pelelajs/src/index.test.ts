@@ -557,6 +557,84 @@ describe('pelelajsPlugin', () => {
     })
   })
 
+  describe('validateBindingElementRestrictions', () => {
+    let tempDir: string
+
+    beforeEach(() => {
+      tempDir = createTempDir()
+    })
+
+    afterEach(() => {
+      removeTempDir(tempDir)
+    })
+
+    it('allows bind-alt on img elements', () => {
+      const pelelaPath = path.join(tempDir, 'valid-alt.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Gallery"><img bind-alt="altText" /></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((e) => e.includes('onlyForImg'))).toBe(false)
+    })
+
+    it('reports error when bind-alt is used on a non-img element', () => {
+      const pelelaPath = path.join(tempDir, 'invalid-alt.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div bind-alt="altText"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(
+        errors.some(
+          (e) =>
+            e.includes('can only be used on <img>') ||
+            e.includes('solo puede usarse en elementos <img>'),
+        ),
+      ).toBe(true)
+    })
+
+    it('reports error when bind-src is used on a non-img element', () => {
+      const pelelaPath = path.join(tempDir, 'invalid-src.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div bind-src="srcUrl"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(
+        errors.some(
+          (e) =>
+            e.includes('can only be used on <img>') ||
+            e.includes('solo puede usarse en elementos <img>'),
+        ),
+      ).toBe(true)
+    })
+  })
+
   describe('helper functions', () => {
     describe('extractLinkAttributeMatches', () => {
       it('extracts link attributes from HTML', () => {

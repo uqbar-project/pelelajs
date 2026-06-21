@@ -22,6 +22,11 @@ export type SrcBinding = {
   propertyName: string
 }
 
+export type AltBinding = {
+  element: HTMLImageElement
+  propertyName: string
+}
+
 export type IfBinding = {
   element: HTMLElement
   propertyName: string
@@ -66,6 +71,7 @@ export type BindingsCollection = {
   valueBindings: ValueBinding[]
   contentBindings: ContentBinding[]
   srcBindings: SrcBinding[]
+  altBindings: AltBinding[]
   ifBindings: IfBinding[]
   classBindings: ClassBinding[]
   styleBindings: StyleBinding[]

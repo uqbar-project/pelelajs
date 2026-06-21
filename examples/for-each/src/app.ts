@@ -40,6 +40,7 @@ interface SelectableType {
 interface Character {
   name: string
   image: string
+  alt: string
 }
 
 class MultiplierOption {
@@ -120,14 +121,17 @@ export class App {
     {
       name: 'Mario',
       image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f935.svg',
+      alt: 'Mario character icon',
     },
     {
       name: 'Luigi',
       image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f935.svg',
+      alt: 'Luigi character icon',
     },
     {
       name: 'Peach',
       image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f478.svg',
+      alt: 'Peach character icon',
     },
   ]
 

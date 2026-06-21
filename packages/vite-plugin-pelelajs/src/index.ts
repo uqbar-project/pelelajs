@@ -140,6 +140,24 @@ function validatePelelaStructure(
   }
 }
 
+const IMG_ONLY_BINDINGS = ['bind-src', 'bind-alt'] as const
+
+function validateBindingElementRestrictions(
+  sourceCode: string,
+  errorFn: (message: string) => void,
+): void {
+  for (const binding of IMG_ONLY_BINDINGS) {
+    const pattern = new RegExp(`<([a-zA-Z][a-zA-Z0-9]*)\\s[^>]*${binding}=`, 'gi')
+    const matches = sourceCode.matchAll(pattern)
+    for (const match of matches) {
+      const tagName = match[1].toLowerCase()
+      if (tagName !== 'img') {
+        errorFn(t('errors.compiler.onlyForImg', { binding, tag: tagName }))
+      }
+    }
+  }
+}
+
 function validateNoForeignSyntax(
   sourceCode: string,
   filePath: string,
@@ -337,6 +355,7 @@ export function pelelajsPlugin(): Plugin {
       validateNoForbiddenRootAttributes(sourceCode, filePath, errorHandler)
       validateNoForbiddenHtmlAttributes(sourceCode, filePath, errorHandler)
       validateComponentAttributes(sourceCode, errorHandler)
+      validateBindingElementRestrictions(sourceCode, errorHandler)
       validateNoForeignSyntax(sourceCode, filePath, errorHandler)
       const viewModelName = extractViewModelName(sourceCode, filePath, errorHandler)
 

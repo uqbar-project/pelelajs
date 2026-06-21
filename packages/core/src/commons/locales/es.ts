@@ -5,6 +5,7 @@ const errors = {
     invalidSyntax:
       '[pelela] Expresión {{kind}} inválida: "{{expression}}". Formato esperado: {{format}}',
     srcOnlyForImg: 'bind-src solo puede usarse en elementos <img>. Se encontró en <{{tag}}>.',
+    altOnlyForImg: 'bind-alt solo puede usarse en elementos <img>. Se encontró en <{{tag}}>.',
     value: {
       invalidElement:
         'bind-value solo puede usarse en elementos input, textarea o select. Se encontró en <{{tagName}}>. Usá bind-content para elementos de visualización.\nElemento: {{snippet}}',
@@ -62,6 +63,7 @@ const errors = {
       'Pelela template "{{filePath}}" contiene property binding tipo Angular ("[property]=value"). En PelelaJS no se admiten construcciones JS en HTML. Pase atributos estáticos y delegue lógica al ViewModel.',
     invalidComponentAttribute:
       'Componente <{{tag}}>: el atributo "{{attr}}" debe usar el prefijo "prop-" (one-way), "link-" (two-way) o "const-"',
+    onlyForImg: '{{binding}} solo puede usarse en elementos <img>, no en <{{tag}}>.',
     missingParentProperty:
       'Componente <{{tag}}>: la propiedad padre "{{parentKey}}" no existe en el view model padre',
     missingViewModel: 'Pelela template "{{filePath}}" debe contener atributo view-model="..."',
