@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## npm-v1.0.1 - 2026-06-22
+* **📦 Deployment:** The deployment of `vite-plugin-pelela` does not bump the version number.
+*(#134 - bumping vite-plugin-pelela when releasing to npm)*
+* **🎨 Style & 🔄 Performance:** Bugs found in examples: child components' CSS are not loaded + `options` in `for-each` recreates proxies over and over.
+*(#135 - child components css are not loaded + options for-each recreates proxies over and over)*
+* **🖼️ Image Binding:** Add a `bind-alt` attribute for `img` tags.
+*(#125 - bind-alt for images)*
+* **🎛️ Form Controls:** Add a `bind-enabled` attribute for data input controls.
+*(#137 - bind-enabled for input, selects, etc.)*
+* **⌨️ Keyboard Event:** Add an `enter` event handler for inputs.
+*(#129 - an enter event is added for inputs)*
+
 ## npm-v1.0.0 - 2026-06-19
 - ❌ **`bind-src` in loops:** Fixed an issue where `bind-src` does not work within a `for-each` context. ([#131](https://github.com/your-repo/issues/131))
 - 🎨 **Dynamic CSS loading:** Resolved unexpected side effects caused by CSS files appending dynamically every time a Pelela page loads. ([#130](https://github.com/your-repo/issues/130))
