@@ -30,7 +30,7 @@ function setupSingleEnabledBinding<T extends object>(
 
   assertViewModelProperty(viewModel, propertyName, 'bind-enabled', element)
 
-  return { element, propertyName }
+  return { element: element as EnabledBinding['element'], propertyName }
 }
 
 export function setupEnabledBindings<T extends object>(
@@ -52,7 +52,7 @@ function renderSingleEnabledBinding<T extends object>(
   const value = getNestedProperty(viewModel, binding.propertyName)
 
   if (value === null || value === undefined) {
-    ;(binding.element as HTMLInputElement).disabled = true
+    binding.element.disabled = true
     return
   }
 
@@ -67,8 +67,8 @@ function renderSingleEnabledBinding<T extends object>(
   }
 
   const shouldBeDisabled = !value
-  if ((binding.element as HTMLInputElement).disabled !== shouldBeDisabled) {
-    ;(binding.element as HTMLInputElement).disabled = shouldBeDisabled
+  if (binding.element.disabled !== shouldBeDisabled) {
+    binding.element.disabled = shouldBeDisabled
   }
 }
 

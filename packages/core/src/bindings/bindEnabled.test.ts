@@ -36,9 +36,7 @@ describe('bindEnabled', () => {
 
       expect(() => {
         setupEnabledBindings(container, viewModel)
-      }).toThrow(
-        /bind-enabled can only be used on form controls/,
-      )
+      }).toThrow(/bind-enabled can only be used on form controls/)
     })
 
     it('should throw error if property does not exist in viewModel', () => {

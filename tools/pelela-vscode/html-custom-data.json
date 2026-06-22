@@ -75,7 +75,7 @@
     },
     {
       "name": "enter",
-      "description": "Pelela: Ejecuta un método del view model al presionar Enter en un input",
+      "description": "Pelela: Binds Enter keypress event to a ViewModel method on input elements",
       "valueSet": "v"
     },
     {

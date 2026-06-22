@@ -33,9 +33,7 @@ describe('bindAlt', () => {
 
       expect(() => {
         setupAltBindings(container, viewModel)
-      }).toThrow(
-        /bind-alt can only be used on <img> elements/,
-      )
+      }).toThrow(/bind-alt can only be used on <img> elements/)
     })
 
     it('should throw error if property does not exist in viewModel', () => {

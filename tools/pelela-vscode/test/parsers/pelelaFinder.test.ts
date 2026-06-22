@@ -28,6 +28,8 @@ describe('pelelaFinder', () => {
     <p if="isVisible">Visible text</p>
     <ul>
       <li for-each="item of items" bind-content="item"></li>
+      <li for-each="product of products" bind-content="productName"></li>
+      <span bind-content="items"></span>
     </ul>
     <div const-style="color: red" const-myAttr="value"></div>
     <div bind-class="activeClass"></div>
@@ -56,6 +58,12 @@ describe('pelelaFinder', () => {
 
     it('should return null for a non-existent class', () => {
       const location = findViewModelTag(testPelelaPath, 'NonExistent')
+
+      assert.strictEqual(location, null)
+    })
+
+    it('should not match view-model with wrong case', () => {
+      const location = findViewModelTag(testPelelaPath, 'testapp')
 
       assert.strictEqual(location, null)
     })
@@ -92,6 +100,19 @@ describe('pelelaFinder', () => {
 
     it('should find usage as for-each collection', () => {
       const location = findPropertyUsage(testPelelaPath, 'items')
+
+      assert.ok(location instanceof vscode.Location)
+      assert.strictEqual(location.uri.fsPath, testPelelaPath)
+    })
+
+    it('should not match a for-each loop variable as a property', () => {
+      const location = findPropertyUsage(testPelelaPath, 'product')
+
+      assert.strictEqual(location, null)
+    })
+
+    it('should find usage as for-each collection without bind-* fallback', () => {
+      const location = findPropertyUsage(testPelelaPath, 'products')
 
       assert.ok(location instanceof vscode.Location)
       assert.strictEqual(location.uri.fsPath, testPelelaPath)
@@ -143,6 +164,12 @@ describe('pelelaFinder', () => {
 
       assert.strictEqual(location, null)
     })
+
+    it('should not match property with wrong case', () => {
+      const location = findPropertyUsage(testPelelaPath, 'USERNAME')
+
+      assert.strictEqual(location, null)
+    })
   })
 
   describe('findMethodUsage', () => {
@@ -162,6 +189,12 @@ describe('pelelaFinder', () => {
 
     it('should return null for a non-existent method', () => {
       const location = findMethodUsage(testPelelaPath, 'nonExistentMethod')
+
+      assert.strictEqual(location, null)
+    })
+
+    it('should not match method with wrong case', () => {
+      const location = findMethodUsage(testPelelaPath, 'HandleSubmit')
 
       assert.strictEqual(location, null)
     })

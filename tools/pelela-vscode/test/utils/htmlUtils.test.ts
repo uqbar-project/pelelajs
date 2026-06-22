@@ -74,6 +74,7 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('bind-style'))
       assert.ok(attributes.includes('const-'))
       assert.ok(attributes.includes('click'))
+      assert.ok(attributes.includes('enter'))
       assert.ok(attributes.includes('for-each'))
     })
 

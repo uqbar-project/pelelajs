@@ -13,6 +13,9 @@ import { extractNestedProperties, extractViewModelMembers } from '../parsers/vie
 import { findViewModelFile } from '../utils/fileUtils'
 import { getHtmlAttributes, getHtmlElements, getPelelaAttributes } from '../utils/htmlUtils'
 
+const EVENT_ATTRIBUTES = new Set(['click', 'enter'])
+const PELELA_ATTRIBUTE_NAMES = new Set(['click', 'enter', 'if', 'for-each'])
+
 async function provideCompletionItems(
   document: vscode.TextDocument,
   position: vscode.Position,
@@ -120,8 +123,7 @@ async function provideAttributeValueCompletions(
   textBeforeCursor: string
 ): Promise<vscode.CompletionItem[]> {
   const isPelelaAttribute =
-    attributeName.startsWith('bind-') ||
-    ['click', 'enter', 'if', 'for-each'].includes(attributeName)
+    attributeName.startsWith('bind-') || PELELA_ATTRIBUTE_NAMES.has(attributeName)
 
   if (!isPelelaAttribute) return []
 
@@ -146,7 +148,7 @@ function provideBasicViewModelCompletions(
   const items: vscode.CompletionItem[] = []
   const { properties, methods } = extractViewModelMembers(typescriptFilePath)
 
-  if (attributeName === 'click' || attributeName === 'enter') {
+  if (EVENT_ATTRIBUTES.has(attributeName)) {
     methods.forEach((name) => {
       items.push(createMethodCompletion(name))
     })

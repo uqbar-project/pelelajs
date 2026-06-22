@@ -10,7 +10,7 @@ export function findViewModelTag(
   className: string
 ): vscode.Location | null {
   const escapedName = escapeRegex(className)
-  const viewModelRegex = new RegExp(`<pelela[^>]*view-model=["']${escapedName}["']`, 'i')
+  const viewModelRegex = new RegExp(`<pelela[^>]*view-model=["']${escapedName}["']`)
   return findLocationInFile(pelelaFilePath, viewModelRegex, className)
 }
 
@@ -20,13 +20,17 @@ export function findPropertyUsage(
 ): vscode.Location | null {
   const escapedName = escapeRegex(propertyName)
   const bindingRegex = new RegExp(
-    `(?:bind-[a-zA-Z0-9_-]+|if|for-each)\\s*=\\s*["'][^"']*\\b${escapedName}\\b[^"']*["']`,
-    'i'
+    `(?:bind-[a-zA-Z0-9_-]+|if)\\s*=\\s*["'][^"']*\\b${escapedName}\\b[^"']*["']`
   )
-  const location = findLocationInFile(pelelaFilePath, bindingRegex, propertyName)
+  const forEachCollectionRegex = new RegExp(
+    `for-each\\s*=\\s*["'][^"']*\\bof\\s+[^"']*\\b${escapedName}\\b[^"']*["']`
+  )
+  const location =
+    findLocationInFile(pelelaFilePath, bindingRegex, propertyName) ??
+    findLocationInFile(pelelaFilePath, forEachCollectionRegex, propertyName)
   if (location) return location
 
-  const constAttrRegex = new RegExp(`const-${escapedName}\\s*=\\s*["'][^"']*["']`, 'i')
+  const constAttrRegex = new RegExp(`const-${escapedName}\\s*=\\s*["'][^"']*["']`)
   return findLocationInFile(pelelaFilePath, constAttrRegex, propertyName)
 }
 
@@ -35,7 +39,7 @@ export function findMethodUsage(
   methodName: string
 ): vscode.Location | null {
   const escapedName = escapeRegex(methodName)
-  const eventRegex = new RegExp(`(?:click|enter)\\s*=\\s*["']${escapedName}["']`, 'i')
+  const eventRegex = new RegExp(`(?:click|enter)\\s*=\\s*["']${escapedName}["']`)
   return findLocationInFile(pelelaFilePath, eventRegex, methodName)
 }
 

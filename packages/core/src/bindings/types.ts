@@ -28,7 +28,14 @@ export type AltBinding = {
 }
 
 export type EnabledBinding = {
-  element: HTMLElement
+  element:
+    | HTMLInputElement
+    | HTMLButtonElement
+    | HTMLSelectElement
+    | HTMLTextAreaElement
+    | HTMLOptGroupElement
+    | HTMLOptionElement
+    | HTMLFieldSetElement
   propertyName: string
 }
 

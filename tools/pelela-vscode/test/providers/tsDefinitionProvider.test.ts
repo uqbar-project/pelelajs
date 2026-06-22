@@ -14,10 +14,21 @@ describe('tsDefinitionProvider', () => {
     'export class MyViewModel {',
     '  userName = "John"',
     '  count = 0',
+    '  readonly id = 1',
+    '  static total = 0',
     '  get isVisible() {',
     '    return true',
     '  }',
     '  handleSubmit() {',
+    '    console.log("submit")',
+    '  }',
+    '  static create() {',
+    '    return new MyViewModel()',
+    '  }',
+    '  async load() {',
+    '    return Promise.resolve()',
+    '  }',
+    '  onSubmit() {',
     '    console.log("submit")',
     '  }',
     '}',
@@ -26,9 +37,14 @@ describe('tsDefinitionProvider', () => {
   const pelelaContent = `<pelela view-model="MyViewModel">
   <span bind-content="userName"></span>
   <span bind-content="count"></span>
+  <span bind-content="id"></span>
+  <span bind-content="total"></span>
   <p if="isVisible">text</p>
   <button click="handleSubmit">Save</button>
+  <button click="create">Create</button>
+  <button click="load">Load</button>
   <input bind-value="userName" />
+  <input enter="onSubmit" />
 </pelela>`
 
   before(() => {
@@ -102,8 +118,8 @@ describe('tsDefinitionProvider', () => {
 
   it('should navigate from getter to first usage in if attribute', () => {
     const doc = makeDocument(tsLines, testTsPath)
-    // Cursor on "isVisible" in "get isVisible()" (line 3, char 6)
-    const pos = new vscode.Position(3, 6)
+    // Cursor on "isVisible" in "get isVisible()" (line 5, char 6)
+    const pos = new vscode.Position(5, 6)
     const location = provideTypeScriptDefinition(
       doc,
       pos,
@@ -116,8 +132,78 @@ describe('tsDefinitionProvider', () => {
 
   it('should navigate from method to first usage in click', () => {
     const doc = makeDocument(tsLines, testTsPath)
-    // Cursor on "handleSubmit" in "handleSubmit() {" (line 6, char 2)
-    const pos = new vscode.Position(6, 2)
+    // Cursor on "handleSubmit" in "handleSubmit() {" (line 8, char 2)
+    const pos = new vscode.Position(8, 2)
+    const location = provideTypeScriptDefinition(
+      doc,
+      pos,
+      {} as vscode.CancellationToken
+    ) as vscode.Location
+
+    assert.ok(location instanceof vscode.Location)
+    assert.strictEqual(location.uri.fsPath, testPelelaPath)
+  })
+
+  it('should navigate from readonly property to usage', () => {
+    const doc = makeDocument(tsLines, testTsPath)
+    // Cursor on "id" in "readonly id = 1" (line 3, char 12)
+    const pos = new vscode.Position(3, 12)
+    const location = provideTypeScriptDefinition(
+      doc,
+      pos,
+      {} as vscode.CancellationToken
+    ) as vscode.Location
+
+    assert.ok(location instanceof vscode.Location)
+    assert.strictEqual(location.uri.fsPath, testPelelaPath)
+  })
+
+  it('should navigate from static property to usage', () => {
+    const doc = makeDocument(tsLines, testTsPath)
+    // Cursor on "total" in "static total = 0" (line 4, char 10)
+    const pos = new vscode.Position(4, 10)
+    const location = provideTypeScriptDefinition(
+      doc,
+      pos,
+      {} as vscode.CancellationToken
+    ) as vscode.Location
+
+    assert.ok(location instanceof vscode.Location)
+    assert.strictEqual(location.uri.fsPath, testPelelaPath)
+  })
+
+  it('should navigate from static method to usage', () => {
+    const doc = makeDocument(tsLines, testTsPath)
+    // Cursor on "create" in "static create() {" (line 11, char 10)
+    const pos = new vscode.Position(11, 10)
+    const location = provideTypeScriptDefinition(
+      doc,
+      pos,
+      {} as vscode.CancellationToken
+    ) as vscode.Location
+
+    assert.ok(location instanceof vscode.Location)
+    assert.strictEqual(location.uri.fsPath, testPelelaPath)
+  })
+
+  it('should navigate from async method to usage', () => {
+    const doc = makeDocument(tsLines, testTsPath)
+    // Cursor on "load" in "async load() {" (line 14, char 10)
+    const pos = new vscode.Position(14, 10)
+    const location = provideTypeScriptDefinition(
+      doc,
+      pos,
+      {} as vscode.CancellationToken
+    ) as vscode.Location
+
+    assert.ok(location instanceof vscode.Location)
+    assert.strictEqual(location.uri.fsPath, testPelelaPath)
+  })
+
+  it('should navigate from method to first usage in enter', () => {
+    const doc = makeDocument(tsLines, testTsPath)
+    // Cursor on "onSubmit" in "onSubmit() {" (line 17, char 4)
+    const pos = new vscode.Position(17, 4)
     const location = provideTypeScriptDefinition(
       doc,
       pos,

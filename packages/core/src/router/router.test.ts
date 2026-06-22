@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getRouterActive, setRouterActive } from '../bootstrap/bootstrap'
 import * as mountTemplate from '../bootstrap/mountTemplate'
 import { RoutingError } from '../errors/index'
@@ -52,6 +52,9 @@ describe('router', () => {
     document.body.appendChild(container)
     window.history.replaceState(null, '', '/')
     renderErrorPageSpy = vi.spyOn(mountTemplate, 'renderErrorPage')
+  })
+
+  afterEach(() => {
     document.querySelectorAll('link[data-pelela-css-url]').forEach((link) => {
       link.remove()
     })
