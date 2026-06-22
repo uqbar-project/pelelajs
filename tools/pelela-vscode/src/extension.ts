@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { createCompletionProvider } from './providers/completionProvider'
 import { createDefinitionProvider } from './providers/definitionProvider'
+import { createTypeScriptDefinitionProvider } from './providers/tsDefinitionProvider'
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('[Pelela Extension] Activated')
@@ -10,9 +11,11 @@ export function activate(context: vscode.ExtensionContext) {
 
   const completionProvider = createCompletionProvider()
   const definitionProvider = createDefinitionProvider()
+  const tsDefinitionProvider = createTypeScriptDefinitionProvider()
 
   context.subscriptions.push(completionProvider)
   context.subscriptions.push(definitionProvider)
+  context.subscriptions.push(tsDefinitionProvider)
 }
 
 function enablePelelaContext() {

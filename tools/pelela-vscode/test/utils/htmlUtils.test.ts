@@ -77,9 +77,9 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('for-each'))
     })
 
-    it('should return exactly 9 attributes', () => {
+    it('should return exactly 10 attributes', () => {
       const attributes = getPelelaAttributes()
-      assert.strictEqual(attributes.length, 9)
+      assert.strictEqual(attributes.length, 10)
     })
   })
 })
