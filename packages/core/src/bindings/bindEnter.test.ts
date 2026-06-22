@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { t } from '../commons/i18n'
 import { InvalidHandlerError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { setupEnterBindings } from './bindEnter'
@@ -210,7 +211,7 @@ describe('bindEnter', () => {
 
       expect(() => {
         setupEnterBindings(container, viewModel)
-      }).toThrow(/enter can only be used on <input> elements/)
+      }).toThrow(t('errors.compiler.enterOnlyForInput', { tag: 'div' }))
     })
 
     it('should throw error when enter is on textarea, button, or select', () => {
@@ -223,7 +224,7 @@ describe('bindEnter', () => {
 
       expect(() => {
         setupEnterBindings(container, viewModel)
-      }).toThrow(/enter can only be used on <input> elements/)
+      }).toThrow(t('errors.compiler.enterOnlyForInput', { tag: 'textarea' }))
     })
   })
 })

@@ -743,6 +743,42 @@ describe('pelelajsPlugin', () => {
 
       expect(errors).toContain(t('errors.compiler.onlyForImg', { binding: 'bind-src', tag: 'div' }))
     })
+
+    it('should not trigger for data-bind-alt on non-img elements', () => {
+      const pelelaPath = path.join(tempDir, 'data-alt.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div data-bind-alt="x"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toHaveLength(0)
+    })
+
+    it('should not trigger for data-bind-src on non-img elements', () => {
+      const pelelaPath = path.join(tempDir, 'data-src.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div data-bind-src="x"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toHaveLength(0)
+    })
   })
 
   describe('validateInputOnlyEvents', () => {
@@ -825,6 +861,21 @@ describe('pelelajsPlugin', () => {
           errorMessage === t('errors.compiler.enterOnlyForInput', { tag: 'section' }),
       )
       expect(enterErrors).toHaveLength(2)
+    })
+
+    it('should not trigger for data-enter on non-input elements', () => {
+      const pelelaPath = path.join(tempDir, 'data-enter.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><div data-enter="fn"></div></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toHaveLength(0)
     })
   })
 

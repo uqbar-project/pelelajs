@@ -148,7 +148,10 @@ function validateBindingElementRestrictions(
   errorFn: (message: string) => void,
 ): void {
   for (const binding of IMG_ONLY_BINDINGS) {
-    const pattern = new RegExp(`<([a-zA-Z][a-zA-Z0-9]*)\\s[^>]*${binding}\\s*=`, 'gi')
+    const pattern = new RegExp(
+      `<([a-zA-Z][a-zA-Z0-9]*)\\s[^>]*(?<![a-zA-Z0-9_-])${binding}\\s*=`,
+      'gi',
+    )
     const matches = sourceCode.matchAll(pattern)
     for (const match of matches) {
       const tagName = match[1].toLowerCase()
@@ -161,7 +164,10 @@ function validateBindingElementRestrictions(
 
 function validateInputOnlyEvents(sourceCode: string, errorFn: (message: string) => void): void {
   for (const eventName of INPUT_ONLY_EVENTS) {
-    const pattern = new RegExp(`<([a-zA-Z][a-zA-Z0-9]*)\\s[^>]*${eventName}\\s*=`, 'gi')
+    const pattern = new RegExp(
+      `<([a-zA-Z][a-zA-Z0-9]*)\\s[^>]*(?<![a-zA-Z0-9_-])${eventName}\\s*=`,
+      'gi',
+    )
     const matches = sourceCode.matchAll(pattern)
     for (const match of matches) {
       const tagName = match[1].toLowerCase()

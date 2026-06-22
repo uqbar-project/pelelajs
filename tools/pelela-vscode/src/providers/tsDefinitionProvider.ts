@@ -5,10 +5,10 @@ import { findPelelaFile } from '../utils/fileUtils'
 const CLASS_DECLARATION_REGEX = /^\s*(?:export\s+)?(?:default\s+)?class\s+(\w+)/
 const ACCESS_MODIFIER = '(?:public\\s+|private\\s+|protected\\s+)?'
 const PROPERTY_DECLARATION_REGEX = new RegExp(
-  `^\\s*${ACCESS_MODIFIER}(?:static\\s+|readonly\\s+)?(?:get\\s+)?(\\w+)\\s*[=:]`
+  `^\\s*${ACCESS_MODIFIER}(?:static\\s+)?(?:readonly\\s+)?(?:get\\s+)?(\\w+)\\s*[=:]`
 )
 const METHOD_DECLARATION_REGEX = new RegExp(
-  `^\\s*${ACCESS_MODIFIER}(?:static\\s+|async\\s+)?(\\w+)\\s*\\(`
+  `^\\s*${ACCESS_MODIFIER}(?:static\\s+)?(?:async\\s+)?(\\w+)\\s*\\(`
 )
 
 function isClassDeclaration(line: string): string | null {
