@@ -74,6 +74,11 @@ export function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): v
       text: 'click="${1:handler}"',
       detail: 'Pelela: ejecuta un método del view model al hacer click',
     },
+    enter: {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
+      text: 'enter="${1:handler}"',
+      detail: 'Pelela: ejecuta un método del view model al presionar Enter',
+    },
     if: {
       // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'if="${1:condicion}"',
@@ -115,7 +120,8 @@ async function provideAttributeValueCompletions(
   textBeforeCursor: string
 ): Promise<vscode.CompletionItem[]> {
   const isPelelaAttribute =
-    attributeName.startsWith('bind-') || ['click', 'if', 'for-each'].includes(attributeName)
+    attributeName.startsWith('bind-') ||
+    ['click', 'enter', 'if', 'for-each'].includes(attributeName)
 
   if (!isPelelaAttribute) return []
 
@@ -140,7 +146,7 @@ function provideBasicViewModelCompletions(
   const items: vscode.CompletionItem[] = []
   const { properties, methods } = extractViewModelMembers(typescriptFilePath)
 
-  if (attributeName === 'click') {
+  if (attributeName === 'click' || attributeName === 'enter') {
     methods.forEach((name) => {
       items.push(createMethodCompletion(name))
     })

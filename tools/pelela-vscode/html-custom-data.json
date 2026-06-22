@@ -74,6 +74,11 @@
       "valueSet": "v"
     },
     {
+      "name": "enter",
+      "description": "Pelela: Ejecuta un método del view model al presionar Enter en un input",
+      "valueSet": "v"
+    },
+    {
       "name": "for-each",
       "description": "Pelela: Iterates over a collection from the ViewModel (syntax: item of collection)",
       "valueSet": "v"

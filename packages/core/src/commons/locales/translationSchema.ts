@@ -46,6 +46,7 @@ type ErrorTranslations = {
     foreignPropertyBinding: string
     invalidComponentAttribute: string
     onlyForImg: string
+    enterOnlyForInput: string
     missingParentProperty: string
     missingViewModel: string
     forbiddenRootAttribute: string

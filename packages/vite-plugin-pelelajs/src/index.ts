@@ -141,6 +141,7 @@ function validatePelelaStructure(
 }
 
 const IMG_ONLY_BINDINGS = ['bind-src', 'bind-alt'] as const
+const INPUT_ONLY_EVENTS = ['enter'] as const
 
 function validateBindingElementRestrictions(
   sourceCode: string,
@@ -153,6 +154,19 @@ function validateBindingElementRestrictions(
       const tagName = match[1].toLowerCase()
       if (tagName !== 'img') {
         errorFn(t('errors.compiler.onlyForImg', { binding, tag: tagName }))
+      }
+    }
+  }
+}
+
+function validateInputOnlyEvents(sourceCode: string, errorFn: (message: string) => void): void {
+  for (const eventName of INPUT_ONLY_EVENTS) {
+    const pattern = new RegExp(`<([a-zA-Z][a-zA-Z0-9]*)\\s[^>]*${eventName}=`, 'gi')
+    const matches = sourceCode.matchAll(pattern)
+    for (const match of matches) {
+      const tagName = match[1].toLowerCase()
+      if (tagName !== 'input') {
+        errorFn(t('errors.compiler.enterOnlyForInput', { tag: tagName }))
       }
     }
   }
@@ -187,6 +201,7 @@ function validateNoForbiddenRootAttributes(
     /\bif\s*=/,
     /\bfor-each\s*=/,
     /\bclick\s*=/,
+    /\benter\s*=/,
   ]
 
   const foundPattern = forbiddenPatterns.find((pattern) => pattern.test(attributes))
@@ -356,6 +371,7 @@ export function pelelajsPlugin(): Plugin {
       validateNoForbiddenHtmlAttributes(sourceCode, filePath, errorHandler)
       validateComponentAttributes(sourceCode, errorHandler)
       validateBindingElementRestrictions(sourceCode, errorHandler)
+      validateInputOnlyEvents(sourceCode, errorHandler)
       validateNoForeignSyntax(sourceCode, filePath, errorHandler)
       const viewModelName = extractViewModelName(sourceCode, filePath, errorHandler)
 

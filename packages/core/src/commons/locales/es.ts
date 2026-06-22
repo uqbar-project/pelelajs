@@ -66,6 +66,7 @@ const errors = {
     invalidComponentAttribute:
       'Componente <{{tag}}>: el atributo "{{attr}}" debe usar el prefijo "prop-" (one-way), "link-" (two-way) o "const-"',
     onlyForImg: '{{binding}} solo puede usarse en elementos <img>, no en <{{tag}}>.',
+    enterOnlyForInput: 'enter solo puede usarse en elementos <input>. Se encontró en <{{tag}}>.',
     missingParentProperty:
       'Componente <{{tag}}>: la propiedad padre "{{parentKey}}" no existe en el view model padre',
     missingViewModel: 'Pelela template "{{filePath}}" debe contener atributo view-model="..."',

@@ -62,6 +62,7 @@ const errors = {
     invalidComponentAttribute:
       'Component <{{tag}}>: attribute "{{attr}}" must use "prop-" (one-way), "link-" (two-way) or "const-" prefix',
     onlyForImg: '{{binding}} can only be used on <img> elements, not on <{{tag}}>.',
+    enterOnlyForInput: 'enter can only be used on <input> elements. Found on <{{tag}}>.',
     missingParentProperty:
       'Component <{{tag}}>: parent property "{{parentKey}}" does not exist in parent view model',
     missingViewModel: 'Pelela template "{{filePath}}" must contain view-model="..." attribute',

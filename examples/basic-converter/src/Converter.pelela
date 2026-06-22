@@ -3,7 +3,7 @@
 <pelela view-model="Converter" class="pelela">
   <label>
     Millas:
-    <input type="text" bind-value="miles" bind-enabled="inputEnabled" />
+    <input type="text" bind-value="miles" bind-enabled="inputEnabled" enter="convert" />
   </label>
 
   <button class="button-primary" click="convert">Convertir</button>

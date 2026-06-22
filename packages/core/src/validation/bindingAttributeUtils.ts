@@ -1,6 +1,6 @@
 import { LINK_PREFIX, PROP_PREFIX } from '../commons/dom'
 
-const EXACT_BINDING_ATTRIBUTES = ['click', 'if', 'for-each', 'index'] as const
+const EXACT_BINDING_ATTRIBUTES = ['click', 'enter', 'if', 'for-each', 'index'] as const
 const BIND_PREFIX_ATTRIBUTES = [
   'bind-value',
   'bind-content',

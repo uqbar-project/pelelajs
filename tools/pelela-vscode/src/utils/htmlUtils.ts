@@ -77,6 +77,7 @@ export function getPelelaAttributes() {
     'bind-style',
     'const-',
     'click',
+    'enter',
     'for-each',
   ]
 }
