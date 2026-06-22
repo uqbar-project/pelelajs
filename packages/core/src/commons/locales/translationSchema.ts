@@ -2,6 +2,8 @@ type ErrorTranslations = {
   bindings: {
     invalidSyntax: string
     srcOnlyForImg: string
+    altOnlyForImg: string
+    enabledOnlyForFormControls: string
     value: {
       invalidElement: string
     }
@@ -43,6 +45,8 @@ type ErrorTranslations = {
     foreignInterpolation: string
     foreignPropertyBinding: string
     invalidComponentAttribute: string
+    onlyForImg: string
+    enterOnlyForInput: string
     missingParentProperty: string
     missingViewModel: string
     forbiddenRootAttribute: string

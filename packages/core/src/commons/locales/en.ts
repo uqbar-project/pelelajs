@@ -5,6 +5,9 @@ const errors = {
     invalidSyntax:
       '[pelela] Invalid {{kind}} expression: "{{expression}}". Expected format: {{format}}',
     srcOnlyForImg: 'bind-src can only be used on <img> elements. Found on <{{tag}}>.',
+    altOnlyForImg: 'bind-alt can only be used on <img> elements. Found on <{{tag}}>.',
+    enabledOnlyForFormControls:
+      'bind-enabled can only be used on form controls (input, select, button, textarea, optgroup, option, fieldset). Found on <{{tag}}>.',
     value: {
       invalidElement:
         'bind-value can only be used on input, textarea, or select elements. Found on <{{tagName}}>. Use bind-content for display elements.\nElement: {{snippet}}',
@@ -58,6 +61,8 @@ const errors = {
       'Pelela template "{{filePath}}" contains Angular-like property binding ("[property]=value"). PelelaJS does not support JS constructs in HTML. Pass static attributes and delegate logic to the ViewModel.',
     invalidComponentAttribute:
       'Component <{{tag}}>: attribute "{{attr}}" must use "prop-" (one-way), "link-" (two-way) or "const-" prefix',
+    onlyForImg: '{{binding}} can only be used on <img> elements, not on <{{tag}}>.',
+    enterOnlyForInput: 'enter can only be used on <input> elements. Found on <{{tag}}>.',
     missingParentProperty:
       'Component <{{tag}}>: parent property "{{parentKey}}" does not exist in parent view model',
     missingViewModel: 'Pelela template "{{filePath}}" must contain view-model="..." attribute',

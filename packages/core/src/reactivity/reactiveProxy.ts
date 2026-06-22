@@ -180,6 +180,10 @@ function makeReactive<T>(
     return target
   }
 
+  if (isProxy(target)) {
+    return target as T
+  }
+
   const existingProxy = proxyCache.get(target) as T | undefined
   if (existingProxy) {
     return existingProxy

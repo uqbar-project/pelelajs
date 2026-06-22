@@ -40,6 +40,19 @@ interface SelectableType {
 interface Character {
   name: string
   image: string
+  alt: string
+}
+
+class MultiplierOption {
+  readonly label!: string
+  readonly factor!: number
+  constructor(label: string, factor: number) {
+    Object.defineProperty(this, 'label', { value: label, enumerable: false })
+    Object.defineProperty(this, 'factor', { value: factor, enumerable: false })
+  }
+  get info(): string {
+    return `${this.label} x${this.factor}`
+  }
 }
 
 export class App {
@@ -108,16 +121,28 @@ export class App {
     {
       name: 'Mario',
       image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f935.svg',
+      alt: 'Mario character icon',
     },
     {
       name: 'Luigi',
       image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f935.svg',
+      alt: 'Luigi character icon',
     },
     {
       name: 'Peach',
       image: 'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f478.svg',
+      alt: 'Peach character icon',
     },
   ]
+
+  // 12) Select with class instances with non-enumerable properties (Issue #135)
+  multipliers: MultiplierOption[] = [
+    new MultiplierOption('Low', 2),
+    new MultiplierOption('Medium', 5),
+    new MultiplierOption('High', 10),
+  ]
+
+  selectedMultiplier: MultiplierOption = this.multipliers[1]
 
   addUser() {
     if (!this.newUserName || !this.newUserEmail) return

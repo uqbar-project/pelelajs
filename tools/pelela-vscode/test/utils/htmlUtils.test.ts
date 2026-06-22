@@ -74,12 +74,13 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('bind-style'))
       assert.ok(attributes.includes('const-'))
       assert.ok(attributes.includes('click'))
+      assert.ok(attributes.includes('enter'))
       assert.ok(attributes.includes('for-each'))
     })
 
-    it('should return exactly 9 attributes', () => {
+    it('should return exactly 10 attributes', () => {
       const attributes = getPelelaAttributes()
-      assert.strictEqual(attributes.length, 9)
+      assert.strictEqual(attributes.length, 10)
     })
   })
 })

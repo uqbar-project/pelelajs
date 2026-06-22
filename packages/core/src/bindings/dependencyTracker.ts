@@ -98,6 +98,8 @@ export class DependencyTracker {
       forEachBindings: addGetterBindings(allBindings.forEachBindings, result.forEachBindings),
       componentBindings: addGetterBindings(allBindings.componentBindings, result.componentBindings),
       valueBindings: addGetterBindings(allBindings.valueBindings, result.valueBindings),
+      altBindings: addGetterBindings(allBindings.altBindings, result.altBindings),
+      enabledBindings: addGetterBindings(allBindings.enabledBindings, result.enabledBindings),
     }
   }
 

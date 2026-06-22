@@ -53,6 +53,16 @@ input {
   box-sizing: border-box;
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox {
+  width: 10%;
+}
+
 input:focus {
   outline: none;
   border-color: #4299e1;

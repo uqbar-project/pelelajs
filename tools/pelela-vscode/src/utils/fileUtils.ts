@@ -10,6 +10,14 @@ export function findViewModelFile(pelelaUri: vscode.Uri): string | null {
   return null
 }
 
+export function findPelelaFile(tsPath: string): string | null {
+  const pelelaPath = tsPath.replace(/\.ts$/, '.pelela')
+  if (fs.existsSync(pelelaPath)) {
+    return pelelaPath
+  }
+  return null
+}
+
 export function readFileLines(filePath: string): string[] {
   const text = fs.readFileSync(filePath, 'utf-8')
   return text.split('\n')

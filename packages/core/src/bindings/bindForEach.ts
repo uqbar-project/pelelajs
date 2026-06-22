@@ -15,10 +15,13 @@ import { getComponentByTag } from '../registry/componentRegistry'
 import { assertValidBindingAttribute } from '../validation/assertValidBindingAttribute'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { isBindingAttribute } from '../validation/bindingAttributeUtils'
+import { renderAltBindings, setupAltBindings } from './bindAlt'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
+import { renderEnabledBindings, setupEnabledBindings } from './bindEnabled'
+import { setupEnterBindings } from './bindEnter'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderSrcBindings, setupSrcBindings } from './bindSrc'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
@@ -98,16 +101,21 @@ function setupBindingsForElement<T extends object>(
     valueBindings: setupValueBindings(element, viewModel),
     contentBindings: setupContentBindings(element, viewModel),
     srcBindings: setupSrcBindings(element, viewModel),
+    altBindings: setupAltBindings(element, viewModel),
+    enabledBindings: setupEnabledBindings(element, viewModel),
     ifBindings: setupIfBindings(element, viewModel),
     classBindings: setupClassBindings(element, viewModel),
     styleBindings: setupStyleBindings(element, viewModel),
   }
   setupClickBindings(element, viewModel)
+  setupEnterBindings(element, viewModel)
 
   return () => {
     renderValueBindings(bindings.valueBindings, viewModel)
     renderContentBindings(bindings.contentBindings, viewModel)
     renderSrcBindings(bindings.srcBindings, viewModel)
+    renderAltBindings(bindings.altBindings, viewModel)
+    renderEnabledBindings(bindings.enabledBindings, viewModel)
     renderIfBindings(bindings.ifBindings, viewModel)
     renderClassBindings(bindings.classBindings, viewModel)
     renderStyleBindings(bindings.styleBindings, viewModel)

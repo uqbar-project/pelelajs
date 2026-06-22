@@ -3,7 +3,12 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { after, before, describe, it } from 'mocha'
 import type * as vscode from 'vscode'
-import { findViewModelFile, readFileContent, readFileLines } from '../../src/utils/fileUtils'
+import {
+  findPelelaFile,
+  findViewModelFile,
+  readFileContent,
+  readFileLines,
+} from '../../src/utils/fileUtils'
 
 describe('fileUtils', () => {
   const testFilesDir = path.join(__dirname, '../fixtures')
@@ -39,6 +44,21 @@ describe('fileUtils', () => {
       const nonExistentPath = path.join(testFilesDir, 'nonexistent.pelela')
       const mockUri = { fsPath: nonExistentPath } as vscode.Uri
       const result = findViewModelFile(mockUri)
+
+      assert.strictEqual(result, null)
+    })
+  })
+
+  describe('findPelelaFile', () => {
+    it('should find the corresponding .pelela file', () => {
+      const result = findPelelaFile(testTsPath)
+
+      assert.strictEqual(result, testPelelaPath)
+    })
+
+    it('should return null if the .pelela file does not exist', () => {
+      const nonExistentPath = path.join(testFilesDir, 'nonexistent.ts')
+      const result = findPelelaFile(nonExistentPath)
 
       assert.strictEqual(result, null)
     })

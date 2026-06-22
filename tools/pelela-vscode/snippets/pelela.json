@@ -29,6 +29,21 @@
     "body": ["bind-style=\"$1\""],
     "description": "Atributo bind-style para estilos dinámicos"
   },
+  "bind-src": {
+    "prefix": "bindsrc",
+    "body": ["bind-src=\"$1\""],
+    "description": "Atributo bind-src para binding de src en img"
+  },
+  "bind-alt": {
+    "prefix": "bindalt",
+    "body": ["bind-alt=\"$1\""],
+    "description": "Atributo bind-alt para binding de alt en img (a11y)"
+  },
+  "bind-enabled": {
+    "prefix": "bindenabled",
+    "body": ["bind-enabled=\"$1\""],
+    "description": "Atributo bind-enabled para habilitar/deshabilitar controles de formulario"
+  },
   "prop-*": {
     "prefix": "prop",
     "body": ["prop-$1=\"$2\""],

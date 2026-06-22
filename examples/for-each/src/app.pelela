@@ -128,7 +128,7 @@
   <p>Ejemplo de bind-src funcionando dentro de un for-each para mostrar imágenes dinámicamente</p>
 
   <div for-each="character of characters" class="card">
-    <img bind-src="character.image" alt="character image" width="50" height="50" />
+    <img bind-src="character.image" bind-alt="character.alt" width="50" height="50" />
     <span bind-content="character.name" class="result-text"></span>
   </div>
 
@@ -149,5 +149,19 @@
       <option for-each="bet of selectedBetClass.bets" bind-content="bet"></option>
     </select>
   </div>
+
+  <hr/>
+
+  <h2>12) Select con clase con propiedades no-enumerables (Issue #135)</h2>
+
+  <p>La clase usa Object.defineProperty con enumerable: false. El select mantiene la identidad correcta gracias a reactiveProxy.</p>
+
+  <div class="card">
+    <select bind-value="selectedMultiplier">
+      <option for-each="multiplier of multipliers" bind-content="multiplier.info"></option>
+    </select>
+  </div>
+
+  <p>Factor del multiplicador seleccionado: <span bind-content="selectedMultiplier.factor"></span></p>
 
 </pelela>
