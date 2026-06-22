@@ -203,5 +203,27 @@ describe('bindEnter', () => {
 
       expect(handleEnter).toHaveBeenCalledTimes(1)
     })
+
+    it('should throw error when enter is on a non-input element', () => {
+      container.innerHTML = '<div enter="handleEnter"></div>'
+      const viewModel = { handleEnter: vi.fn() }
+
+      expect(() => {
+        setupEnterBindings(container, viewModel)
+      }).toThrow(/enter can only be used on <input> elements/)
+    })
+
+    it('should throw error when enter is on textarea, button, or select', () => {
+      container.innerHTML = `
+        <textarea enter="handleEnter"></textarea>
+        <button enter="handleEnter">Button</button>
+        <select enter="handleEnter"></select>
+      `
+      const viewModel = { handleEnter: vi.fn() }
+
+      expect(() => {
+        setupEnterBindings(container, viewModel)
+      }).toThrow(/enter can only be used on <input> elements/)
+    })
   })
 })

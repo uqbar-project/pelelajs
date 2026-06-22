@@ -1,4 +1,5 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
+import { t } from '../commons/i18n'
 import { InvalidHandlerError } from '../errors/index'
 import type { ViewModel } from './types'
 
@@ -8,6 +9,10 @@ function setupSingleEnterBinding<T extends object>(
 ): void {
   const handlerName = element.getAttribute('enter')
   if (!handlerName?.trim()) return
+
+  if (element.tagName !== 'INPUT') {
+    throw new Error(t('errors.compiler.enterOnlyForInput', { tag: element.tagName.toLowerCase() }))
+  }
 
   element.addEventListener('keydown', (event: KeyboardEvent) => {
     if (event.key !== 'Enter') return

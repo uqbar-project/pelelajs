@@ -37,7 +37,7 @@ describe('bindEnabled', () => {
       expect(() => {
         setupEnabledBindings(container, viewModel)
       }).toThrow(
-        /bind-enabled solo puede usarse en controles de formulario|bind-enabled can only be used on form controls/,
+        /bind-enabled can only be used on form controls/,
       )
     })
 

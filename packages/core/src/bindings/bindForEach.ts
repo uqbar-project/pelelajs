@@ -18,6 +18,7 @@ import { isBindingAttribute } from '../validation/bindingAttributeUtils'
 import { renderAltBindings, setupAltBindings } from './bindAlt'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
+import { setupEnterBindings } from './bindEnter'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderEnabledBindings, setupEnabledBindings } from './bindEnabled'
@@ -107,6 +108,7 @@ function setupBindingsForElement<T extends object>(
     styleBindings: setupStyleBindings(element, viewModel),
   }
   setupClickBindings(element, viewModel)
+  setupEnterBindings(element, viewModel)
 
   return () => {
     renderValueBindings(bindings.valueBindings, viewModel)

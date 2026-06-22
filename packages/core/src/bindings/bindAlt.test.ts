@@ -34,7 +34,7 @@ describe('bindAlt', () => {
       expect(() => {
         setupAltBindings(container, viewModel)
       }).toThrow(
-        /bind-alt solo puede usarse en elementos <img>|bind-alt can only be used on <img> elements/,
+        /bind-alt can only be used on <img> elements/,
       )
     })
 
