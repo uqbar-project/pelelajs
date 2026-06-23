@@ -19,6 +19,11 @@ export function isStartingTag(textBeforeCursor: string): boolean {
   return /<\w*$/.test(textBeforeCursor)
 }
 
+export function getCurrentTagName(textBeforeCursor: string): string | null {
+  const tagMatch = /<\s*(\w+)/.exec(textBeforeCursor)
+  return tagMatch ? tagMatch[1].toLowerCase() : null
+}
+
 export function getAttributeValueMatch(textBeforeCursor: string): string | null {
   const attributeValueMatch = /=\s*"([^"]*)$/.exec(textBeforeCursor)
   return attributeValueMatch ? attributeValueMatch[1] : null

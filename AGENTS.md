@@ -68,3 +68,8 @@
   - **Ante la duda, preguntá:** No tomes decisiones de diseño o arquitectura por tu cuenta.
   - **Explicación:** Siempre explicá los cambios importantes siguiendo estas directrices.
 </ai_interaction_protocol>
+
+<lessons_learned>
+
+- **VSCode plugin — tres mecanismos de autocompletado:** Al agregar un nuevo binding (ej. `bind-alt`, `bind-enabled`), hay que actualizar los **3** mecanismos del plugin: `html-custom-data.json` (HTML IntelliSense), `snippets/pelela.json` (snippets), y `src/utils/htmlUtils.ts` → `getPelelaAttributes()` (provider programático). Los planes de bind-alt y bind-enabled omitieron este último, por lo que los bindings aparecían por IntelliSense y snippets pero no en el autocompletado por código.
+</lessons_learned>
