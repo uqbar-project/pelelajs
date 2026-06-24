@@ -129,6 +129,11 @@ describe('documentParser', () => {
       const result = getCurrentTagName('< input ')
       assert.strictEqual(result, 'input')
     })
+
+    it('should return the last tag when multiple tags are present', () => {
+      const result = getCurrentTagName('<div><img ')
+      assert.strictEqual(result, 'img')
+    })
   })
 
   describe('parseForEachExpression', () => {
