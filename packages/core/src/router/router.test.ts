@@ -385,7 +385,7 @@ describe('router', () => {
   })
 
   describe('child component CSS', () => {
-    it('should load CSS from child component with PascalCase single-word tag (e.g. <Validator>)', () => {
+    it('should load CSS from child component with kebab-case single-word tag (e.g. <validator>)', () => {
       class Validator {
         label = 'Validator'
       }
@@ -417,7 +417,7 @@ describe('router', () => {
       expect(wheelLink).toBeInstanceOf(HTMLLinkElement)
     })
 
-    it('should load CSS from child component with PascalCase multi-word tag (e.g. <SomeComponent>)', () => {
+    it('should load CSS from child component with kebab-case multi-word tag (e.g. <some-component>)', () => {
       class SomeComponent {
         label = 'Some'
       }
