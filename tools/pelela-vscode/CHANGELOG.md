@@ -1,5 +1,8 @@
 # CHANGELOG - Pelela VSCode Extension
 
+## vscode-v1.0.2 - 2026-06-25
+- 📝 VS Code autocomplete fixes
+
 ## vscode-v1.0.1 - 2026-06-22
 - 🖼️ Image Binding: Add a bind-alt attribute for img tags (#125 - bind-alt for images)
 - 🎛️ Form Controls: Add a bind-enabled attribute for data input controls (#137 - bind-enabled for input, selects, etc.)
