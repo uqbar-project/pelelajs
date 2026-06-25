@@ -1,6 +1,11 @@
 import * as assert from 'node:assert'
 import { describe, it } from 'mocha'
-import { getHtmlAttributes, getHtmlElements, getPelelaAttributes } from '../../src/utils/htmlUtils'
+import {
+  getHtmlAttributes,
+  getHtmlElements,
+  getPelelaAttributes,
+  getPelelaAttributesForTag,
+} from '../../src/utils/htmlUtils'
 
 describe('htmlUtils', () => {
   describe('getHtmlElements', () => {
@@ -67,20 +72,88 @@ describe('htmlUtils', () => {
       const attributes = getPelelaAttributes()
 
       assert.ok(attributes.includes('view-model'))
-      assert.ok(attributes.includes('bind-value'))
-      assert.ok(attributes.includes('bind-content'))
-      assert.ok(attributes.includes('if'))
+      assert.ok(attributes.includes('bind-alt'))
       assert.ok(attributes.includes('bind-class'))
+      assert.ok(attributes.includes('bind-content'))
+      assert.ok(attributes.includes('bind-enabled'))
+      assert.ok(attributes.includes('bind-src'))
       assert.ok(attributes.includes('bind-style'))
+      assert.ok(attributes.includes('bind-value'))
       assert.ok(attributes.includes('const-'))
       assert.ok(attributes.includes('click'))
       assert.ok(attributes.includes('enter'))
       assert.ok(attributes.includes('for-each'))
+      assert.ok(attributes.includes('if'))
     })
 
-    it('should return exactly 10 attributes', () => {
+    it('should return exactly 13 attributes', () => {
       const attributes = getPelelaAttributes()
-      assert.strictEqual(attributes.length, 10)
+      assert.strictEqual(attributes.length, 13)
+    })
+  })
+
+  describe('getPelelaAttributesForTag', () => {
+    it('should return all attributes for a tag without restrictions', () => {
+      const attributes = getPelelaAttributesForTag('div')
+
+      assert.ok(attributes.includes('bind-class'))
+      assert.ok(attributes.includes('bind-content'))
+      assert.ok(attributes.includes('click'))
+      assert.ok(attributes.includes('if'))
+    })
+
+    it('should include bind-alt for img tags', () => {
+      const attributes = getPelelaAttributesForTag('img')
+
+      assert.ok(attributes.includes('bind-alt'))
+      assert.ok(attributes.includes('bind-src'))
+    })
+
+    it('should exclude bind-alt for non-img tags', () => {
+      const attributes = getPelelaAttributesForTag('input')
+
+      assert.ok(!attributes.includes('bind-alt'))
+      assert.ok(!attributes.includes('bind-src'))
+    })
+
+    it('should include bind-enabled for form control tags', () => {
+      const attributes = getPelelaAttributesForTag('input')
+
+      assert.ok(attributes.includes('bind-enabled'))
+    })
+
+    it('should exclude bind-enabled for non-form tags', () => {
+      const attributes = getPelelaAttributesForTag('div')
+
+      assert.ok(!attributes.includes('bind-enabled'))
+    })
+
+    it('should include enter only for input tags', () => {
+      const inputAttrs = getPelelaAttributesForTag('input')
+      const divAttrs = getPelelaAttributesForTag('div')
+
+      assert.ok(inputAttrs.includes('enter'))
+      assert.ok(!divAttrs.includes('enter'))
+    })
+
+    it('should include view-model only for pelela and component tags', () => {
+      const pelelaAttrs = getPelelaAttributesForTag('pelela')
+      const componentAttrs = getPelelaAttributesForTag('component')
+      const divAttrs = getPelelaAttributesForTag('div')
+
+      assert.ok(pelelaAttrs.includes('view-model'))
+      assert.ok(componentAttrs.includes('view-model'))
+      assert.ok(!divAttrs.includes('view-model'))
+    })
+
+    it('should return all attributes when tagName is null', () => {
+      const attributes = getPelelaAttributesForTag(null)
+
+      assert.ok(attributes.includes('bind-alt'))
+      assert.ok(attributes.includes('bind-enabled'))
+      assert.ok(attributes.includes('enter'))
+      assert.ok(attributes.includes('view-model'))
+      assert.strictEqual(attributes.length, 13)
     })
   })
 })

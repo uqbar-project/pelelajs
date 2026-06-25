@@ -4,6 +4,7 @@ import {
   findForEachInElement,
   getAttributeValueMatch,
   getCurrentAttributeName,
+  getCurrentTagName,
   isInsideTag,
   isStartingTag,
   parseForEachExpression,
@@ -11,7 +12,7 @@ import {
 } from '../parsers/documentParser'
 import { extractNestedProperties, extractViewModelMembers } from '../parsers/viewModelParser'
 import { findViewModelFile } from '../utils/fileUtils'
-import { getHtmlAttributes, getHtmlElements, getPelelaAttributes } from '../utils/htmlUtils'
+import { getHtmlAttributes, getHtmlElements, getPelelaAttributesForTag } from '../utils/htmlUtils'
 
 const EVENT_ATTRIBUTES = new Set(['click', 'enter'])
 const PELELA_ATTRIBUTE_NAMES = new Set(['click', 'enter', 'if', 'for-each'])
@@ -39,8 +40,9 @@ async function provideCompletionItems(
   if (isStartingTag(textBeforeCursor)) {
     addHtmlElementCompletions(items)
   } else if (isInsideTag(textBeforeCursor)) {
+    const tagName = getCurrentTagName(textBeforeCursor)
     addHtmlAttributeCompletions(items)
-    addPelelaAttributeCompletions(items)
+    addPelelaAttributeCompletions(items, tagName)
   }
 
   return items
@@ -63,8 +65,11 @@ function addHtmlAttributeCompletions(items: vscode.CompletionItem[]): void {
   })
 }
 
-export function addPelelaAttributeCompletions(items: vscode.CompletionItem[]): void {
-  const attrNames = getPelelaAttributes()
+export function addPelelaAttributeCompletions(
+  items: vscode.CompletionItem[],
+  tagName?: string | null
+): void {
+  const attrNames = getPelelaAttributesForTag(tagName ?? null)
 
   const attributeSnippets: Record<string, { text: string; detail: string }> = {
     'view-model': {

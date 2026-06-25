@@ -385,60 +385,95 @@ describe('router', () => {
   })
 
   describe('child component CSS', () => {
-    it('should load CSS from child components used in a route template', () => {
-      class ChildWidget {
-        label = 'Widget'
+    it('should load CSS from child component with kebab-case single-word tag (e.g. <validator>)', () => {
+      class Validator {
+        label = 'Validator'
       }
-      class Dashboard {
-        title = 'Dashboard'
+      class Wheel {
+        title = 'Wheel'
       }
 
       defineComponent(
-        'ChildWidget',
-        ChildWidget,
-        '<pelela view-model="ChildWidget"><span bind-content="label"></span></pelela>',
-        { cssUrls: ['/styles/child-widget.css'] },
+        'Validator',
+        Validator,
+        '<pelela view-model="Validator"><span bind-content="label"></span></pelela>',
+        { cssUrls: ['/styles/validator.css'] },
       )
       defineComponent(
-        'Dashboard',
-        Dashboard,
-        '<pelela view-model="Dashboard"><child-widget></child-widget><h1 bind-content="title"></h1></pelela>',
-        { cssUrls: ['/styles/dashboard.css'] },
+        'Wheel',
+        Wheel,
+        '<pelela view-model="Wheel"><validator></validator><h1 bind-content="title"></h1></pelela>',
+        { cssUrls: ['/styles/wheel.css'] },
       )
 
-      router.start(container, [{ path: '/', component: Dashboard }])
+      router.start(container, [{ path: '/', component: Wheel }])
+
+      const validatorLink = document.querySelector(
+        'link[data-pelela-css-url="/styles/validator.css"]',
+      )
+      const wheelLink = document.querySelector('link[data-pelela-css-url="/styles/wheel.css"]')
+
+      expect(validatorLink).toBeInstanceOf(HTMLLinkElement)
+      expect(wheelLink).toBeInstanceOf(HTMLLinkElement)
+    })
+
+    it('should load CSS from child component with kebab-case multi-word tag (e.g. <some-component>)', () => {
+      class SomeComponent {
+        label = 'Some'
+      }
+      class AppLayout {
+        title = 'App Layout'
+      }
+
+      defineComponent(
+        'SomeComponent',
+        SomeComponent,
+        '<pelela view-model="SomeComponent"><span bind-content="label"></span></pelela>',
+        { cssUrls: ['/styles/some-component.css'] },
+      )
+      defineComponent(
+        'AppLayout',
+        AppLayout,
+        '<pelela view-model="AppLayout"><some-component></some-component><h1 bind-content="title"></h1></pelela>',
+        { cssUrls: ['/styles/app-layout.css'] },
+      )
+
+      router.start(container, [{ path: '/', component: AppLayout }])
 
       const childLink = document.querySelector(
-        'link[data-pelela-css-url="/styles/child-widget.css"]',
+        'link[data-pelela-css-url="/styles/some-component.css"]',
       )
-      const parentLink = document.querySelector('link[data-pelela-css-url="/styles/dashboard.css"]')
+      const parentLink = document.querySelector(
+        'link[data-pelela-css-url="/styles/app-layout.css"]',
+      )
 
       expect(childLink).toBeInstanceOf(HTMLLinkElement)
       expect(parentLink).toBeInstanceOf(HTMLLinkElement)
+      expect(container.querySelector('span')?.innerHTML).toBe('Some')
     })
 
     it('should remove child component CSS when navigating to a different route', () => {
-      class ChildWidget {
-        label = 'Widget'
+      class Validator {
+        label = 'Validator'
       }
-      class Dashboard {
-        title = 'Dashboard'
+      class Wheel {
+        title = 'Wheel'
       }
       class Settings {
         version = '1.0'
       }
 
       defineComponent(
-        'ChildWidget',
-        ChildWidget,
-        '<pelela view-model="ChildWidget"><span bind-content="label"></span></pelela>',
-        { cssUrls: ['/styles/child-widget.css'] },
+        'Validator',
+        Validator,
+        '<pelela view-model="Validator"><span bind-content="label"></span></pelela>',
+        { cssUrls: ['/styles/validator.css'] },
       )
       defineComponent(
-        'Dashboard',
-        Dashboard,
-        '<pelela view-model="Dashboard"><child-widget></child-widget><h1 bind-content="title"></h1></pelela>',
-        { cssUrls: ['/styles/dashboard.css'] },
+        'Wheel',
+        Wheel,
+        '<pelela view-model="Wheel"><validator></validator><h1 bind-content="title"></h1></pelela>',
+        { cssUrls: ['/styles/wheel.css'] },
       )
       defineComponent(
         'Settings',
@@ -448,22 +483,20 @@ describe('router', () => {
       )
 
       router.start(container, [
-        { path: '/', component: Dashboard },
+        { path: '/', component: Wheel },
         { path: '/settings', component: Settings },
       ])
 
-      const childLink = document.querySelector(
-        'link[data-pelela-css-url="/styles/child-widget.css"]',
-      )
+      const childLink = document.querySelector('link[data-pelela-css-url="/styles/validator.css"]')
       expect(childLink).toBeInstanceOf(HTMLLinkElement)
 
       router.navigateTo('/settings')
 
       const childLinkAfterNav = document.querySelector(
-        'link[data-pelela-css-url="/styles/child-widget.css"]',
+        'link[data-pelela-css-url="/styles/validator.css"]',
       )
       const parentLinkAfterNav = document.querySelector(
-        'link[data-pelela-css-url="/styles/dashboard.css"]',
+        'link[data-pelela-css-url="/styles/wheel.css"]',
       )
       expect(childLinkAfterNav).toBeNull()
       expect(parentLinkAfterNav).toBeNull()

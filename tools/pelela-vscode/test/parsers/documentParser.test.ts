@@ -3,6 +3,7 @@ import { describe, it } from 'mocha'
 import {
   getAttributeValueMatch,
   getCurrentAttributeName,
+  getCurrentTagName,
   isInsideTag,
   isStartingTag,
   parseForEachExpression,
@@ -95,6 +96,43 @@ describe('documentParser', () => {
     it('should handle spaces around the equals sign', () => {
       const result = getAttributeValueMatch('bind-value = "test')
       assert.strictEqual(result, 'test')
+    })
+  })
+
+  describe('getCurrentTagName', () => {
+    it('should extract the tag name from an opening tag', () => {
+      const result = getCurrentTagName('<div ')
+      assert.strictEqual(result, 'div')
+    })
+
+    it('should extract the tag name with attributes present', () => {
+      const result = getCurrentTagName('<img src="test" ')
+      assert.strictEqual(result, 'img')
+    })
+
+    it('should extract the tag name from a Pelela root tag', () => {
+      const result = getCurrentTagName('<pelela ')
+      assert.strictEqual(result, 'pelela')
+    })
+
+    it('should extract the tag name from a component tag', () => {
+      const result = getCurrentTagName('<component ')
+      assert.strictEqual(result, 'component')
+    })
+
+    it('should return null for plain text', () => {
+      const result = getCurrentTagName('some text')
+      assert.strictEqual(result, null)
+    })
+
+    it('should handle whitespace after <', () => {
+      const result = getCurrentTagName('< input ')
+      assert.strictEqual(result, 'input')
+    })
+
+    it('should return the last tag when multiple tags are present', () => {
+      const result = getCurrentTagName('<div><img ')
+      assert.strictEqual(result, 'img')
     })
   })
 

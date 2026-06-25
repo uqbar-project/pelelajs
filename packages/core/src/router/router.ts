@@ -5,6 +5,7 @@ import {
   findExistingStylesheetLink,
   removeStylesheetLinks,
 } from '../commons/cssLoader'
+import { toKebabCase } from '../commons/helpers'
 import { RoutingError } from '../errors/RoutingError'
 import {
   getComponentByTag,
@@ -24,7 +25,11 @@ export function registerCss(cssPath: string): void {
   currentRouteCss.add(cssPath)
 }
 
-function collectChildComponentCssUrls(template: string, visited = new Set<string>()): string[] {
+function collectChildComponentCssUrls(rawTemplate: string, visited = new Set<string>()): string[] {
+  const template = rawTemplate.replace(
+    /<\s*(\w+)/g,
+    (_, tagName: string) => `<${toKebabCase(tagName)}`,
+  )
   const tagRegex = (tag: string) => new RegExp(`<${tag}(?:[\\s>/])`)
 
   return getRegisteredTags()
