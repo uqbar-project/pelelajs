@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## npm-v1.0.2 - 2026-06-25
+- 🎨 Child components CSS manipulation fixed
+
 ## npm-v1.0.1 - 2026-06-22
 * **📦 Deployment:** The deployment of `vite-plugin-pelela` does not bump the version number.
 *(#134 - bumping vite-plugin-pelela when releasing to npm)*
