@@ -402,7 +402,7 @@ describe('router', () => {
       defineComponent(
         'Wheel',
         Wheel,
-        '<pelela view-model="Wheel"><Validator></Validator><h1 bind-content="title"></h1></pelela>',
+        '<pelela view-model="Wheel"><validator></validator><h1 bind-content="title"></h1></pelela>',
         { cssUrls: ['/styles/wheel.css'] },
       )
 
@@ -434,7 +434,7 @@ describe('router', () => {
       defineComponent(
         'AppLayout',
         AppLayout,
-        '<pelela view-model="AppLayout"><SomeComponent></SomeComponent><h1 bind-content="title"></h1></pelela>',
+        '<pelela view-model="AppLayout"><some-component></some-component><h1 bind-content="title"></h1></pelela>',
         { cssUrls: ['/styles/app-layout.css'] },
       )
 
@@ -449,6 +449,7 @@ describe('router', () => {
 
       expect(childLink).toBeInstanceOf(HTMLLinkElement)
       expect(parentLink).toBeInstanceOf(HTMLLinkElement)
+      expect(container.querySelector('span')?.innerHTML).toBe('Some')
     })
 
     it('should remove child component CSS when navigating to a different route', () => {
@@ -471,7 +472,7 @@ describe('router', () => {
       defineComponent(
         'Wheel',
         Wheel,
-        '<pelela view-model="Wheel"><Validator></Validator><h1 bind-content="title"></h1></pelela>',
+        '<pelela view-model="Wheel"><validator></validator><h1 bind-content="title"></h1></pelela>',
         { cssUrls: ['/styles/wheel.css'] },
       )
       defineComponent(
