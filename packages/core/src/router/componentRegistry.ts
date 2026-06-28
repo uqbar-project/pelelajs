@@ -1,9 +1,9 @@
+import { toKebabCase } from '../commons/helpers'
 import {
   clearComponentRegistry,
   defineComponent as defineComponentOriginal,
   getComponentEntry,
 } from '../registry/componentRegistry'
-import { toKebabCase } from '../commons/helpers'
 import type { ViewModelConstructor } from '../types'
 
 export function inferComponentName(creator: ViewModelConstructor): string {
