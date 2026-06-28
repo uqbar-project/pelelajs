@@ -436,6 +436,141 @@ describe('pelelajsPlugin', () => {
       )
     })
 
+    it('reports error when component tag uses camelCase', () => {
+      const pelelaPath = path.join(tempDir, 'camel-case-component.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><myComponent prop-value="x"></myComponent></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(
+        t('errors.compiler.invalidComponentTagCase', {
+          tag: 'myComponent',
+          suggestedTag: 'my-component',
+        }),
+      )
+    })
+
+    it('reports error when component tag uses camelCase in pelela request with query params', () => {
+      const pelelaPath = path.join(tempDir, 'camel-case-component-query.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><myComponent prop-value="x"></myComponent></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, `${pelelaPath}?import&t=123`, {} as never)
+
+      expect(errors).toContain(
+        t('errors.compiler.invalidComponentTagCase', {
+          tag: 'myComponent',
+          suggestedTag: 'my-component',
+        }),
+      )
+    })
+
+    it('reports error when component tag collapsed a registered kebab-case component', () => {
+      fs.writeFileSync(path.join(tempDir, 'person-row.ts'), 'export class PersonRow {}')
+      fs.writeFileSync(
+        path.join(tempDir, 'person-row.pelela'),
+        '<pelela view-model="PersonRow"></pelela>',
+      )
+      const pelelaPath = path.join(tempDir, 'collapsed-component.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><personrow prop-value="x"></personrow></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(
+        t('errors.compiler.invalidComponentTagCase', {
+          tag: 'personrow',
+          suggestedTag: 'person-row',
+        }),
+      )
+    })
+
+    it('accepts registered single-word component tags', () => {
+      fs.writeFileSync(path.join(tempDir, 'counter.ts'), 'export class Counter {}')
+      fs.writeFileSync(
+        path.join(tempDir, 'counter.pelela'),
+        '<pelela view-model="Counter"></pelela>',
+      )
+      const pelelaPath = path.join(tempDir, 'single-word-component.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><counter prop-value="x"></counter></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toEqual([])
+    })
+
+    it('reports error when component tag uses PascalCase', () => {
+      const pelelaPath = path.join(tempDir, 'pascal-case-component.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><MyComponent prop-value="x"></MyComponent></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(
+        t('errors.compiler.invalidComponentTagCase', {
+          tag: 'MyComponent',
+          suggestedTag: 'my-component',
+        }),
+      )
+    })
+
+    it('accepts uppercase standard HTML tags', () => {
+      const pelelaPath = path.join(tempDir, 'uppercase-html.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><DIV></DIV></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toEqual([])
+    })
+
     it('accepts prop-* prefix on component attributes', () => {
       const pelelaPath = path.join(tempDir, 'valid-props.pelela')
       fs.writeFileSync(

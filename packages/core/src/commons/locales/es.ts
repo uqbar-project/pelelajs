@@ -63,6 +63,8 @@ const errors = {
       'Pelela template "{{filePath}}" contiene sintaxis "{{ expression }}" no soportada. En PelelaJS no se permite interpolación estilo mustache. Usá directivas de binding como bind-content="valor" en su lugar.',
     foreignPropertyBinding:
       'Pelela template "{{filePath}}" contiene property binding tipo Angular ("[property]=value"). En PelelaJS no se admiten construcciones JS en HTML. Pase atributos estáticos y delegue lógica al ViewModel.',
+    invalidComponentTagCase:
+      'El tag de componente <{{tag}}> debe usar kebab-case en archivos .pelela. Usá <{{suggestedTag}}> en su lugar.',
     invalidComponentAttribute:
       'Componente <{{tag}}>: el atributo "{{attr}}" debe usar el prefijo "prop-" (one-way), "link-" (two-way) o "const-"',
     onlyForImg: '{{binding}} solo puede usarse en elementos <img>, no en <{{tag}}>.',

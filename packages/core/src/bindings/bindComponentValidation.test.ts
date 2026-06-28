@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { initializeI18n } from '../commons/i18n'
+import { initializeI18n, t } from '../commons/i18n'
 import { UnknownComponentPropertyError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
@@ -27,6 +27,41 @@ describe('bindComponent validation', () => {
 
     expect(() => setupComponentBindings(container, vm)).toThrow(
       /Unknown component: <my-unknown-comp>/,
+    )
+  })
+
+  it('should suggest the registered kebab-case tag when the DOM contains the collapsed tag', () => {
+    class PersonRow {}
+    defineComponent('PersonRow', PersonRow, '<component view-model="PersonRow"></component>')
+
+    container.innerHTML =
+      '<personrow prop-person="person" prop-index="index" prop-selected-index="selectedIndex"></personrow>'
+    const vm = createReactiveViewModel({}, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).toThrow(
+      t('errors.compiler.invalidComponentTagCase', {
+        tag: 'personrow',
+        suggestedTag: 'person-row',
+      }),
+    )
+  })
+
+  it('should not suggest a kebab-case tag when the collapsed component tag is ambiguous', () => {
+    const ambiguousTagName = 'personrowx'
+    const ambiguousSnippet = `<${ambiguousTagName}></${ambiguousTagName}>`
+    class PersonRowX {}
+    class PersonrowX {}
+    defineComponent('PersonRowX', PersonRowX, '<component view-model="PersonRowX"></component>')
+    defineComponent('PersonrowX', PersonrowX, '<component view-model="PersonrowX"></component>')
+
+    container.innerHTML = ambiguousSnippet
+    const vm = createReactiveViewModel({}, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).toThrow(
+      t('errors.compiler.unknownComponent', {
+        tagName: ambiguousTagName,
+        snippet: ambiguousSnippet,
+      }),
     )
   })
 
