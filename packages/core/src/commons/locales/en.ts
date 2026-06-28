@@ -60,7 +60,7 @@ const errors = {
     foreignPropertyBinding:
       'Pelela template "{{filePath}}" contains Angular-like property binding ("[property]=value"). PelelaJS does not support JS constructs in HTML. Pass static attributes and delegate logic to the ViewModel.',
     invalidComponentTagCase:
-      'Component tag <{{tag}}> must use kebab-case in .pelela files because HTML lowercases tag names. Use <{{suggestedTag}}> instead.',
+      'Component tag <{{tag}}> must use kebab-case in .pelela files. Use <{{suggestedTag}}> instead.',
     invalidComponentAttribute:
       'Component <{{tag}}>: attribute "{{attr}}" must use "prop-" (one-way), "link-" (two-way) or "const-" prefix',
     onlyForImg: '{{binding}} can only be used on <img> elements, not on <{{tag}}>.',
