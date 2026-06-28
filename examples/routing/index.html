@@ -4,9 +4,36 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PelelaJS Routing</title>
+  <style>
+    .help-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #667eea;
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+      z-index: 9999;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .help-fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.7);
+    }
+  </style>
 </head>
 <body>
   <div id="app"></div>
+
+  <a href="/help.html" class="help-fab" title="Help">?</a>
 
   <script type="module" src="/main.ts"></script>
 </body>

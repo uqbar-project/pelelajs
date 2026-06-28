@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pelela Cheat Sheet</title>
+  <style>
+    @import 'https://fonts.googleapis.com/css2?family=Geist:ital,wght@0,100..900;1,100..900&display=swap';
+
+    body {
+      font-family: Geist, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .cheat-sheet-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .title {
+      color: #333;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 18px;
+    }
+
+    .nav-link {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .nav-link:hover {
+      text-decoration: underline;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    .cli-section-title::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 6H21M8 12H21M8 18H21M3 6h3M3 12h3m0 6h3' stroke='%23667eea'/%3E%3C/svg%3E");
+    }
+
+    .bindings-section-title::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 2 2 2h8a2 2 0 0 0 2-2V8z' stroke='%23667eea'/%3E%3Cpath d='M14 2v6h6M8 13h8M8 17h8M8 9h2' stroke='%23667eea'/%3E%3C/svg%3E");
+    }
+
+    .prop-section-title::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' stroke='%23667eea'/%3E%3C/svg%3E");
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .code {
+      font-family: monospace;
+      background-color: #f4f4f4;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+
+    .attribute {
+      color: #d63384;
+      font-weight: 600;
+    }
+
+    .example {
+      background-color: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      margin: 15px 0;
+      font-family: monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    .note {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 10px;
+      margin: 15px 0;
+      border-radius: 3px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 10px 20px;
+      background-color: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+
+    .back-link:hover {
+      background-color: #5a67d8;
+    }
+
+    @media (max-width: 768px) {
+      .cheat-sheet-container {
+        padding: 20px;
+      }
+
+      .title {
+        font-size: 24px;
+      }
+
+      .section-title {
+        font-size: 20px;
+      }
+
+      .section-title::before {
+        width: 30px;
+        height: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="cheat-sheet-container">
+    <div class="header">
+      <div class="title">Pelela Cheat Sheet</div>
+      <div class="subtitle">Comprehensive documentation for PelelaJS Framework</div>
+      <div class="nav-link-container" style="margin-top: 20px;">
+        <a href="#cli" class="nav-link">CLI</a> |
+        <a href="#view-model" class="nav-link">ViewModel</a> |
+        <a href="#bindings" class="nav-link">Bindings</a> |
+        <a href="#parent-child" class="nav-link">Parent/Child</a> |
+        <a href="#naming" class="nav-link">Naming</a>
+      </div>
+    </div>
+
+    <div id="cli" class="section">
+      <div class="section-title cli-section-title">Pelela CLI Commands</div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Description</th>
+              <th>Options</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code">pelela init [projectName]</span></td>
+              <td>Initialize a new Pelela project with the base template</td>
+              <td>—</td>
+              <td><span class="code">pelela init my-app</span></td>
+            </tr>
+            <tr>
+              <td><span class="code">pelela new &lt;path/componentName&gt;</span></td>
+              <td>Create a new component in the project</td>
+              <td><span class="code">--no-css</span>, <span class="code">-c --component</span></td>
+              <td><span class="code">pelela new src/components/Button</span></td>
+            </tr>
+            <tr>
+              <td><span class="code">pelela rename &lt;path/oldComponentName&gt; &lt;path/newComponentName&gt;</span></td>
+              <td>Rename an existing component</td>
+              <td>—</td>
+              <td><span class="code">pelela rename src/components/Button src/components/ActionButton</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <strong>Note:</strong> The CLI commands are built with TypeScript and Commander.js, providing a clean interface for project scaffolding and component management.
+      </div>
+    </div>
+
+    <div id="view-model" class="section">
+      <div class="section-title bindings-section-title">ViewModel</div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Description</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code">initialize()</span></td>
+              <td>Called automatically when the component mounts. Set up initial state, start observers, or perform async setup.</td>
+              <td><span class="code">initialize() { this.count = 0; }</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <strong>Note:</strong> The <span class="code">initialize()</span> method is optional. It runs once after the view model is instantiated and before the view renders.
+      </div>
+    </div>
+
+    <div id="naming" class="section">
+      <div class="section-title bindings-section-title">Naming Conventions</div>
+
+      <p>Pelela follows these naming conventions across the framework:</p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Scope</th>
+              <th>Case</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>File names</td>
+              <td>kebab-case</td>
+              <td><span class="code">my-button.pelela.html</span>, <span class="code">my-button.view-model.ts</span></td>
+            </tr>
+            <tr>
+              <td>Child component tags</td>
+              <td>kebab-case</td>
+              <td><span class="code">&lt;my-component&gt;</span>, <span class="code">&lt;app-header&gt;</span></td>
+            </tr>
+            <tr>
+              <td>ViewModel class &amp; property names</td>
+              <td>CamelCase</td>
+              <td><span class="code">MyViewModel</span>, <span class="code">this.userName</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <strong>Note:</strong> These conventions follow standard web platform practices: custom elements require kebab-case names, while TypeScript uses CamelCase for classes and identifiers.
+      </div>
+    </div>
+
+    <div id="bindings" class="section">
+      <div class="section-title bindings-section-title">Element Bindings</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Binding</th>
+            <th>Valid Tags</th>
+            <th>Description</th>
+            <th>Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="attribute">bind-content</span></td>
+            <td>Any element</td>
+            <td>Bind element's text content to a view model property</td>
+            <td><span class="code">&lt;div bind-content="message"&gt;&lt;/div&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">bind-value</span></td>
+            <td><span class="code">&lt;input&gt;</span>, <span class="code">&lt;textarea&gt;</span>, <span class="code">&lt;select&gt;</span></td>
+            <td>Bind element's value to a view model property</td>
+            <td><span class="code">&lt;input bind-value="count" /&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">bind-src</span></td>
+            <td><span class="code">&lt;img&gt;</span></td>
+            <td>Bind element's src attribute to a view model property</td>
+            <td><span class="code">&lt;img bind-src="src" /&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">bind-alt</span></td>
+            <td><span class="code">&lt;img&gt;</span></td>
+            <td>Bind element's alt attribute to a view model property</td>
+            <td><span class="code">&lt;img bind-alt="description" /&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">bind-class</span></td>
+            <td>Any element</td>
+            <td>Bind element's class attribute to a view model property</td>
+            <td><span class="code">&lt;div bind-class="activeClass" /&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">bind-style</span></td>
+            <td>Any element</td>
+            <td>Bind element's style object to a view model property</td>
+            <td><span class="code">&lt;div bind-style="dynamicStyle" /&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">bind-enabled</span></td>
+            <td><span class="code">&lt;input&gt;</span>, <span class="code">&lt;select&gt;</span>, <span class="code">&lt;button&gt;</span>, <span class="code">&lt;textarea&gt;</span>, <span class="code">&lt;optgroup&gt;</span>, <span class="code">&lt;option&gt;</span>, <span class="code">&lt;fieldset&gt;</span></td>
+            <td>Bind element's enabled state to a view model property</td>
+            <td><span class="code">&lt;button bind-enabled="canSubmit" /&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">if</span></td>
+            <td>Any element</td>
+            <td>Conditionally show/hide element based on view model property</td>
+            <td><span class="code">&lt;div if="visible"&gt;Content&lt;/div&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">for-each</span></td>
+            <td>Any element</td>
+            <td>Render a collection of items using a template</td>
+            <td><span class="code">&lt;div for-each="items"&gt;{{item}}&lt;/div&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">click</span></td>
+            <td>Any element</td>
+            <td>Handle click events on elements</td>
+            <td><span class="code">&lt;button click="handleClick"&gt;Click&lt;/button&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span class="attribute">enter</span></td>
+            <td><span class="code">&lt;input&gt;</span></td>
+            <td>Handle Enter key press events</td>
+            <td><span class="code">&lt;input enter="submitForm" /&gt;</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="parent-child" class="section">
+      <div class="section-title prop-section-title">Parent / Child Components</div>
+
+      <p>Pelela provides three attribute prefixes to communicate between parent and child components:</p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Prefix</th>
+              <th>Direction</th>
+              <th>Description</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="attribute">prop-*</span></td>
+              <td>Parent → Child</td>
+              <td>Pass reactive property values</td>
+              <td><span class="code">&lt;my-component prop-name="value"&gt;</span></td>
+            </tr>
+            <tr>
+              <td><span class="attribute">link-*</span></td>
+              <td>Parent ↔ Child</td>
+              <td>Two-way binding between parent and child</td>
+              <td><span class="code">&lt;my-component link-name="name"&gt;</span></td>
+            </tr>
+            <tr>
+              <td><span class="attribute">const-*</span></td>
+              <td>Parent → Child</td>
+              <td>Pass constant values (evaluated once, not reactive)</td>
+              <td><span class="code">&lt;my-component const-name="'John'"&gt;</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="example">
+        &lt;pelela view-model="Parent"&gt;
+          &lt;my-component prop-name="value" link-name="name" const-label="'Hello'"&gt;&lt;/my-component&gt;
+        &lt;/pelela&gt;
+      </div>
+
+      <div class="note">
+        <strong>Important:</strong> All parent-child bindings must be used within a <span class="code">&lt;pelela&gt;</span> or <span class="code">&lt;component&gt;</span> root element, or they'll be rejected as security violations.
+      </div>
+    </div>
+
+    <a href="#" class="back-link" onclick="window.history.back();">&larr; Back to Application</a>
+  </div>
+</body>
+</html>
