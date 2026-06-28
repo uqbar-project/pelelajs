@@ -51,6 +51,24 @@ describe('validatePelelaSource', () => {
     expect(errors).toEqual([])
   })
 
+  it('returns the declared view model name when it uses single quotes', () => {
+    const errors: string[] = []
+
+    const viewModelName = validatePelelaSource({
+      sourceCode: `<pelela view-model='${HOME_VIEW_MODEL}'>
+        <${COUNTER_TAG}></${COUNTER_TAG}>
+      </pelela>`,
+      filePath: FILE_PATH,
+      knownComponentTags: [COUNTER_TAG],
+      errorFn: (message) => {
+        errors.push(message)
+      },
+    })
+
+    expect(viewModelName).toBe(HOME_VIEW_MODEL)
+    expect(errors).toEqual([])
+  })
+
   it('reports an error when a component tag uses camelCase', () => {
     const errors = validateTemplate(
       pelelaTemplate(`<${PERSON_ROW_CAMEL_TAG}></${PERSON_ROW_CAMEL_TAG}>`),

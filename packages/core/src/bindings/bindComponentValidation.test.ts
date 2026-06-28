@@ -46,6 +46,25 @@ describe('bindComponent validation', () => {
     )
   })
 
+  it('should not suggest a kebab-case tag when the collapsed component tag is ambiguous', () => {
+    const ambiguousTagName = 'personrowx'
+    const ambiguousSnippet = `<${ambiguousTagName}></${ambiguousTagName}>`
+    class PersonRowX {}
+    class PersonrowX {}
+    defineComponent('PersonRowX', PersonRowX, '<component view-model="PersonRowX"></component>')
+    defineComponent('PersonrowX', PersonrowX, '<component view-model="PersonrowX"></component>')
+
+    container.innerHTML = ambiguousSnippet
+    const vm = createReactiveViewModel({}, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).toThrow(
+      t('errors.compiler.unknownComponent', {
+        tagName: ambiguousTagName,
+        snippet: ambiguousSnippet,
+      }),
+    )
+  })
+
   it('should NOT throw for standard HTML tags', () => {
     container.innerHTML = '<div><span></span><p></p><section></section></div>'
     const vm = createReactiveViewModel({}, () => {})

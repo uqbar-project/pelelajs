@@ -530,12 +530,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors).not.toContain(
-        t('errors.compiler.invalidComponentTagCase', {
-          tag: 'counter',
-          suggestedTag: 'counter',
-        }),
-      )
+      expect(errors).toEqual([])
     })
 
     it('reports error when component tag uses PascalCase', () => {
@@ -573,9 +568,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors).not.toContain(
-        t('errors.compiler.invalidComponentTagCase', { tag: 'DIV', suggestedTag: 'div' }),
-      )
+      expect(errors).toEqual([])
     })
 
     it('accepts prop-* prefix on component attributes', () => {

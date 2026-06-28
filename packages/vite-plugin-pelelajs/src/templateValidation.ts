@@ -288,8 +288,10 @@ function extractViewModelName(
   filePath: string,
   errorFn: (message: string) => void,
 ): string {
-  const viewModelMatch = sourceCode.match(/<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/i)
-  const viewModelName = viewModelMatch ? viewModelMatch[1] : null
+  const viewModelMatch = sourceCode.match(
+    /<(?:pelela|component)[^>]*view-model\s*=\s*(?:"([^"]+)"|'([^']+)')/i,
+  )
+  const viewModelName = viewModelMatch?.[1] ?? viewModelMatch?.[2] ?? null
 
   if (!viewModelName) {
     errorFn(t('errors.compiler.missingViewModel', { filePath }))

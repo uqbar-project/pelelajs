@@ -3,7 +3,11 @@ import { t } from '../commons/i18n'
 import { PelelaError } from './PelelaError'
 
 function findKebabCaseSuggestion(tagName: string, registeredTags: string[]): string | undefined {
-  return registeredTags.find((registeredTag) => registeredTag.replace(/-/g, '') === tagName)
+  const matchingTags = registeredTags.filter(
+    (registeredTag) => registeredTag.replace(/-/g, '') === tagName,
+  )
+
+  return matchingTags.length === 1 ? matchingTags[0] : undefined
 }
 
 export class UnknownComponentError extends PelelaError {
