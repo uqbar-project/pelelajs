@@ -116,7 +116,7 @@ function validateTags(root: HTMLElement, registeredTags: string[]): void {
   allElements.filter(isPotentialComponent).forEach((element) => {
     const tagName = element.tagName.toLowerCase()
     if (!registeredTags.includes(tagName)) {
-      throw new UnknownComponentError(tagName, element)
+      throw new UnknownComponentError(tagName, element, registeredTags)
     }
   })
 }

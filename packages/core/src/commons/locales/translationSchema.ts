@@ -44,6 +44,7 @@ type ErrorTranslations = {
     unbalancedTags: string
     foreignInterpolation: string
     foreignPropertyBinding: string
+    invalidComponentTagCase: string
     invalidComponentAttribute: string
     onlyForImg: string
     enterOnlyForInput: string
