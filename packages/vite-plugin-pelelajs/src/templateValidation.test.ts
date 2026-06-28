@@ -109,6 +109,15 @@ describe('validatePelelaSource', () => {
     )
   })
 
+  it('does not suggest a kebab-case tag when the collapsed component tag is ambiguous', () => {
+    const errors = validateTemplate(
+      pelelaTemplate(`<${PERSON_ROW_COLLAPSED_TAG}></${PERSON_ROW_COLLAPSED_TAG}>`),
+      [PERSON_ROW_TAG, 'personr-ow'],
+    )
+
+    expect(errors).toEqual([])
+  })
+
   it('accepts a known single-word component tag', () => {
     const errors = validateTemplate(pelelaTemplate(`<${COUNTER_TAG}></${COUNTER_TAG}>`), [
       COUNTER_TAG,

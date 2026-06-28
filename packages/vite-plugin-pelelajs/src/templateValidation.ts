@@ -1,4 +1,5 @@
 import {
+  findUniqueCollapsedTag,
   isPelelaRootTag,
   isStandardHtmlTag,
   isValidComponentAttribute,
@@ -110,13 +111,6 @@ function extractTemplateTagNames(sourceCode: string): string[] {
   return Array.from(sourceCode.matchAll(TAG_PATTERN), (tagMatch) => tagMatch[1])
 }
 
-function findCollapsedKebabCaseTag(
-  tagName: string,
-  knownComponentTags: string[],
-): string | undefined {
-  return knownComponentTags.find((knownTag) => knownTag.replace(/-/g, '') === tagName)
-}
-
 function validateCollapsedComponentTags(
   sourceCode: string,
   knownComponentTags: string[],
@@ -134,7 +128,7 @@ function validateCollapsedComponentTags(
     })
     .map((tagName) => ({
       tagName,
-      suggestedTag: findCollapsedKebabCaseTag(tagName, knownComponentTags),
+      suggestedTag: findUniqueCollapsedTag(tagName, knownComponentTags),
     }))
     .filter(
       (match): match is { tagName: string; suggestedTag: string } =>
