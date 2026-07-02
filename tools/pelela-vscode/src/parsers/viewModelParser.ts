@@ -1,283 +1,292 @@
-import { readFileContent, readFileLines } from '../utils/fileUtils'
-import {
-  calculateBraceDepth,
-  findMemberMatch,
-  isClassDeclaration,
-  isInterfaceDeclaration,
-  isObjectLiteralStart,
-} from '../utils/parsingUtils'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import * as ts from 'typescript'
 
 export interface ViewModelMembers {
   properties: string[]
   methods: string[]
 }
 
-interface ParserState {
-  properties: Set<string>
-  methods: Set<string>
-  context: 'none' | 'interface' | 'class'
-  braceDepth: number
-  inPropertyValue: boolean
-  propertyBraceDepth: number
+function readFileContent(filePath: string): string {
+  return fs.readFileSync(filePath, 'utf-8')
+}
+
+function createSourceFile(filePath: string): ts.SourceFile {
+  const content = readFileContent(filePath)
+  return ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true)
+}
+
+function getDeclarationName(node: { name?: ts.DeclarationName }): string | null {
+  const declarationName = node.name
+  if (!declarationName) return null
+  if (ts.isIdentifier(declarationName)) return declarationName.text
+  return null
+}
+
+function isRelevantMember(classMember: ts.ClassElement): boolean {
+  return ts.isPropertyDeclaration(classMember) || ts.isGetAccessor(classMember) || ts.isMethodDeclaration(classMember)
+}
+
+function isStaticMember(classMember: ts.ClassElement): boolean {
+  return (ts.getCombinedModifierFlags(classMember) & ts.ModifierFlags.Static) !== 0
+}
+
+function getMemberInfo(
+  classMember: ts.ClassElement,
+): { name: string; kind: 'property' | 'method' } | null {
+  const name = getDeclarationName(classMember)
+  if (!name) return null
+  if (name === 'constructor' || name === 'if') return null
+  if (ts.isMethodDeclaration(classMember)) return { name, kind: 'method' }
+  return { name, kind: 'property' }
 }
 
 export function extractViewModelMembers(typescriptFilePath: string): ViewModelMembers {
-  const lines = readFileLines(typescriptFilePath)
+  const sourceFile = createSourceFile(typescriptFilePath)
+  const initialMembers: ViewModelMembers = { properties: [], methods: [] }
 
-  const initialState: ParserState = {
-    properties: new Set<string>(),
-    methods: new Set<string>(),
-    context: 'none',
-    braceDepth: 0,
-    inPropertyValue: false,
-    propertyBraceDepth: 0,
-  }
+  const classDeclaration = sourceFile.statements.find(
+    (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement),
+  )
+  if (!classDeclaration) return initialMembers
 
-  const finalState = lines.reduce((state, line) => {
-    if (state.context === 'none') {
-      return handleOuterContext(state, line)
-    }
-
-    if (state.context === 'interface') {
-      return handleInterfaceContext(state, line)
-    }
-
-    if (state.context === 'class') {
-      return handleClassContext(state, line)
-    }
-
-    return state
-  }, initialState)
-
-  return {
-    properties: Array.from(finalState.properties),
-    methods: Array.from(finalState.methods),
-  }
-}
-
-function handleOuterContext(state: ParserState, line: string): ParserState {
-  const isInterface = isInterfaceDeclaration(line)
-  const isClass = isClassDeclaration(line)
-
-  if (isInterface || isClass) {
-    const braceDepth = calculateBraceDepth(line)
-    const context = isInterface ? 'interface' : 'class'
-
-    return {
-      ...state,
-      braceDepth,
-      context: braceDepth === 0 ? 'none' : context,
-    }
-  }
-
-  return state
-}
-
-function handleInterfaceContext(state: ParserState, line: string): ParserState {
-  const newBraceDepth = state.braceDepth + calculateBraceDepth(line)
-
-  return {
-    ...state,
-    braceDepth: newBraceDepth,
-    context: newBraceDepth === 0 ? 'none' : state.context,
-  }
-}
-
-function handleClassContext(state: ParserState, line: string): ParserState {
-  const previousBraceDepth = state.braceDepth
-  const newBraceDepth = state.braceDepth + calculateBraceDepth(line)
-
-  let newInPropertyValue = state.inPropertyValue
-  let newPropertyBraceDepth = state.propertyBraceDepth
-  let newMethods = state.methods
-  let newProperties = state.properties
-
-  if (state.inPropertyValue) {
-    newPropertyBraceDepth += calculateBraceDepth(line)
-    if (newPropertyBraceDepth === 0) {
-      newInPropertyValue = false
-    }
-  } else if (previousBraceDepth === 1) {
-    const member = findMemberMatch(line)
-    if (member) {
-      if (member.type === 'method') {
-        newMethods = new Set(state.methods).add(member.name)
-      } else {
-        newProperties = new Set(state.properties).add(member.name)
-      }
-    }
-
-    if (isObjectLiteralStart(line)) {
-      newInPropertyValue = true
-      newPropertyBraceDepth = calculateBraceDepth(line)
-      if (newPropertyBraceDepth === 0) {
-        newInPropertyValue = false
-      }
-    }
-  }
-
-  let newContext = state.context
-  if (newBraceDepth === 0) {
-    newContext = 'none'
-    newInPropertyValue = false
-  }
-
-  return {
-    ...state,
-    braceDepth: newBraceDepth,
-    inPropertyValue: newInPropertyValue,
-    propertyBraceDepth: newPropertyBraceDepth,
-    methods: newMethods,
-    properties: newProperties,
-    context: newContext,
-  }
+  return classDeclaration.members
+    .filter(isRelevantMember)
+    .filter((classMember) => !isStaticMember(classMember))
+    .map(getMemberInfo)
+    .filter((memberInfo): memberInfo is { name: string; kind: 'property' | 'method' } => memberInfo !== null)
+    .reduce(
+      (accumulator, { name, kind }) => {
+        if (kind === 'method') {
+          accumulator.methods.push(name)
+        } else {
+          accumulator.properties.push(name)
+        }
+        return accumulator
+      },
+      initialMembers,
+    )
 }
 
 export function extractNestedProperties(
   typescriptFilePath: string,
-  propertyPaths: string[]
+  propertyPaths: string[],
 ): string[] {
-  const lines = readFileLines(typescriptFilePath)
-  const fullFileContent = readFileContent(typescriptFilePath)
-
   if (propertyPaths.length === 0) return []
+  const sourceFile = createSourceFile(typescriptFilePath)
 
   const rootPropertyName = propertyPaths[0]
-  const rootPropertyLineIndex = findPropertyLine(lines, rootPropertyName)
+  const rootPropertyDeclaration = findPropertyDeclaration(sourceFile, rootPropertyName)
+  if (!rootPropertyDeclaration) return []
 
-  if (rootPropertyLineIndex === -1) return []
+  const startingNode = rootPropertyDeclaration.type ?? rootPropertyDeclaration.initializer
+  if (!startingNode) return []
 
-  const rootPropertyLine = lines[rootPropertyLineIndex]
-  const arrayTypeMatch = rootPropertyLine.match(/:\s*(\w+)\[\]/)
-
-  if (arrayTypeMatch && propertyPaths.length === 1) {
-    const interfaceName = arrayTypeMatch[1]
-    return extractInterfaceProperties(fullFileContent, interfaceName)
-  }
-
-  return extractPropertiesFromObjectPath(lines, rootPropertyLineIndex, propertyPaths.slice(1))
+  const remainingPaths = propertyPaths.slice(1)
+  return resolveNestedProperty(startingNode, remainingPaths, sourceFile, typescriptFilePath)
 }
 
-function findPropertyLine(lines: string[], propertyName: string): number {
-  const propertyDeclarationRegex = new RegExp(
-    `^\\s*(?:public\\s+|private\\s+|protected\\s+)?${propertyName}\\??\\s*[=:]`,
-    'm'
+function findPropertyDeclaration(
+  sourceFile: ts.SourceFile,
+  propertyName: string,
+): ts.PropertyDeclaration | undefined {
+  const classDeclaration = sourceFile.statements.find(
+    (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement),
   )
-
-  return lines.findIndex((line) => propertyDeclarationRegex.test(line))
+  if (!classDeclaration) return undefined
+  return classDeclaration.members.find(
+    (member): member is ts.PropertyDeclaration =>
+      ts.isPropertyDeclaration(member) && getDeclarationName(member) === propertyName,
+  )
 }
 
-function extractPropertiesFromObjectPath(
-  lines: string[],
-  startLineIndex: number,
-  remainingPropertyPath: string[]
+function resolveNestedProperty(
+  node: ts.Node,
+  remainingPaths: string[],
+  sourceFile: ts.SourceFile,
+  filePath: string,
 ): string[] {
-  const objectLiteralLineIndex = lines
-    .slice(startLineIndex)
-    .findIndex((line) => isObjectLiteralStart(line))
-
-  if (objectLiteralLineIndex === -1) return []
-
-  const absoluteObjectLiteralLineIndex = startLineIndex + objectLiteralLineIndex
-  const braceDepth = calculateBraceDepth(lines[absoluteObjectLiteralLineIndex])
-  const searchStartIndex = absoluteObjectLiteralLineIndex + 1
-
-  if (remainingPropertyPath.length === 0) {
-    return collectPropertiesAtBraceLevelOne(lines, searchStartIndex, braceDepth)
+  if (remainingPaths.length === 0) {
+    return extractPropertyNamesFromType(node, sourceFile, filePath)
   }
 
-  return findNestedPropertyRecursive(lines, searchStartIndex, braceDepth, remainingPropertyPath)
+  const [currentPath, ...restOfPaths] = remainingPaths
+  const childNode = resolvePropertyType(node, currentPath, sourceFile, filePath)
+  if (!childNode) return []
+  return resolveNestedProperty(childNode, restOfPaths, sourceFile, filePath)
 }
 
-function collectPropertiesAtBraceLevelOne(
-  lines: string[],
-  searchStartIndex: number,
-  initialBraceDepth: number
+function extractPropertyNamesFromType(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  filePath: string,
 ): string[] {
-  let currentBraceDepth = initialBraceDepth
-  const discoveredProperties = new Set<string>()
-
-  for (let lineIndex = searchStartIndex; lineIndex < lines.length; lineIndex++) {
-    const line = lines[lineIndex]
-    const previousBraceDepth = currentBraceDepth
-    currentBraceDepth += calculateBraceDepth(line)
-
-    if (currentBraceDepth === 0) break
-
-    if (previousBraceDepth === 1) {
-      const propertyNameMatch = /^\s*([a-zA-Z_]\w*)\s*[=:]/.exec(line)
-      if (propertyNameMatch) {
-        discoveredProperties.add(propertyNameMatch[1])
-      }
-    }
+  if (ts.isObjectLiteralExpression(node)) {
+    return extractPropertyNamesFromObjectLiteral(node)
   }
-
-  return Array.from(discoveredProperties)
-}
-
-function findNestedPropertyRecursive(
-  lines: string[],
-  searchStartIndex: number,
-  initialBraceDepth: number,
-  remainingPropertyPath: string[]
-): string[] {
-  const targetProperty = remainingPropertyPath[0]
-  let currentBraceDepth = initialBraceDepth
-
-  for (let lineIndex = searchStartIndex; lineIndex < lines.length; lineIndex++) {
-    const line = lines[lineIndex]
-    const previousBraceDepth = currentBraceDepth
-    currentBraceDepth += calculateBraceDepth(line)
-
-    if (currentBraceDepth === 0) break
-
-    const propertyMatchRegex = new RegExp(`^\\s*${targetProperty}\\s*[=:]`)
-    if (propertyMatchRegex.test(line) && previousBraceDepth === 1) {
-      return extractPropertiesFromObjectPath(lines, lineIndex, remainingPropertyPath.slice(1))
-    }
+  if (ts.isTypeReferenceNode(node)) {
+    return extractPropertyNamesFromTypeReference(node, sourceFile, filePath)
   }
-
+  if (ts.isArrayTypeNode(node)) {
+    return extractPropertyNamesFromType(node.elementType, sourceFile, filePath)
+  }
+  if (ts.isTypeLiteralNode(node)) {
+    return extractPropertyNamesFromTypeLiteral(node)
+  }
   return []
+}
+
+function extractPropertyNamesFromObjectLiteral(node: ts.ObjectLiteralExpression): string[] {
+  return node.properties
+    .filter((property): property is ts.PropertyAssignment => ts.isPropertyAssignment(property))
+    .map((property) => (property.name && ts.isIdentifier(property.name) ? property.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function extractPropertyNamesFromTypeReference(
+  node: ts.TypeReferenceNode,
+  sourceFile: ts.SourceFile,
+  filePath: string,
+): string[] {
+  const declaration = resolveTypeReference(node, sourceFile, filePath)
+  if (!declaration) return []
+  return membersFromDeclaration(declaration)
+}
+
+function extractPropertyNamesFromTypeLiteral(node: ts.TypeLiteralNode): string[] {
+  return node.members
+    .filter((typeMember): typeMember is ts.PropertySignature => ts.isPropertySignature(typeMember))
+    .map((typeMember) => (typeMember.name && ts.isIdentifier(typeMember.name) ? typeMember.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function resolvePropertyType(
+  node: ts.Node,
+  propertyName: string,
+  sourceFile: ts.SourceFile,
+  filePath: string,
+): ts.Node | undefined {
+  if (ts.isObjectLiteralExpression(node)) {
+    return resolvePropertyInObjectLiteral(node, propertyName)
+  }
+  if (ts.isTypeReferenceNode(node)) {
+    return resolvePropertyInTypeReference(node, propertyName, sourceFile, filePath)
+  }
+  return undefined
+}
+
+function resolvePropertyInObjectLiteral(
+  node: ts.ObjectLiteralExpression,
+  propertyName: string,
+): ts.Node | undefined {
+  const propertyAssignment = node.properties.find(
+    (property): property is ts.PropertyAssignment =>
+      ts.isPropertyAssignment(property) && property.name && ts.isIdentifier(property.name) && property.name.text === propertyName,
+  )
+  return propertyAssignment?.initializer
+}
+
+function resolvePropertyInTypeReference(
+  node: ts.TypeReferenceNode,
+  propertyName: string,
+  sourceFile: ts.SourceFile,
+  filePath: string,
+): ts.Node | undefined {
+  const declaration = resolveTypeReference(node, sourceFile, filePath)
+  if (!declaration) return undefined
+  if (ts.isTypeAliasDeclaration(declaration)) return undefined
+  const member = declaration.members.find(
+    (declarationMember): declarationMember is ts.PropertySignature | ts.PropertyDeclaration =>
+      (ts.isPropertySignature(declarationMember) || ts.isPropertyDeclaration(declarationMember)) &&
+      getDeclarationName(declarationMember) === propertyName,
+  )
+  if (!member) return undefined
+  return member.type ?? (ts.isPropertyDeclaration(member) ? member.initializer : undefined)
+}
+
+function resolveTypeReference(
+  typeNode: ts.TypeReferenceNode,
+  sourceFile: ts.SourceFile,
+  filePath: string,
+): ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration | undefined {
+  if (!ts.isIdentifier(typeNode.typeName)) return undefined
+  const typeName = typeNode.typeName.text
+  const localDeclaration = findDeclaration(sourceFile, typeName)
+  if (localDeclaration) return localDeclaration
+  return findCrossFileDeclaration(typeName, sourceFile, filePath)
+}
+
+function findDeclaration(
+  sourceFile: ts.SourceFile,
+  name: string,
+): ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration | undefined {
+  return sourceFile.statements.find(
+    (statement): statement is ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration =>
+      (ts.isInterfaceDeclaration(statement) || ts.isClassDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) &&
+      statement.name?.text === name,
+  )
+}
+
+function membersFromDeclaration(
+  declaration: ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration,
+): string[] {
+  if (ts.isTypeAliasDeclaration(declaration)) return []
+  return declaration.members
+    .filter((declarationMember): declarationMember is ts.PropertySignature | ts.PropertyDeclaration =>
+      ts.isPropertySignature(declarationMember) || ts.isPropertyDeclaration(declarationMember),
+    )
+    .map((declarationMember) => (declarationMember.name && ts.isIdentifier(declarationMember.name) ? declarationMember.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function findCrossFileDeclaration(
+  typeName: string,
+  sourceFile: ts.SourceFile,
+  filePath: string,
+): ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration | undefined {
+  const importDeclaration = sourceFile.statements.find(
+    (statement): statement is ts.ImportDeclaration =>
+      ts.isImportDeclaration(statement) &&
+      statement.importClause?.namedBindings !== undefined &&
+      ts.isNamedImports(statement.importClause.namedBindings) &&
+      statement.importClause.namedBindings.elements.some(
+        (importedElement) => importedElement.name.text === typeName,
+      ),
+  )
+  if (!importDeclaration) return undefined
+
+  if (!ts.isStringLiteral(importDeclaration.moduleSpecifier)) return undefined
+  const moduleSpecifier = importDeclaration.moduleSpecifier.text
+  const resolvedPath = resolveModulePath(filePath, moduleSpecifier)
+  if (!resolvedPath) return undefined
+
+  const importedSourceFile = createSourceFile(resolvedPath)
+  return findDeclaration(importedSourceFile, typeName)
+}
+
+function resolveModulePath(currentFilePath: string, moduleSpecifier: string): string | null {
+  if (!moduleSpecifier.startsWith('.')) return null
+  const directory = path.dirname(currentFilePath)
+  const resolvedBase = path.resolve(directory, moduleSpecifier)
+  const typescriptPath = `${resolvedBase}.ts`
+  if (fs.existsSync(typescriptPath)) return typescriptPath
+  const indexPath = path.join(resolvedBase, 'index.ts')
+  if (fs.existsSync(indexPath)) return indexPath
+  return null
 }
 
 export function extractInterfaceProperties(
   fullFileContent: string,
-  interfaceName: string
+  interfaceName: string,
 ): string[] {
-  const lines = fullFileContent.split('\n')
-  const interfaceDeclarationRegex = new RegExp(`^\\s*interface\\s+${interfaceName}\\s*\\{?`, 'm')
-
-  const interfaceStartLineIndex = lines.findIndex((line) => interfaceDeclarationRegex.test(line))
-
-  if (interfaceStartLineIndex === -1) return []
-
-  return collectInterfaceMembers(lines, interfaceStartLineIndex)
-}
-
-function collectInterfaceMembers(lines: string[], searchStartIndex: number): string[] {
-  const discoveredProperties = new Set<string>()
-  let currentBraceDepth = 0
-  let isInsideInterface = false
-
-  for (let lineIndex = searchStartIndex; lineIndex < lines.length; lineIndex++) {
-    const line = lines[lineIndex]
-
-    if (!isInsideInterface) {
-      if (line.includes('{')) {
-        isInsideInterface = true
-        currentBraceDepth = calculateBraceDepth(line)
-      }
-      continue
-    }
-
-    currentBraceDepth += calculateBraceDepth(line)
-    if (currentBraceDepth === 0) break
-
-    const interfacePropertyMatch = /^\s*([a-zA-Z_]\w*)\s*[?:]/.exec(line)
-    if (interfacePropertyMatch) {
-      discoveredProperties.add(interfacePropertyMatch[1])
-    }
-  }
-
-  return Array.from(discoveredProperties)
+  const sourceFile = ts.createSourceFile('temp.ts', fullFileContent, ts.ScriptTarget.Latest, true)
+  const declaration = sourceFile.statements.find(
+    (statement): statement is ts.InterfaceDeclaration =>
+      ts.isInterfaceDeclaration(statement) && statement.name?.text === interfaceName,
+  )
+  if (!declaration) return []
+  return declaration.members
+    .filter((interfaceMember): interfaceMember is ts.PropertySignature => ts.isPropertySignature(interfaceMember))
+    .map((interfaceMember) => (interfaceMember.name && ts.isIdentifier(interfaceMember.name) ? interfaceMember.name.text : ''))
+    .filter((name) => name !== '')
 }

@@ -1,6 +1,7 @@
 import type * as vscode from 'vscode'
 
 const FOR_EACH_REGEX = /for-each=["'](\w+)\s+of\s+(\w+)["']/
+const INDEX_ATTR_REGEX = /index\s*=\s*["'](\w+)["']/
 
 export function getCurrentAttributeName(
   lineText: string,
@@ -33,6 +34,7 @@ export interface ForEachResult {
   itemName: string
   line: number
   itemPos: number
+  indexName: string | null
 }
 
 export function findForEachInElement(
@@ -41,22 +43,21 @@ export function findForEachInElement(
 ): ForEachResult | null {
   const lineIndices = Array.from(
     { length: currentLineIndex + 1 },
-    (_, index) => currentLineIndex - index
+    (_, index) => currentLineIndex - index,
   )
-
-  for (const lineIndex of lineIndices) {
-    const lineText = document.lineAt(lineIndex).text
-    const forEachMatch = FOR_EACH_REGEX.exec(lineText)
-
-    if (forEachMatch) {
+  const result = lineIndices
+    .map((lineIndex) => {
+      const lineText = document.lineAt(lineIndex).text
+      const forEachMatch = FOR_EACH_REGEX.exec(lineText)
+      if (!forEachMatch) return null
       const itemName = forEachMatch[1]
+      const indexMatch = lineText.match(INDEX_ATTR_REGEX)
       const forEachAttributeStart = lineText.indexOf('for-each=')
       const itemPosition = lineText.indexOf(itemName, forEachAttributeStart)
-      return { itemName, line: lineIndex, itemPos: itemPosition }
-    }
-  }
-
-  return null
+      return { itemName, line: lineIndex, itemPos: itemPosition, indexName: indexMatch?.[1] ?? null }
+    })
+    .find((result): result is ForEachResult => result !== null)
+  return result ?? null
 }
 
 export interface ForEachExpression {

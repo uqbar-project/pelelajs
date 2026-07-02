@@ -204,7 +204,7 @@ export class ProductRow {
   get isSelected() { return this.currentIndex + 1 === this.index }
 
   static create() { return new ProductRow() }
-  handleClick() { console.log("click") }
+  handleClick({ item: Item }) { console.log(item.title) }
   private helper() { return true }
 }
 
@@ -223,6 +223,7 @@ Cover:
   - Properties with `: ` are included (`name`, `items`)
   - Getters are included as properties (`delivery`, `price`, `isSelected`)
   - Methods are included (`handleClick`, `helper`)
+  - Methods with destructured parameters (`handleClick({ item: Item })`) are correctly parsed as methods
   - Constructor and `if` are NOT included
   - Static methods are NOT included
 - `extractNestedProperties`:
@@ -232,6 +233,15 @@ Cover:
 - `extractInterfaceProperties`:
   - Returns properties from an existing interface
   - Returns `[]` for a non-existent interface
+
+### `test/providers/completionProvider.test.ts`
+
+Add tests for attribute value completions (a `TextDocument` mock is needed to pass lines). Cover:
+
+- **For-each variable in basic completions:** when cursor is inside a for-each element, `provideBasicViewModelCompletions` must include the iteration variable (`item`) and the index variable (`currentIndex` if present) alongside ViewModel properties.
+- **For-each nested property completions:** when user types `item.` inside a for-each, completions must show the item type's properties (e.g., `id`, `title`, `completed` from `Item`).
+- **Event attribute shows methods:** when the attribute is `click` or `enter`, completions must include only methods (including `handleClick`), not properties or getters.
+- **Binding attribute shows properties:** when the attribute is `bind-content` or similar, completions must include only properties (including getters), not methods.
 
 ### `test/parsers/documentParser.test.ts`
 
