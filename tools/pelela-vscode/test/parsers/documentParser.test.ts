@@ -1,6 +1,8 @@
 import * as assert from 'node:assert'
 import { describe, it } from 'mocha'
+import type * as vscode from 'vscode'
 import {
+  findForEachInElement,
   getAttributeValueMatch,
   getCurrentAttributeName,
   getCurrentTagName,
@@ -191,6 +193,48 @@ describe('documentParser', () => {
     it('should return null for an empty string', () => {
       const result = parsePropertyPath('')
       assert.strictEqual(result, null)
+    })
+  })
+
+  describe('findForEachInElement', () => {
+    function createMockDocument(lines: string[]): vscode.TextDocument {
+      return {
+        lineAt: (lineIndex: number) => ({ text: lines[lineIndex] }),
+      } as unknown as vscode.TextDocument
+    }
+
+    it('should extract index name when present', () => {
+      const document = createMockDocument([
+        '<div for-each="item of items" index="currentIndex">',
+        '  <span bind-content="item.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.indexName, 'currentIndex')
+    })
+
+    it('should return null indexName when index attribute is absent', () => {
+      const document = createMockDocument([
+        '<div for-each="item of items">',
+        '  <span bind-content="item.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.indexName, null)
+    })
+
+    it('should return null when no for-each is found', () => {
+      const document = createMockDocument(['<div>', '  <span bind-content="name">'])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result, null)
+    })
+
+    it('should return itemName and itemPos correctly', () => {
+      const document = createMockDocument([
+        '<div for-each="product of products">',
+        '  <span bind-content="product.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.itemName, 'product')
+      assert.strictEqual(typeof result?.itemPos, 'number')
     })
   })
 })

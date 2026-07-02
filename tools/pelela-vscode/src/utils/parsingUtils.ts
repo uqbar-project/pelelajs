@@ -29,5 +29,3 @@ export function isClassDeclaration(line: string): boolean {
 export function isObjectLiteralStart(line: string): boolean {
   return (line.includes('=') || line.includes(':')) && line.includes('{')
 }
-
-

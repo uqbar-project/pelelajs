@@ -276,6 +276,10 @@ importers:
         version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0)
 
   tools/pelela-vscode:
+    dependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
     devDependencies:
       '@types/mocha':
         specifier: 10.0.10
@@ -307,9 +311,6 @@ importers:
       tsx:
         specifier: 4.21.0
         version: 4.21.0
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
 packages:
 

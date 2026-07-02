@@ -43,7 +43,7 @@ export function findForEachInElement(
 ): ForEachResult | null {
   const lineIndices = Array.from(
     { length: currentLineIndex + 1 },
-    (_, index) => currentLineIndex - index,
+    (_, index) => currentLineIndex - index
   )
   const result = lineIndices
     .map((lineIndex) => {
@@ -54,10 +54,46 @@ export function findForEachInElement(
       const indexMatch = lineText.match(INDEX_ATTR_REGEX)
       const forEachAttributeStart = lineText.indexOf('for-each=')
       const itemPosition = lineText.indexOf(itemName, forEachAttributeStart)
-      return { itemName, line: lineIndex, itemPos: itemPosition, indexName: indexMatch?.[1] ?? null }
+      return {
+        itemName,
+        line: lineIndex,
+        itemPos: itemPosition,
+        indexName: indexMatch?.[1] ?? null,
+      }
     })
-    .find((result): result is ForEachResult => result !== null)
+    .find((result): result is ForEachResult => {
+      if (result === null) return false
+      return !isForEachScopeClosed(document, result.line, currentLineIndex)
+    })
   return result ?? null
+}
+
+function isForEachScopeClosed(
+  document: vscode.TextDocument,
+  forEachLine: number,
+  currentLine: number
+): boolean {
+  const forEachLineText = document.lineAt(forEachLine).text
+  const tagNameMatch = forEachLineText.match(/<\s*(\w[\w-]*)/)
+  if (!tagNameMatch) return false
+  const tagName = tagNameMatch[1].toLowerCase()
+
+  let depth = 1
+
+  for (let i = forEachLine + 1; i < currentLine; i++) {
+    const lineText = document.lineAt(i).text
+    depth += countTagBalance(lineText, tagName)
+    if (depth <= 0) return true
+  }
+
+  return false
+}
+
+function countTagBalance(lineText: string, tagName: string): number {
+  const tagRegex = new RegExp(`</?${tagName}(?:\\s|>)`, 'gi')
+  return Array.from(lineText.matchAll(tagRegex)).reduce((balance, match) => {
+    return match[0].startsWith('</') ? balance - 1 : balance + 1
+  }, 0)
 }
 
 export interface ForEachExpression {

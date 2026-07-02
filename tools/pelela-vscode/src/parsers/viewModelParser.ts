@@ -24,7 +24,11 @@ function getDeclarationName(node: { name?: ts.DeclarationName }): string | null 
 }
 
 function isRelevantMember(classMember: ts.ClassElement): boolean {
-  return ts.isPropertyDeclaration(classMember) || ts.isGetAccessor(classMember) || ts.isMethodDeclaration(classMember)
+  return (
+    ts.isPropertyDeclaration(classMember) ||
+    ts.isGetAccessor(classMember) ||
+    ts.isMethodDeclaration(classMember)
+  )
 }
 
 function isStaticMember(classMember: ts.ClassElement): boolean {
@@ -32,7 +36,7 @@ function isStaticMember(classMember: ts.ClassElement): boolean {
 }
 
 function getMemberInfo(
-  classMember: ts.ClassElement,
+  classMember: ts.ClassElement
 ): { name: string; kind: 'property' | 'method' } | null {
   const name = getDeclarationName(classMember)
   if (!name) return null
@@ -46,7 +50,7 @@ export function extractViewModelMembers(typescriptFilePath: string): ViewModelMe
   const initialMembers: ViewModelMembers = { properties: [], methods: [] }
 
   const classDeclaration = sourceFile.statements.find(
-    (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement),
+    (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement)
   )
   if (!classDeclaration) return initialMembers
 
@@ -54,23 +58,23 @@ export function extractViewModelMembers(typescriptFilePath: string): ViewModelMe
     .filter(isRelevantMember)
     .filter((classMember) => !isStaticMember(classMember))
     .map(getMemberInfo)
-    .filter((memberInfo): memberInfo is { name: string; kind: 'property' | 'method' } => memberInfo !== null)
-    .reduce(
-      (accumulator, { name, kind }) => {
-        if (kind === 'method') {
-          accumulator.methods.push(name)
-        } else {
-          accumulator.properties.push(name)
-        }
-        return accumulator
-      },
-      initialMembers,
+    .filter(
+      (memberInfo): memberInfo is { name: string; kind: 'property' | 'method' } =>
+        memberInfo !== null
     )
+    .reduce((accumulator, { name, kind }) => {
+      if (kind === 'method') {
+        accumulator.methods.push(name)
+      } else {
+        accumulator.properties.push(name)
+      }
+      return accumulator
+    }, initialMembers)
 }
 
 export function extractNestedProperties(
   typescriptFilePath: string,
-  propertyPaths: string[],
+  propertyPaths: string[]
 ): string[] {
   if (propertyPaths.length === 0) return []
   const sourceFile = createSourceFile(typescriptFilePath)
@@ -88,15 +92,15 @@ export function extractNestedProperties(
 
 function findPropertyDeclaration(
   sourceFile: ts.SourceFile,
-  propertyName: string,
+  propertyName: string
 ): ts.PropertyDeclaration | undefined {
   const classDeclaration = sourceFile.statements.find(
-    (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement),
+    (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement)
   )
   if (!classDeclaration) return undefined
   return classDeclaration.members.find(
     (member): member is ts.PropertyDeclaration =>
-      ts.isPropertyDeclaration(member) && getDeclarationName(member) === propertyName,
+      ts.isPropertyDeclaration(member) && getDeclarationName(member) === propertyName
   )
 }
 
@@ -104,7 +108,7 @@ function resolveNestedProperty(
   node: ts.Node,
   remainingPaths: string[],
   sourceFile: ts.SourceFile,
-  filePath: string,
+  filePath: string
 ): string[] {
   if (remainingPaths.length === 0) {
     return extractPropertyNamesFromType(node, sourceFile, filePath)
@@ -119,7 +123,7 @@ function resolveNestedProperty(
 function extractPropertyNamesFromType(
   node: ts.Node,
   sourceFile: ts.SourceFile,
-  filePath: string,
+  filePath: string
 ): string[] {
   if (ts.isObjectLiteralExpression(node)) {
     return extractPropertyNamesFromObjectLiteral(node)
@@ -146,7 +150,7 @@ function extractPropertyNamesFromObjectLiteral(node: ts.ObjectLiteralExpression)
 function extractPropertyNamesFromTypeReference(
   node: ts.TypeReferenceNode,
   sourceFile: ts.SourceFile,
-  filePath: string,
+  filePath: string
 ): string[] {
   const declaration = resolveTypeReference(node, sourceFile, filePath)
   if (!declaration) return []
@@ -156,7 +160,9 @@ function extractPropertyNamesFromTypeReference(
 function extractPropertyNamesFromTypeLiteral(node: ts.TypeLiteralNode): string[] {
   return node.members
     .filter((typeMember): typeMember is ts.PropertySignature => ts.isPropertySignature(typeMember))
-    .map((typeMember) => (typeMember.name && ts.isIdentifier(typeMember.name) ? typeMember.name.text : ''))
+    .map((typeMember) =>
+      typeMember.name && ts.isIdentifier(typeMember.name) ? typeMember.name.text : ''
+    )
     .filter((name) => name !== '')
 }
 
@@ -164,7 +170,7 @@ function resolvePropertyType(
   node: ts.Node,
   propertyName: string,
   sourceFile: ts.SourceFile,
-  filePath: string,
+  filePath: string
 ): ts.Node | undefined {
   if (ts.isObjectLiteralExpression(node)) {
     return resolvePropertyInObjectLiteral(node, propertyName)
@@ -177,11 +183,14 @@ function resolvePropertyType(
 
 function resolvePropertyInObjectLiteral(
   node: ts.ObjectLiteralExpression,
-  propertyName: string,
+  propertyName: string
 ): ts.Node | undefined {
   const propertyAssignment = node.properties.find(
     (property): property is ts.PropertyAssignment =>
-      ts.isPropertyAssignment(property) && property.name && ts.isIdentifier(property.name) && property.name.text === propertyName,
+      ts.isPropertyAssignment(property) &&
+      property.name &&
+      ts.isIdentifier(property.name) &&
+      property.name.text === propertyName
   )
   return propertyAssignment?.initializer
 }
@@ -190,7 +199,7 @@ function resolvePropertyInTypeReference(
   node: ts.TypeReferenceNode,
   propertyName: string,
   sourceFile: ts.SourceFile,
-  filePath: string,
+  filePath: string
 ): ts.Node | undefined {
   const declaration = resolveTypeReference(node, sourceFile, filePath)
   if (!declaration) return undefined
@@ -198,7 +207,7 @@ function resolvePropertyInTypeReference(
   const member = declaration.members.find(
     (declarationMember): declarationMember is ts.PropertySignature | ts.PropertyDeclaration =>
       (ts.isPropertySignature(declarationMember) || ts.isPropertyDeclaration(declarationMember)) &&
-      getDeclarationName(declarationMember) === propertyName,
+      getDeclarationName(declarationMember) === propertyName
   )
   if (!member) return undefined
   return member.type ?? (ts.isPropertyDeclaration(member) ? member.initializer : undefined)
@@ -207,7 +216,7 @@ function resolvePropertyInTypeReference(
 function resolveTypeReference(
   typeNode: ts.TypeReferenceNode,
   sourceFile: ts.SourceFile,
-  filePath: string,
+  filePath: string
 ): ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration | undefined {
   if (!ts.isIdentifier(typeNode.typeName)) return undefined
   const typeName = typeNode.typeName.text
@@ -218,31 +227,40 @@ function resolveTypeReference(
 
 function findDeclaration(
   sourceFile: ts.SourceFile,
-  name: string,
+  name: string
 ): ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration | undefined {
   return sourceFile.statements.find(
-    (statement): statement is ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration =>
-      (ts.isInterfaceDeclaration(statement) || ts.isClassDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) &&
-      statement.name?.text === name,
+    (
+      statement
+    ): statement is ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration =>
+      (ts.isInterfaceDeclaration(statement) ||
+        ts.isClassDeclaration(statement) ||
+        ts.isTypeAliasDeclaration(statement)) &&
+      statement.name?.text === name
   )
 }
 
 function membersFromDeclaration(
-  declaration: ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration,
+  declaration: ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration
 ): string[] {
   if (ts.isTypeAliasDeclaration(declaration)) return []
   return declaration.members
-    .filter((declarationMember): declarationMember is ts.PropertySignature | ts.PropertyDeclaration =>
-      ts.isPropertySignature(declarationMember) || ts.isPropertyDeclaration(declarationMember),
+    .filter(
+      (declarationMember): declarationMember is ts.PropertySignature | ts.PropertyDeclaration =>
+        ts.isPropertySignature(declarationMember) || ts.isPropertyDeclaration(declarationMember)
     )
-    .map((declarationMember) => (declarationMember.name && ts.isIdentifier(declarationMember.name) ? declarationMember.name.text : ''))
+    .map((declarationMember) =>
+      declarationMember.name && ts.isIdentifier(declarationMember.name)
+        ? declarationMember.name.text
+        : ''
+    )
     .filter((name) => name !== '')
 }
 
 function findCrossFileDeclaration(
   typeName: string,
   sourceFile: ts.SourceFile,
-  filePath: string,
+  filePath: string
 ): ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration | undefined {
   const importDeclaration = sourceFile.statements.find(
     (statement): statement is ts.ImportDeclaration =>
@@ -250,8 +268,8 @@ function findCrossFileDeclaration(
       statement.importClause?.namedBindings !== undefined &&
       ts.isNamedImports(statement.importClause.namedBindings) &&
       statement.importClause.namedBindings.elements.some(
-        (importedElement) => importedElement.name.text === typeName,
-      ),
+        (importedElement) => importedElement.name.text === typeName
+      )
   )
   if (!importDeclaration) return undefined
 
@@ -277,16 +295,20 @@ function resolveModulePath(currentFilePath: string, moduleSpecifier: string): st
 
 export function extractInterfaceProperties(
   fullFileContent: string,
-  interfaceName: string,
+  interfaceName: string
 ): string[] {
   const sourceFile = ts.createSourceFile('temp.ts', fullFileContent, ts.ScriptTarget.Latest, true)
   const declaration = sourceFile.statements.find(
     (statement): statement is ts.InterfaceDeclaration =>
-      ts.isInterfaceDeclaration(statement) && statement.name?.text === interfaceName,
+      ts.isInterfaceDeclaration(statement) && statement.name?.text === interfaceName
   )
   if (!declaration) return []
   return declaration.members
-    .filter((interfaceMember): interfaceMember is ts.PropertySignature => ts.isPropertySignature(interfaceMember))
-    .map((interfaceMember) => (interfaceMember.name && ts.isIdentifier(interfaceMember.name) ? interfaceMember.name.text : ''))
+    .filter((interfaceMember): interfaceMember is ts.PropertySignature =>
+      ts.isPropertySignature(interfaceMember)
+    )
+    .map((interfaceMember) =>
+      interfaceMember.name && ts.isIdentifier(interfaceMember.name) ? interfaceMember.name.text : ''
+    )
     .filter((name) => name !== '')
 }

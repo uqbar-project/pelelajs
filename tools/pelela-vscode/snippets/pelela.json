@@ -53,5 +53,10 @@
     "prefix": "link",
     "body": ["link-$1=\"$2\""],
     "description": "Atributo link-* para two-way binding en componentes"
+  },
+  "const-*": {
+    "prefix": "const",
+    "body": ["const-$1=\"$2\""],
+    "description": "Atributo const-* para valores constantes en componentes"
   }
 }

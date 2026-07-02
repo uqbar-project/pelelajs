@@ -2,7 +2,6 @@ import * as assert from 'node:assert'
 import { describe, it } from 'mocha'
 import {
   calculateBraceDepth,
-  findMemberMatch,
   isClassDeclaration,
   isInterfaceDeclaration,
   isObjectLiteralStart,
@@ -68,51 +67,6 @@ describe('parsingUtils', () => {
     it('should return false if the conditions are not met', () => {
       assert.strictEqual(isObjectLiteralStart('prop = 5'), false)
       assert.strictEqual(isObjectLiteralStart('class MyClass {'), false) // Has neither : nor =
-    })
-  })
-
-  describe('findMemberMatch', () => {
-    it('should detect simple properties', () => {
-      const match = findMemberMatch('  public name: string')
-      assert.ok(match)
-      assert.strictEqual(match?.name, 'name')
-      assert.strictEqual(match?.type, 'property')
-    })
-
-    it('should detect private properties', () => {
-      const match = findMemberMatch('  private _id = 1')
-      assert.ok(match)
-      assert.strictEqual(match?.name, '_id')
-      assert.strictEqual(match?.type, 'property')
-    })
-
-    it('should detect getters as properties', () => {
-      const match = findMemberMatch('  get fullName() {')
-      assert.ok(match)
-      assert.strictEqual(match?.name, 'fullName')
-      assert.strictEqual(match?.type, 'property')
-    })
-
-    it('should detect methods', () => {
-      const match = findMemberMatch('  save(data: any) {')
-      assert.ok(match)
-      assert.strictEqual(match?.name, 'save')
-      assert.strictEqual(match?.type, 'method')
-    })
-
-    it('should ignore constructors', () => {
-      const match = findMemberMatch('  constructor() {')
-      assert.strictEqual(match, null)
-    })
-
-    it('should ignore keywords like if', () => {
-      const match = findMemberMatch('  if (condition) {')
-      assert.strictEqual(match, null)
-    })
-
-    it('should return null for lines that are not members', () => {
-      assert.strictEqual(findMemberMatch('import { something } from "somewhere"'), null)
-      assert.strictEqual(findMemberMatch('  return this.name'), null)
     })
   })
 })
