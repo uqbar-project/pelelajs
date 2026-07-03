@@ -174,17 +174,16 @@ export function provideBasicViewModelCompletions(
   const items: vscode.CompletionItem[] = []
   const { properties, methods } = extractViewModelMembers(typescriptFilePath)
 
-  const forEachInElement = findForEachInElement(document, position.line)
-  if (forEachInElement) {
-    items.push(createPropertyCompletion(forEachInElement.itemName))
-    if (forEachInElement.indexName) {
-      items.push(createPropertyCompletion(forEachInElement.indexName))
-    }
-  }
-
   if (EVENT_ATTRIBUTES.has(attributeName)) {
     items.push(...methods.map(createMethodCompletion))
   } else {
+    const forEachInElement = findForEachInElement(document, position.line)
+    if (forEachInElement) {
+      items.push(createPropertyCompletion(forEachInElement.itemName))
+      if (forEachInElement.indexName) {
+        items.push(createPropertyCompletion(forEachInElement.indexName))
+      }
+    }
     items.push(...properties.map(createPropertyCompletion))
   }
 

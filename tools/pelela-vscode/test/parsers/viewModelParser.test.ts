@@ -1,5 +1,6 @@
 import * as assert from 'node:assert'
 import * as fs from 'node:fs'
+import * as os from 'node:os'
 import * as path from 'node:path'
 import { after, before, describe, it } from 'mocha'
 import {
@@ -42,10 +43,27 @@ interface Item {
 }
 `
 
+const EXPECTED_PROPERTIES = [
+  'product',
+  'currentIndex',
+  'index',
+  'name',
+  'items',
+  'user',
+  'delivery',
+  'price',
+  'isSelected',
+]
+const EXPECTED_METHODS = ['handleClick', 'helper']
+const EXPECTED_ITEM_INTERFACE = ['id', 'title', 'completed']
+const EXPECTED_PRODUCT_INTERFACE = ['id', 'name', 'value']
+const EXPECTED_USER_PROPERTIES = ['name', 'address']
+const EXPECTED_ADDRESS_PROPERTIES = ['street', 'number']
+
 describe('viewModelParser', () => {
-  const testFilesDir = path.join(__dirname, '../fixtures')
-  const testVMPath = path.join(testFilesDir, 'testViewModel.ts')
-  const productFixturePath = path.join(testFilesDir, 'Product.ts')
+  let testFilesDir: string
+  let testVMPath: string
+  let productFixturePath: string
 
   const PRODUCT_FIXTURE_CONTENT = `
 export interface Product {
@@ -56,110 +74,74 @@ export interface Product {
 `
 
   before(() => {
-    if (!fs.existsSync(testFilesDir)) {
-      fs.mkdirSync(testFilesDir, { recursive: true })
-    }
+    testFilesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-test-'))
+    testVMPath = path.join(testFilesDir, 'testViewModel.ts')
+    productFixturePath = path.join(testFilesDir, 'Product.ts')
     fs.writeFileSync(testVMPath, FIXTURE_CONTENT)
     fs.writeFileSync(productFixturePath, PRODUCT_FIXTURE_CONTENT)
   })
 
   after(() => {
-    if (fs.existsSync(testVMPath)) {
-      fs.unlinkSync(testVMPath)
-    }
-    if (fs.existsSync(productFixturePath)) {
-      fs.unlinkSync(productFixturePath)
+    if (fs.existsSync(testFilesDir)) {
+      fs.rmSync(testFilesDir, { recursive: true })
     }
   })
 
   describe('extractViewModelMembers', () => {
-    it('should include properties with definite assignment (!:)', () => {
+    it('should return all non-static properties including getters', () => {
       const { properties } = extractViewModelMembers(testVMPath)
-      assert.ok(properties.includes('product'))
-      assert.ok(properties.includes('currentIndex'))
-      assert.ok(properties.includes('index'))
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_PROPERTIES].sort())
     })
 
-    it('should include properties with regular type annotation', () => {
-      const { properties } = extractViewModelMembers(testVMPath)
-      assert.ok(properties.includes('name'))
-      assert.ok(properties.includes('items'))
-    })
-
-    it('should include getters as properties', () => {
-      const { properties } = extractViewModelMembers(testVMPath)
-      assert.ok(properties.includes('delivery'))
-      assert.ok(properties.includes('price'))
-      assert.ok(properties.includes('isSelected'))
-    })
-
-    it('should include methods', () => {
+    it('should return all non-static methods', () => {
       const { methods } = extractViewModelMembers(testVMPath)
-      assert.ok(methods.includes('handleClick'))
-      assert.ok(methods.includes('helper'))
+      assert.deepStrictEqual([...methods].sort(), [...EXPECTED_METHODS].sort())
     })
 
-    it('should include methods with destructured parameters', () => {
-      const { methods } = extractViewModelMembers(testVMPath)
-      assert.ok(methods.includes('handleClick'))
-    })
-
-    it('should not include constructor or if', () => {
+    it('should exclude constructor, static methods, and if', () => {
       const { methods } = extractViewModelMembers(testVMPath)
       assert.ok(!methods.includes('constructor'))
-      assert.ok(!methods.includes('if'))
-    })
-
-    it('should not include static methods', () => {
-      const { methods } = extractViewModelMembers(testVMPath)
       assert.ok(!methods.includes('create'))
+      assert.ok(!methods.includes('if'))
     })
   })
 
   describe('extractNestedProperties', () => {
     it('should extract properties from an object literal', () => {
       const properties = extractNestedProperties(testVMPath, ['user'])
-      assert.ok(properties.includes('name'))
-      assert.ok(properties.includes('address'))
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_USER_PROPERTIES].sort())
     })
 
     it('should extract deeply nested properties from an object literal', () => {
       const properties = extractNestedProperties(testVMPath, ['user', 'address'])
-      assert.ok(properties.includes('street'))
-      assert.ok(properties.includes('number'))
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_ADDRESS_PROPERTIES].sort())
     })
 
     it('should return an empty array for non-existent properties', () => {
       const properties = extractNestedProperties(testVMPath, ['nonExistent'])
-      assert.strictEqual(properties.length, 0)
+      assert.deepStrictEqual(properties, [])
     })
 
     it('should extract properties from an interface when the property is an array', () => {
       const properties = extractNestedProperties(testVMPath, ['items'])
-      assert.ok(properties.includes('id'))
-      assert.ok(properties.includes('title'))
-      assert.ok(properties.includes('completed'))
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_ITEM_INTERFACE].sort())
     })
 
     it('should resolve types across files via import', () => {
       const properties = extractNestedProperties(testVMPath, ['product'])
-      assert.ok(properties.includes('id'))
-      assert.ok(properties.includes('name'))
-      assert.ok(properties.includes('value'))
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_PRODUCT_INTERFACE].sort())
     })
   })
 
   describe('extractInterfaceProperties', () => {
     it('should extract properties from an existing interface', () => {
       const properties = extractInterfaceProperties(FIXTURE_CONTENT, 'Item')
-      assert.ok(properties.includes('id'))
-      assert.ok(properties.includes('title'))
-      assert.ok(properties.includes('completed'))
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_ITEM_INTERFACE].sort())
     })
 
     it('should return an empty array for a non-existent interface', () => {
       const properties = extractInterfaceProperties(FIXTURE_CONTENT, 'NonExistent')
-      assert.strictEqual(properties.length, 0)
+      assert.deepStrictEqual(properties, [])
     })
   })
 })

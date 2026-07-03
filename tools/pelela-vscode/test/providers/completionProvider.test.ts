@@ -17,8 +17,8 @@ export class TestViewModel {
     return this.name
   }
 
-  handleClick() {
-    console.log("clicked")
+  handleClick(event: Event) {
+    console.log("clicked", event)
   }
 
   private helperMethod() {
@@ -137,6 +137,19 @@ describe('completionProvider', () => {
       assert.ok(labels.includes('helperMethod'), 'should include private method')
       assert.ok(!labels.includes('name'), 'should NOT include properties')
       assert.ok(!labels.includes('fullName'), 'should NOT include getters')
+    })
+
+    it('should exclude for-each variables from event attribute completions', () => {
+      const document = createMockDocument([
+        '<div for-each="product of products">',
+        '  <button click="',
+      ])
+      const position = createMockPosition(1, 17)
+      const completions = provideBasicViewModelCompletions(testVMPath, 'click', document, position)
+
+      const labels = completions.map((item) => item.label)
+      assert.ok(labels.includes('handleClick'), 'should include method')
+      assert.ok(!labels.includes('product'), 'should NOT include for-each variable')
     })
 
     it('should include only properties for binding attributes', () => {

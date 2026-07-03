@@ -87,21 +87,6 @@
       "name": "index",
       "description": "Pelela: Specifies the index variable name for for-each loops",
       "valueSet": "v"
-    },
-    {
-      "name": "prop-*",
-      "description": "Pelela: One-way binding to pass data to a child component",
-      "valueSet": "v"
-    },
-    {
-      "name": "link-*",
-      "description": "Pelela: Two-way binding between parent and child component",
-      "valueSet": "v"
-    },
-    {
-      "name": "const-*",
-      "description": "Pelela: Constant value binding to a child component",
-      "valueSet": "v"
     }
   ]
 }

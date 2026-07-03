@@ -236,5 +236,53 @@ describe('documentParser', () => {
       assert.strictEqual(result?.itemName, 'product')
       assert.strictEqual(typeof result?.itemPos, 'number')
     })
+
+    it('should return null when cursor is after an inline single-line for-each element', () => {
+      const document = createMockDocument([
+        '<ul>',
+        '  <li for-each="product of products">{{product}}</li>',
+        '</ul>',
+      ])
+      const result = findForEachInElement(document, 2)
+      assert.strictEqual(result, null)
+    })
+
+    it('should find for-each when cursor is on the same line as an inline element', () => {
+      const document = createMockDocument([
+        '<ul>',
+        '  <li for-each="product of products">{{product}}</li>',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.itemName, 'product')
+    })
+
+    it('should return null for bind-content outside an inline closed for-each', () => {
+      const document = createMockDocument([
+        '<li for-each="product of products">{{product}}</li>',
+        '<span bind-content="product.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result, null)
+    })
+
+    it('should return null for bind-content after a multiline closed for-each', () => {
+      const document = createMockDocument([
+        '<div for-each="product of products">',
+        '  <span>{{product}}</span>',
+        '</div>',
+        '<span bind-content="product.name">',
+      ])
+      const result = findForEachInElement(document, 3)
+      assert.strictEqual(result, null)
+    })
+
+    it('should find for-each for bind-content inside a multiline open for-each', () => {
+      const document = createMockDocument([
+        '<div for-each="product of products">',
+        '  <span bind-content="product.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.itemName, 'product')
+    })
   })
 })

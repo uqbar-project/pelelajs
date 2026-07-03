@@ -7,13 +7,31 @@ export interface ViewModelMembers {
   methods: string[]
 }
 
-function readFileContent(filePath: string): string {
-  return fs.readFileSync(filePath, 'utf-8')
+interface SourceFileCacheEntry {
+  sourceFile: ts.SourceFile
+  mtimeMs: number
 }
 
-function createSourceFile(filePath: string): ts.SourceFile {
-  const content = readFileContent(filePath)
-  return ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true)
+const sourceFileCache = new Map<string, SourceFileCacheEntry>()
+
+function getCachedSourceFile(filePath: string): ts.SourceFile {
+  try {
+    const stats = fs.statSync(filePath)
+    const cacheEntry = sourceFileCache.get(filePath)
+
+    if (cacheEntry && cacheEntry.mtimeMs === stats.mtimeMs) {
+      return cacheEntry.sourceFile
+    }
+
+    const content = fs.readFileSync(filePath, 'utf-8')
+    const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true)
+    sourceFileCache.set(filePath, { sourceFile, mtimeMs: stats.mtimeMs })
+    return sourceFile
+  } catch {
+    sourceFileCache.delete(filePath)
+    const content = fs.readFileSync(filePath, 'utf-8')
+    return ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true)
+  }
 }
 
 function getDeclarationName(node: { name?: ts.DeclarationName }): string | null {
@@ -46,7 +64,7 @@ function getMemberInfo(
 }
 
 export function extractViewModelMembers(typescriptFilePath: string): ViewModelMembers {
-  const sourceFile = createSourceFile(typescriptFilePath)
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
   const initialMembers: ViewModelMembers = { properties: [], methods: [] }
 
   const classDeclaration = sourceFile.statements.find(
@@ -77,7 +95,7 @@ export function extractNestedProperties(
   propertyPaths: string[]
 ): string[] {
   if (propertyPaths.length === 0) return []
-  const sourceFile = createSourceFile(typescriptFilePath)
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
 
   const rootPropertyName = propertyPaths[0]
   const rootPropertyDeclaration = findPropertyDeclaration(sourceFile, rootPropertyName)
@@ -178,7 +196,27 @@ function resolvePropertyType(
   if (ts.isTypeReferenceNode(node)) {
     return resolvePropertyInTypeReference(node, propertyName, sourceFile, filePath)
   }
+  if (ts.isArrayTypeNode(node)) {
+    return resolvePropertyType(node.elementType, propertyName, sourceFile, filePath)
+  }
+  if (ts.isTypeLiteralNode(node)) {
+    return resolvePropertyInTypeLiteral(node, propertyName)
+  }
   return undefined
+}
+
+function resolvePropertyInTypeLiteral(
+  node: ts.TypeLiteralNode,
+  propertyName: string
+): ts.Node | undefined {
+  const propertySignature = node.members.find(
+    (member): member is ts.PropertySignature =>
+      ts.isPropertySignature(member) &&
+      member.name &&
+      ts.isIdentifier(member.name) &&
+      member.name.text === propertyName
+  )
+  return propertySignature?.type
 }
 
 function resolvePropertyInObjectLiteral(
@@ -278,7 +316,7 @@ function findCrossFileDeclaration(
   const resolvedPath = resolveModulePath(filePath, moduleSpecifier)
   if (!resolvedPath) return undefined
 
-  const importedSourceFile = createSourceFile(resolvedPath)
+  const importedSourceFile = getCachedSourceFile(resolvedPath)
   return findDeclaration(importedSourceFile, typeName)
 }
 

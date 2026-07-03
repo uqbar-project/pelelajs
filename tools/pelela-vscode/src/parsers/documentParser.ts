@@ -1,7 +1,8 @@
 import type * as vscode from 'vscode'
+import { findFirst } from '../helpers'
 
 const FOR_EACH_REGEX = /for-each=["'](\w+)\s+of\s+(\w+)["']/
-const INDEX_ATTR_REGEX = /index\s*=\s*["'](\w+)["']/
+const INDEX_ATTR_REGEX = /(?:^|\s)index\s*=\s*["'](\w+)["']/
 
 export function getCurrentAttributeName(
   lineText: string,
@@ -37,35 +38,36 @@ export interface ForEachResult {
   indexName: string | null
 }
 
+function* forEachCandidates(
+  document: vscode.TextDocument,
+  currentLineIndex: number
+): Generator<ForEachResult, void, unknown> {
+  for (let i = currentLineIndex; i >= 0; i--) {
+    const lineText = document.lineAt(i).text
+    const forEachMatch = FOR_EACH_REGEX.exec(lineText)
+    if (!forEachMatch) continue
+    const indexMatch = lineText.match(INDEX_ATTR_REGEX)
+    const forEachAttributeStart = lineText.indexOf('for-each=')
+    const itemPosition = lineText.indexOf(forEachMatch[1], forEachAttributeStart)
+    yield {
+      itemName: forEachMatch[1],
+      line: i,
+      itemPos: itemPosition,
+      indexName: indexMatch?.[1] ?? null,
+    }
+  }
+}
+
 export function findForEachInElement(
   document: vscode.TextDocument,
   currentLineIndex: number
 ): ForEachResult | null {
-  const lineIndices = Array.from(
-    { length: currentLineIndex + 1 },
-    (_, index) => currentLineIndex - index
+  return (
+    findFirst(
+      forEachCandidates(document, currentLineIndex),
+      (result) => !isForEachScopeClosed(document, result.line, currentLineIndex)
+    ) ?? null
   )
-  const result = lineIndices
-    .map((lineIndex) => {
-      const lineText = document.lineAt(lineIndex).text
-      const forEachMatch = FOR_EACH_REGEX.exec(lineText)
-      if (!forEachMatch) return null
-      const itemName = forEachMatch[1]
-      const indexMatch = lineText.match(INDEX_ATTR_REGEX)
-      const forEachAttributeStart = lineText.indexOf('for-each=')
-      const itemPosition = lineText.indexOf(itemName, forEachAttributeStart)
-      return {
-        itemName,
-        line: lineIndex,
-        itemPos: itemPosition,
-        indexName: indexMatch?.[1] ?? null,
-      }
-    })
-    .find((result): result is ForEachResult => {
-      if (result === null) return false
-      return !isForEachScopeClosed(document, result.line, currentLineIndex)
-    })
-  return result ?? null
 }
 
 function isForEachScopeClosed(
@@ -78,9 +80,9 @@ function isForEachScopeClosed(
   if (!tagNameMatch) return false
   const tagName = tagNameMatch[1].toLowerCase()
 
-  let depth = 1
+  let depth = 0
 
-  for (let i = forEachLine + 1; i < currentLine; i++) {
+  for (let i = forEachLine; i < currentLine; i++) {
     const lineText = document.lineAt(i).text
     depth += countTagBalance(lineText, tagName)
     if (depth <= 0) return true
