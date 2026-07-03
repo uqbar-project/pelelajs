@@ -4,25 +4,23 @@ const ATTRIBUTE_HELP: Record<string, string> = {
   'prop-': 'Pelela: one-way binding to pass data to a child component (parent → child)',
   'link-': 'Pelela: two-way binding between parent and child component (parent ↔ child)',
   'const-': 'Pelela: constant value binding to a child component',
+  index: 'Pelela: specifies the index variable name in a for-each loop',
 }
 
-async function provideHover(
+export function provideHover(
   document: vscode.TextDocument,
   position: vscode.Position,
   _token: vscode.CancellationToken
-): Promise<vscode.Hover | null> {
+): vscode.Hover | null {
   const wordRange = document.getWordRangeAtPosition(position)
   if (!wordRange) return null
 
   const word = document.getText(wordRange)
 
-  for (const [prefix, helpText] of Object.entries(ATTRIBUTE_HELP)) {
-    if (word.startsWith(prefix)) {
-      return new vscode.Hover(helpText)
-    }
-  }
+  const match = Object.entries(ATTRIBUTE_HELP).find(([prefix]) => word.startsWith(prefix))
+  if (!match) return null
 
-  return null
+  return new vscode.Hover(match[1])
 }
 
 export function createHoverProvider(): vscode.Disposable {
