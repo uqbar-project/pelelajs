@@ -46,6 +46,8 @@ function createMockPosition(line: number, character: number): vscode.Position {
 describe('completionProvider', () => {
   const testFilesDir = path.join(__dirname, '../fixtures')
   const testVMPath = path.join(testFilesDir, 'completionTestViewModel.ts')
+  const FOR_EACH_ITEM_VARIABLE = 'item'
+  const FOR_EACH_INDEX_VARIABLE = 'currentIndex'
 
   before(() => {
     if (!fs.existsSync(testFilesDir)) {
@@ -91,7 +93,7 @@ describe('completionProvider', () => {
   describe('provideBasicViewModelCompletions', () => {
     it('should include for-each variable alongside ViewModel properties', () => {
       const document = createMockDocument([
-        '<div for-each="item of items">',
+        `<div for-each="${FOR_EACH_ITEM_VARIABLE} of items">`,
         '  <span bind-content="',
       ])
       const position = createMockPosition(1, 22)
@@ -103,15 +105,19 @@ describe('completionProvider', () => {
       )
 
       const labels = completions.map((item) => item.label)
-      assert.ok(labels.includes('item'), 'should include for-each variable')
+      assert.ok(labels.includes(FOR_EACH_ITEM_VARIABLE), 'should include for-each variable')
       assert.ok(labels.includes('name'), 'should include ViewModel property')
       assert.ok(labels.includes('fullName'), 'should include getter as property')
       assert.ok(labels.includes('items'), 'should include array property')
+
+      const itemVar = completions.find((item) => item.label === FOR_EACH_ITEM_VARIABLE)
+      assert.strictEqual(itemVar?.detail, 'Pelela iteration property')
+      assert.strictEqual(itemVar?.kind, vscode.CompletionItemKind.Variable)
     })
 
     it('should include index variable when present in for-each', () => {
       const document = createMockDocument([
-        '<div for-each="item of items" index="currentIndex">',
+        `<div for-each="${FOR_EACH_ITEM_VARIABLE} of items" index="${FOR_EACH_INDEX_VARIABLE}">`,
         '  <span bind-content="',
       ])
       const position = createMockPosition(1, 22)
@@ -123,8 +129,12 @@ describe('completionProvider', () => {
       )
 
       const labels = completions.map((item) => item.label)
-      assert.ok(labels.includes('item'), 'should include for-each variable')
-      assert.ok(labels.includes('currentIndex'), 'should include index variable')
+      assert.ok(labels.includes(FOR_EACH_ITEM_VARIABLE), 'should include for-each variable')
+      assert.ok(labels.includes(FOR_EACH_INDEX_VARIABLE), 'should include index variable')
+
+      const indexVar = completions.find((item) => item.label === FOR_EACH_INDEX_VARIABLE)
+      assert.strictEqual(indexVar?.detail, 'Pelela iteration property')
+      assert.strictEqual(indexVar?.kind, vscode.CompletionItemKind.Variable)
     })
 
     it('should include only methods for event attributes', () => {

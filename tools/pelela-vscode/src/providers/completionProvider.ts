@@ -179,9 +179,9 @@ export function provideBasicViewModelCompletions(
   } else {
     const forEachInElement = findForEachInElement(document, position.line)
     if (forEachInElement) {
-      items.push(createPropertyCompletion(forEachInElement.itemName))
+      items.push(createIterationPropertyCompletion(forEachInElement.itemName))
       if (forEachInElement.indexName) {
-        items.push(createPropertyCompletion(forEachInElement.indexName))
+        items.push(createIterationPropertyCompletion(forEachInElement.indexName))
       }
     }
     items.push(...properties.map(createPropertyCompletion))
@@ -200,6 +200,13 @@ function createMethodCompletion(name: string): vscode.CompletionItem {
 function createPropertyCompletion(name: string): vscode.CompletionItem {
   const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
   item.detail = 'Pelela ViewModel property'
+  item.sortText = `!0_${name}`
+  return item
+}
+
+function createIterationPropertyCompletion(name: string): vscode.CompletionItem {
+  const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Variable)
+  item.detail = 'Pelela iteration property'
   item.sortText = `!0_${name}`
   return item
 }
