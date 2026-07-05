@@ -69,7 +69,9 @@ const errors = {
       'Component <{{tag}}>: parent property "{{parentKey}}" does not exist in parent view model',
     missingViewModel: 'Pelela template "{{filePath}}" must contain view-model="..." attribute',
     forbiddenRootAttribute:
-      'Pelela template "{{filePath}}": Attribute "{{attr}}" is not allowed on root tag <{{tagName}}>. Logic and binding attributes can only be used on internal elements or component invocations.',
+      'Pelela template "{{filePath}}": Attribute "{{attr}}" is not allowed on root tag <{{tagName}}>. Logic and binding attributes can only be used on internal elements or component invocations. Found at: {{snippet}}',
+    forbiddenHtmlAttribute:
+      'Pelela template "{{filePath}}": Attribute "{{attr}}" is not allowed on HTML tag <{{tagName}}>. Logic and binding attributes can only be used on component invocations. Found at: {{snippet}}',
     directiveOutsideRoot:
       'Pelela template "{{filePath}}": Directive `{{directive}}` detected outside root tag <{{tagName}}>. Found at: {{snippet}}',
     unknownComponent:

@@ -407,7 +407,7 @@ describe('pelelajsPlugin', () => {
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
       expect(errors).toContain(
-        t('errors.compiler.forbiddenRootAttribute', {
+        t('errors.compiler.forbiddenHtmlAttribute', {
           filePath: pelelaPath,
           tagName: 'div',
           attr: 'link-value',

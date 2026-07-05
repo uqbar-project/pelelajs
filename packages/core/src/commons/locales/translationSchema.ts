@@ -51,6 +51,7 @@ type ErrorTranslations = {
     missingParentProperty: string
     missingViewModel: string
     forbiddenRootAttribute: string
+    forbiddenHtmlAttribute: string
     directiveOutsideRoot: string
     unknownComponent: string
     unknownComponentProperty: string
