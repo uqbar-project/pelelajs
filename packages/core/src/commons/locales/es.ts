@@ -73,7 +73,9 @@ const errors = {
       'Componente <{{tag}}>: la propiedad padre "{{parentKey}}" no existe en el view model padre',
     missingViewModel: 'Pelela template "{{filePath}}" debe contener atributo view-model="..."',
     forbiddenRootAttribute:
-      'Pelela template "{{filePath}}": El atributo "{{attr}}" no está permitido en la etiqueta raíz <{{tagName}}>. Los atributos de lógica y binding solo pueden usarse en elementos internos o invocaciones de componentes.',
+      'Pelela template "{{filePath}}": El atributo "{{attr}}" no está permitido en la etiqueta raíz <{{tagName}}>. Los atributos de lógica y binding solo pueden usarse en elementos internos o invocaciones de componentes. Encontrado en: {{snippet}}',
+    forbiddenHtmlAttribute:
+      'Pelela template "{{filePath}}": El atributo "{{attr}}" no está permitido en la etiqueta HTML <{{tagName}}>. Los atributos de lógica y binding solo pueden usarse en invocaciones de componentes. Encontrado en: {{snippet}}',
     directiveOutsideRoot:
       'Pelela template "{{filePath}}": Directiva `{{directive}}` detectada fuera de la etiqueta raíz <{{tagName}}>. Encontrado en: {{snippet}}',
     unknownComponent:

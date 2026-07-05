@@ -157,7 +157,7 @@ function validateNoForbiddenHtmlAttributes(
 
   invalidMatches.forEach((match) => {
     errorFn(
-      t('errors.compiler.forbiddenRootAttribute', {
+      t('errors.compiler.forbiddenHtmlAttribute', {
         filePath,
         tagName: match.tagName,
         attr: match.attributeName,

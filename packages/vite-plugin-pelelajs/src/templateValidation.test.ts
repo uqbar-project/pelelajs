@@ -9,7 +9,10 @@ const PERSON_ROW_COLLAPSED_TAG = 'personrow'
 const PERSON_ROW_CAMEL_TAG = 'personRow'
 const PERSON_ROW_PASCAL_TAG = 'PersonRow'
 const COUNTER_TAG = 'counter'
+const PELELA_ROOT_TAG = 'pelela'
+const HTML_TAG = 'div'
 const INVALID_ATTRIBUTE = 'value'
+const LINK_ATTRIBUTE = 'link-value'
 
 function pelelaTemplate(content: string): string {
   return `<pelela view-model="${HOME_VIEW_MODEL}">${content}</pelela>`
@@ -138,5 +141,38 @@ describe('validatePelelaSource', () => {
         attr: INVALID_ATTRIBUTE,
       }),
     )
+  })
+
+  it('reports a root-specific error when a forbidden attribute is on the root tag', () => {
+    const errors = validateTemplate(
+      [
+        `<${PELELA_ROOT_TAG} view-model="${HOME_VIEW_MODEL}" ${LINK_ATTRIBUTE}="x">`,
+        `</${PELELA_ROOT_TAG}>`,
+      ].join(''),
+    )
+
+    expect(errors).toEqual([
+      t('errors.compiler.forbiddenRootAttribute', {
+        filePath: FILE_PATH,
+        tagName: PELELA_ROOT_TAG,
+        attr: LINK_ATTRIBUTE,
+        snippet: `<${PELELA_ROOT_TAG} ${LINK_ATTRIBUTE}="...">`,
+      }),
+    ])
+  })
+
+  it('reports an HTML-specific error when a forbidden attribute is on an internal HTML tag', () => {
+    const errors = validateTemplate(
+      pelelaTemplate(`<${HTML_TAG} ${LINK_ATTRIBUTE}="x"></${HTML_TAG}>`),
+    )
+
+    expect(errors).toEqual([
+      t('errors.compiler.forbiddenHtmlAttribute', {
+        filePath: FILE_PATH,
+        tagName: HTML_TAG,
+        attr: LINK_ATTRIBUTE,
+        snippet: `<${HTML_TAG} ${LINK_ATTRIBUTE}="...">`,
+      }),
+    ])
   })
 })
