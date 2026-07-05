@@ -1,5 +1,6 @@
 import * as assert from 'node:assert'
 import * as fs from 'node:fs'
+import * as os from 'node:os'
 import * as path from 'node:path'
 import { after, before, describe, it } from 'mocha'
 import {
@@ -8,128 +9,139 @@ import {
   extractViewModelMembers,
 } from '../../src/parsers/viewModelParser'
 
-describe('viewModelParser', () => {
-  const testFilesDir = path.join(__dirname, '../fixtures')
-  const testVMPath = path.join(testFilesDir, 'testViewModel.ts')
+const FIXTURE_CONTENT = `
+import { Product } from './Product'
 
-  before(() => {
-    if (!fs.existsSync(testFilesDir)) {
-      fs.mkdirSync(testFilesDir, { recursive: true })
-    }
+export class ProductRow {
+  product!: Product
+  currentIndex!: number
+  index!: number
+  name: string = "test"
+  items: Item[] = []
 
-    const testVMContent = `
-export class TestViewModel {
-  public name: string = "test";
-  private _internal: number = 0;
-  
-  items: Item[] = [];
-  
   user = {
     name: "John",
     address: {
       street: "Main St",
       number: 123
     }
-  };
-  
-  get fullName() {
-    return this.name;
   }
-  
-  handleClick() {
-    console.log("clicked");
-  }
-  
-  private helperMethod() {
-    return true;
-  }
+
+  get delivery() { return this.product.deliveryDate() }
+  get price() { return this.product.value }
+  get isSelected() { return this.currentIndex + 1 === this.index }
+
+  static create() { return new ProductRow() }
+  handleClick({ item: Item }) { console.log(item.title) }
+  private helper() { return true }
 }
 
 interface Item {
-  id: number;
-  title: string;
-  completed: boolean;
+  id: number
+  title: string
+  completed: boolean
 }
 `
-    fs.writeFileSync(testVMPath, testVMContent)
+
+const EXPECTED_PROPERTIES = [
+  'product',
+  'currentIndex',
+  'index',
+  'name',
+  'items',
+  'user',
+  'delivery',
+  'price',
+  'isSelected',
+]
+const EXPECTED_METHODS = ['handleClick', 'helper']
+const EXPECTED_ITEM_INTERFACE = ['id', 'title', 'completed']
+const EXPECTED_PRODUCT_INTERFACE = ['id', 'name', 'value']
+const EXPECTED_USER_PROPERTIES = ['name', 'address']
+const EXPECTED_ADDRESS_PROPERTIES = ['street', 'number']
+
+describe('viewModelParser', () => {
+  let testFilesDir: string
+  let testVMPath: string
+  let productFixturePath: string
+
+  const PRODUCT_FIXTURE_CONTENT = `
+export interface Product {
+  id: number
+  name: string
+  value: number
+}
+`
+
+  before(() => {
+    testFilesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-test-'))
+    testVMPath = path.join(testFilesDir, 'testViewModel.ts')
+    productFixturePath = path.join(testFilesDir, 'Product.ts')
+    fs.writeFileSync(testVMPath, FIXTURE_CONTENT)
+    fs.writeFileSync(productFixturePath, PRODUCT_FIXTURE_CONTENT)
   })
 
   after(() => {
-    if (fs.existsSync(testVMPath)) {
-      fs.unlinkSync(testVMPath)
+    if (fs.existsSync(testFilesDir)) {
+      fs.rmSync(testFilesDir, { recursive: true })
     }
   })
 
   describe('extractViewModelMembers', () => {
-    it('should extract properties and methods from a class', () => {
-      const { properties, methods } = extractViewModelMembers(testVMPath)
-
-      assert.ok(properties.includes('name'))
-      assert.ok(properties.includes('_internal'))
-      assert.ok(properties.includes('items'))
-      assert.ok(properties.includes('user'))
-      assert.ok(properties.includes('fullName'))
-
-      assert.ok(methods.includes('handleClick'))
-      assert.ok(methods.includes('helperMethod'))
-      assert.ok(!methods.includes('constructor'))
+    it('should return all non-static properties including getters', () => {
+      const { properties } = extractViewModelMembers(testVMPath)
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_PROPERTIES].sort())
     })
 
-    it('should not include the constructor in methods', () => {
+    it('should return all non-static methods', () => {
+      const { methods } = extractViewModelMembers(testVMPath)
+      assert.deepStrictEqual([...methods].sort(), [...EXPECTED_METHODS].sort())
+    })
+
+    it('should exclude constructor, static methods, and if', () => {
       const { methods } = extractViewModelMembers(testVMPath)
       assert.ok(!methods.includes('constructor'))
-    })
-
-    it('should include getters as properties', () => {
-      const { properties } = extractViewModelMembers(testVMPath)
-      assert.ok(properties.includes('fullName'))
+      assert.ok(!methods.includes('create'))
+      assert.ok(!methods.includes('if'))
     })
   })
 
   describe('extractNestedProperties', () => {
-    it('should extract nested properties from an object literal', () => {
-      const props = extractNestedProperties(testVMPath, ['user'])
-
-      assert.ok(props.includes('name'))
-      assert.ok(props.includes('address'))
+    it('should extract properties from an object literal', () => {
+      const properties = extractNestedProperties(testVMPath, ['user'])
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_USER_PROPERTIES].sort())
     })
 
-    it('should extract deeply nested properties', () => {
-      const props = extractNestedProperties(testVMPath, ['user', 'address'])
-
-      assert.ok(props.includes('street'))
-      assert.ok(props.includes('number'))
+    it('should extract deeply nested properties from an object literal', () => {
+      const properties = extractNestedProperties(testVMPath, ['user', 'address'])
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_ADDRESS_PROPERTIES].sort())
     })
 
     it('should return an empty array for non-existent properties', () => {
-      const props = extractNestedProperties(testVMPath, ['nonExistent'])
-      assert.strictEqual(props.length, 0)
+      const properties = extractNestedProperties(testVMPath, ['nonExistent'])
+      assert.deepStrictEqual(properties, [])
     })
 
     it('should extract properties from an interface when the property is an array', () => {
-      const props = extractNestedProperties(testVMPath, ['items'])
+      const properties = extractNestedProperties(testVMPath, ['items'])
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_ITEM_INTERFACE].sort())
+    })
 
-      assert.ok(props.includes('id'))
-      assert.ok(props.includes('title'))
-      assert.ok(props.includes('completed'))
+    it('should resolve types across files via import', () => {
+      const properties = extractNestedProperties(testVMPath, ['product'])
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_PRODUCT_INTERFACE].sort())
     })
   })
 
   describe('extractInterfaceProperties', () => {
-    it('should extract properties from an interface', () => {
-      const testVMContent = fs.readFileSync(testVMPath, 'utf-8')
-      const props = extractInterfaceProperties(testVMContent, 'Item')
-
-      assert.ok(props.includes('id'))
-      assert.ok(props.includes('title'))
-      assert.ok(props.includes('completed'))
+    it('should extract properties from an existing interface', () => {
+      const properties = extractInterfaceProperties(FIXTURE_CONTENT, 'Item')
+      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_ITEM_INTERFACE].sort())
     })
 
-    it('should return an empty array for non-existent interfaces', () => {
-      const testVMContent = fs.readFileSync(testVMPath, 'utf-8')
-      const props = extractInterfaceProperties(testVMContent, 'NonExistent')
-
-      assert.strictEqual(props.length, 0)
+    it('should return an empty array for a non-existent interface', () => {
+      const properties = extractInterfaceProperties(FIXTURE_CONTENT, 'NonExistent')
+      assert.deepStrictEqual(properties, [])
     })
   })
 })

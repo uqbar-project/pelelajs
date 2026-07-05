@@ -97,6 +97,11 @@ export function addPelelaAttributeCompletions(
       text: 'for-each="${1:item} of ${2:collection}"',
       detail: 'Pelela: itera sobre una colección del view model',
     },
+    index: {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
+      text: 'index="${1:index}"',
+      detail: 'Pelela: nombre de la variable de índice en un for-each',
+    },
   }
 
   attrNames.forEach((name) => {
@@ -109,6 +114,16 @@ export function addPelelaAttributeCompletions(
     } else if (name.startsWith('bind-')) {
       item.insertText = new vscode.SnippetString(`${name}="\${1:propiedad}"`)
       item.detail = 'Pelela: binding al view model'
+      item.sortText = `!0_${name}`
+    } else if (name.startsWith('prop-')) {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
+      item.insertText = new vscode.SnippetString('prop-${1:field-name}="${2:value}"')
+      item.detail = 'Pelela: one-way binding para un componente hijo'
+      item.sortText = `!0_${name}`
+    } else if (name.startsWith('link-')) {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
+      item.insertText = new vscode.SnippetString('link-${1:field-name}="${2:value}"')
+      item.detail = 'Pelela: two-way binding para un componente hijo'
       item.sortText = `!0_${name}`
     } else if (name.startsWith('const-')) {
       // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
@@ -128,7 +143,11 @@ async function provideAttributeValueCompletions(
   textBeforeCursor: string
 ): Promise<vscode.CompletionItem[]> {
   const isPelelaAttribute =
-    attributeName.startsWith('bind-') || PELELA_ATTRIBUTE_NAMES.has(attributeName)
+    attributeName.startsWith('bind-') ||
+    attributeName.startsWith('prop-') ||
+    attributeName.startsWith('link-') ||
+    attributeName.startsWith('const-') ||
+    PELELA_ATTRIBUTE_NAMES.has(attributeName)
 
   if (!isPelelaAttribute) return []
 
@@ -137,30 +156,35 @@ async function provideAttributeValueCompletions(
 
   const valueBeforeCursor = getAttributeValueMatch(textBeforeCursor)
   if (!valueBeforeCursor) {
-    return provideBasicViewModelCompletions(typescriptFilePath, attributeName)
+    return provideBasicViewModelCompletions(typescriptFilePath, attributeName, document, position)
   }
 
   const propertyPath = parsePropertyPath(valueBeforeCursor)
   return propertyPath
     ? provideNestedPropertyCompletions(document, position, typescriptFilePath, propertyPath)
-    : provideBasicViewModelCompletions(typescriptFilePath, attributeName)
+    : provideBasicViewModelCompletions(typescriptFilePath, attributeName, document, position)
 }
 
-function provideBasicViewModelCompletions(
+export function provideBasicViewModelCompletions(
   typescriptFilePath: string,
-  attributeName: string
+  attributeName: string,
+  document: vscode.TextDocument,
+  position: vscode.Position
 ): vscode.CompletionItem[] {
   const items: vscode.CompletionItem[] = []
   const { properties, methods } = extractViewModelMembers(typescriptFilePath)
 
   if (EVENT_ATTRIBUTES.has(attributeName)) {
-    methods.forEach((name) => {
-      items.push(createMethodCompletion(name))
-    })
+    items.push(...methods.map(createMethodCompletion))
   } else {
-    properties.forEach((name) => {
-      items.push(createPropertyCompletion(name))
-    })
+    const forEachInElement = findForEachInElement(document, position.line)
+    if (forEachInElement) {
+      items.push(createIterationPropertyCompletion(forEachInElement.itemName))
+      if (forEachInElement.indexName) {
+        items.push(createIterationPropertyCompletion(forEachInElement.indexName))
+      }
+    }
+    items.push(...properties.map(createPropertyCompletion))
   }
 
   return items
@@ -176,6 +200,13 @@ function createMethodCompletion(name: string): vscode.CompletionItem {
 function createPropertyCompletion(name: string): vscode.CompletionItem {
   const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
   item.detail = 'Pelela ViewModel property'
+  item.sortText = `!0_${name}`
+  return item
+}
+
+function createIterationPropertyCompletion(name: string): vscode.CompletionItem {
+  const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Variable)
+  item.detail = 'Pelela iteration property'
   item.sortText = `!0_${name}`
   return item
 }

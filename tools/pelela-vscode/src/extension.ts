@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { createCompletionProvider } from './providers/completionProvider'
 import { createDefinitionProvider } from './providers/definitionProvider'
+import { createHoverProvider } from './providers/hoverProvider'
 import { createTypeScriptDefinitionProvider } from './providers/tsDefinitionProvider'
 
 export function activate(context: vscode.ExtensionContext) {
@@ -11,10 +12,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   const completionProvider = createCompletionProvider()
   const definitionProvider = createDefinitionProvider()
+  const hoverProvider = createHoverProvider()
   const tsDefinitionProvider = createTypeScriptDefinitionProvider()
 
   context.subscriptions.push(completionProvider)
   context.subscriptions.push(definitionProvider)
+  context.subscriptions.push(hoverProvider)
   context.subscriptions.push(tsDefinitionProvider)
 }
 
