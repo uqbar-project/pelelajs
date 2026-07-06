@@ -305,6 +305,7 @@
     <div id="bindings" class="section">
       <div class="section-title bindings-section-title">Element Bindings</div>
 
+      <div class="table-container">
       <table>
         <thead>
           <tr>
@@ -367,7 +368,7 @@
             <td><span class="attribute">for-each</span></td>
             <td>Any element</td>
             <td>Render a collection of items using a template</td>
-            <td><span class="code">&lt;div for-each="items"&gt;{{item}}&lt;/div&gt;</span></td>
+            <td><span class="code">&lt;div for-each="item of items" bind-content="item"&gt;&lt;/div&gt;</span></td> 
           </tr>
           <tr>
             <td><span class="attribute">click</span></td>
@@ -383,6 +384,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <div id="parent-child" class="section">
