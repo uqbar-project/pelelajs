@@ -8,28 +8,11 @@ import {
 import { scanDocument } from '../../src/diagnostics/scanDocument'
 import type { TagInfo } from '../../src/diagnostics/types'
 import { t } from '../../src/i18n/index'
-
-function createMockDocument(lines: string[]): vscode.TextDocument {
-  return {
-    lineCount: lines.length,
-    lineAt: (lineIndex: number) => ({ text: lines[lineIndex] }),
-    uri: vscode.Uri.file('test.pelela'),
-    languageId: 'pelela',
-  } as unknown as vscode.TextDocument
-}
+import { assertDiagnostic, createMockDocument } from './testHelpers'
 
 function prepareTags(lines: string[]): TagInfo[] {
   const document = createMockDocument(lines)
   return scanDocument(document)
-}
-
-function assertDiagnostic(
-  diagnostic: vscode.Diagnostic,
-  expectedMessage: string,
-  expectedSeverity: vscode.DiagnosticSeverity
-): void {
-  assert.strictEqual(diagnostic.message, expectedMessage)
-  assert.strictEqual(diagnostic.severity, expectedSeverity)
 }
 
 describe('attributeValidator', () => {

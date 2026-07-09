@@ -13,11 +13,14 @@ import {
 import { t } from '../../src/i18n/index'
 import type { ViewModelMembers } from '../../src/parsers/viewModelParser'
 import { extractViewModelMembers } from '../../src/parsers/viewModelParser'
+import { assertDiagnostic, createMockDocument } from './testHelpers'
 
 const VIEW_MODEL_FIXTURE = `
 export class TestViewModel {
   name: string = "test"
   count: number = 0
+  obj = { value: "hello" }
+  items: { name: string }[] = []
 
   handleClick(): void {
     console.log("clicked")
@@ -35,15 +38,6 @@ interface ViewModelContext {
   members: ViewModelMembers
 }
 
-function createMockDocument(lines: string[], uriPath: string): vscode.TextDocument {
-  return {
-    lineCount: lines.length,
-    lineAt: (lineIndex: number) => ({ text: lines[lineIndex] }),
-    uri: vscode.Uri.file(uriPath),
-    languageId: 'pelela',
-  } as unknown as vscode.TextDocument
-}
-
 function prepareValidation(
   lines: string[],
   context: ViewModelContext
@@ -51,15 +45,6 @@ function prepareValidation(
   const document = createMockDocument(lines, context.pelelaPath)
   const tags = scanDocument(document)
   return { tags, document }
-}
-
-function assertDiagnostic(
-  diagnostic: vscode.Diagnostic,
-  expectedMessage: string,
-  expectedSeverity: vscode.DiagnosticSeverity
-): void {
-  assert.strictEqual(diagnostic.message, expectedMessage)
-  assert.strictEqual(diagnostic.severity, expectedSeverity)
 }
 
 describe('viewModelValidator', () => {
@@ -144,6 +129,39 @@ describe('viewModelValidator', () => {
       )
       const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
       assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts a nested property path', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="obj.value">'], context)
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts a for-each item nested property', () => {
+      const { tags, document } = prepareValidation(
+        ['<div for-each="item of items">', '  <span bind-content="item.name"></span>', '</div>'],
+        context
+      )
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a non-existent for-each nested property', () => {
+      const { tags, document } = prepareValidation(
+        [
+          '<div for-each="item of items">',
+          '  <span bind-content="item.nonExistent"></span>',
+          '</div>',
+        ],
+        context
+      )
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'nonExistent' }),
+        vscode.DiagnosticSeverity.Error
+      )
     })
   })
 

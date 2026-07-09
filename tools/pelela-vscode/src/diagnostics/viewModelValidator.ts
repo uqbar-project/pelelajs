@@ -82,6 +82,27 @@ function validatePropertyPath(
   return []
 }
 
+function validatePropertyExists(
+  attribute: AttrInfo,
+  fullPathParts: string[],
+  tsPath: string
+): vscode.Diagnostic[] {
+  const parentPathParts = fullPathParts.slice(0, -1)
+  const lastPart = fullPathParts[fullPathParts.length - 1]
+  const parentProperties = extractNestedProperties(tsPath, parentPathParts)
+
+  if (parentProperties.includes(lastPart)) return []
+
+  return [
+    makeDiagnostic(
+      attribute.valueRange ?? attribute.nameRange,
+      'diagnostics.propertyNotFound',
+      { name: lastPart },
+      vscode.DiagnosticSeverity.Error
+    ),
+  ]
+}
+
 function validateForEachPath(
   attribute: AttrInfo,
   pathParts: string[],
@@ -96,21 +117,11 @@ function validateForEachPath(
   const remainingParts = pathParts.slice(1)
   if (remainingParts.length === 0) return []
 
-  const nestedProperties = extractNestedProperties(tsPath, [forEachExpression.collectionName])
-  const lastPart = remainingParts[remainingParts.length - 1]
-
-  if (!nestedProperties.includes(lastPart)) {
-    return [
-      makeDiagnostic(
-        attribute.valueRange ?? attribute.nameRange,
-        'diagnostics.propertyNotFound',
-        { name: lastPart },
-        vscode.DiagnosticSeverity.Error
-      ),
-    ]
-  }
-
-  return []
+  return validatePropertyExists(
+    attribute,
+    [forEachExpression.collectionName, ...remainingParts],
+    tsPath
+  )
 }
 
 function validateNestedPath(
@@ -118,22 +129,7 @@ function validateNestedPath(
   pathParts: string[],
   tsPath: string
 ): vscode.Diagnostic[] {
-  const nestedProperties = extractNestedProperties(tsPath, pathParts)
-  if (nestedProperties.length === 0) return []
-
-  const lastPart = pathParts[pathParts.length - 1]
-  if (!nestedProperties.includes(lastPart)) {
-    return [
-      makeDiagnostic(
-        attribute.valueRange ?? attribute.nameRange,
-        'diagnostics.propertyNotFound',
-        { name: lastPart },
-        vscode.DiagnosticSeverity.Error
-      ),
-    ]
-  }
-
-  return []
+  return validatePropertyExists(attribute, pathParts, tsPath)
 }
 
 export function validateEventMethods(
