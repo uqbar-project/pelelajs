@@ -86,9 +86,9 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('if'))
     })
 
-    it('should return exactly 13 attributes', () => {
+    it('should return exactly 16 attributes', () => {
       const attributes = getPelelaAttributes()
-      assert.strictEqual(attributes.length, 13)
+      assert.strictEqual(attributes.length, 16)
     })
   })
 
@@ -153,7 +153,7 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('bind-enabled'))
       assert.ok(attributes.includes('enter'))
       assert.ok(attributes.includes('view-model'))
-      assert.strictEqual(attributes.length, 13)
+      assert.strictEqual(attributes.length, 16)
     })
   })
 })
