@@ -74,5 +74,20 @@ export function createDiagnosticsProvider(): vscode.Disposable {
     }
   }
 
-  return vscode.Disposable.from(openListener, changeListener, closeListener, collection)
+  const baseDisposable = vscode.Disposable.from(
+    openListener,
+    changeListener,
+    closeListener,
+    collection
+  )
+
+  return {
+    dispose: () => {
+      debounceTimers.forEach((timer) => {
+        clearTimeout(timer)
+      })
+      debounceTimers.clear()
+      baseDisposable.dispose()
+    },
+  }
 }

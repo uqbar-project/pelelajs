@@ -7,7 +7,6 @@ import type { AttrInfo, TagInfo } from './types'
 
 const BINDING_PREFIXES = ['bind-', 'prop-', 'link-']
 const EVENT_NAMES = ['click', 'enter']
-const SKIP_ATTRIBUTES = ['view-model', 'for-each', 'index', 'const-']
 
 function isBindingAttribute(name: string): boolean {
   return name === 'if' || BINDING_PREFIXES.some((prefix) => name.startsWith(prefix))
@@ -15,10 +14,6 @@ function isBindingAttribute(name: string): boolean {
 
 function isEventAttribute(name: string): boolean {
   return EVENT_NAMES.includes(name)
-}
-
-function shouldSkipAttribute(name: string): boolean {
-  return SKIP_ATTRIBUTES.includes(name)
 }
 
 export function validateViewModelExistence(tags: TagInfo[], tsPath: string): vscode.Diagnostic[] {
@@ -45,9 +40,7 @@ export function validateBindingProperties(
 ): vscode.Diagnostic[] {
   return tags.flatMap((tag) =>
     tag.attributes
-      .filter(
-        (attribute) => isBindingAttribute(attribute.name) && !shouldSkipAttribute(attribute.name)
-      )
+      .filter((attribute) => isBindingAttribute(attribute.name))
       .flatMap((attribute) =>
         validatePropertyPath(attribute, tag.lineIndex, tsPath, members, document)
       )
