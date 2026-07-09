@@ -57,6 +57,24 @@ export function createDiagnosticsProvider(): vscode.Disposable {
     }
   })
 
+  const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
+    if (document.languageId === 'pelela') {
+      const uriString = document.uri.toString()
+      const timer = debounceTimers.get(uriString)
+      if (timer !== undefined) {
+        clearTimeout(timer)
+        debounceTimers.delete(uriString)
+      }
+      validateDocument(document)
+    }
+  })
+
+  const activeEditorListener = vscode.window.onDidChangeActiveTextEditor((editor) => {
+    if (editor !== undefined && editor.document.languageId === 'pelela') {
+      validateDocument(editor.document)
+    }
+  })
+
   const closeListener = vscode.workspace.onDidCloseTextDocument((document) => {
     const uriString = document.uri.toString()
     const timer = debounceTimers.get(uriString)
@@ -77,6 +95,8 @@ export function createDiagnosticsProvider(): vscode.Disposable {
   const baseDisposable = vscode.Disposable.from(
     openListener,
     changeListener,
+    saveListener,
+    activeEditorListener,
     closeListener,
     collection
   )
