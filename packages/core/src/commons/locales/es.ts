@@ -47,6 +47,16 @@ const errors = {
       '[pelela] El componente "{{name}}" no tiene un template registrado. ¿Llamaste a defineComponent?',
     routerNotStarted:
       '[pelela] Router no iniciado. Llamá a router.start() antes de usar {{action}}.',
+    routeWithChildrenAndComponent:
+      '[pelela] Una ruta con hijos no puede tener un componente. Eliminá el componente o dividilo en una ruta hija.',
+    nestedLayoutsNotSupported:
+      '[pelela] No se soportan layouts anidados. Cada nivel de hijos hereda el layout del padre automáticamente.',
+    layoutMissingOutlet:
+      '[pelela] El template del layout debe contener un elemento <outlet> como marcador para el contenido de la ruta hija.',
+    layoutWithoutChildren:
+      '[pelela] Una ruta con layout debe tener hijos. Un layout envuelve rutas hijas mediante <outlet>.',
+    childrenWithoutLayout:
+      '[pelela] Una ruta con hijos debe tener un layout. Las rutas hijas necesitan un layout padre que las envuelva.',
   },
   compiler: {
     missingRoot:

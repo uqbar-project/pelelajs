@@ -46,6 +46,16 @@ const errors = {
     componentNotRegistered:
       '[pelela] Component "{{name}}" has no template registered. Did you call defineComponent?',
     routerNotStarted: '[pelela] Router not started. Call router.start() before using {{action}}.',
+    routeWithChildrenAndComponent:
+      '[pelela] Route with children cannot have a component. Remove the component or split it into a child route.',
+    nestedLayoutsNotSupported:
+      '[pelela] Nested layouts are not supported. Each level of children inherits the parent layout automatically.',
+    layoutMissingOutlet:
+      '[pelela] Layout template must contain an <outlet> element as a placeholder for the child route content.',
+    layoutWithoutChildren:
+      '[pelela] Route with layout must have children. A layout wraps child routes via <outlet>.',
+    childrenWithoutLayout:
+      '[pelela] Route with children must have a layout. Children need a parent layout to be wrapped in.',
   },
   compiler: {
     missingRoot:

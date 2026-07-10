@@ -1,10 +1,40 @@
+import { t } from '../commons/i18n'
 import { RoutingError } from '../errors/RoutingError'
-import type { MatchedRoute, RouteDefinition } from './types'
+import type { ViewModelConstructor } from '../types'
+import type { FlattenedRoute, MatchedRoute, RouteDefinition } from './types'
 
 type CompiledRoute = {
-  route: RouteDefinition
+  route: FlattenedRoute
   regex: RegExp
   paramNames: string[]
+}
+export function joinPaths(parent: string, child: string): string {
+  const combined = parent.endsWith('/') || parent === '' ? parent + child : `${parent}/${child}`
+  const result = combined.replace(/\/+/g, '/') || '/'
+  if (result === '*') return result
+  return result.startsWith('/') ? result : `/${result}`
+}
+export function flattenRoutes(
+  routes: RouteDefinition[],
+  parentPath: string = '',
+  parentLayout?: ViewModelConstructor,
+): FlattenedRoute[] {
+  return routes.flatMap((route) => {
+    const fullPath = joinPaths(parentPath, route.path)
+    const layout = route.layout ?? parentLayout
+
+    if (route.children) {
+      if (route.component) {
+        throw new Error(t('errors.routing.routeWithChildrenAndComponent'))
+      }
+      if (route.layout && parentLayout) {
+        throw new Error(t('errors.routing.nestedLayoutsNotSupported'))
+      }
+      return flattenRoutes(route.children, fullPath, layout)
+    }
+
+    return [{ path: fullPath, component: route.component!, layout }]
+  })
 }
 
 function escapeRegex(str: string): string {
@@ -19,7 +49,7 @@ function mapSegmentToRegex(segment: string, paramNames: string[]): string {
   return escapeRegex(segment)
 }
 
-function compileRoute(route: RouteDefinition): CompiledRoute {
+function compileRoute(route: FlattenedRoute): CompiledRoute {
   if (route.path === '*') {
     return { route, regex: /^.*$/, paramNames: [] }
   }
@@ -62,7 +92,7 @@ function extractSearchParameters(search: string): Record<string, string> {
 export function matchRoute(
   pathname: string,
   search: string,
-  routes: RouteDefinition[],
+  routes: FlattenedRoute[],
 ): MatchedRoute {
   const normalizedPath = pathname === '' ? '/' : pathname
   const compiled = routes.map(compileRoute)
