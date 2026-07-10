@@ -23,9 +23,16 @@ module.exports = {
       'tsx scripts/open-changelog-editor.ts npm',
       // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
       'pnpm --filter pelelajs version ${version} --no-git-tag-version --no-git-checks',
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
+      'pnpm --filter vite-plugin-pelelajs version ${version} --no-git-tag-version --no-git-checks',
       'cp CHANGELOG.md packages/core/CHANGELOG.md',
-      'git add packages/core/CHANGELOG.md',
+      'git add packages/core/CHANGELOG.md packages/core/package.json packages/vite-plugin-pelelajs/package.json',
       'pnpm run build',
+    ],
+    'after:release': [
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
+      'tsx scripts/publish-vite-plugin.ts ${version}',
+      'npm publish packages/core --access public',
     ],
   },
 }
