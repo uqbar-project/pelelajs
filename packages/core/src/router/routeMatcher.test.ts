@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { RoutingError } from '../errors/index'
-import { matchRoute } from './routeMatcher'
-import type { RouteDefinition } from './types'
+import { flattenRoutes, joinPaths, matchRoute } from './routeMatcher'
+import type { FlattenedRoute, RouteDefinition } from './types'
 
 class ProductCatalog {
   products: string[] = ['Laptop', 'Mouse']
@@ -31,13 +31,159 @@ class AboutPage {
   message = 'About us'
 }
 
-const ROUTES: RouteDefinition[] = [
+class MainLayout {
+  title = 'Main Layout'
+}
+
+class AnotherLayout {
+  title = 'Another'
+}
+
+const ROUTES: FlattenedRoute[] = [
   { path: '/', component: ProductCatalog },
   { path: '/about', component: AboutPage },
   { path: '/product/:id', component: ProductDetail },
   { path: '/product/:id/city/:cityId', component: CityGuide },
   { path: '*', component: NotFoundPage },
 ]
+
+describe('joinPaths', () => {
+  it('should return root when both parent and child are empty', () => {
+    expect(joinPaths('', '')).toBe('/')
+  })
+
+  it('should join empty parent with child path', () => {
+    expect(joinPaths('', 'detail/:id')).toBe('/detail/:id')
+  })
+
+  it('should join non-empty parent with child', () => {
+    expect(joinPaths('admin', 'settings')).toBe('/admin/settings')
+  })
+
+  it('should handle trailing slash in parent', () => {
+    expect(joinPaths('admin/', 'settings')).toBe('/admin/settings')
+  })
+
+  it('should handle root parent with child', () => {
+    expect(joinPaths('', '')).toBe('/')
+  })
+})
+
+describe('flattenRoutes', () => {
+  it('should flatten a simple list of routes without layout', () => {
+    const routes: RouteDefinition[] = [
+      { path: '/', component: ProductCatalog },
+      { path: '/about', component: AboutPage },
+    ]
+
+    const result = flattenRoutes(routes)
+
+    expect(result).toEqual([
+      { path: '/', component: ProductCatalog, layout: undefined },
+      { path: '/about', component: AboutPage, layout: undefined },
+    ])
+  })
+
+  it('should flatten routes with layout and children', () => {
+    const routes: RouteDefinition[] = [
+      {
+        path: '',
+        layout: MainLayout,
+        children: [
+          { path: '', component: ProductCatalog },
+          { path: 'detail/:id', component: ProductDetail },
+        ],
+      },
+    ]
+
+    const result = flattenRoutes(routes)
+
+    expect(result).toEqual([
+      { path: '/', component: ProductCatalog, layout: MainLayout },
+      { path: '/detail/:id', component: ProductDetail, layout: MainLayout },
+    ])
+  })
+
+  it('should inherit parent layout when child has no layout', () => {
+    const routes: RouteDefinition[] = [
+      {
+        path: '',
+        layout: MainLayout,
+        children: [{ path: '', component: ProductCatalog }],
+      },
+    ]
+
+    const result = flattenRoutes(routes)
+
+    expect(result).toEqual([{ path: '/', component: ProductCatalog, layout: MainLayout }])
+  })
+
+  it('should throw when a route has both component and children', () => {
+    const routes: RouteDefinition[] = [
+      {
+        path: '',
+        component: ProductCatalog,
+        layout: MainLayout,
+        children: [],
+      },
+    ]
+
+    expect(() => flattenRoutes(routes)).toThrow('cannot have a component')
+  })
+
+  it('should throw when nested layouts are detected (layout inside another layout)', () => {
+    const routes: RouteDefinition[] = [
+      {
+        path: '',
+        layout: MainLayout,
+        children: [
+          {
+            path: 'sub',
+            layout: AnotherLayout,
+            children: [{ path: '', component: ProductCatalog }],
+          },
+        ],
+      },
+    ]
+
+    expect(() => flattenRoutes(routes)).toThrow('Nested layouts are not supported')
+  })
+
+  it('should preserve layout for sibling routes under the same parent', () => {
+    const routes: RouteDefinition[] = [
+      {
+        path: '',
+        layout: MainLayout,
+        children: [
+          { path: '', component: ProductCatalog },
+          { path: 'detail/:id', component: ProductDetail },
+          { path: 'about', component: AboutPage },
+        ],
+      },
+    ]
+
+    const result = flattenRoutes(routes)
+
+    expect(result).toHaveLength(3)
+    result.forEach((flattenedRoute: FlattenedRoute) => {
+      expect(flattenedRoute.layout).toBe(MainLayout)
+    })
+  })
+
+  it('should keep routes without layout when no parent layout exists', () => {
+    const routes: RouteDefinition[] = [
+      { path: '/', component: ProductCatalog },
+      { path: '/login', component: AboutPage },
+    ]
+
+    const result = flattenRoutes(routes)
+
+    expect(result).toEqual([
+      { path: '/', component: ProductCatalog, layout: undefined },
+      { path: '/login', component: AboutPage, layout: undefined },
+    ])
+  })
+})
 
 describe('routeMatcher', () => {
   describe('exact path matching', () => {
@@ -61,7 +207,7 @@ describe('routeMatcher', () => {
     })
 
     it('should escape regex metacharacters in static routes', () => {
-      const staticWithMeta: RouteDefinition[] = [
+      const staticWithMeta: FlattenedRoute[] = [
         { path: '/static.html', component: AboutPage },
         { path: '*', component: NotFoundPage },
       ]
@@ -113,7 +259,7 @@ describe('routeMatcher', () => {
 
   describe('route not found', () => {
     it('should throw RoutingError when no route matches and no catch-all exists', () => {
-      const routesWithoutCatchAll: RouteDefinition[] = [{ path: '/', component: ProductCatalog }]
+      const routesWithoutCatchAll: FlattenedRoute[] = [{ path: '/', component: ProductCatalog }]
 
       expect(() => {
         matchRoute('/unknown', '', routesWithoutCatchAll)
@@ -121,7 +267,7 @@ describe('routeMatcher', () => {
     })
 
     it('should include the path in the error', () => {
-      const routesWithoutCatchAll: RouteDefinition[] = [{ path: '/', component: ProductCatalog }]
+      const routesWithoutCatchAll: FlattenedRoute[] = [{ path: '/', component: ProductCatalog }]
 
       expect(() => {
         matchRoute('/not-found', '', routesWithoutCatchAll)
@@ -131,7 +277,7 @@ describe('routeMatcher', () => {
 
   describe('first match wins', () => {
     it('should return the first matching route when multiple could match', () => {
-      const overlappingRoutes: RouteDefinition[] = [
+      const overlappingRoutes: FlattenedRoute[] = [
         { path: '/product/:id', component: ProductDetail },
         { path: '*', component: NotFoundPage },
       ]
@@ -142,7 +288,7 @@ describe('routeMatcher', () => {
     })
 
     it('should return catch-all only if no other route matches first', () => {
-      const overlappingRoutes: RouteDefinition[] = [
+      const overlappingRoutes: FlattenedRoute[] = [
         { path: '*', component: NotFoundPage },
         { path: '/product/:id', component: ProductDetail },
       ]

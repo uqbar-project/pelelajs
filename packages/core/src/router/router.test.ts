@@ -4,6 +4,7 @@ import * as mountTemplate from '../bootstrap/mountTemplate'
 import { RoutingError } from '../errors/index'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import { clearRegistry } from '../registry/viewModelRegistry'
+import type { PelelaElement } from '../types'
 import { resetRouter, router } from './router'
 
 class ProductCatalog {
@@ -500,6 +501,227 @@ describe('router', () => {
       )
       expect(childLinkAfterNav).toBeNull()
       expect(parentLinkAfterNav).toBeNull()
+    })
+  })
+
+  describe('layout rendering', () => {
+    class MainLayout {
+      title = 'My App'
+    }
+
+    class HomePage {
+      message = 'Welcome'
+    }
+
+    class LoginPage {
+      label = 'Login'
+    }
+
+    const layoutTemplate =
+      '<pelela view-model="MainLayout"><header><h1 bind-content="title"></h1></header><main><outlet></outlet></main><footer>© 2026</footer></pelela>'
+    const homePageTemplate = '<pelela view-model="HomePage"><p bind-content="message"></p></pelela>'
+    const loginPageTemplate =
+      '<pelela view-model="LoginPage"><form><button>Entrar</button></form></pelela>'
+
+    it('should render page wrapped in layout when route has layout and children', () => {
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+      defineComponent('HomePage', HomePage, homePageTemplate)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: MainLayout,
+          children: [{ path: '', component: HomePage }],
+        },
+      ])
+
+      expect(container.querySelector('header')).toBeInstanceOf(HTMLElement)
+      expect(container.querySelector('footer')).toBeInstanceOf(HTMLElement)
+      expect(container.querySelector('p')).toBeInstanceOf(HTMLParagraphElement)
+      expect(container.querySelector('p')!.innerHTML).toBe('Welcome')
+    })
+
+    it('should replace <outlet> with the page content and not leave <outlet> in the DOM', () => {
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+      defineComponent('HomePage', HomePage, homePageTemplate)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: MainLayout,
+          children: [{ path: '', component: HomePage }],
+        },
+      ])
+
+      expect(container.querySelector('outlet')).toBeNull()
+    })
+
+    it('should transfer prop-* attributes from <outlet> to the page ViewModel', () => {
+      class LayoutWithProps {
+        userName = 'John Doe'
+      }
+      class PageWithProps {
+        userName = ''
+        appName = ''
+      }
+
+      const layoutWithPropsTemplate =
+        '<pelela view-model="LayoutWithProps"><main><outlet prop-userName="userName" const-appName="\'Test App\'"></outlet></main></pelela>'
+      const pageWithPropsTemplate =
+        '<pelela view-model="PageWithProps"><p bind-content="userName"></p><span bind-content="appName"></span></pelela>'
+
+      defineComponent('LayoutWithProps', LayoutWithProps, layoutWithPropsTemplate)
+      defineComponent('PageWithProps', PageWithProps, pageWithPropsTemplate)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: LayoutWithProps,
+          children: [{ path: '', component: PageWithProps }],
+        },
+      ])
+
+      const layoutElement = container.querySelector('pelela[view-model]') as PelelaElement | null
+      expect(layoutElement).toBeInstanceOf(HTMLElement)
+      const layoutVM = (layoutElement! as PelelaElement<Record<string, unknown>>).__pelelaViewModel
+      expect(layoutVM).toBeDefined()
+
+      const pageElement = container.querySelector(
+        'pelela[view-model="PageWithProps"]',
+      ) as PelelaElement<Record<string, unknown>> | null
+      expect(pageElement).toBeInstanceOf(HTMLElement)
+      const pageVM = pageElement!.__pelelaViewModel
+      expect(pageVM).toBeDefined()
+
+      expect(pageVM.userName).toBe('John Doe')
+      expect(pageVM.appName).toBe("'Test App'")
+      expect(container.querySelector('p')!.innerHTML).toBe('John Doe')
+    })
+
+    it('should throw when a route has layout but no children', () => {
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+
+      expect(() => {
+        router.start(container, [{ path: '', layout: MainLayout }])
+      }).toThrow('Route with layout must have children')
+    })
+
+    it('should throw when a route has children but no layout', () => {
+      defineComponent('HomePage', HomePage, homePageTemplate)
+
+      expect(() => {
+        router.start(container, [{ path: '', children: [{ path: '', component: HomePage }] }])
+      }).toThrow('Route with children must have a layout')
+    })
+
+    it('should render page standalone when route has no layout', () => {
+      defineComponent('HomePage', HomePage, homePageTemplate)
+      defineComponent('LoginPage', LoginPage, loginPageTemplate)
+      window.history.replaceState(null, '', '/login')
+
+      router.start(container, [
+        { path: '/', component: HomePage },
+        { path: '/login', component: LoginPage },
+      ])
+
+      expect(container.querySelector('form')).toBeInstanceOf(HTMLFormElement)
+      expect(container.querySelector('header')).toBeNull()
+    })
+  })
+
+  describe('layout CSS lifecycle', () => {
+    class LayoutWithCss {
+      title = 'Layout'
+    }
+    class PageWithCss {
+      message = 'Page'
+    }
+
+    const layoutCssTemplate =
+      '<pelela view-model="LayoutWithCss"><header><h1 bind-content="title"></h1></header><main><outlet></outlet></main><footer>Footer</footer></pelela>'
+    const pageCssTemplate =
+      '<pelela view-model="PageWithCss"><p bind-content="message"></p></pelela>'
+
+    it('should load layout CSS when route has layout', () => {
+      defineComponent('LayoutWithCss', LayoutWithCss, layoutCssTemplate, {
+        cssUrls: ['/styles/layout.css'],
+      })
+      defineComponent('PageWithCss', PageWithCss, pageCssTemplate)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: LayoutWithCss,
+          children: [{ path: '', component: PageWithCss }],
+        },
+      ])
+
+      const layoutLink = document.querySelector('link[data-pelela-css-url="/styles/layout.css"]')
+      expect(layoutLink).toBeInstanceOf(HTMLLinkElement)
+    })
+
+    it('should load both layout CSS and page CSS', () => {
+      defineComponent('LayoutWithCss', LayoutWithCss, layoutCssTemplate, {
+        cssUrls: ['/styles/layout.css'],
+      })
+      defineComponent('PageWithCss', PageWithCss, pageCssTemplate, {
+        cssUrls: ['/styles/page.css'],
+      })
+
+      router.start(container, [
+        {
+          path: '',
+          layout: LayoutWithCss,
+          children: [{ path: '', component: PageWithCss }],
+        },
+      ])
+
+      const layoutLink = document.querySelector('link[data-pelela-css-url="/styles/layout.css"]')
+      const pageLink = document.querySelector('link[data-pelela-css-url="/styles/page.css"]')
+      expect(layoutLink).toBeInstanceOf(HTMLLinkElement)
+      expect(pageLink).toBeInstanceOf(HTMLLinkElement)
+    })
+
+    it('should remove layout CSS and page CSS when navigating to a different route', () => {
+      class OtherPage {
+        version = '2.0'
+      }
+      const otherPageTemplate =
+        '<pelela view-model="OtherPage"><span bind-content="version"></span></pelela>'
+
+      defineComponent('LayoutWithCss', LayoutWithCss, layoutCssTemplate, {
+        cssUrls: ['/styles/layout.css'],
+      })
+      defineComponent('PageWithCss', PageWithCss, pageCssTemplate, {
+        cssUrls: ['/styles/page.css'],
+      })
+      defineComponent('OtherPage', OtherPage, otherPageTemplate, {
+        cssUrls: ['/styles/other.css'],
+      })
+
+      router.start(container, [
+        {
+          path: '',
+          layout: LayoutWithCss,
+          children: [
+            { path: '', component: PageWithCss },
+            { path: 'other', component: OtherPage },
+          ],
+        },
+        { path: '/standalone', component: OtherPage },
+      ])
+
+      expect(
+        document.querySelector('link[data-pelela-css-url="/styles/layout.css"]'),
+      ).toBeInstanceOf(HTMLLinkElement)
+
+      router.navigateTo('/standalone')
+
+      expect(document.querySelector('link[data-pelela-css-url="/styles/layout.css"]')).toBeNull()
+      expect(document.querySelector('link[data-pelela-css-url="/styles/page.css"]')).toBeNull()
+      expect(
+        document.querySelector('link[data-pelela-css-url="/styles/other.css"]'),
+      ).toBeInstanceOf(HTMLLinkElement)
     })
   })
 

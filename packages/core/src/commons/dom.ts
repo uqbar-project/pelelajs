@@ -5,7 +5,7 @@ export const STANDARD_HTML_TAGS = [
   'a', 'img', 'script', 'style', 'link', 'meta', 'base', 'form', 'input',
   'button', 'select', 'option', 'textarea', 'label', 'table', 'tr', 'td',
   'th', 'thead', 'tbody', 'tfoot', 'caption', 'col', 'colgroup', 'section',
-  'article', 'nav', 'aside', 'header', 'footer', 'main', 'figure', 'figcaption',
+  'article', 'nav', 'aside', 'header', 'footer', 'main', 'outlet', 'figure', 'figcaption',
   'iframe', 'canvas', 'svg', 'math', 'video', 'audio', 'source', 'track',
   'map', 'area', 'object', 'param', 'embed', 'details', 'summary', 'dialog',
   'template', 'slot', 'time', 'data', 'code', 'pre', 'blockquote', 'q',

@@ -35,6 +35,11 @@ type ErrorTranslations = {
     routeNotFound: string
     componentNotRegistered: string
     routerNotStarted: string
+    routeWithChildrenAndComponent: string
+    nestedLayoutsNotSupported: string
+    layoutMissingOutlet: string
+    layoutWithoutChildren: string
+    childrenWithoutLayout: string
   }
   compiler: {
     missingRoot: string
