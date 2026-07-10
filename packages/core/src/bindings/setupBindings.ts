@@ -1,7 +1,12 @@
+import { findAllElements } from '../commons/helpers'
+import { assertValidBindingAttribute } from '../validation/assertValidBindingAttribute'
+import { renderAltBindings, setupAltBindings } from './bindAlt'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
+import { renderEnabledBindings, setupEnabledBindings } from './bindEnabled'
+import { setupEnterBindings } from './bindEnter'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderSrcBindings, setupSrcBindings } from './bindSrc'
@@ -9,10 +14,12 @@ import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import { DependencyTracker } from './dependencyTracker'
 import type {
+  AltBinding,
   BindingsCollection,
   ClassBinding,
   ComponentBinding,
   ContentBinding,
+  EnabledBinding,
   ForEachBinding,
   IfBinding,
   SrcBinding,
@@ -26,6 +33,8 @@ type AnyBinding =
   | ValueBinding
   | ContentBinding
   | SrcBinding
+  | AltBinding
+  | EnabledBinding
   | IfBinding
   | ClassBinding
   | StyleBinding
@@ -59,6 +68,14 @@ function registerAllBindingDependencies(
     {
       list: bindings.srcBindings,
       getPath: (binding) => (binding as SrcBinding).propertyName,
+    },
+    {
+      list: bindings.altBindings,
+      getPath: (binding) => (binding as AltBinding).propertyName,
+    },
+    {
+      list: bindings.enabledBindings,
+      getPath: (binding) => (binding as EnabledBinding).propertyName,
     },
     {
       list: bindings.ifBindings,
@@ -116,6 +133,14 @@ function executeRenderPipeline<T extends object>(
       render: () => renderSrcBindings(targetBindings.srcBindings, viewModel),
     },
     {
+      condition: () => targetBindings.altBindings.length > 0,
+      render: () => renderAltBindings(targetBindings.altBindings, viewModel),
+    },
+    {
+      condition: () => targetBindings.enabledBindings.length > 0,
+      render: () => renderEnabledBindings(targetBindings.enabledBindings, viewModel),
+    },
+    {
       condition: () => targetBindings.ifBindings.length > 0,
       render: () => renderIfBindings(targetBindings.ifBindings, viewModel),
     },
@@ -146,18 +171,28 @@ export function setupBindings<T extends object>(
   viewModel: ViewModel<T>,
   { skipRootIf = false }: { skipRootIf?: boolean } = {},
 ): (changedPath?: string) => void {
+  const allElements = findAllElements(root, '*', true)
+  for (const element of allElements) {
+    for (const attr of element.attributes) {
+      assertValidBindingAttribute(attr.name, element)
+    }
+  }
+
   const bindings: BindingsCollection = {
     forEachBindings: setupForEachBindings(root, viewModel),
     componentBindings: setupComponentBindings(root, viewModel),
     valueBindings: setupValueBindings(root, viewModel),
     contentBindings: setupContentBindings(root, viewModel),
     srcBindings: setupSrcBindings(root, viewModel),
+    altBindings: setupAltBindings(root, viewModel),
+    enabledBindings: setupEnabledBindings(root, viewModel),
     ifBindings: setupIfBindings(root, viewModel, skipRootIf),
     classBindings: setupClassBindings(root, viewModel),
     styleBindings: setupStyleBindings(root, viewModel),
   }
 
   setupClickBindings(root, viewModel)
+  setupEnterBindings(root, viewModel)
 
   const tracker = new DependencyTracker()
   registerAllBindingDependencies(bindings, tracker, viewModel)

@@ -77,6 +77,38 @@ importers:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
 
+  examples/css-child-test:
+    dependencies:
+      pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/core
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 7.2.4
+        version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+
+  examples/error-handling:
+    dependencies:
+      pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/core
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 7.2.4
+        version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+
   examples/for-each:
     dependencies:
       pelelajs:
@@ -244,6 +276,10 @@ importers:
         version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0)
 
   tools/pelela-vscode:
+    dependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
     devDependencies:
       '@types/mocha':
         specifier: 10.0.10
@@ -275,9 +311,6 @@ importers:
       tsx:
         specifier: 4.21.0
         version: 4.21.0
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
 packages:
 

@@ -1,0 +1,6 @@
+<div>
+  <pelela view-model="BadConstParent">
+    <h1>BadConstParent Component</h1>
+    <bad-const-child const-what="1"></bad-const-child>
+  </pelela>
+</div>

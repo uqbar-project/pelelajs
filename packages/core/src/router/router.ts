@@ -1,6 +1,17 @@
-import { mountTemplate } from '../bootstrap/mountTemplate'
+import { resetRouterActive, setRouterActive } from '../bootstrap/bootstrap'
+import { handleError, mountTemplate, renderErrorPage } from '../bootstrap/mountTemplate'
+import {
+  createStylesheetLink,
+  findExistingStylesheetLink,
+  removeStylesheetLinks,
+} from '../commons/cssLoader'
+import { toKebabCase } from '../commons/helpers'
 import { RoutingError } from '../errors/RoutingError'
-import { getComponentEntry } from '../registry/componentRegistry'
+import {
+  getComponentByTag,
+  getComponentEntry,
+  getRegisteredTags,
+} from '../registry/componentRegistry'
 import { matchRoute } from './routeMatcher'
 import type { MatchedRoute, RouteDefinition } from './types'
 
@@ -8,20 +19,67 @@ let container: HTMLElement | null = null
 let routes: RouteDefinition[] = []
 let currentMatch: MatchedRoute | null = null
 let popstateHandler: (() => void) | null = null
+const currentRouteCss = new Set<string>()
+
+export function registerCss(cssPath: string): void {
+  currentRouteCss.add(cssPath)
+}
+
+function collectChildComponentCssUrls(rawTemplate: string, visited = new Set<string>()): string[] {
+  const template = rawTemplate.replace(
+    /<\s*(\w+)/g,
+    (_, tagName: string) => `<${toKebabCase(tagName)}`,
+  )
+  const tagRegex = (tag: string) => new RegExp(`<${tag}(?:[\\s>/])`)
+
+  return getRegisteredTags()
+    .filter((tag) => !visited.has(tag) && tagRegex(tag).test(template))
+    .flatMap((tag) => {
+      visited.add(tag)
+      const componentDef = getComponentByTag(tag)
+      const childCss = componentDef?.entry.template
+        ? collectChildComponentCssUrls(componentDef.entry.template, visited)
+        : []
+      return [...(componentDef?.entry.cssUrls ?? []), ...childCss]
+    })
+}
 
 function renderPath(pathname: string, search: string, nextPath?: string): void {
-  const match = matchRoute(pathname, search, routes)
+  try {
+    const match = matchRoute(pathname, search, routes)
 
-  const entry = getComponentEntry(match.route.component)
-  if (!entry) {
-    throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
-  }
+    const entry = getComponentEntry(match.route.component)
+    if (!entry) {
+      throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
+    }
 
-  currentMatch = match
-  mountTemplate(container!, entry.template)
+    const oldRouteCss = new Set(currentRouteCss)
+    currentRouteCss.clear()
 
-  if (nextPath) {
-    history.pushState(null, '', nextPath)
+    currentMatch = match
+    mountTemplate(container!, entry.template)
+
+    for (const cssUrl of oldRouteCss) {
+      removeStylesheetLinks(cssUrl)
+    }
+    const routeCssUrls = entry.cssUrls ?? []
+    const childCssUrls = collectChildComponentCssUrls(entry.template)
+    const allCssUrls = [...routeCssUrls, ...childCssUrls]
+    for (const cssUrl of allCssUrls) {
+      currentRouteCss.add(cssUrl)
+      const existingLink = findExistingStylesheetLink(cssUrl)
+      if (!existingLink) {
+        const linkElement = createStylesheetLink(cssUrl)
+        document.head.appendChild(linkElement)
+      }
+    }
+
+    if (nextPath) {
+      history.pushState(null, '', nextPath)
+    }
+  } catch (error) {
+    resetRouterActive()
+    handleError(error)
   }
 }
 
@@ -34,7 +92,13 @@ function validateRoutesHaveTemplates(routeDefs: RouteDefinition[]): void {
   const missingComponent = routeDefs.find((routeDef) => !getComponentEntry(routeDef.component))
 
   if (missingComponent) {
-    throw new RoutingError(missingComponent.component.name || 'Unknown', 'component-not-registered')
+    const error = new RoutingError(
+      missingComponent.component.name || 'Unknown',
+      'component-not-registered',
+    )
+    console.error(error)
+    renderErrorPage(error)
+    throw error
   }
 }
 
@@ -44,8 +108,6 @@ export const router = {
    * All components must be registered with defineComponent() before calling start().
    */
   start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
-    validateRoutesHaveTemplates(routeDefs)
-
     if (popstateHandler) {
       window.removeEventListener('popstate', popstateHandler)
     }
@@ -59,6 +121,8 @@ export const router = {
     window.addEventListener('popstate', popstateHandler)
 
     try {
+      setRouterActive()
+      validateRoutesHaveTemplates(routeDefs)
       resolveAndRender()
     } catch (error) {
       resetRouter()
@@ -70,12 +134,16 @@ export const router = {
    * Programmatic navigation. Updates the URL and mounts the matching route.
    */
   navigateTo(path: string): void {
-    if (!container) {
-      throw new RoutingError('navigateTo()', 'router-not-started')
-    }
+    try {
+      if (!container) {
+        throw new RoutingError('navigateTo()', 'router-not-started')
+      }
 
-    const url = new URL(path, window.location.origin)
-    renderPath(url.pathname, url.search, path)
+      const url = new URL(path, window.location.origin)
+      renderPath(url.pathname, url.search, path)
+    } catch (error) {
+      handleError(error)
+    }
   },
 
   /**
@@ -93,6 +161,10 @@ export const router = {
   searchParameters(): Record<string, string> {
     return currentMatch?.searchParameters ?? {}
   },
+
+  registerCss(cssPath: string): void {
+    currentRouteCss.add(cssPath)
+  },
 }
 
 /**
@@ -106,4 +178,6 @@ export function resetRouter(): void {
   routes = []
   currentMatch = null
   popstateHandler = null
+  currentRouteCss.clear()
+  resetRouterActive()
 }

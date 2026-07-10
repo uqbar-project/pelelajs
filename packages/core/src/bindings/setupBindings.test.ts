@@ -19,6 +19,8 @@ describe('setupBindings', () => {
       <div if="show"></div>
       <div bind-class="classes"></div>
       <div bind-style="styles"></div>
+      <input bind-enabled="isActive" />
+      <img bind-alt="altText" />
       <button click="handleClick">Click</button>
     `
 
@@ -27,6 +29,8 @@ describe('setupBindings', () => {
       show: true,
       classes: 'test',
       styles: { color: 'red' },
+      isActive: true,
+      altText: 'description',
       handleClick: vi.fn(),
     }
 
@@ -129,6 +133,42 @@ describe('setupBindings', () => {
     }).not.toThrow()
   })
 
+  it('should render bind-enabled correctly', () => {
+    container.innerHTML = '<input bind-enabled="isActive" />'
+
+    const viewModel = { isActive: true }
+    const render = setupBindings(container, viewModel)
+
+    const input = container.querySelector('input')!
+    expect(input.disabled).toBe(false)
+
+    viewModel.isActive = false
+    render()
+    expect(input.disabled).toBe(true)
+
+    viewModel.isActive = true
+    render()
+    expect(input.disabled).toBe(false)
+  })
+
+  it('should render bind-alt correctly', () => {
+    container.innerHTML = '<img bind-alt="description" />'
+
+    const viewModel: Record<string, string | null> = { description: 'A photo' }
+    const render = setupBindings(container, viewModel)
+
+    const img = container.querySelector('img')!
+    expect(img.getAttribute('alt')).toBe('A photo')
+
+    viewModel.description = null
+    render()
+    expect(img.hasAttribute('alt')).toBe(false)
+
+    viewModel.description = 'Updated'
+    render()
+    expect(img.getAttribute('alt')).toBe('Updated')
+  })
+
   it('should integrate all binding types correctly', () => {
     container.innerHTML = `
       <div>
@@ -136,17 +176,21 @@ describe('setupBindings', () => {
         <div if="showMessage">
           <span bind-content="message" bind-class="messageClass" bind-style="messageStyle"></span>
         </div>
+        <input bind-enabled="isActive" />
+        <img bind-alt="altText" />
         <button click="submit">Submit</button>
       </div>
     `
 
     const submit = vi.fn()
-    const viewModel = {
+    const viewModel: Record<string, unknown> = {
       name: 'John',
       showMessage: true,
       message: 'Hello',
       messageClass: 'highlight',
       messageStyle: { color: 'blue' },
+      isActive: false,
+      altText: 'Image description',
       submit,
     }
 
@@ -156,12 +200,28 @@ describe('setupBindings', () => {
     expect(container.querySelector('span')!.textContent).toBe('Hello')
     expect(container.querySelector('span')!.className).toContain('highlight')
     expect(container.querySelector('span')!.style.color).toBe('blue')
+    expect(container.querySelector('img')!.getAttribute('alt')).toBe('Image description')
 
     viewModel.showMessage = false
+    viewModel.altText = null
     render()
     expect(container.querySelectorAll('div')[1].style.display).toBe('none')
+    expect(container.querySelector('img')!.hasAttribute('alt')).toBe(false)
+
+    viewModel.isActive = true
+    render()
+    expect(container.querySelectorAll('input')[1].disabled).toBe(false)
 
     container.querySelector('button')!.click()
     expect(submit).toHaveBeenCalled()
+  })
+
+  it('should accept directives inside root tag', () => {
+    container.innerHTML = '<pelela view-model="Home"><div bind-content="x">Test</div></pelela>'
+    const viewModel = { x: 'test' }
+
+    expect(() => {
+      setupBindings(container, viewModel)
+    }).not.toThrow()
   })
 })

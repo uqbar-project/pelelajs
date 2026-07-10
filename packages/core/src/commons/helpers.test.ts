@@ -4,6 +4,7 @@ import {
   extractElementSnippet,
   filterOwnElements,
   findAllElements,
+  findUniqueCollapsedTag,
   isObject,
   isPropertyOrNestedPath,
   isValidIdentifier,
@@ -191,6 +192,20 @@ describe('helpers', () => {
 
     it('should handle multiple words', () => {
       expect(toKebabCase('myLongComponentName')).toBe('my-long-component-name')
+    })
+  })
+
+  describe('findUniqueCollapsedTag', () => {
+    it('should return the matching tag when the collapsed match is unique', () => {
+      expect(findUniqueCollapsedTag('personrow', ['person-row'])).toBe('person-row')
+    })
+
+    it('should return undefined when there are no collapsed matches', () => {
+      expect(findUniqueCollapsedTag('personrow', ['counter'])).toBeUndefined()
+    })
+
+    it('should return undefined when the collapsed match is ambiguous', () => {
+      expect(findUniqueCollapsedTag('personrow', ['person-row', 'personr-ow'])).toBeUndefined()
     })
   })
 

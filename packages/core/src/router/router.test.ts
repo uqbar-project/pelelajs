@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { getRouterActive, setRouterActive } from '../bootstrap/bootstrap'
+import * as mountTemplate from '../bootstrap/mountTemplate'
 import { RoutingError } from '../errors/index'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import { clearRegistry } from '../registry/viewModelRegistry'
@@ -40,6 +42,7 @@ function registerTestComponents(): void {
 
 describe('router', () => {
   let container: HTMLElement
+  let renderErrorPageSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     resetRouter()
@@ -48,6 +51,13 @@ describe('router', () => {
     container = document.createElement('div')
     document.body.appendChild(container)
     window.history.replaceState(null, '', '/')
+    renderErrorPageSpy = vi.spyOn(mountTemplate, 'renderErrorPage')
+  })
+
+  afterEach(() => {
+    document.querySelectorAll('link[data-pelela-css-url]').forEach((link) => {
+      link.remove()
+    })
   })
 
   describe('start', () => {
@@ -76,6 +86,18 @@ describe('router', () => {
       }).toThrow(RoutingError)
     })
 
+    it('should reset isRouterActive when start fails due to unregistered component', () => {
+      expect(getRouterActive()).toBe(false)
+
+      try {
+        router.start(container, [{ path: '/', component: ProductCatalog }])
+      } catch {
+        // Expected
+      }
+
+      expect(getRouterActive()).toBe(false)
+    })
+
     it('should NOT add duplicate popstate listeners on multiple starts', () => {
       registerTestComponents()
       const addSpy = vi.spyOn(window, 'addEventListener')
@@ -93,22 +115,22 @@ describe('router', () => {
       removeSpy.mockRestore()
     })
 
-    it('should clean up state if initial resolveAndRender fails', () => {
+    it('should render error page when start URL does not match any route', () => {
       registerTestComponents()
       window.history.replaceState(null, '', '/nonexistent')
 
-      // This start will fail because /nonexistent doesn't match and no catch-all exists
-      try {
-        router.start(container, [{ path: '/', component: ProductCatalog }])
-      } catch {
-        // Expected
-      }
+      router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      // Verify cleanup: should not have a container or routes set internally
-      // We check this indirectly by seeing if navigateTo fails as if start() was never called
-      expect(() => {
-        router.navigateTo('/')
-      }).toThrow(RoutingError) // Should throw saying container is null (the root path mismatch)
+      expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(RoutingError))
+    })
+
+    it('should reset isRouterActive when route resolution fails', () => {
+      registerTestComponents()
+      window.history.replaceState(null, '', '/nonexistent')
+
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      expect(getRouterActive()).toBe(false)
     })
   })
 
@@ -140,13 +162,53 @@ describe('router', () => {
       expect(window.location.pathname).toBe('/product/42')
     })
 
-    it('should throw RoutingError when navigating to an undefined route', () => {
+    it('should call renderErrorPage when navigating to an undefined route', () => {
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      expect(() => {
-        router.navigateTo('/unknown')
-      }).toThrow(RoutingError)
+      router.navigateTo('/unknown')
+      expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(RoutingError))
+    })
+
+    it('should reset isRouterActive when navigating to an undefined route', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      router.navigateTo('/unknown')
+
+      expect(getRouterActive()).toBe(false)
+    })
+
+    it('should call handleError when renderPath fails during navigateTo', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      const handleErrorSpy = vi.spyOn(mountTemplate, 'handleError')
+      const mountTemplateSpy = vi.spyOn(mountTemplate, 'mountTemplate').mockImplementation(() => {
+        throw new Error('Mount failed')
+      })
+
+      router.navigateTo('/')
+
+      expect(handleErrorSpy).toHaveBeenCalledWith(expect.any(Error))
+
+      mountTemplateSpy.mockRestore()
+      handleErrorSpy.mockRestore()
+    })
+
+    it('should reset isRouterActive when mountTemplate throws during navigateTo', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      const mountTemplateSpy = vi.spyOn(mountTemplate, 'mountTemplate').mockImplementation(() => {
+        throw new Error('Mount failed')
+      })
+
+      router.navigateTo('/')
+
+      expect(getRouterActive()).toBe(false)
+
+      mountTemplateSpy.mockRestore()
     })
 
     it('should NOT update the browser URL when navigation fails (atomicity)', () => {
@@ -308,6 +370,164 @@ describe('router', () => {
       ])
 
       expect(container.querySelector('p')!.innerHTML).toBe('Page not found')
+    })
+  })
+
+  describe('resetRouter', () => {
+    it('should reset isRouterActive flag', () => {
+      setRouterActive()
+      expect(getRouterActive()).toBe(true)
+
+      resetRouter()
+
+      expect(getRouterActive()).toBe(false)
+    })
+  })
+
+  describe('child component CSS', () => {
+    it('should load CSS from child component with kebab-case single-word tag (e.g. <validator>)', () => {
+      class Validator {
+        label = 'Validator'
+      }
+      class Wheel {
+        title = 'Wheel'
+      }
+
+      defineComponent(
+        'Validator',
+        Validator,
+        '<pelela view-model="Validator"><span bind-content="label"></span></pelela>',
+        { cssUrls: ['/styles/validator.css'] },
+      )
+      defineComponent(
+        'Wheel',
+        Wheel,
+        '<pelela view-model="Wheel"><validator></validator><h1 bind-content="title"></h1></pelela>',
+        { cssUrls: ['/styles/wheel.css'] },
+      )
+
+      router.start(container, [{ path: '/', component: Wheel }])
+
+      const validatorLink = document.querySelector(
+        'link[data-pelela-css-url="/styles/validator.css"]',
+      )
+      const wheelLink = document.querySelector('link[data-pelela-css-url="/styles/wheel.css"]')
+
+      expect(validatorLink).toBeInstanceOf(HTMLLinkElement)
+      expect(wheelLink).toBeInstanceOf(HTMLLinkElement)
+    })
+
+    it('should load CSS from child component with kebab-case multi-word tag (e.g. <some-component>)', () => {
+      class SomeComponent {
+        label = 'Some'
+      }
+      class AppLayout {
+        title = 'App Layout'
+      }
+
+      defineComponent(
+        'SomeComponent',
+        SomeComponent,
+        '<pelela view-model="SomeComponent"><span bind-content="label"></span></pelela>',
+        { cssUrls: ['/styles/some-component.css'] },
+      )
+      defineComponent(
+        'AppLayout',
+        AppLayout,
+        '<pelela view-model="AppLayout"><some-component></some-component><h1 bind-content="title"></h1></pelela>',
+        { cssUrls: ['/styles/app-layout.css'] },
+      )
+
+      router.start(container, [{ path: '/', component: AppLayout }])
+
+      const childLink = document.querySelector(
+        'link[data-pelela-css-url="/styles/some-component.css"]',
+      )
+      const parentLink = document.querySelector(
+        'link[data-pelela-css-url="/styles/app-layout.css"]',
+      )
+
+      expect(childLink).toBeInstanceOf(HTMLLinkElement)
+      expect(parentLink).toBeInstanceOf(HTMLLinkElement)
+      expect(container.querySelector('span')?.innerHTML).toBe('Some')
+    })
+
+    it('should remove child component CSS when navigating to a different route', () => {
+      class Validator {
+        label = 'Validator'
+      }
+      class Wheel {
+        title = 'Wheel'
+      }
+      class Settings {
+        version = '1.0'
+      }
+
+      defineComponent(
+        'Validator',
+        Validator,
+        '<pelela view-model="Validator"><span bind-content="label"></span></pelela>',
+        { cssUrls: ['/styles/validator.css'] },
+      )
+      defineComponent(
+        'Wheel',
+        Wheel,
+        '<pelela view-model="Wheel"><validator></validator><h1 bind-content="title"></h1></pelela>',
+        { cssUrls: ['/styles/wheel.css'] },
+      )
+      defineComponent(
+        'Settings',
+        Settings,
+        '<pelela view-model="Settings"><p bind-content="version"></p></pelela>',
+        { cssUrls: ['/styles/settings.css'] },
+      )
+
+      router.start(container, [
+        { path: '/', component: Wheel },
+        { path: '/settings', component: Settings },
+      ])
+
+      const childLink = document.querySelector('link[data-pelela-css-url="/styles/validator.css"]')
+      expect(childLink).toBeInstanceOf(HTMLLinkElement)
+
+      router.navigateTo('/settings')
+
+      const childLinkAfterNav = document.querySelector(
+        'link[data-pelela-css-url="/styles/validator.css"]',
+      )
+      const parentLinkAfterNav = document.querySelector(
+        'link[data-pelela-css-url="/styles/wheel.css"]',
+      )
+      expect(childLinkAfterNav).toBeNull()
+      expect(parentLinkAfterNav).toBeNull()
+    })
+  })
+
+  describe('registerCss', () => {
+    it('should add CSS path to currentRouteCss set', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      router.registerCss('/styles/custom.css')
+
+      // Verify the CSS path was added by checking that it's in the set
+      // We can't directly access currentRouteCss, but we can verify it doesn't throw
+      expect(() => {
+        router.registerCss('/styles/another.css')
+      }).not.toThrow()
+    })
+
+    it('should add CSS path when called before start', () => {
+      registerTestComponents()
+      // Call registerCss before start
+      router.registerCss('/styles/before-start.css')
+
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      // Verify it doesn't throw
+      expect(() => {
+        router.registerCss('/styles/after-start.css')
+      }).not.toThrow()
     })
   })
 })

@@ -2,7 +2,7 @@
   "name": "pelela",
   "type": "module",
   "private": true,
-  "version": "0.6.8",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {

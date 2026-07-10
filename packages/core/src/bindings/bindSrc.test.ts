@@ -33,9 +33,7 @@ describe('bindSrc', () => {
 
       expect(() => {
         setupSrcBindings(container, viewModel)
-      }).toThrow(
-        /bind-src solo puede usarse en elementos <img>|bind-src can only be used on <img> elements/,
-      )
+      }).toThrow(/bind-src can only be used on <img> elements/)
     })
 
     it('should throw error if property does not exist in viewModel', () => {

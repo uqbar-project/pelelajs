@@ -70,13 +70,41 @@ export function getHtmlAttributes() {
 export function getPelelaAttributes() {
   return [
     'view-model',
-    'bind-value',
-    'bind-content',
-    'if',
+    'bind-alt',
     'bind-class',
+    'bind-content',
+    'bind-enabled',
+    'bind-src',
     'bind-style',
-    'const-',
+    'bind-value',
     'click',
+    'enter',
+    'const-',
     'for-each',
+    'if',
+    'index',
+    'link-',
+    'prop-',
   ]
+}
+
+const TAG_RESTRICTED_PELELA_ATTRIBUTES: Record<string, string[]> = {
+  'bind-alt': ['img'],
+  'bind-src': ['img'],
+  'bind-enabled': ['input', 'select', 'button', 'textarea', 'optgroup', 'option', 'fieldset'],
+  'bind-value': ['input', 'textarea', 'select'],
+  enter: ['input'],
+  'view-model': ['pelela', 'component'],
+}
+
+export function getPelelaAttributesForTag(tagName: string | null): string[] {
+  const allAttributes = getPelelaAttributes()
+
+  if (!tagName) return allAttributes
+
+  return allAttributes.filter((attr) => {
+    const allowedTags = TAG_RESTRICTED_PELELA_ATTRIBUTES[attr]
+    if (!allowedTags) return true
+    return allowedTags.includes(tagName)
+  })
 }

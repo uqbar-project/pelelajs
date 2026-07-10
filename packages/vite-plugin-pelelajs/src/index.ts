@@ -1,15 +1,25 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
-import {
-  initializeI18n,
-  isPelelaRootTag,
-  isStandardHtmlTag,
-  isValidComponentAttribute,
-  LINK_PREFIX,
-  t,
-} from 'pelelajs'
+import { initializeI18n } from 'pelelajs'
 
 import type { Plugin } from 'vite'
+import {
+  componentTagToKebabCase,
+  getPelelaFilePath,
+  validatePelelaSource,
+} from './templateValidation'
+
+export { extractLinkAttributeMatches } from './templateValidation'
+
+const PLUGIN_NAME = 'vite-plugin-pelelajs'
+
+interface ComponentFileMetadata {
+  name: string
+  tsPath: string
+  pelelaPath: string
+  viewModelName: string
+  cssPaths: string[]
+}
 
 export function escapeTemplateForLiteral(html: string): string {
   return html.replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
@@ -19,176 +29,9 @@ function getCssImport(pelelaFilePath: string): string {
   const cssFile = pelelaFilePath.replace(/\.pelela$/, '.css')
   if (fs.existsSync(cssFile)) {
     const cssBase = path.basename(cssFile)
-    return `import "./${cssBase}";\n`
+    return `export const __pelelaCssUrls = [new URL("./${cssBase}", import.meta.url).href];\n`
   }
-  return ''
-}
-
-const TAG_PATTERN = /<([\w-]+)([^>]*)>/g
-const LINK_ATTRIBUTE_PATTERN = new RegExp(`\\b(${LINK_PREFIX}[a-zA-Z0-9_-]+)\\s*=`, 'g')
-
-function extractAttributes(
-  sourceCode: string,
-  attrPattern: RegExp,
-): Array<{ tagName: string; attributeName: string }> {
-  return Array.from(sourceCode.matchAll(TAG_PATTERN)).flatMap((tagMatch) => {
-    const tagName = tagMatch[1].toLowerCase()
-    const attributesSegment = tagMatch[2]
-    return Array.from(attributesSegment.matchAll(attrPattern), (attrMatch) => ({
-      tagName,
-      attributeName: attrMatch[1],
-    }))
-  })
-}
-
-export function extractLinkAttributeMatches(
-  sourceCode: string,
-): Array<{ tagName: string; attributeName: string }> {
-  return extractAttributes(sourceCode, LINK_ATTRIBUTE_PATTERN)
-}
-
-const ATTRIBUTE_PAIR_PATTERN = /([a-zA-Z0-9_-]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*))?/g
-
-function extractAttributeNames(attributesSegment: string): string[] {
-  return Array.from(attributesSegment.matchAll(ATTRIBUTE_PAIR_PATTERN), (match) => match[1])
-}
-
-function extractComponentAttributeMatches(
-  sourceCode: string,
-): Array<{ tagName: string; attributeName: string }> {
-  return Array.from(sourceCode.matchAll(TAG_PATTERN)).flatMap((tagMatch) =>
-    extractAttributeNames(tagMatch[2]).map((attributeName) => ({
-      tagName: tagMatch[1].toLowerCase(),
-      attributeName,
-    })),
-  )
-}
-
-function validateComponentAttributes(sourceCode: string, errorFn: (message: string) => void): void {
-  const componentMatches = extractComponentAttributeMatches(sourceCode)
-
-  const invalidMatches = componentMatches.filter(
-    (match) =>
-      !isPelelaRootTag(match.tagName) &&
-      !isStandardHtmlTag(match.tagName) &&
-      !isValidComponentAttribute(match.attributeName),
-  )
-
-  invalidMatches.forEach((match) => {
-    errorFn(
-      t('errors.compiler.invalidComponentAttribute', {
-        tag: match.tagName,
-        attr: match.attributeName,
-      }),
-    )
-  })
-}
-
-function validateNoForbiddenHtmlAttributes(
-  sourceCode: string,
-  filePath: string,
-  errorFn: (message: string) => void,
-): void {
-  const linkMatches = extractLinkAttributeMatches(sourceCode)
-
-  const invalidMatches = linkMatches.filter(
-    (match) => !isPelelaRootTag(match.tagName) && isStandardHtmlTag(match.tagName),
-  )
-
-  invalidMatches.forEach((match) => {
-    errorFn(
-      t('errors.compiler.forbiddenRootAttribute', {
-        filePath,
-        tagName: match.tagName,
-        attr: match.attributeName,
-      }),
-    )
-  })
-}
-
-function validatePelelaStructure(
-  sourceCode: string,
-  filePath: string,
-  errorFn: (message: string) => void,
-): void {
-  const openTags = sourceCode.match(/<(?:pelela|component)\b[^>]*>/gi) || []
-  const closeTags = sourceCode.match(/<\/(?:pelela|component)>/gi) || []
-
-  if (openTags.length === 0) {
-    errorFn(t('errors.compiler.missingRoot', { filePath }))
-  }
-
-  if (openTags.length > 1) {
-    errorFn(t('errors.compiler.multipleRoots', { filePath, count: openTags.length }))
-  }
-
-  if (closeTags.length === 0) {
-    errorFn(t('errors.compiler.missingClosingTag', { filePath }))
-  }
-
-  if (closeTags.length !== openTags.length) {
-    errorFn(t('errors.compiler.unbalancedTags', { filePath }))
-  }
-}
-
-function validateNoForeignSyntax(
-  sourceCode: string,
-  filePath: string,
-  errorFn: (message: string) => void,
-): void {
-  if (/\{\{.*?\}\}/.test(sourceCode)) {
-    errorFn(t('errors.compiler.foreignInterpolation', { filePath }))
-  }
-
-  if (/<[^>]+ \[[^\]]+\]\s*=.*/.test(sourceCode)) {
-    errorFn(t('errors.compiler.foreignPropertyBinding', { filePath }))
-  }
-}
-
-function validateNoForbiddenRootAttributes(
-  sourceCode: string,
-  filePath: string,
-  errorFn: (message: string) => void,
-): void {
-  const rootTagMatch = sourceCode.match(/<(pelela|component)\b([^>]*)>/i)
-  if (!rootTagMatch) return
-
-  const attributes = rootTagMatch[2]
-  const forbiddenPatterns = [
-    new RegExp(`\\b${LINK_PREFIX}[a-zA-Z0-9_-]+`),
-    /\bbind-[a-zA-Z0-9_-]+/,
-    /\bif\s*=/,
-    /\bfor-each\s*=/,
-    /\bclick\s*=/,
-  ]
-
-  const foundPattern = forbiddenPatterns.find((pattern) => pattern.test(attributes))
-
-  if (foundPattern) {
-    errorFn(
-      t('errors.compiler.forbiddenRootAttribute', {
-        filePath,
-        tagName: rootTagMatch[1],
-        attr: attributes.match(foundPattern)?.[0],
-      }),
-    )
-  }
-}
-
-function extractViewModelName(
-  sourceCode: string,
-  filePath: string,
-  errorFn: (message: string) => void,
-): string {
-  const viewModelMatch = sourceCode.match(/<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/i)
-  const viewModelName = viewModelMatch ? viewModelMatch[1] : null
-
-  if (!viewModelName) {
-    errorFn(t('errors.compiler.missingViewModel', { filePath }))
-    return ''
-  }
-
-  return viewModelName
+  return 'export const __pelelaCssUrls = [];\n'
 }
 
 function generateModuleCode(
@@ -203,9 +46,7 @@ export default template;
 `
 }
 
-function findComponentFiles(
-  srcDir: string,
-): Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }> {
+function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
   if (!fs.existsSync(srcDir)) return []
 
   return fs
@@ -215,16 +56,19 @@ function findComponentFiles(
       const componentName = tsFile.replace(/\.ts$/, '')
       const pelelaFile = `${componentName}.pelela`
       const pelelaPath = path.join(srcDir, pelelaFile)
+      const cssPath = path.join(srcDir, `${componentName}.css`)
+      const cssPaths = fs.existsSync(cssPath) ? [`./${componentName}.css`] : []
 
       return {
         componentName,
         tsFile,
         pelelaFile,
         pelelaPath,
+        cssPaths,
       }
     })
     .filter(({ pelelaPath }) => fs.existsSync(pelelaPath))
-    .map(({ componentName, tsFile, pelelaFile, pelelaPath }) => {
+    .map(({ componentName, tsFile, pelelaFile, pelelaPath, cssPaths }) => {
       const templateContent = fs.readFileSync(pelelaPath, 'utf-8')
       const viewModelMatch = templateContent.match(
         /<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/,
@@ -236,6 +80,7 @@ function findComponentFiles(
         tsPath: `./src/${tsFile}`,
         pelelaPath: `./src/${pelelaFile}`,
         viewModelName,
+        cssPaths,
       }
     })
 }
@@ -244,26 +89,38 @@ export function kebabToCamelCase(name: string): string {
   return name.replace(/[-.]([a-z])/g, (_, letter) => letter.toUpperCase())
 }
 
-function generateAutoRegistrationCode(
-  components: Array<{ name: string; tsPath: string; pelelaPath: string; viewModelName: string }>,
-): string {
-  const componentImports = components
-    .map(({ tsPath, viewModelName }) => `import { ${viewModelName} } from "${tsPath}";`)
+function generateComponentMetadata(component: ComponentFileMetadata) {
+  const { name, viewModelName, tsPath, pelelaPath, cssPaths } = component
+  const baseName = kebabToCamelCase(name)
+  const templateVar = `${baseName}Template`
+  const cssUrlsVar = `${baseName}CssUrls`
+  const hasCss = cssPaths.length > 0
+
+  return {
+    componentImport: `import { ${viewModelName} } from "${tsPath}";`,
+
+    templateImport: `import ${templateVar}${
+      hasCss ? `, { __pelelaCssUrls as ${cssUrlsVar} }` : ''
+    } from "${pelelaPath}";`,
+
+    registration: hasCss
+      ? `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar}, { cssUrls: ${cssUrlsVar} });`
+      : `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar});`,
+  }
+}
+
+function generateAutoRegistrationCode(components: ComponentFileMetadata[]): string {
+  const processedComponents = components.map(generateComponentMetadata)
+
+  const componentImports = processedComponents
+    .map((processed) => processed.componentImport)
     .join('\n')
 
-  const templateImports = components
-    .map(({ name, pelelaPath }) => {
-      const templateVar = `${kebabToCamelCase(name)}Template`
-      return `import ${templateVar} from "${pelelaPath}";`
-    })
+  const templateImports = processedComponents
+    .map((processed) => processed.templateImport)
     .join('\n')
 
-  const registrations = components
-    .map(({ viewModelName, name }) => {
-      const templateVar = `${kebabToCamelCase(name)}Template`
-      return `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar});`
-    })
-    .join('\n')
+  const registrations = processedComponents.map((processed) => processed.registration).join('\n')
 
   return `
 ${componentImports}
@@ -274,11 +131,17 @@ ${registrations}
 `
 }
 
+function getKnownComponentTags(pelelaFilePath: string): string[] {
+  return findComponentFiles(path.dirname(pelelaFilePath)).map((component) =>
+    componentTagToKebabCase(component.viewModelName),
+  )
+}
+
 export function pelelajsPlugin(): Plugin {
   initializeI18n()
 
   return {
-    name: 'vite-plugin-pelelajs',
+    name: PLUGIN_NAME,
     enforce: 'pre',
 
     resolveId(id) {
@@ -300,20 +163,20 @@ export function pelelajsPlugin(): Plugin {
         return generateAutoRegistrationCode(components)
       }
 
-      if (!filePath.endsWith('.pelela')) {
+      const pelelaFilePath = getPelelaFilePath(filePath)
+      if (!pelelaFilePath) {
         return null
       }
 
-      const sourceCode = fs.readFileSync(filePath, 'utf-8')
-      const cssImport = getCssImport(filePath)
+      const sourceCode = fs.readFileSync(pelelaFilePath, 'utf-8')
+      const cssImport = getCssImport(pelelaFilePath)
 
-      const errorHandler = this.error.bind(this)
-      validatePelelaStructure(sourceCode, filePath, errorHandler)
-      validateNoForbiddenRootAttributes(sourceCode, filePath, errorHandler)
-      validateNoForbiddenHtmlAttributes(sourceCode, filePath, errorHandler)
-      validateComponentAttributes(sourceCode, errorHandler)
-      validateNoForeignSyntax(sourceCode, filePath, errorHandler)
-      const viewModelName = extractViewModelName(sourceCode, filePath, errorHandler)
+      const viewModelName = validatePelelaSource({
+        sourceCode,
+        filePath: pelelaFilePath,
+        knownComponentTags: getKnownComponentTags(pelelaFilePath),
+        errorFn: this.error.bind(this),
+      })
 
       const escapedTemplate = escapeTemplateForLiteral(sourceCode)
 

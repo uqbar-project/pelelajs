@@ -8,6 +8,7 @@ import { provideDefinition } from '../../src/providers/definitionProvider'
 describe('definitionProvider - Component Tag Navigation', () => {
   const fixturesDir = path.join(__dirname, '../fixtures')
   const parentPath = path.join(fixturesDir, 'parent.pelela')
+  const parentTsPath = path.join(fixturesDir, 'parent.ts')
   const childPath = path.join(fixturesDir, 'child-comp.pelela')
 
   const fileLines = [
@@ -16,6 +17,8 @@ describe('definitionProvider - Component Tag Navigation', () => {
     '    <child-comp prop-value="some"></child-comp>',
     '    </child-comp>',
     '    <div class="test"></div>',
+    '    <input enter="handleEnter" />',
+    '    <div data-enter="handleEnter"></div>',
     '</pelela>',
     '    <workspace-comp></workspace-comp>',
   ]
@@ -33,11 +36,18 @@ describe('definitionProvider - Component Tag Navigation', () => {
     }
     fs.writeFileSync(parentPath, fileLines.join('\n'))
     fs.writeFileSync(childPath, '<pelela></pelela>')
+    fs.writeFileSync(
+      parentTsPath,
+      'export class Parent {\n  handleEnter() {\n    console.log("enter")\n  }\n}\n'
+    )
   })
 
   after(() => {
     if (fs.existsSync(parentPath)) {
       fs.unlinkSync(parentPath)
+    }
+    if (fs.existsSync(parentTsPath)) {
+      fs.unlinkSync(parentTsPath)
     }
     if (fs.existsSync(childPath)) {
       fs.unlinkSync(childPath)
@@ -86,6 +96,23 @@ describe('definitionProvider - Component Tag Navigation', () => {
     assert.strictEqual(location.range.start.character, 0)
   })
 
+  it('should navigate to method on enter attribute', () => {
+    const posEnter = new vscode.Position(5, 24)
+    const location = provideDefinition(
+      mockDocument,
+      posEnter,
+      {} as vscode.CancellationToken
+    ) as vscode.Location
+
+    assert.ok(location instanceof vscode.Location)
+  })
+
+  it('should ignore data-enter attribute', () => {
+    const posEnter = new vscode.Position(6, 20)
+    const resultEnter = provideDefinition(mockDocument, posEnter, {} as vscode.CancellationToken)
+    assert.strictEqual(resultEnter, null)
+  })
+
   it('should fallback to workspace search when local file does not exist', async () => {
     const mockUri = vscode.Uri.file('/some/other/workspace-comp.pelela')
     const EXPECTED_GLOB = '**/workspace-comp.pelela'
@@ -101,8 +128,8 @@ describe('definitionProvider - Component Tag Navigation', () => {
         return Promise.resolve([mockUri])
       }
 
-      // Cursor on "workspace-comp" in "<workspace-comp>" (line 6, character 10)
-      const posWorkspace = new vscode.Position(6, 10)
+      // Cursor on "workspace-comp" in "<workspace-comp>" (line 8, character 10)
+      const posWorkspace = new vscode.Position(8, 10)
       const result = provideDefinition(mockDocument, posWorkspace, {} as vscode.CancellationToken)
 
       const location = (await Promise.resolve(result)) as vscode.Location

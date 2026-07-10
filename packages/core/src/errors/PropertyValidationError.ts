@@ -6,6 +6,8 @@ export type BindingKind =
   | 'bind-value'
   | 'bind-content'
   | 'bind-src'
+  | 'bind-alt'
+  | 'bind-enabled'
   | 'bind-style'
   | 'for-each'
   | 'if'

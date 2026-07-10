@@ -63,7 +63,21 @@ export function toCamelCase(str: string): string {
 }
 
 export function toKebabCase(str: string): string {
-  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
+  return str
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+    .toLowerCase()
+}
+
+export function findUniqueCollapsedTag(
+  tagName: string,
+  candidateTags: string[],
+): string | undefined {
+  const matchingTags = candidateTags.filter(
+    (candidateTag) => candidateTag.replace(/-/g, '') === tagName,
+  )
+
+  return matchingTags.length === 1 ? matchingTags[0] : undefined
 }
 
 export function isPropertyOrNestedPath(property: string | symbol, root: string): boolean {

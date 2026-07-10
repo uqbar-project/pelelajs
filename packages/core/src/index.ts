@@ -8,6 +8,7 @@ export {
   LINK_PREFIX,
   PROP_PREFIX,
 } from './commons/dom'
+export { findUniqueCollapsedTag } from './commons/helpers'
 export { initializeI18n, t } from './commons/i18n'
 export type { BindingKind, EventType, RegistrationType, RoutingErrorType } from './errors/index'
 export {

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  InvalidBindingAttributeError,
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
   InvalidPropertyTypeError,
@@ -9,12 +10,12 @@ import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import {
   createExtendedViewModel,
-  isBindingAttribute,
   isCustomComponent,
   renderForEachBindings,
   setupForEachBindings,
   setupSingleForEachBinding,
 } from './bindForEach'
+import { getOptionValue } from './optionValues'
 import { setupBindings } from './setupBindings'
 
 describe('bindForEach', () => {
@@ -23,6 +24,10 @@ describe('bindForEach', () => {
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('setupForEachBindings', () => {
@@ -145,33 +150,6 @@ describe('bindForEach', () => {
       expect(itemRef.current).toBe('initial')
     })
 
-    describe('isBindingAttribute', () => {
-      it('should accept framework binding prefixes', () => {
-        expect(isBindingAttribute('bind-content')).toBe(true)
-        expect(isBindingAttribute('bind-class')).toBe(true)
-        expect(isBindingAttribute('link-value')).toBe(true)
-        expect(isBindingAttribute('prop-name')).toBe(true)
-        expect(isBindingAttribute('click')).toBe(true)
-        expect(isBindingAttribute('if')).toBe(true)
-        expect(isBindingAttribute('for-each')).toBe(true)
-        expect(isBindingAttribute('index')).toBe(true)
-      })
-
-      it('should reject standard HTML attributes with hyphens', () => {
-        expect(isBindingAttribute('aria-label')).toBe(false)
-        expect(isBindingAttribute('aria-hidden')).toBe(false)
-        expect(isBindingAttribute('data-test')).toBe(false)
-        expect(isBindingAttribute('data-id')).toBe(false)
-        expect(isBindingAttribute('role')).toBe(false)
-        expect(isBindingAttribute('xml:lang')).toBe(false)
-      })
-
-      it('should reject custom kebab-case props', () => {
-        expect(isBindingAttribute('custom-prop')).toBe(false)
-        expect(isBindingAttribute('my-attribute')).toBe(false)
-      })
-    })
-
     describe('isCustomComponent', () => {
       it('should return true for registered components with hyphen in tag name', () => {
         class TestVM {
@@ -273,6 +251,36 @@ describe('bindForEach', () => {
 
       const span = container.querySelector('span')
       expect(span?.style.color).toBe('red')
+    })
+  })
+
+  describe('setupBindings', () => {
+    it('should throw InvalidBindingAttributeError for invalid bind- attributes', () => {
+      container.innerHTML = '<div bind-what="test"></div>'
+      const viewModel = {}
+
+      expect(() => {
+        setupBindings(container, viewModel)
+      }).toThrow(InvalidBindingAttributeError)
+    })
+
+    it('should throw InvalidBindingAttributeError with correct i18n message', () => {
+      container.innerHTML = '<div bind-what="test"></div>'
+      const viewModel = {}
+
+      const error = (() => {
+        try {
+          setupBindings(container, viewModel)
+          return null
+        } catch (e) {
+          return e as InvalidBindingAttributeError
+        }
+      })()
+
+      expect(error).toBeInstanceOf(InvalidBindingAttributeError)
+      expect(error?.attributeName).toBe('bind-what')
+      expect(error?.message).toContain('bind-what')
+      expect(error?.message).toContain('<div bind-what="test"></div>')
     })
   })
 
@@ -1048,7 +1056,7 @@ describe('bindForEach', () => {
       expect(spans).toHaveLength(3)
     })
 
-    it('should set option value to the for-each item object', () => {
+    it('should set index-based value on options when item is an object', () => {
       container.innerHTML = `
         <select>
           <option for-each="type of types" bind-content="type.description"></option>
@@ -1068,9 +1076,9 @@ describe('bindForEach', () => {
       const options = container.querySelectorAll('option')
       expect(options).toHaveLength(2)
       expect(options[0].textContent).toBe('Type A')
-      expect(options[0].value).toBe('[{"description":1,"value":2},"Type A",1]')
+      expect(options[0].value).toBe('0')
       expect(options[1].textContent).toBe('Type B')
-      expect(options[1].value).toBe('[{"description":1,"value":2},"Type B",2]')
+      expect(options[1].value).toBe('1')
     })
 
     it('should set option value to string when item is not object', () => {
@@ -1088,6 +1096,45 @@ describe('bindForEach', () => {
       expect(options[0].value).toBe('1')
       expect(options[1].value).toBe('2')
       expect(options[2].value).toBe('3')
+    })
+
+    it('should update selectedType with the same class instance when an option is selected', () => {
+      container.innerHTML = `
+        <select bind-value="selectedType">
+          <option for-each="type of types" bind-content="type.description"></option>
+        </select>
+      `
+
+      class BetType {
+        constructor(
+          public description: string,
+          public multiplier: number,
+        ) {}
+
+        getLabel(): string {
+          return `${this.description} x${this.multiplier}`
+        }
+      }
+
+      const typeA = new BetType('Type A', 2)
+      const typeB = new BetType('Type B', 3)
+
+      const viewModel = {
+        types: [typeA, typeB],
+        selectedType: null as BetType | null,
+      }
+
+      setupBindings(container, viewModel)
+
+      const select = container.querySelector('select') as HTMLSelectElement
+      const options = container.querySelectorAll('option')
+      expect(options).toHaveLength(2)
+      expect(getOptionValue(options[0] as HTMLOptionElement)).toBe(typeA)
+      expect(getOptionValue(options[1] as HTMLOptionElement)).toBe(typeB)
+
+      select.selectedIndex = 1
+      select.dispatchEvent(new Event('input'))
+      expect(viewModel.selectedType).toBe(typeB)
     })
 
     it('should access nested properties of item in for-each', () => {
@@ -1155,6 +1202,172 @@ describe('bindForEach', () => {
       inputs[0].dispatchEvent(new Event('input'))
 
       expect(viewModel.items[0].name).toBe('Updated Item 1')
+    })
+  })
+
+  describe('Issue #131 - bind-src within for-each', () => {
+    it('should render bind-src with simple item properties', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'image1.png' }, { image: 'image2.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('image1.png')
+      expect(images[1].getAttribute('src')).toBe('image2.png')
+    })
+
+    it('should render bind-src with nested item properties', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.profile.avatar" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ profile: { avatar: 'avatar1.png' } }, { profile: { avatar: 'avatar2.png' } }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('avatar1.png')
+      expect(images[1].getAttribute('src')).toBe('avatar2.png')
+    })
+
+    it('should update bind-src when item property changes', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'old.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const img = container.querySelector('img')!
+      expect(img.getAttribute('src')).toBe('old.png')
+
+      viewModel.people[0].image = 'new.png'
+      renderForEachBindings(bindings, viewModel)
+
+      expect(img.getAttribute('src')).toBe('new.png')
+    })
+
+    it('should handle null and undefined values in bind-src', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'initial.png' as string | null | undefined }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const img = container.querySelector('img')!
+      expect(img.getAttribute('src')).toBe('initial.png')
+
+      viewModel.people[0].image = null
+      renderForEachBindings(bindings, viewModel)
+      expect(img.getAttribute('src')).toBeNull()
+
+      viewModel.people[0].image = undefined
+      renderForEachBindings(bindings, viewModel)
+      expect(img.getAttribute('src')).toBeNull()
+    })
+
+    it('should handle bind-src when array grows', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'image1.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      expect(container.querySelectorAll('img')).toHaveLength(1)
+
+      viewModel.people.push({ image: 'image2.png' })
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('image1.png')
+      expect(images[1].getAttribute('src')).toBe('image2.png')
+    })
+
+    it('should handle bind-src when array shrinks', () => {
+      container.innerHTML = `
+        <div for-each="person of people">
+          <img bind-src="person.image" />
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'image1.png' }, { image: 'image2.png' }, { image: 'image3.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      expect(container.querySelectorAll('img')).toHaveLength(3)
+
+      viewModel.people.pop()
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('image1.png')
+      expect(images[1].getAttribute('src')).toBe('image2.png')
+    })
+
+    it('should render bind-src with index attribute', () => {
+      container.innerHTML = `
+        <div for-each="person of people" index="i">
+          <img bind-src="person.image" />
+          <span bind-content="i"></span>
+        </div>
+      `
+
+      const viewModel = {
+        people: [{ image: 'image1.png' }, { image: 'image2.png' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const images = container.querySelectorAll('img')
+      expect(images).toHaveLength(2)
+      expect(images[0].getAttribute('src')).toBe('image1.png')
+      expect(images[1].getAttribute('src')).toBe('image2.png')
+
+      const spans = container.querySelectorAll('span')
+      expect(spans[0].textContent).toBe('0')
+      expect(spans[1].textContent).toBe('1')
     })
   })
 })

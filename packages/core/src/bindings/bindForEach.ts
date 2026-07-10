@@ -1,5 +1,3 @@
-import { stringify } from 'devalue'
-import { LINK_PREFIX, PROP_PREFIX } from '../commons/dom'
 import {
   extractElementSnippet,
   filterOwnElements,
@@ -14,15 +12,22 @@ import {
   InvalidPropertyTypeError,
 } from '../errors/index'
 import { getComponentByTag } from '../registry/componentRegistry'
+import { assertValidBindingAttribute } from '../validation/assertValidBindingAttribute'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
+import { isBindingAttribute } from '../validation/bindingAttributeUtils'
+import { renderAltBindings, setupAltBindings } from './bindAlt'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import { setupClickBindings } from './bindClick'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { renderContentBindings, setupContentBindings } from './bindContent'
+import { renderEnabledBindings, setupEnabledBindings } from './bindEnabled'
+import { setupEnterBindings } from './bindEnter'
 import { renderIfBindings, setupIfBindings } from './bindIf'
+import { renderSrcBindings, setupSrcBindings } from './bindSrc'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import { getNestedProperty } from './nestedProperties'
+import { setOptionValue } from './optionValues'
 import type { ForEachBinding, ViewModel } from './types'
 
 function parseForEachExpression(
@@ -88,19 +93,29 @@ function setupBindingsForElement<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): () => void {
+  for (const attr of element.attributes) {
+    assertValidBindingAttribute(attr.name, element)
+  }
   const componentBindings = setupComponentBindings(element, viewModel)
   const bindings = {
     valueBindings: setupValueBindings(element, viewModel),
     contentBindings: setupContentBindings(element, viewModel),
+    srcBindings: setupSrcBindings(element, viewModel),
+    altBindings: setupAltBindings(element, viewModel),
+    enabledBindings: setupEnabledBindings(element, viewModel),
     ifBindings: setupIfBindings(element, viewModel),
     classBindings: setupClassBindings(element, viewModel),
     styleBindings: setupStyleBindings(element, viewModel),
   }
   setupClickBindings(element, viewModel)
+  setupEnterBindings(element, viewModel)
 
   return () => {
     renderValueBindings(bindings.valueBindings, viewModel)
     renderContentBindings(bindings.contentBindings, viewModel)
+    renderSrcBindings(bindings.srcBindings, viewModel)
+    renderAltBindings(bindings.altBindings, viewModel)
+    renderEnabledBindings(bindings.enabledBindings, viewModel)
     renderIfBindings(bindings.ifBindings, viewModel)
     renderClassBindings(bindings.classBindings, viewModel)
     renderStyleBindings(bindings.styleBindings, viewModel)
@@ -157,28 +172,6 @@ export function setupSingleForEachBinding<T extends object>(
     previousLength: 0,
     extraDependencies,
   }
-}
-
-const EXACT_BINDING_ATTRIBUTES = ['click', 'if', 'for-each', 'index'] as const
-type ExactBindingAttribute = (typeof EXACT_BINDING_ATTRIBUTES)[number]
-
-export function isBindingAttribute(attrName: string): boolean {
-  // Exclude standard HTML attributes that contain hyphens
-  if (
-    /^aria-/.test(attrName) ||
-    /^data-/.test(attrName) ||
-    attrName === 'role' ||
-    /^xml-/.test(attrName)
-  ) {
-    return false
-  }
-  // Accept only framework binding prefixes
-  return (
-    attrName.startsWith('bind-') ||
-    attrName.startsWith(LINK_PREFIX) ||
-    attrName.startsWith(PROP_PREFIX) ||
-    EXACT_BINDING_ATTRIBUTES.includes(attrName as ExactBindingAttribute)
-  )
 }
 
 export function isCustomComponent(element: HTMLElement): boolean {
@@ -245,8 +238,9 @@ export function setupForEachBindings<T extends object>(
     .filter((binding): binding is ForEachBinding => binding !== null)
 }
 
-function serializeOptionValue(item: unknown): string {
-  return typeof item === 'object' && item !== null ? stringify(item) : String(item)
+function setOptionElementValue(element: HTMLOptionElement, item: unknown, index: number): void {
+  element.value = typeof item === 'object' && item !== null ? String(index) : String(item)
+  setOptionValue(element, item)
 }
 
 function createNewElement<T extends object>(
@@ -268,7 +262,7 @@ function createNewElement<T extends object>(
   const render = setupBindingsForElement(element, extendedViewModel)
 
   if (element.tagName === 'OPTION') {
-    ;(element as HTMLOptionElement).value = serializeOptionValue(item)
+    setOptionElementValue(element as HTMLOptionElement, item, index)
   }
 
   const lastElement =
@@ -309,7 +303,7 @@ function updateExistingElements(binding: ForEachBinding, collection: unknown[]):
     rendered.indexRef.current = index
 
     if (rendered.element.tagName === 'OPTION') {
-      ;(rendered.element as HTMLOptionElement).value = serializeOptionValue(collection[index])
+      setOptionElementValue(rendered.element as HTMLOptionElement, collection[index], index)
     }
 
     rendered.render()

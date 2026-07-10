@@ -5,10 +5,15 @@ const errors = {
     invalidSyntax:
       '[pelela] Invalid {{kind}} expression: "{{expression}}". Expected format: {{format}}',
     srcOnlyForImg: 'bind-src can only be used on <img> elements. Found on <{{tag}}>.',
+    altOnlyForImg: 'bind-alt can only be used on <img> elements. Found on <{{tag}}>.',
+    enabledOnlyForFormControls:
+      'bind-enabled can only be used on form controls (input, select, button, textarea, optgroup, option, fieldset). Found on <{{tag}}>.',
     value: {
       invalidElement:
         'bind-value can only be used on input, textarea, or select elements. Found on <{{tagName}}>. Use bind-content for display elements.\nElement: {{snippet}}',
     },
+    invalidBindingAttribute:
+      '[pelela] Invalid binding attribute: "{{attributeName}}". Element: {{elementSnippet}}',
   },
   dom: {
     invalidStructure: '[pelela] {{kind}}: Cannot setup binding, {{issue}}',
@@ -33,6 +38,8 @@ const errors = {
   security: {
     domEnvironmentRequired: 'sanitizeHTML requires a DOM environment (document and DOMParser)',
     prototypePollution: '[pelela] Prototype pollution blocked on key: {{keys}}',
+    selfClosingError:
+      'Malformed HTML5: Element "{{element}}" accepts content and cannot be self-closed. Error found near: "...{{context}}..."',
   },
   routing: {
     routeNotFound: '[pelela] No route defined for "{{path}}"',
@@ -52,15 +59,33 @@ const errors = {
       'Pelela template "{{filePath}}" contains unsupported "{{ expression }}" syntax. PelelaJS does not allow mustache-style interpolation. Use binding directives like bind-content="value" instead.',
     foreignPropertyBinding:
       'Pelela template "{{filePath}}" contains Angular-like property binding ("[property]=value"). PelelaJS does not support JS constructs in HTML. Pass static attributes and delegate logic to the ViewModel.',
+    invalidComponentTagCase:
+      'Component tag <{{tag}}> must use kebab-case in .pelela files. Use <{{suggestedTag}}> instead.',
     invalidComponentAttribute:
       'Component <{{tag}}>: attribute "{{attr}}" must use "prop-" (one-way), "link-" (two-way) or "const-" prefix',
+    onlyForImg: '{{binding}} can only be used on <img> elements, not on <{{tag}}>.',
+    enterOnlyForInput: 'enter can only be used on <input> elements. Found on <{{tag}}>.',
     missingParentProperty:
       'Component <{{tag}}>: parent property "{{parentKey}}" does not exist in parent view model',
     missingViewModel: 'Pelela template "{{filePath}}" must contain view-model="..." attribute',
     forbiddenRootAttribute:
-      'Pelela template "{{filePath}}": Attribute "{{attr}}" is not allowed on root tag <{{tagName}}>. Logic and binding attributes can only be used on internal elements or component invocations.',
+      'Pelela template "{{filePath}}": Attribute "{{attr}}" is not allowed on root tag <{{tagName}}>. Logic and binding attributes can only be used on internal elements or component invocations. Found at: {{snippet}}',
+    forbiddenHtmlAttribute:
+      'Pelela template "{{filePath}}": Attribute "{{attr}}" is not allowed on HTML tag <{{tagName}}>. Logic and binding attributes can only be used on component invocations. Found at: {{snippet}}',
+    directiveOutsideRoot:
+      'Pelela template "{{filePath}}": Directive `{{directive}}` detected outside root tag <{{tagName}}>. Found at: {{snippet}}',
     unknownComponent:
       'Unknown component: <{{tagName}}>. Did you forget to register it?\nFound at: {{snippet}}',
+    unknownComponentProperty:
+      'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{propertyName}}" is not defined in the child ViewModel.\nFound at: {{snippet}}',
+  },
+  ui: {
+    errorPage: {
+      title: 'Pelela Error',
+      header: 'Pelela Error',
+      stackTrace: 'Stack Trace:',
+      noStack: 'No stack trace available',
+    },
   },
 } as const satisfies TranslationSchema['errors']
 

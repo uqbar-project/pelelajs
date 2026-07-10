@@ -1,0 +1,6 @@
+<div>
+  <pelela view-model="BadPropParent">
+    <h1>BadParent Component</h1>
+    <bad-prop-child prop-invalid="something"></bad-prop-child>
+  </pelela>
+</div>

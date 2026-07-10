@@ -93,7 +93,7 @@ The release script will:
 
 5. **Build**: Compiles all packages.
 
-6. **Publish**: Deploys `pelelajs` to the NPM registry.
+6. **Publish**: Deploys `pelelajs` and `vite-plugin-pelelajs` to the NPM registry.
 
 7. **Git Operations**: Creates a release commit, a git tag (e.g., `npm-v0.5.4`), and pushes to `main` with tags.
 

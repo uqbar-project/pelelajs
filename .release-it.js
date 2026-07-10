@@ -26,7 +26,8 @@ module.exports = {
       // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
       'pnpm --filter vite-plugin-pelelajs version ${version} --no-git-tag-version --no-git-checks',
       'cp CHANGELOG.md packages/core/CHANGELOG.md',
-      'git add packages/core/CHANGELOG.md packages/core/package.json packages/vite-plugin-pelelajs/package.json',
+      'git add packages/core/CHANGELOG.md packages/core/package.json',
+      'git add packages/vite-plugin-pelelajs/package.json',
       'pnpm run build',
     ],
     'after:release': [

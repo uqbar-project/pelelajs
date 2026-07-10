@@ -13,6 +13,7 @@ import { findViewModelFile } from '../utils/fileUtils'
 
 const BIND_ATTRIBUTE_PATTERN = /(?:bind-[a-zA-Z0-9_-]+|if|for-each)=["']([^"']+)["']/g
 const CLICK_ATTRIBUTE_PATTERN = /click=["']([^"']+)["']/g
+const ENTER_ATTRIBUTE_PATTERN = /(?<![a-zA-Z0-9_-])enter=["']([^"']+)["']/g
 
 export function provideDefinition(
   document: vscode.TextDocument,
@@ -24,7 +25,8 @@ export function provideDefinition(
   const syncResult =
     checkViewModelDefinition(document, position, lineText) ||
     checkBindAttributeDefinitions(document, position, lineText) ||
-    checkClickAttributeDefinition(document, position, lineText)
+    checkClickAttributeDefinition(document, position, lineText) ||
+    checkEnterAttributeDefinition(document, position, lineText)
 
   return syncResult ?? checkComponentTagDefinition(document, position, lineText)
 }
@@ -223,14 +225,13 @@ function handlePropertyPathDefinition(
   )
 }
 
-function checkClickAttributeDefinition(
+function checkEventAttributeDefinition(
+  pattern: RegExp,
   document: vscode.TextDocument,
   position: vscode.Position,
   lineText: string
 ): vscode.Location | null {
-  const matches = Array.from(lineText.matchAll(CLICK_ATTRIBUTE_PATTERN))
-
-  const activeMatch = matches.find((match) => {
+  const activeMatch = Array.from(lineText.matchAll(pattern)).find((match) => {
     const methodName = match[1]
     const valueStartPos = match.index + match[0].indexOf(methodName)
     const valueEndPos = valueStartPos + methodName.length
@@ -241,6 +242,22 @@ function checkClickAttributeDefinition(
 
   const typescriptFilePath = findViewModelFile(document.uri)
   return typescriptFilePath ? findMethodDefinition(typescriptFilePath, activeMatch[1]) : null
+}
+
+function checkClickAttributeDefinition(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  lineText: string
+): vscode.Location | null {
+  return checkEventAttributeDefinition(CLICK_ATTRIBUTE_PATTERN, document, position, lineText)
+}
+
+function checkEnterAttributeDefinition(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  lineText: string
+): vscode.Location | null {
+  return checkEventAttributeDefinition(ENTER_ATTRIBUTE_PATTERN, document, position, lineText)
 }
 
 export function createDefinitionProvider(): vscode.Disposable {

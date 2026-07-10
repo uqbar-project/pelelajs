@@ -78,6 +78,15 @@ export const vscodeStub = {
     Folder: 18,
   },
 
+  Hover: class Hover {
+    contents: unknown
+    range: unknown
+    constructor(contents: unknown, range?: unknown) {
+      this.contents = contents
+      this.range = range
+    }
+  },
+
   SnippetString: class SnippetString {
     value: string
     constructor(value: string) {

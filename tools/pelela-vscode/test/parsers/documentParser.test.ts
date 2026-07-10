@@ -1,8 +1,11 @@
 import * as assert from 'node:assert'
 import { describe, it } from 'mocha'
+import type * as vscode from 'vscode'
 import {
+  findForEachInElement,
   getAttributeValueMatch,
   getCurrentAttributeName,
+  getCurrentTagName,
   isInsideTag,
   isStartingTag,
   parseForEachExpression,
@@ -98,6 +101,43 @@ describe('documentParser', () => {
     })
   })
 
+  describe('getCurrentTagName', () => {
+    it('should extract the tag name from an opening tag', () => {
+      const result = getCurrentTagName('<div ')
+      assert.strictEqual(result, 'div')
+    })
+
+    it('should extract the tag name with attributes present', () => {
+      const result = getCurrentTagName('<img src="test" ')
+      assert.strictEqual(result, 'img')
+    })
+
+    it('should extract the tag name from a Pelela root tag', () => {
+      const result = getCurrentTagName('<pelela ')
+      assert.strictEqual(result, 'pelela')
+    })
+
+    it('should extract the tag name from a component tag', () => {
+      const result = getCurrentTagName('<component ')
+      assert.strictEqual(result, 'component')
+    })
+
+    it('should return null for plain text', () => {
+      const result = getCurrentTagName('some text')
+      assert.strictEqual(result, null)
+    })
+
+    it('should handle whitespace after <', () => {
+      const result = getCurrentTagName('< input ')
+      assert.strictEqual(result, 'input')
+    })
+
+    it('should return the last tag when multiple tags are present', () => {
+      const result = getCurrentTagName('<div><img ')
+      assert.strictEqual(result, 'img')
+    })
+  })
+
   describe('parseForEachExpression', () => {
     it('should parse a valid for-each expression', () => {
       const result = parseForEachExpression('for-each="item of items"')
@@ -153,6 +193,96 @@ describe('documentParser', () => {
     it('should return null for an empty string', () => {
       const result = parsePropertyPath('')
       assert.strictEqual(result, null)
+    })
+  })
+
+  describe('findForEachInElement', () => {
+    function createMockDocument(lines: string[]): vscode.TextDocument {
+      return {
+        lineAt: (lineIndex: number) => ({ text: lines[lineIndex] }),
+      } as unknown as vscode.TextDocument
+    }
+
+    it('should extract index name when present', () => {
+      const document = createMockDocument([
+        '<div for-each="item of items" index="currentIndex">',
+        '  <span bind-content="item.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.indexName, 'currentIndex')
+    })
+
+    it('should return null indexName when index attribute is absent', () => {
+      const document = createMockDocument([
+        '<div for-each="item of items">',
+        '  <span bind-content="item.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.indexName, null)
+    })
+
+    it('should return null when no for-each is found', () => {
+      const document = createMockDocument(['<div>', '  <span bind-content="name">'])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result, null)
+    })
+
+    it('should return itemName and itemPos correctly', () => {
+      const document = createMockDocument([
+        '<div for-each="product of products">',
+        '  <span bind-content="product.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.itemName, 'product')
+      assert.strictEqual(typeof result?.itemPos, 'number')
+    })
+
+    it('should return null when cursor is after an inline single-line for-each element', () => {
+      const document = createMockDocument([
+        '<ul>',
+        '  <li for-each="product of products">{{product}}</li>',
+        '</ul>',
+      ])
+      const result = findForEachInElement(document, 2)
+      assert.strictEqual(result, null)
+    })
+
+    it('should find for-each when cursor is on the same line as an inline element', () => {
+      const document = createMockDocument([
+        '<ul>',
+        '  <li for-each="product of products">{{product}}</li>',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.itemName, 'product')
+    })
+
+    it('should return null for bind-content outside an inline closed for-each', () => {
+      const document = createMockDocument([
+        '<li for-each="product of products">{{product}}</li>',
+        '<span bind-content="product.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result, null)
+    })
+
+    it('should return null for bind-content after a multiline closed for-each', () => {
+      const document = createMockDocument([
+        '<div for-each="product of products">',
+        '  <span>{{product}}</span>',
+        '</div>',
+        '<span bind-content="product.name">',
+      ])
+      const result = findForEachInElement(document, 3)
+      assert.strictEqual(result, null)
+    })
+
+    it('should find for-each for bind-content inside a multiline open for-each', () => {
+      const document = createMockDocument([
+        '<div for-each="product of products">',
+        '  <span bind-content="product.name">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.itemName, 'product')
     })
   })
 })

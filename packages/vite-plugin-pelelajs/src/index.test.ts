@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { t } from 'pelelajs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   escapeTemplateForLiteral,
@@ -166,6 +167,35 @@ describe('pelelajsPlugin', () => {
 
       process.cwd = originalCwd
     })
+
+    it('generates registration code with cssUrls when component has adjacent css file', () => {
+      const srcDir = path.join(tempDir, 'src')
+      fs.mkdirSync(srcDir, { recursive: true })
+      fs.writeFileSync(path.join(srcDir, 'styled.ts'), 'export class Styled {}')
+      fs.writeFileSync(
+        path.join(srcDir, 'styled.pelela'),
+        '<pelela view-model="Styled"><h1>Styled</h1></pelela>',
+      )
+      fs.writeFileSync(path.join(srcDir, 'styled.css'), 'h1 { color: red; }')
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+
+        const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+
+        expect(result).toContain(
+          'import styledTemplate, { __pelelaCssUrls as styledCssUrls } from "./src/styled.pelela"',
+        )
+        expect(result).toContain(
+          'defineComponent("Styled", Styled, styledTemplate, { cssUrls: styledCssUrls })',
+        )
+      } finally {
+        process.cwd = originalCwd
+      }
+    })
   })
 
   describe('load - pelela files', () => {
@@ -214,7 +244,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.length).toBeGreaterThan(0)
+      expect(errors).toContain(t('errors.compiler.missingRoot', { filePath: pelelaPath }))
     })
 
     it('reports error when view-model attribute is missing', () => {
@@ -229,7 +259,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('view-model="..."'))).toBe(true)
+      expect(errors).toContain(t('errors.compiler.missingViewModel', { filePath: pelelaPath }))
     })
 
     it('reports error when pelela tags are unbalanced', () => {
@@ -244,7 +274,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('unbalanced'))).toBe(true)
+      expect(errors).toContain(t('errors.compiler.unbalancedTags', { filePath: pelelaPath }))
     })
 
     it('includes css import when matching css file exists', () => {
@@ -259,7 +289,9 @@ describe('pelelajsPlugin', () => {
       const mockContext = { error: () => {} }
       const result = handler.call(mockContext as never, pelelaPath, {} as never) as string
 
-      expect(result).toContain('import "./styled.css"')
+      expect(result).toContain(
+        'export const __pelelaCssUrls = [new URL("./styled.css", import.meta.url).href]',
+      )
     })
 
     it('reports error when multiple root tags exist', () => {
@@ -277,7 +309,9 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('root tags'))).toBe(true)
+      expect(errors).toContain(
+        t('errors.compiler.multipleRoots', { filePath: pelelaPath, count: 2 }),
+      )
     })
 
     it('reports error when foreign interpolation syntax is used', () => {
@@ -292,7 +326,7 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('{{ expression }}'))).toBe(true)
+      expect(errors).toContain(t('errors.compiler.foreignInterpolation', { filePath: pelelaPath }))
     })
 
     it('reports error when foreign property binding syntax is used', () => {
@@ -307,7 +341,9 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('[property]=value'))).toBe(true)
+      expect(errors).toContain(
+        t('errors.compiler.foreignPropertyBinding', { filePath: pelelaPath }),
+      )
     })
 
     it('reports error when forbidden attributes are on root tag', () => {
@@ -322,7 +358,37 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('not allowed on root tag'))).toBe(true)
+      expect(errors).toContain(
+        t('errors.compiler.forbiddenRootAttribute', {
+          filePath: pelelaPath,
+          tagName: 'pelela',
+          attr: 'link-value',
+          snippet: '<pelela link-value="...">',
+        }),
+      )
+    })
+
+    it('should interpolate attribute name in forbidden root attribute error', () => {
+      const pelelaPath = path.join(tempDir, 'interpolation.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home" link-value="x"></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors[0]).toBe(
+        t('errors.compiler.forbiddenRootAttribute', {
+          filePath: pelelaPath,
+          tagName: 'pelela',
+          attr: 'link-value',
+          snippet: '<pelela link-value="...">',
+        }),
+      )
+      expect(errors[0]).not.toContain('{{attr}}')
+      expect(errors[0]).not.toContain('undefined')
     })
 
     it('reports error when link attributes are on standard HTML tags', () => {
@@ -340,7 +406,14 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('not allowed on root tag'))).toBe(true)
+      expect(errors).toContain(
+        t('errors.compiler.forbiddenHtmlAttribute', {
+          filePath: pelelaPath,
+          tagName: 'div',
+          attr: 'link-value',
+          snippet: '<div link-value="...">',
+        }),
+      )
     })
 
     it('reports error when component attribute lacks prop-* or link-* prefix', () => {
@@ -358,7 +431,144 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('must use "prop-"'))).toBe(true)
+      expect(errors).toContain(
+        t('errors.compiler.invalidComponentAttribute', { tag: 'my-comp', attr: 'value' }),
+      )
+    })
+
+    it('reports error when component tag uses camelCase', () => {
+      const pelelaPath = path.join(tempDir, 'camel-case-component.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><myComponent prop-value="x"></myComponent></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(
+        t('errors.compiler.invalidComponentTagCase', {
+          tag: 'myComponent',
+          suggestedTag: 'my-component',
+        }),
+      )
+    })
+
+    it('reports error when component tag uses camelCase in pelela request with query params', () => {
+      const pelelaPath = path.join(tempDir, 'camel-case-component-query.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><myComponent prop-value="x"></myComponent></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, `${pelelaPath}?import&t=123`, {} as never)
+
+      expect(errors).toContain(
+        t('errors.compiler.invalidComponentTagCase', {
+          tag: 'myComponent',
+          suggestedTag: 'my-component',
+        }),
+      )
+    })
+
+    it('reports error when component tag collapsed a registered kebab-case component', () => {
+      fs.writeFileSync(path.join(tempDir, 'person-row.ts'), 'export class PersonRow {}')
+      fs.writeFileSync(
+        path.join(tempDir, 'person-row.pelela'),
+        '<pelela view-model="PersonRow"></pelela>',
+      )
+      const pelelaPath = path.join(tempDir, 'collapsed-component.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><personrow prop-value="x"></personrow></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(
+        t('errors.compiler.invalidComponentTagCase', {
+          tag: 'personrow',
+          suggestedTag: 'person-row',
+        }),
+      )
+    })
+
+    it('accepts registered single-word component tags', () => {
+      fs.writeFileSync(path.join(tempDir, 'counter.ts'), 'export class Counter {}')
+      fs.writeFileSync(
+        path.join(tempDir, 'counter.pelela'),
+        '<pelela view-model="Counter"></pelela>',
+      )
+      const pelelaPath = path.join(tempDir, 'single-word-component.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><counter prop-value="x"></counter></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toEqual([])
+    })
+
+    it('reports error when component tag uses PascalCase', () => {
+      const pelelaPath = path.join(tempDir, 'pascal-case-component.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><MyComponent prop-value="x"></MyComponent></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(
+        t('errors.compiler.invalidComponentTagCase', {
+          tag: 'MyComponent',
+          suggestedTag: 'my-component',
+        }),
+      )
+    })
+
+    it('accepts uppercase standard HTML tags', () => {
+      const pelelaPath = path.join(tempDir, 'uppercase-html.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><DIV></DIV></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toEqual([])
     })
 
     it('accepts prop-* prefix on component attributes', () => {
@@ -376,7 +586,9 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+      expect(
+        errors.some((errorMessage) => errorMessage.includes('invalidComponentAttribute')),
+      ).toBe(false)
     })
 
     it('accepts link-* prefix on component attributes', () => {
@@ -394,7 +606,9 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+      expect(
+        errors.some((errorMessage) => errorMessage.includes('invalidComponentAttribute')),
+      ).toBe(false)
     })
 
     it('reports error for each invalid attribute when component has multiple invalid attributes', () => {
@@ -412,7 +626,13 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      const invalidAttrErrors = errors.filter((e) => e.includes('must use "prop-"'))
+      const invalidAttrErrors = errors.filter(
+        (errorMessage) =>
+          errorMessage ===
+            t('errors.compiler.invalidComponentAttribute', { tag: 'my-comp', attr: 'class' }) ||
+          errorMessage ===
+            t('errors.compiler.invalidComponentAttribute', { tag: 'my-comp', attr: 'id' }),
+      )
       expect(invalidAttrErrors).toHaveLength(2)
     })
 
@@ -432,7 +652,9 @@ describe('pelelajsPlugin', () => {
 
         handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+        expect(
+          errors.some((errorMessage) => errorMessage.includes('invalidComponentAttribute')),
+        ).toBe(false)
       })
 
       it('does not report false positive when link-* value contains "="', () => {
@@ -450,7 +672,9 @@ describe('pelelajsPlugin', () => {
 
         handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+        expect(
+          errors.some((errorMessage) => errorMessage.includes('invalidComponentAttribute')),
+        ).toBe(false)
       })
 
       it('does not report false positive when single-quoted value contains "="', () => {
@@ -468,7 +692,9 @@ describe('pelelajsPlugin', () => {
 
         handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-        expect(errors.some((e) => e.includes('invalidComponentAttribute'))).toBe(false)
+        expect(
+          errors.some((errorMessage) => errorMessage.includes('invalidComponentAttribute')),
+        ).toBe(false)
       })
 
       it('still detects truly invalid attributes when valid ones have "=" in their values', () => {
@@ -486,7 +712,11 @@ describe('pelelajsPlugin', () => {
 
         handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-        const invalidAttrErrors = errors.filter((e) => e.includes('must use "prop-"'))
+        const invalidAttrErrors = errors.filter(
+          (errorMessage) =>
+            errorMessage ===
+            t('errors.compiler.invalidComponentAttribute', { tag: 'my-comp', attr: 'class' }),
+        )
         expect(invalidAttrErrors).toHaveLength(1)
       })
 
@@ -505,8 +735,282 @@ describe('pelelajsPlugin', () => {
 
         handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-        expect(errors.some((e) => e.includes('must use "prop-"'))).toBe(true)
+        expect(errors).toContain(
+          t('errors.compiler.invalidComponentAttribute', { tag: 'my-comp', attr: 'disabled' }),
+        )
       })
+    })
+  })
+
+  describe('validateBindingElementRestrictions', () => {
+    let tempDir: string
+
+    beforeEach(() => {
+      tempDir = createTempDir()
+    })
+
+    afterEach(() => {
+      removeTempDir(tempDir)
+    })
+
+    it('allows bind-alt on img elements', () => {
+      const pelelaPath = path.join(tempDir, 'valid-alt.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Gallery"><img bind-alt="altText" /></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((errorMessage) => errorMessage.includes('onlyForImg'))).toBe(false)
+    })
+
+    it('reports error when bind-alt is used on a non-img element', () => {
+      const pelelaPath = path.join(tempDir, 'invalid-alt.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div bind-alt="altText"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(t('errors.compiler.onlyForImg', { binding: 'bind-alt', tag: 'div' }))
+    })
+
+    it('reports error when bind-src is used on a non-img element', () => {
+      const pelelaPath = path.join(tempDir, 'invalid-src.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div bind-src="srcUrl"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(t('errors.compiler.onlyForImg', { binding: 'bind-src', tag: 'div' }))
+    })
+
+    it('reports error when bind-alt has extra whitespace before equals sign', () => {
+      const pelelaPath = path.join(tempDir, 'alt-space-before.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div bind-alt ="altText"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(t('errors.compiler.onlyForImg', { binding: 'bind-alt', tag: 'div' }))
+    })
+
+    it('reports error when bind-alt has extra whitespace after equals sign', () => {
+      const pelelaPath = path.join(tempDir, 'alt-space-after.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div bind-alt= "altText"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(t('errors.compiler.onlyForImg', { binding: 'bind-alt', tag: 'div' }))
+    })
+
+    it('reports error when bind-alt has extra whitespace around equals sign', () => {
+      const pelelaPath = path.join(tempDir, 'alt-space-both.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div bind-alt = "altText"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(t('errors.compiler.onlyForImg', { binding: 'bind-alt', tag: 'div' }))
+    })
+
+    it('reports error when bind-src has extra whitespace around equals sign', () => {
+      const pelelaPath = path.join(tempDir, 'src-space.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div bind-src = "srcUrl"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(t('errors.compiler.onlyForImg', { binding: 'bind-src', tag: 'div' }))
+    })
+
+    it('should not trigger for data-bind-alt on non-img elements', () => {
+      const pelelaPath = path.join(tempDir, 'data-alt.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div data-bind-alt="x"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toHaveLength(0)
+    })
+
+    it('should not trigger for data-bind-src on non-img elements', () => {
+      const pelelaPath = path.join(tempDir, 'data-src.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div data-bind-src="x"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toHaveLength(0)
+    })
+  })
+
+  describe('validateInputOnlyEvents', () => {
+    let tempDir: string
+
+    beforeEach(() => {
+      tempDir = createTempDir()
+    })
+
+    afterEach(() => {
+      removeTempDir(tempDir)
+    })
+
+    it('allows enter on input elements', () => {
+      const pelelaPath = path.join(tempDir, 'valid-enter.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Form"><input enter="onSubmit" /></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors.some((errorMessage) => errorMessage.includes('enterOnlyForInput'))).toBe(false)
+    })
+
+    it('reports error when enter is used on a non-input element', () => {
+      const pelelaPath = path.join(tempDir, 'invalid-enter.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><div enter="onClick"></div></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(t('errors.compiler.enterOnlyForInput', { tag: 'div' }))
+    })
+
+    it('reports error when enter has extra whitespace around equals sign', () => {
+      const pelelaPath = path.join(tempDir, 'enter-space.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><div enter = "onClick"></div></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toContain(t('errors.compiler.enterOnlyForInput', { tag: 'div' }))
+    })
+
+    it('reports error when enter is used on multiple non-input elements', () => {
+      const pelelaPath = path.join(tempDir, 'multi-enter.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><span enter="fn1"></span><section enter="fn2"></section></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      const enterErrors = errors.filter(
+        (errorMessage) =>
+          errorMessage === t('errors.compiler.enterOnlyForInput', { tag: 'span' }) ||
+          errorMessage === t('errors.compiler.enterOnlyForInput', { tag: 'section' }),
+      )
+      expect(enterErrors).toHaveLength(2)
+    })
+
+    it('should not trigger for data-enter on non-input elements', () => {
+      const pelelaPath = path.join(tempDir, 'data-enter.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"><div data-enter="fn"></div></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+
+      expect(errors).toHaveLength(0)
     })
   })
 

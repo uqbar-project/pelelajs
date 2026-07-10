@@ -39,6 +39,21 @@
       "valueSet": "v"
     },
     {
+      "name": "bind-src",
+      "description": "Pelela: Binds the src attribute to a ViewModel property (for img elements)",
+      "valueSet": "v"
+    },
+    {
+      "name": "bind-alt",
+      "description": "Pelela: Binds the alt attribute to a ViewModel property (for img elements, a11y/WCAG)",
+      "valueSet": "v"
+    },
+    {
+      "name": "bind-enabled",
+      "description": "Pelela: Binds the enabled state to a boolean ViewModel property (for input, select, button, textarea, optgroup, option, fieldset)",
+      "valueSet": "v"
+    },
+    {
       "name": "if",
       "description": "Pelela: Conditional rendering based on a ViewModel property",
       "valueSet": "v"
@@ -56,6 +71,11 @@
     {
       "name": "click",
       "description": "Pelela: Binds click event to a ViewModel method",
+      "valueSet": "v"
+    },
+    {
+      "name": "enter",
+      "description": "Pelela: Binds Enter keypress event to a ViewModel method on input elements",
       "valueSet": "v"
     },
     {

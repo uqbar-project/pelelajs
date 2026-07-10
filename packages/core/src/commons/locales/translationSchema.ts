@@ -2,9 +2,12 @@ type ErrorTranslations = {
   bindings: {
     invalidSyntax: string
     srcOnlyForImg: string
+    altOnlyForImg: string
+    enabledOnlyForFormControls: string
     value: {
       invalidElement: string
     }
+    invalidBindingAttribute: string
   }
   dom: {
     invalidStructure: string
@@ -26,6 +29,7 @@ type ErrorTranslations = {
   security: {
     domEnvironmentRequired: string
     prototypePollution: string
+    selfClosingError: string
   }
   routing: {
     routeNotFound: string
@@ -40,11 +44,25 @@ type ErrorTranslations = {
     unbalancedTags: string
     foreignInterpolation: string
     foreignPropertyBinding: string
+    invalidComponentTagCase: string
     invalidComponentAttribute: string
+    onlyForImg: string
+    enterOnlyForInput: string
     missingParentProperty: string
     missingViewModel: string
     forbiddenRootAttribute: string
+    forbiddenHtmlAttribute: string
+    directiveOutsideRoot: string
     unknownComponent: string
+    unknownComponentProperty: string
+  }
+  ui: {
+    errorPage: {
+      title: string
+      header: string
+      stackTrace: string
+      noStack: string
+    }
   }
 }
 
