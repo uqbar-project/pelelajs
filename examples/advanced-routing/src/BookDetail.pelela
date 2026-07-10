@@ -1,0 +1,10 @@
+<pelela view-model="BookDetail">
+  <h1 bind-content="title"></h1>
+  <dl>
+    <dt>Autor</dt>
+    <dd bind-content="author"></dd>
+    <dt>Año de publicación</dt>
+    <dd bind-content="year"></dd>
+  </dl>
+  <button click="goBack">Volver al listado</button>
+</pelela>

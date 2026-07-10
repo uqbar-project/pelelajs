@@ -1,0 +1,15 @@
+<pelela view-model="BookList">
+  <h1>Libros</h1>
+  <p bind-content="description"></p>
+  <ul>
+    <li for-each="book of books">
+      <article>
+        <h2 bind-content="book.title"></h2>
+        <p><strong>Autor:</strong> <span bind-content="book.author"></span></p>
+        <p><strong>Año:</strong> <span bind-content="book.year"></span></p>
+        <button click="viewDetail">Ver detalle</button>
+      </article>
+    </li>
+  </ul>
+  <small bind-content="platform"></small>
+</pelela>

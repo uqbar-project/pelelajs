@@ -24,6 +24,7 @@ describe('htmlUtils', () => {
       assert.ok(elements.includes('button'))
       assert.ok(elements.includes('input'))
       assert.ok(elements.includes('section'))
+      assert.ok(elements.includes('outlet'))
     })
 
     it('should not include duplicate elements', () => {

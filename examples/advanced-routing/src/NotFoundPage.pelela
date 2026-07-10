@@ -1,0 +1,5 @@
+<pelela view-model="NotFoundPage">
+  <h1>Página no encontrada</h1>
+  <p bind-content="message"></p>
+  <a href="/">Volver al inicio</a>
+</pelela>
