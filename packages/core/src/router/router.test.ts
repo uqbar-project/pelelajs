@@ -598,6 +598,47 @@ describe('router', () => {
       expect(container.querySelector('p')!.innerHTML).toBe('John Doe')
     })
 
+    it('should update layout ViewModel state when navigating between children', () => {
+      class LayoutWithBreadcrumb {
+        breadcrumb = ''
+        constructor() {
+          this.breadcrumb = window.location.pathname.startsWith('/detail') ? ' > Detalle' : ''
+        }
+      }
+      class PageOne {
+        label = 'One'
+      }
+      class PageTwo {
+        label = 'Two'
+      }
+
+      const layoutBreadcrumbTemplate =
+        '<pelela view-model="LayoutWithBreadcrumb"><nav><span bind-content="breadcrumb"></span></nav><main><outlet></outlet></main></pelela>'
+      const pageOneTemplate = '<pelela view-model="PageOne"><p bind-content="label"></p></pelela>'
+      const pageTwoTemplate = '<pelela view-model="PageTwo"><p bind-content="label"></p></pelela>'
+
+      defineComponent('LayoutWithBreadcrumb', LayoutWithBreadcrumb, layoutBreadcrumbTemplate)
+      defineComponent('PageOne', PageOne, pageOneTemplate)
+      defineComponent('PageTwo', PageTwo, pageTwoTemplate)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: LayoutWithBreadcrumb,
+          children: [
+            { path: '', component: PageOne },
+            { path: 'detail', component: PageTwo },
+          ],
+        },
+      ])
+
+      expect(container.querySelector('nav span')!.textContent).toBe('')
+
+      router.navigateTo('/detail')
+
+      expect(container.querySelector('nav span')!.textContent).toBe(' > Detalle')
+    })
+
     it('should throw when a route has layout but no children', () => {
       defineComponent('MainLayout', MainLayout, layoutTemplate)
 
@@ -680,6 +721,55 @@ describe('router', () => {
       const pageLink = document.querySelector('link[data-pelela-css-url="/styles/page.css"]')
       expect(layoutLink).toBeInstanceOf(HTMLLinkElement)
       expect(pageLink).toBeInstanceOf(HTMLLinkElement)
+    })
+
+    it('should keep layout CSS when navigating between children that share the same layout', () => {
+      class PageA {
+        label = 'A'
+      }
+      class PageB {
+        label = 'B'
+      }
+      const pageATemplate = '<pelela view-model="PageA"><span bind-content="label"></span></pelela>'
+      const pageBTemplate = '<pelela view-model="PageB"><span bind-content="label"></span></pelela>'
+
+      defineComponent('LayoutWithCss', LayoutWithCss, layoutCssTemplate, {
+        cssUrls: ['/styles/layout.css'],
+      })
+      defineComponent('PageA', PageA, pageATemplate, {
+        cssUrls: ['/styles/page-a.css'],
+      })
+      defineComponent('PageB', PageB, pageBTemplate, {
+        cssUrls: ['/styles/page-b.css'],
+      })
+
+      router.start(container, [
+        {
+          path: '',
+          layout: LayoutWithCss,
+          children: [
+            { path: '', component: PageA },
+            { path: 'b', component: PageB },
+          ],
+        },
+      ])
+
+      expect(
+        document.querySelector('link[data-pelela-css-url="/styles/layout.css"]'),
+      ).toBeInstanceOf(HTMLLinkElement)
+      expect(
+        document.querySelector('link[data-pelela-css-url="/styles/page-a.css"]'),
+      ).toBeInstanceOf(HTMLLinkElement)
+
+      router.navigateTo('/b')
+
+      expect(
+        document.querySelector('link[data-pelela-css-url="/styles/layout.css"]'),
+      ).toBeInstanceOf(HTMLLinkElement)
+      expect(document.querySelector('link[data-pelela-css-url="/styles/page-a.css"]')).toBeNull()
+      expect(
+        document.querySelector('link[data-pelela-css-url="/styles/page-b.css"]'),
+      ).toBeInstanceOf(HTMLLinkElement)
     })
 
     it('should remove layout CSS and page CSS when navigating to a different route', () => {

@@ -1,0 +1,14 @@
+<pelela view-model="MainLayout">
+  <header>
+    <nav>
+      <a href="/">Inicio</a>
+      <span bind-content="breadcrumb"></span>
+    </nav>
+  </header>
+  <main>
+    <outlet prop-platform="platform"></outlet>
+  </main>
+  <footer>
+    <p>&copy; 2026 PelelaJS — Ejemplo de routing con layout</p>
+  </footer>
+</pelela>

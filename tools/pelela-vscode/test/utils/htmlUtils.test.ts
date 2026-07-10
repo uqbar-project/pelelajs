@@ -24,6 +24,7 @@ describe('htmlUtils', () => {
       assert.ok(elements.includes('button'))
       assert.ok(elements.includes('input'))
       assert.ok(elements.includes('section'))
+      assert.ok(elements.includes('outlet'))
     })
 
     it('should not include duplicate elements', () => {
@@ -86,9 +87,9 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('if'))
     })
 
-    it('should return exactly 13 attributes', () => {
+    it('should return exactly 16 attributes', () => {
       const attributes = getPelelaAttributes()
-      assert.strictEqual(attributes.length, 13)
+      assert.strictEqual(attributes.length, 16)
     })
   })
 
@@ -153,7 +154,7 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('bind-enabled'))
       assert.ok(attributes.includes('enter'))
       assert.ok(attributes.includes('view-model'))
-      assert.strictEqual(attributes.length, 13)
+      assert.strictEqual(attributes.length, 16)
     })
   })
 })

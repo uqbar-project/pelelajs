@@ -66,7 +66,7 @@ function getOutletBindingType(attrName: string): 'prop' | 'const' | 'link' | und
 }
 
 function getOutletBindingPageProperty(attrName: string): string | undefined {
-  var result: string | undefined
+  let result: string | undefined
   if (attrName.startsWith(PROP_PREFIX)) result = PROP_PREFIX
   if (attrName.startsWith(CONST_PREFIX)) result = CONST_PREFIX
   if (attrName.startsWith(LINK_PREFIX)) result = LINK_PREFIX
@@ -158,6 +158,10 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
 
     currentMatch = match
 
+    if (nextPath) {
+      history.pushState(null, '', nextPath)
+    }
+
     if (match.route.layout) {
       const layoutEntry = getComponentEntry(match.route.layout)
       if (!layoutEntry) {
@@ -168,20 +172,21 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
       const combinedHtml = combineLayoutAndPage(layoutEntry.template, pageEntry.template)
       mountTemplate(container!, combinedHtml)
       setupOutletBindings(container!, outletBindings)
+
+      for (const cssUrl of oldRouteCss) {
+        removeStylesheetLinks(cssUrl)
+      }
+
       loadRouteCss(layoutEntry)
     } else {
       mountTemplate(container!, pageEntry.template)
-    }
 
-    for (const cssUrl of oldRouteCss) {
-      removeStylesheetLinks(cssUrl)
+      for (const cssUrl of oldRouteCss) {
+        removeStylesheetLinks(cssUrl)
+      }
     }
 
     loadRouteCss(pageEntry)
-
-    if (nextPath) {
-      history.pushState(null, '', nextPath)
-    }
   } catch (error) {
     resetRouterActive()
     handleError(error)

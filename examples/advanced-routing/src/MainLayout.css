@@ -1,0 +1,44 @@
+/* MainLayout styles */
+
+pelela[view-model="MainLayout"] {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+header {
+  background-color: #1e293b;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+nav a {
+  color: #93c5fd;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+nav span {
+  color: #cbd5e1;
+}
+
+main {
+  flex: 1;
+}
+
+footer {
+  position: sticky;
+  bottom: 20px;
+  padding: 1rem 2rem;
+  background-color: #e2e8f0;
+  color: #64748b;
+  border-radius: 0.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+}

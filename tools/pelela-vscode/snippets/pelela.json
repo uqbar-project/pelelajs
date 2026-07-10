@@ -1,4 +1,9 @@
 {
+  "outlet": {
+    "prefix": "outlet",
+    "body": ["<outlet$1>$0"],
+    "description": "Placeholder for child route content in a layout"
+  },
   "Pelela root": {
     "prefix": "pelela",
     "body": ["<pelela view-model=\"$1\">", "  $0", "</pelela>"],

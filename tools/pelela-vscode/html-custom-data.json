@@ -20,6 +20,24 @@
           "description": "Specifies the ViewModel class to bind to this component"
         }
       ]
+    },
+    {
+      "name": "outlet",
+      "description": "Placeholder for child route content in a layout template",
+      "attributes": [
+        {
+          "name": "prop-{name}",
+          "description": "One-way binding from layout ViewModel to page ViewModel"
+        },
+        {
+          "name": "const-{name}",
+          "description": "Constant value passed to the page ViewModel"
+        },
+        {
+          "name": "link-{name}",
+          "description": "Two-way binding between layout ViewModel and page ViewModel"
+        }
+      ]
     }
   ],
   "globalAttributes": [
