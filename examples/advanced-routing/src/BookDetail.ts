@@ -9,7 +9,7 @@ export class BookDetail {
 
   constructor() {
     const { id } = router.urlParameters()
-    const book = books.find((book) => book.id === id)
+    const book = books.find((_book) => _book.id === id)
 
     if (book) {
       this.title = book.title
