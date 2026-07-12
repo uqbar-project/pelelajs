@@ -1,6 +1,7 @@
 import {
   CONST_PREFIX,
   isPelelaRootTag,
+  isRouterHtmlTag,
   isStandardHtmlTag,
   isValidComponentAttribute,
   LINK_PREFIX,
@@ -107,7 +108,7 @@ function assertChildViewModelProperty(
 
 function isPotentialComponent(element: HTMLElement): boolean {
   const tagName = element.tagName.toLowerCase()
-  return !isPelelaRootTag(tagName) && !isStandardHtmlTag(tagName)
+  return !isPelelaRootTag(tagName) && !isStandardHtmlTag(tagName) && !isRouterHtmlTag(tagName)
 }
 
 function validateTags(root: HTMLElement, registeredTags: string[]): void {

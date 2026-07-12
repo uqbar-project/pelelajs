@@ -67,6 +67,14 @@ describe('joinPaths', () => {
   it('should handle root parent with child', () => {
     expect(joinPaths('', '')).toBe('/')
   })
+
+  it('should preserve catch-all star at root level', () => {
+    expect(joinPaths('', '*')).toBe('*')
+  })
+
+  it('should prefix nested star with parent path', () => {
+    expect(joinPaths('admin', '*')).toBe('/admin/*')
+  })
 })
 
 describe('flattenRoutes', () => {
@@ -119,14 +127,14 @@ describe('flattenRoutes', () => {
   })
 
   it('should throw when a route has both component and children', () => {
-    const routes: RouteDefinition[] = [
+    const routes = [
       {
         path: '',
         component: ProductCatalog,
         layout: MainLayout,
-        children: [],
+        children: [] as RouteDefinition[],
       },
-    ]
+    ] as unknown as RouteDefinition[]
 
     expect(() => flattenRoutes(routes)).toThrow('cannot have a component')
   })
@@ -254,6 +262,52 @@ describe('routeMatcher', () => {
       const result = matchRoute('/a/b/c/d/e', '', ROUTES)
 
       expect(result.route.component).toBe(NotFoundPage)
+    })
+  })
+
+  describe('nested catch-all routes', () => {
+    it('should match paths under the nested wildcard prefix', () => {
+      const routes: FlattenedRoute[] = [{ path: '/admin/*', component: NotFoundPage }]
+
+      const result = matchRoute('/admin/users', '', routes)
+      expect(result.route.component).toBe(NotFoundPage)
+    })
+
+    it('should match deeply nested paths under the nested wildcard', () => {
+      const routes: FlattenedRoute[] = [{ path: '/admin/*', component: NotFoundPage }]
+
+      const result = matchRoute('/admin/users/roles/edit', '', routes)
+      expect(result.route.component).toBe(NotFoundPage)
+    })
+
+    it('should match just the prefix path itself', () => {
+      const routes: FlattenedRoute[] = [{ path: '/admin/*', component: NotFoundPage }]
+
+      const result = matchRoute('/admin/', '', routes)
+      expect(result.route.component).toBe(NotFoundPage)
+    })
+
+    it('should match the prefix without trailing slash', () => {
+      const routes: FlattenedRoute[] = [{ path: '/admin/*', component: NotFoundPage }]
+
+      const result = matchRoute('/admin', '', routes)
+      expect(result.route.component).toBe(NotFoundPage)
+    })
+
+    it('should NOT match a different prefix', () => {
+      const routes: FlattenedRoute[] = [{ path: '/admin/*', component: NotFoundPage }]
+
+      expect(() => matchRoute('/other/page', '', routes)).toThrow(RoutingError)
+    })
+
+    it('should prefer a specific route over a nested wildcard when both match', () => {
+      const routes: FlattenedRoute[] = [
+        { path: '/admin/dashboard', component: AboutPage },
+        { path: '/admin/*', component: NotFoundPage },
+      ]
+
+      const result = matchRoute('/admin/dashboard', '', routes)
+      expect(result.route.component).toBe(AboutPage)
     })
   })
 

@@ -6,6 +6,7 @@ import { clearComponentRegistry, defineComponent } from '../registry/componentRe
 import { clearRegistry } from '../registry/viewModelRegistry'
 import type { PelelaElement } from '../types'
 import { resetRouter, router } from './router'
+import type { RouteDefinition } from './types'
 
 class ProductCatalog {
   products = ['Laptop', 'Mouse', 'Keyboard']
@@ -521,7 +522,7 @@ describe('router', () => {
       '<pelela view-model="MainLayout"><header><h1 bind-content="title"></h1></header><main><outlet></outlet></main><footer>© 2026</footer></pelela>'
     const homePageTemplate = '<pelela view-model="HomePage"><p bind-content="message"></p></pelela>'
     const loginPageTemplate =
-      '<pelela view-model="LoginPage"><form><button>Entrar</button></form></pelela>'
+      '<pelela view-model="LoginPage"><form><button>Login</button></form></pelela>'
 
     it('should render page wrapped in layout when route has layout and children', () => {
       defineComponent('MainLayout', MainLayout, layoutTemplate)
@@ -602,7 +603,7 @@ describe('router', () => {
       class LayoutWithBreadcrumb {
         breadcrumb = ''
         constructor() {
-          this.breadcrumb = window.location.pathname.startsWith('/detail') ? ' > Detalle' : ''
+          this.breadcrumb = window.location.pathname.startsWith('/detail') ? ' > Detail' : ''
         }
       }
       class PageOne {
@@ -636,14 +637,14 @@ describe('router', () => {
 
       router.navigateTo('/detail')
 
-      expect(container.querySelector('nav span')!.textContent).toBe(' > Detalle')
+      expect(container.querySelector('nav span')!.textContent).toBe(' > Detail')
     })
 
     it('should throw when a route has layout but no children', () => {
       defineComponent('MainLayout', MainLayout, layoutTemplate)
 
       expect(() => {
-        router.start(container, [{ path: '', layout: MainLayout }])
+        router.start(container, [{ path: '', layout: MainLayout }] as unknown as RouteDefinition[])
       }).toThrow('Route with layout must have children')
     })
 
@@ -651,7 +652,9 @@ describe('router', () => {
       defineComponent('HomePage', HomePage, homePageTemplate)
 
       expect(() => {
-        router.start(container, [{ path: '', children: [{ path: '', component: HomePage }] }])
+        router.start(container, [
+          { path: '', children: [{ path: '', component: HomePage }] },
+        ] as unknown as RouteDefinition[])
       }).toThrow('Route with children must have a layout')
     })
 
@@ -667,6 +670,143 @@ describe('router', () => {
 
       expect(container.querySelector('form')).toBeInstanceOf(HTMLFormElement)
       expect(container.querySelector('header')).toBeNull()
+    })
+
+    it('should render grandchild component when navigating through three levels of nested routes', () => {
+      class AppLayout {
+        title = 'App'
+      }
+      class NestedHome {
+        label = 'Home'
+      }
+      class Level1Page {
+        section = 'Level 1'
+      }
+      class Level2Page {
+        section = 'Level 2'
+      }
+      class Level3Page {
+        section = 'Level 3'
+      }
+
+      const appLayoutTpl =
+        '<pelela view-model="AppLayout"><header><h1 bind-content="title"></h1></header><main><outlet></outlet></main><footer>Footer</footer></pelela>'
+      const homeTpl = '<pelela view-model="NestedHome"><p bind-content="label"></p></pelela>'
+      const level1Tpl = '<pelela view-model="Level1Page"><p bind-content="section"></p></pelela>'
+      const level2Tpl = '<pelela view-model="Level2Page"><p bind-content="section"></p></pelela>'
+      const level3Tpl = '<pelela view-model="Level3Page"><p bind-content="section"></p></pelela>'
+
+      defineComponent('AppLayout', AppLayout, appLayoutTpl)
+      defineComponent('NestedHome', NestedHome, homeTpl)
+      defineComponent('Level1Page', Level1Page, level1Tpl)
+      defineComponent('Level2Page', Level2Page, level2Tpl)
+      defineComponent('Level3Page', Level3Page, level3Tpl)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: AppLayout,
+          children: [
+            { path: '', component: NestedHome },
+            { path: 'level1', component: Level1Page },
+            { path: 'level1/level2', component: Level2Page },
+            { path: 'level1/level2/level3', component: Level3Page },
+          ],
+        },
+      ])
+
+      expect(container.querySelector('p')!.textContent).toBe('Home')
+      expect(container.querySelector('header h1')!.textContent).toBe('App')
+
+      router.navigateTo('/level1')
+      expect(container.querySelector('p')!.textContent).toBe('Level 1')
+      expect(container.querySelector('outlet')).toBeNull()
+
+      router.navigateTo('/level1/level2')
+      expect(container.querySelector('p')!.textContent).toBe('Level 2')
+      expect(container.querySelector('outlet')).toBeNull()
+
+      router.navigateTo('/level1/level2/level3')
+      expect(container.querySelector('header h1')!.textContent).toBe('App')
+      expect(container.querySelector('footer')!.textContent).toBe('Footer')
+      expect(container.querySelector('p')!.textContent).toBe('Level 3')
+      expect(container.querySelector('outlet')).toBeNull()
+    })
+
+    it('should propagate link-* changes from page VM back to layout VM', () => {
+      class LinkLayout {
+        userName = 'Alice'
+      }
+      class LinkPage {
+        userName = ''
+      }
+
+      const linkLayoutTpl =
+        '<pelela view-model="LinkLayout"><header><span bind-content="userName">will-change</span></header><main><outlet link-userName="userName"></outlet></main></pelela>'
+      const linkPageTpl =
+        '<pelela view-model="LinkPage"><p bind-content="userName">will-change</p></pelela>'
+
+      defineComponent('LinkLayout', LinkLayout, linkLayoutTpl)
+      defineComponent('LinkPage', LinkPage, linkPageTpl)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: LinkLayout,
+          children: [{ path: '', component: LinkPage }],
+        },
+      ])
+
+      expect(container.querySelector('header span')!.textContent).toBe('Alice')
+      expect(container.querySelector('p')!.textContent).toBe('Alice')
+      expect(container.querySelector('outlet')).toBeNull()
+
+      const pageEl = container.querySelector('pelela[view-model="LinkPage"]') as PelelaElement<
+        Record<string, unknown>
+      > | null
+      const pageVM = pageEl!.__pelelaViewModel
+      pageVM.userName = 'Bob'
+
+      expect(container.querySelector('header span')!.textContent).toBe('Bob')
+      expect(container.querySelector('p')!.textContent).toBe('Bob')
+    })
+
+    it('should NOT propagate prop-* changes from page VM back to layout VM', () => {
+      class PropLayout {
+        userName = 'Alice'
+      }
+      class PropPage {
+        userName = ''
+      }
+
+      const propLayoutTpl =
+        '<pelela view-model="PropLayout"><header><span bind-content="userName">will-change</span></header><main><outlet prop-userName="userName"></outlet></main></pelela>'
+      const propPageTpl =
+        '<pelela view-model="PropPage"><p bind-content="userName">will-change</p></pelela>'
+
+      defineComponent('PropLayout', PropLayout, propLayoutTpl)
+      defineComponent('PropPage', PropPage, propPageTpl)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: PropLayout,
+          children: [{ path: '', component: PropPage }],
+        },
+      ])
+
+      expect(container.querySelector('header span')!.textContent).toBe('Alice')
+      expect(container.querySelector('p')!.textContent).toBe('Alice')
+      expect(container.querySelector('outlet')).toBeNull()
+
+      const pageEl = container.querySelector('pelela[view-model="PropPage"]') as PelelaElement<
+        Record<string, unknown>
+      > | null
+      const pageVM = pageEl!.__pelelaViewModel
+      pageVM.userName = 'Bob'
+
+      expect(container.querySelector('header span')!.textContent).toBe('Alice')
+      expect(container.querySelector('p')!.textContent).toBe('Bob')
     })
   })
 
