@@ -1,4 +1,4 @@
-import { getNestedProperty } from '../bindings/nestedProperties'
+import { getNestedProperty, setNestedProperty } from '../bindings/nestedProperties'
 import { resetRouterActive, setRouterActive } from '../bootstrap/bootstrap'
 import { handleError, mountTemplate, renderErrorPage } from '../bootstrap/mountTemplate'
 import {
@@ -9,6 +9,7 @@ import {
 import { CONST_PREFIX, LINK_PREFIX, PROP_PREFIX } from '../commons/dom'
 import { toCamelCase, toKebabCase } from '../commons/helpers'
 import { t } from '../commons/i18n'
+import { isUnsafeKey } from '../commons/sanitization'
 import { RoutingError } from '../errors/RoutingError'
 import {
   getComponentByTag,
@@ -81,21 +82,43 @@ function parseOutletBindings(layoutTemplate: string): OutletBinding[] {
   const attrsString = outletMatch[1].trim()
   if (!attrsString) return []
 
-  const bindings: OutletBinding[] = []
   const attrRegex = /(\S+)\s*=\s*"([^"]*)"|(\S+)\s*=\s*'([^']*)'/g
   const matches = Array.from(attrsString.matchAll(attrRegex))
-  for (const match of matches) {
+  return matches.flatMap((match) => {
     const name = match[1] || match[3]
     const value = match[2] || match[4]
     const type = getOutletBindingType(name)
     const pageProperty = getOutletBindingPageProperty(name)
+    return type && pageProperty ? [{ type, pageProperty, sourceExpression: value }] : []
+  })
+}
 
-    if (type && pageProperty) {
-      bindings.push({ type, pageProperty, sourceExpression: value })
-    }
-  }
+function setupLinkPropagation(
+  pageViewModel: Record<string, unknown>,
+  layoutViewModel: Record<string, unknown>,
+  pageProperty: string,
+  sourceExpression: string,
+): void {
+  const rawTarget = (pageViewModel as Record<string, unknown>).$raw as
+    | Record<string, unknown>
+    | undefined
+  if (!rawTarget) return
 
-  return bindings
+  let internalValue = rawTarget[pageProperty]
+
+  Object.defineProperty(rawTarget, pageProperty, {
+    get() {
+      return internalValue
+    },
+    set(newValue: unknown) {
+      if (internalValue !== newValue) {
+        internalValue = newValue
+        setNestedProperty(layoutViewModel, sourceExpression, newValue)
+      }
+    },
+    enumerable: true,
+    configurable: true,
+  })
 }
 
 function setupOutletBindings(rootContainer: HTMLElement, outletBindings: OutletBinding[]): void {
@@ -111,20 +134,31 @@ function setupOutletBindings(rootContainer: HTMLElement, outletBindings: OutletB
   const pageViewModel = pageElement.__pelelaViewModel as Record<string, unknown>
   if (!layoutViewModel || !pageViewModel) return
 
-  for (const binding of outletBindings) {
-    const value =
-      binding.type === 'const'
-        ? isNumberConstant(binding.sourceExpression)
-          ? Number(binding.sourceExpression)
-          : binding.sourceExpression
-        : getNestedProperty(layoutViewModel, binding.sourceExpression)
+  outletBindings
+    .filter((binding) => !isUnsafeKey(binding.pageProperty))
+    .forEach((binding) => {
+      const value =
+        binding.type === 'const'
+          ? isNumberConstant(binding.sourceExpression)
+            ? Number(binding.sourceExpression)
+            : binding.sourceExpression
+          : getNestedProperty(layoutViewModel, binding.sourceExpression)
 
-    pageViewModel[binding.pageProperty] = value
-  }
+      pageViewModel[binding.pageProperty] = value
+
+      if (binding.type === 'link') {
+        setupLinkPropagation(
+          pageViewModel,
+          layoutViewModel,
+          binding.pageProperty,
+          binding.sourceExpression,
+        )
+      }
+    })
 }
 
 function combineLayoutAndPage(layoutTemplate: string, pageTemplate: string): string {
-  const outletRegex = /<outlet\b[^>]*\/?>/i
+  const outletRegex = /<outlet\b[^>]*\/?>(?:\s*<\/outlet\s*>)?/i
   if (!outletRegex.test(layoutTemplate)) {
     throw new Error(t('errors.routing.layoutMissingOutlet'))
   }
@@ -162,6 +196,10 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
       history.pushState(null, '', nextPath)
     }
 
+    for (const cssUrl of oldRouteCss) {
+      removeStylesheetLinks(cssUrl)
+    }
+
     if (match.route.layout) {
       const layoutEntry = getComponentEntry(match.route.layout)
       if (!layoutEntry) {
@@ -172,18 +210,9 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
       const combinedHtml = combineLayoutAndPage(layoutEntry.template, pageEntry.template)
       mountTemplate(container!, combinedHtml)
       setupOutletBindings(container!, outletBindings)
-
-      for (const cssUrl of oldRouteCss) {
-        removeStylesheetLinks(cssUrl)
-      }
-
       loadRouteCss(layoutEntry)
     } else {
       mountTemplate(container!, pageEntry.template)
-
-      for (const cssUrl of oldRouteCss) {
-        removeStylesheetLinks(cssUrl)
-      }
     }
 
     loadRouteCss(pageEntry)

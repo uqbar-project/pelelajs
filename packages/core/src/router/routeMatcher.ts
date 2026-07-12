@@ -33,7 +33,7 @@ export function flattenRoutes(
       return flattenRoutes(route.children, fullPath, layout)
     }
 
-    return [{ path: fullPath, component: route.component!, layout }]
+    return [{ path: fullPath, component: route.component, layout }]
   })
 }
 
@@ -52,6 +52,15 @@ function mapSegmentToRegex(segment: string, paramNames: string[]): string {
 function compileRoute(route: FlattenedRoute): CompiledRoute {
   if (route.path === '*') {
     return { route, regex: /^.*$/, paramNames: [] }
+  }
+
+  if (route.path.endsWith('/*')) {
+    const prefix = route.path.slice(0, -2)
+    return {
+      route,
+      regex: new RegExp(`^${escapeRegex(prefix)}(?:/.*)?$`),
+      paramNames: [],
+    }
   }
 
   const paramNames: string[] = []

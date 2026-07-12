@@ -5,7 +5,7 @@ export const STANDARD_HTML_TAGS = [
   'a', 'img', 'script', 'style', 'link', 'meta', 'base', 'form', 'input',
   'button', 'select', 'option', 'textarea', 'label', 'table', 'tr', 'td',
   'th', 'thead', 'tbody', 'tfoot', 'caption', 'col', 'colgroup', 'section',
-  'article', 'nav', 'aside', 'header', 'footer', 'main', 'outlet', 'figure', 'figcaption',
+  'article', 'nav', 'aside', 'header', 'footer', 'main', 'figure', 'figcaption',
   'iframe', 'canvas', 'svg', 'math', 'video', 'audio', 'source', 'track',
   'map', 'area', 'object', 'param', 'embed', 'details', 'summary', 'dialog',
   'template', 'slot', 'time', 'data', 'code', 'pre', 'blockquote', 'q',
@@ -21,6 +21,12 @@ export function isStandardHtmlTag(tagName: string): boolean {
 
 export function isPelelaRootTag(tagName: string): boolean {
   return ['pelela', 'component'].includes(tagName.toLowerCase())
+}
+
+export const ROUTER_HTML_TAGS = ['outlet'] as const
+
+export function isRouterHtmlTag(tagName: string): boolean {
+  return ROUTER_HTML_TAGS.includes(tagName.toLowerCase() as (typeof ROUTER_HTML_TAGS)[number])
 }
 
 export const LINK_PREFIX = 'link-'
