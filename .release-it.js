@@ -31,9 +31,9 @@ module.exports = {
       'pnpm run build',
     ],
     'after:release': [
+      'npm publish packages/core --access public',
       // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
       'tsx scripts/publish-vite-plugin.ts ${version}',
-      'npm publish packages/core --access public',
     ],
   },
 }
