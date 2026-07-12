@@ -10,6 +10,11 @@ import type { TagInfo } from '../../src/diagnostics/types'
 import { t } from '../../src/i18n/index'
 import { assertDiagnostic, createMockDocument } from './testHelpers'
 
+// Multi-line tags use an array of strings (one element per line) instead of
+// backtick template literals because createMockDocument maps lineAt(i) to
+// each array element. A single multi-line string would set lineCount=1,
+// breaking mock consumers that iterate by line (e.g. findForEachInElement).
+
 function prepareTags(lines: string[]): TagInfo[] {
   const document = createMockDocument(lines)
   return scanDocument(document)
@@ -72,6 +77,19 @@ describe('attributeValidator', () => {
         t('diagnostics.unknownAttribute', { name: 'foo' }),
         vscode.DiagnosticSeverity.Warning
       )
+    })
+
+    it('allows known Pelela attribute on a multi-line tag', () => {
+      const tags = prepareTags(['<div', '  bind-content="name">'])
+      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+    })
+
+    it('flags unknown attribute on a multi-line tag', () => {
+      const tags = prepareTags(['<div', '  foo="bar">'])
+      const diagnostics = validateUnknownAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+      assert.strictEqual(diagnostics[0].range.start.line, 1)
+      assert.strictEqual(diagnostics[0].range.start.character, 2)
     })
   })
 
