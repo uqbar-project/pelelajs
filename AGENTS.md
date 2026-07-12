@@ -72,4 +72,6 @@
 <lessons_learned>
 
 - **VSCode plugin — tres mecanismos de autocompletado:** Al agregar un nuevo binding (ej. `bind-alt`, `bind-enabled`), hay que actualizar los **3** mecanismos del plugin: `html-custom-data.json` (HTML IntelliSense), `snippets/pelela.json` (snippets), y `src/utils/htmlUtils.ts` → `getPelelaAttributes()` (provider programático). Los planes de bind-alt y bind-enabled omitieron este último, por lo que los bindings aparecían por IntelliSense y snippets pero no en el autocompletado por código.
+
+- **Nunca desestimar errores de LSP diciendo "también pasa en otros archivos":** Si el LSP reporta errores de tipado en archivos que modifiqué o creé, debo investigar la causa raíz y corregirla (ej: falta de `tsconfig.json` que cubra el directorio, falta de `@types/node`, etc.). No asumir que el error es preexistente o aceptable. El LSP debe estar limpio.
 </lessons_learned>

@@ -1,10 +1,12 @@
 import { execSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname } from 'node:path'
 
 export function publishVitePlugin(
   version: string,
   packageJsonPath = 'packages/vite-plugin-pelelajs/package.json',
 ): void {
+  const packageDir = dirname(packageJsonPath)
   const originalContent = readFileSync(packageJsonPath, 'utf-8')
   const packageJson = JSON.parse(originalContent)
   const originalDependency = packageJson.dependencies?.pelelajs
@@ -16,7 +18,7 @@ export function publishVitePlugin(
   }
 
   try {
-    execSync('npm publish packages/vite-plugin-pelelajs --access public', {
+    execSync(`npm publish ${packageDir} --access public`, {
       stdio: 'inherit',
       encoding: 'utf-8',
     })

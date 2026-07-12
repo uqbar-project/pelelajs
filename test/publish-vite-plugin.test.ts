@@ -17,6 +17,22 @@ describe('publishVitePlugin', () => {
     vi.resetAllMocks()
   })
 
+  it('should publish and restore workspace:* dependency on success', () => {
+    const mockedReadFileSync = vi.mocked(readFileSync)
+    mockedReadFileSync.mockReturnValue(
+      JSON.stringify({ dependencies: { pelelajs: 'workspace:*' } }),
+    )
+    const mockedWriteFileSync = vi.mocked(writeFileSync)
+
+    publishVitePlugin('1.0.0')
+
+    expect(mockedWriteFileSync).toHaveBeenCalledTimes(2)
+    const firstCallContent = mockedWriteFileSync.mock.calls[0][1]
+    const secondCallContent = mockedWriteFileSync.mock.calls[1][1]
+    expect(firstCallContent).toContain('"1.0.0"')
+    expect(secondCallContent).toContain('"workspace:*"')
+  })
+
   it('should restore workspace:* dependency in finally when publish fails', () => {
     const mockedExecSync = vi.mocked(execSync)
     mockedExecSync.mockImplementation(() => {
@@ -34,7 +50,7 @@ describe('publishVitePlugin', () => {
     const lastWriteCall = mockedWriteFileSync.mock.lastCall
     expect(lastWriteCall).toBeDefined()
     const [, writtenContent] = lastWriteCall as [string, string]
-    expect(writtenContent).toContain('"workspace:*"')
+    expect(JSON.parse(writtenContent).dependencies.pelelajs).toBe('workspace:*')
   })
 
   it('should not modify package.json when dependency is not workspace:*', () => {
