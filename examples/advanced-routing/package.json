@@ -1,7 +1,7 @@
 {
   "name": "eg-advanced-routing-pelelajs",
   "version": "1.0.0",
-  "description": "Advance routing - nested layout example",
+  "description": "Advanced routing - nested layout example",
   "main": "index.js",
   "scripts": {
     "dev": "vite",

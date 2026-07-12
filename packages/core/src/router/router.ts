@@ -196,9 +196,9 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
       history.pushState(null, '', nextPath)
     }
 
-    for (const cssUrl of oldRouteCss) {
+    oldRouteCss.forEach((cssUrl) => {
       removeStylesheetLinks(cssUrl)
-    }
+    })
 
     if (match.route.layout) {
       const layoutEntry = getComponentEntry(match.route.layout)
