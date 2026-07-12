@@ -1,9 +1,15 @@
+import * as vscode from 'vscode'
+import { en } from './en'
 import { es } from './es'
 
 type Locale = Record<string, unknown>
 
-const locales: Record<string, Locale> = {
-  es,
+const locales: Record<string, Locale> = { en, es }
+const DEFAULT_LOCALE = 'es'
+
+function resolveLocale(): Locale {
+  const language = vscode.env.language.split('-')[0]
+  return locales[language] ?? locales[DEFAULT_LOCALE]
 }
 
 function lookupPath(obj: Locale, path: string[]): string | undefined {
@@ -13,17 +19,22 @@ function lookupPath(obj: Locale, path: string[]): string | undefined {
   }, obj) as string | undefined
 }
 
+export function interpolate(template: string, params: Record<string, string>): string {
+  return Object.entries(params).reduce(
+    (result, [paramKey, paramValue]) => result.replaceAll(`{{${paramKey}}}`, paramValue),
+    template,
+  )
+}
+
 export function t(key: string, params?: Record<string, string>): string {
-  const locale = locales.es
+  const locale = resolveLocale()
   const path = key.split('.')
-  let message = lookupPath(locale, path)
+  const message = lookupPath(locale, path)
 
   if (message === undefined) return key
 
   if (params) {
-    for (const [paramKey, paramValue] of Object.entries(params)) {
-      message = message.replace(`{{${paramKey}}}`, paramValue)
-    }
+    return interpolate(message, params)
   }
 
   return message

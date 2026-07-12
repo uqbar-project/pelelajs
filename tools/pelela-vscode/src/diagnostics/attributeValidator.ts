@@ -10,10 +10,18 @@ import type { TagInfo } from './types'
 const HTML_KNOWN = getHtmlAttributes()
 const PELELA_KNOWN = getPelelaAttributes()
 
+function matchesAttribute(name: string, list: string[]): boolean {
+  return list.some((entry) => (entry.endsWith('-') ? name.startsWith(entry) : entry === name))
+}
+
+function isPelelaAttribute(name: string): boolean {
+  return matchesAttribute(name, PELELA_KNOWN)
+}
+
 function isKnownAttribute(name: string): boolean {
   return (
     HTML_KNOWN.includes(name) ||
-    PELELA_KNOWN.includes(name) ||
+    isPelelaAttribute(name) ||
     name.startsWith('data-') ||
     name.startsWith('aria-')
   )
@@ -39,7 +47,8 @@ export function validateTagRestrictions(tags: TagInfo[]): vscode.Diagnostic[] {
     const allowed = getPelelaAttributesForTag(tag.tagName)
     return tag.attributes
       .filter(
-        (attribute) => PELELA_KNOWN.includes(attribute.name) && !allowed.includes(attribute.name)
+        (attribute) =>
+          isPelelaAttribute(attribute.name) && !matchesAttribute(attribute.name, allowed)
       )
       .map((attribute) =>
         makeDiagnostic(

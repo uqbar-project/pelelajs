@@ -155,6 +155,10 @@ export const vscodeStub = {
     findFiles: (_glob: string) => Promise.resolve([]),
   },
 
+  env: {
+    language: 'es',
+  },
+
   window: {
     activeTextEditor: null,
   },

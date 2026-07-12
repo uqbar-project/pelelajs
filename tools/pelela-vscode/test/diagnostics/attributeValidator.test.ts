@@ -27,6 +27,15 @@ describe('attributeValidator', () => {
       assert.strictEqual(validateUnknownAttributes(tags).length, 0)
     })
 
+    it('allows Pelela prefix-based attributes', () => {
+      const tags = prepareTags([
+        '<div prop-title="hello">',
+        '<div link-value="world">',
+        '<div const-foo="bar">',
+      ])
+      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+    })
+
     it('allows data-* attribute', () => {
       const tags = prepareTags(['<div data-custom="value">'])
       assert.strictEqual(validateUnknownAttributes(tags).length, 0)
@@ -67,6 +76,13 @@ describe('attributeValidator', () => {
   })
 
   describe('validateTagRestrictions', () => {
+    it('allows prefix-based attributes on any tag', () => {
+      const tags = prepareTags([
+        '<custom-element prop-title="hello" link-value="world" const-foo="bar">',
+      ])
+      assert.strictEqual(validateTagRestrictions(tags).length, 0)
+    })
+
     it('allows bind-alt on img', () => {
       const tags = prepareTags(['<img bind-alt="description">'])
       assert.strictEqual(validateTagRestrictions(tags).length, 0)

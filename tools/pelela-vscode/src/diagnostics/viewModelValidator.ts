@@ -58,10 +58,14 @@ function validatePropertyPath(
   const firstPart = pathParts[0]
 
   const forEachResult = findForEachInElement(document, lineIndex)
-  const isInForEach = forEachResult !== null
 
-  if (isInForEach && forEachResult.itemName === firstPart) {
-    return validateForEachPath(attribute, pathParts, tsPath, forEachResult, document)
+  if (forEachResult) {
+    if (forEachResult.itemName === firstPart) {
+      return validateForEachPath(attribute, pathParts, tsPath, forEachResult, document)
+    }
+    if (forEachResult.indexName === firstPart) {
+      return []
+    }
   }
 
   if (!members.properties.includes(firstPart)) {

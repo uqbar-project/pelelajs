@@ -137,6 +137,15 @@ describe('viewModelValidator', () => {
       assert.strictEqual(diagnostics.length, 0)
     })
 
+    it('accepts a for-each index variable used in a binding', () => {
+      const { tags, document } = prepareValidation(
+        ['<div for-each="item of items" index="i">', '  <span bind-content="i"></span>', '</div>'],
+        context
+      )
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
     it('accepts a for-each item nested property', () => {
       const { tags, document } = prepareValidation(
         ['<div for-each="item of items">', '  <span bind-content="item.name"></span>', '</div>'],
