@@ -2,6 +2,8 @@ import { execSync } from 'node:child_process'
 import { stdin as input, stdout as output } from 'node:process'
 import readline from 'node:readline/promises'
 
+if (process.env.CI) process.exit(0)
+
 try {
   execSync('pnpm whoami', { stdio: 'pipe' })
 } catch {
