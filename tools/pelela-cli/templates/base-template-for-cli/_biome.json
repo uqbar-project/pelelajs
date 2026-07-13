@@ -27,7 +27,8 @@
         "noAccumulatingSpread": "warn"
       },
       "nursery": {
-        "noUnusedExpressions": "off"
+        "noUnusedExpressions": "off",
+        "useExplicitType": "error"
       }
     }
   },
