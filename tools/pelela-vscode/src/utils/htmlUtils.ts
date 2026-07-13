@@ -64,6 +64,11 @@ export function getHtmlAttributes() {
     'height',
     'target',
     'rel',
+    'for',
+    'tabindex',
+    'lang',
+    'dir',
+    'hidden',
   ]
 }
 

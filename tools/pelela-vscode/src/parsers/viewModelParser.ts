@@ -66,9 +66,7 @@ function getMemberInfo(
 export function extractViewModelMembers(typescriptFilePath: string): ViewModelMembers {
   const sourceFile = getCachedSourceFile(typescriptFilePath)
 
-  const classDeclaration = sourceFile.statements.find(
-    (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement)
-  )
+  const classDeclaration = getClassDeclaration(sourceFile)
   if (!classDeclaration) return { properties: [], methods: [] }
 
   const paramProperties = getParameterPropertyNames(classDeclaration)
@@ -95,9 +93,14 @@ export function extractViewModelMembers(typescriptFilePath: string): ViewModelMe
 }
 
 function getClassDeclaration(sourceFile: ts.SourceFile): ts.ClassDeclaration | undefined {
-  return sourceFile.statements.find((statement): statement is ts.ClassDeclaration =>
+  const classes = sourceFile.statements.filter((statement): statement is ts.ClassDeclaration =>
     ts.isClassDeclaration(statement)
   )
+  const exported = classes.find(
+    (classDeclaration) =>
+      (ts.getCombinedModifierFlags(classDeclaration) & ts.ModifierFlags.Export) !== 0
+  )
+  return exported ?? classes[classes.length - 1]
 }
 
 function findPropertyTypeNode(
@@ -209,6 +212,15 @@ function extractPropertyNamesFromType(
   if (ts.isTypeLiteralNode(node)) {
     return extractPropertyNamesFromTypeLiteral(node)
   }
+  if (ts.isUnionTypeNode(node)) {
+    const nonNullTypes = node.types.filter(
+      (unionMember) =>
+        unionMember.kind !== ts.SyntaxKind.NullKeyword &&
+        unionMember.kind !== ts.SyntaxKind.UndefinedKeyword
+    )
+    if (nonNullTypes.length === 0) return []
+    return extractPropertyNamesFromType(nonNullTypes[0], sourceFile, filePath)
+  }
   if (node.kind === ts.SyntaxKind.StringKeyword) {
     return BUILTIN_CLASSES.String
   }
@@ -235,6 +247,9 @@ function extractPropertyNamesFromTypeReference(
 ): string[] {
   const declaration = resolveTypeReference(node, sourceFile, filePath)
   if (!declaration) return []
+  if (ts.isTypeAliasDeclaration(declaration)) {
+    return extractPropertyNamesFromType(declaration.type, sourceFile, filePath)
+  }
   return membersFromDeclaration(declaration)
 }
 
@@ -288,6 +303,16 @@ function resolvePropertyType(
   if (ts.isTypeLiteralNode(node)) {
     return resolvePropertyInTypeLiteral(node, propertyName)
   }
+  if (ts.isUnionTypeNode(node)) {
+    const nonNullTypes = node.types.filter(
+      (unionMember) =>
+        unionMember.kind !== ts.SyntaxKind.NullKeyword &&
+        unionMember.kind !== ts.SyntaxKind.UndefinedKeyword
+    )
+    const first = nonNullTypes[0]
+    if (!first) return undefined
+    return resolvePropertyType(first, propertyName, sourceFile, filePath)
+  }
   if (node.kind === ts.SyntaxKind.StringKeyword && BUILTIN_CLASSES.String.includes(propertyName)) {
     const returnKind = BUILTIN_RETURN_TYPES[propertyName]
     return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
@@ -331,7 +356,9 @@ function resolvePropertyInTypeReference(
 ): ts.Node | undefined {
   const declaration = resolveTypeReference(node, sourceFile, filePath)
   if (!declaration) return undefined
-  if (ts.isTypeAliasDeclaration(declaration)) return undefined
+  if (ts.isTypeAliasDeclaration(declaration)) {
+    return resolvePropertyType(declaration.type, propertyName, sourceFile, filePath)
+  }
   const member = declaration.members.find(
     (declarationMember): declarationMember is ts.PropertySignature | ts.PropertyDeclaration =>
       (ts.isPropertySignature(declarationMember) || ts.isPropertyDeclaration(declarationMember)) &&

@@ -272,6 +272,69 @@ export class ViewModelWithParamRef {
       )
     })
 
+    it('should prefer the exported class when multiple classes exist in the file', () => {
+      const fPath = path.join(testFilesDir, 'MultiClass.ts')
+      fs.writeFileSync(
+        fPath,
+        `class Helper {
+  value: number = 0
+}
+
+export class ExportedViewModel {
+  items: string[] = []
+  handleClick(): void {}
+}`
+      )
+      const members = extractViewModelMembers(fPath)
+      assert.ok(members.properties.includes('items'), 'should include property from exported class')
+      assert.ok(
+        members.methods.includes('handleClick'),
+        'should include method from exported class'
+      )
+      assert.ok(
+        !members.properties.includes('value'),
+        'should NOT include property from non-exported class'
+      )
+    })
+
+    it('should resolve properties from a type alias', () => {
+      const fPath = path.join(testFilesDir, 'TypeAliasVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export type TipoApuesta = {
+  descripcion: string
+  ganancia: number
+  valoresAApostar: (number | string)[]
+}
+
+export class TypeAliasVM {
+  tipos: TipoApuesta[] = []
+}`
+      )
+      const properties = extractNestedProperties(fPath, ['tipos'])
+      assert.ok(properties.includes('descripcion'), 'should include descripcion from type alias')
+      assert.ok(properties.includes('ganancia'), 'should include ganancia from type alias')
+      assert.ok(
+        properties.includes('valoresAApostar'),
+        'should include valoresAApostar from type alias'
+      )
+    })
+
+    it('should resolve properties through a union type', () => {
+      const fPath = path.join(testFilesDir, 'UnionTypeVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `type Inner = { value: string; extra: number }
+
+export class UnionTypeVM {
+  field: Inner | null = null
+}`
+      )
+      const properties = extractNestedProperties(fPath, ['field'])
+      assert.ok(properties.includes('value'), 'should include value from the non-null union member')
+      assert.ok(properties.includes('extra'), 'should include extra from the non-null union member')
+    })
+
     it('should resolve types across files via import', () => {
       const properties = extractNestedProperties(testVMPath, ['product'])
       assert.deepStrictEqual([...properties].sort(), [...EXPECTED_PRODUCT_INTERFACE].sort())
