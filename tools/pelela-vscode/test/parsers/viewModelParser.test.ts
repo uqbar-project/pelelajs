@@ -187,6 +187,91 @@ export class ViewModelWithParamRef {
       })
     })
 
+    it('should resolve Array<Type> generic syntax like an array type', () => {
+      const fPath = path.join(testFilesDir, 'ArrayGenericVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class ArrayGenericVM {
+  items: Array<{ title: string; completed: boolean }> = []
+}`
+      )
+      const properties = extractNestedProperties(fPath, ['items'])
+      assert.ok(properties.includes('length'), 'should include array built-in length')
+      assert.ok(properties.includes('title'), 'should include element property title')
+      assert.ok(properties.includes('completed'), 'should include element property completed')
+    })
+
+    it('should resolve nested property through Array<Type> syntax', () => {
+      const fPath = path.join(testFilesDir, 'ArrayGenericNestedVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class ArrayGenericNestedVM {
+  items: Array<{ name: string; child: { value: number } }> = []
+}`
+      )
+      const properties = extractNestedProperties(fPath, ['items', 'child'])
+      assert.ok(properties.includes('value'), 'should include child property value')
+    })
+
+    it('should resolve Array<Type> with a primitive element type', () => {
+      const fPath = path.join(testFilesDir, 'ArrayGenericPrimitiveVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class ArrayGenericPrimitiveVM {
+  names: Array<string> = []
+}`
+      )
+      const properties = extractNestedProperties(fPath, ['names'])
+      const stringBuiltins = Object.getOwnPropertyNames(String.prototype)
+      stringBuiltins.forEach((prop) => {
+        assert.ok(properties.includes(prop), `should include String.${prop}`)
+      })
+    })
+
+    it('should resolve Array built-in properties from an array literal initializer', () => {
+      const fPath = path.join(testFilesDir, 'ArrayLiteralVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class ArrayLiteralVM {
+  items = [{ name: "test" }]
+}`
+      )
+      const properties = extractNestedProperties(fPath, ['items'])
+      assert.ok(properties.includes('length'), 'should include array built-in length')
+    })
+
+    it('should resolve properties from a getter with an explicit return type', () => {
+      const fPath = path.join(testFilesDir, 'GetterExplicitType.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class GetterExplicitType {
+  get productos(): Array<{ name: string }> {
+    return getProducts()
+  }
+}`
+      )
+      const properties = extractNestedProperties(fPath, ['productos'])
+      assert.ok(properties.includes('length'), 'should include array built-in length')
+      assert.ok(properties.includes('name'), 'should include element property name')
+    })
+
+    it('should resolve properties from a getter returning an array literal', () => {
+      const fPath = path.join(testFilesDir, 'GetterArrayLiteral.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class GetterArrayLiteral {
+  get productos() {
+    return [{ name: "test" }]
+  }
+}`
+      )
+      const properties = extractNestedProperties(fPath, ['productos'])
+      assert.ok(
+        properties.includes('length'),
+        'should include array built-in length from ArrayLiteralExpression'
+      )
+    })
+
     it('should resolve types across files via import', () => {
       const properties = extractNestedProperties(testVMPath, ['product'])
       assert.deepStrictEqual([...properties].sort(), [...EXPECTED_PRODUCT_INTERFACE].sort())

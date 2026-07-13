@@ -144,7 +144,67 @@ describe('viewModelValidator', () => {
       assert.strictEqual(diagnostics.length, 0)
     })
 
-    it('accepts a built-in property like length on an array', () => {
+    it('accepts length on an Array<Type> generic property', () => {
+      const genericPath = path.join(testFilesDir, 'GenericArrayVM.ts')
+      fs.writeFileSync(
+        genericPath,
+        `export class GenericArrayVM {
+  productos: Array<{ name: string }> = []
+}`
+      )
+      const genericMembers = extractViewModelMembers(genericPath)
+      const { tags, document } = prepareValidation(['<div if="productos.length">'], {
+        tsPath: genericPath,
+        pelelaPath: testPelelaPath,
+        members: genericMembers,
+      })
+      const diagnostics = validateBindingProperties(tags, genericPath, genericMembers, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts length on an array property without type annotation', () => {
+      const noTypePath = path.join(testFilesDir, 'NoTypeArrayVM.ts')
+      fs.writeFileSync(
+        noTypePath,
+        `export class NoTypeArrayVM {
+  items = [{ x: 1 }]
+}`
+      )
+      const noTypeMembers = extractViewModelMembers(noTypePath)
+      const { tags, document } = prepareValidation(['<div if="items.length">'], {
+        tsPath: noTypePath,
+        pelelaPath: testPelelaPath,
+        members: noTypeMembers,
+      })
+      const diagnostics = validateBindingProperties(tags, noTypePath, noTypeMembers, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts length on a getter returning an array', () => {
+      const getterPath = path.join(testFilesDir, 'GetterReturningArray.ts')
+      fs.writeFileSync(
+        getterPath,
+        `export class GetterReturningArray {
+  get productos() {
+    return [{ name: "test" }]
+  }
+
+  get cantidadProductos() {
+    return this.productos.length
+  }
+}`
+      )
+      const getterMembers = extractViewModelMembers(getterPath)
+      const { tags, document } = prepareValidation(['<div if="productos.length">'], {
+        tsPath: getterPath,
+        pelelaPath: testPelelaPath,
+        members: getterMembers,
+      })
+      const diagnostics = validateBindingProperties(tags, getterPath, getterMembers, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts length on an Array built-in property', () => {
       const { tags, document } = prepareValidation(['<div if="items.length">'], context)
       const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
       assert.strictEqual(diagnostics.length, 0)

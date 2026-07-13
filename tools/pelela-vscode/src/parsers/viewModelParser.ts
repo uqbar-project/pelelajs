@@ -94,6 +94,41 @@ export function extractViewModelMembers(typescriptFilePath: string): ViewModelMe
     )
 }
 
+function getClassDeclaration(sourceFile: ts.SourceFile): ts.ClassDeclaration | undefined {
+  return sourceFile.statements.find((statement): statement is ts.ClassDeclaration =>
+    ts.isClassDeclaration(statement)
+  )
+}
+
+function findPropertyTypeNode(
+  sourceFile: ts.SourceFile,
+  propertyName: string
+): ts.Node | undefined {
+  const classDeclaration = getClassDeclaration(sourceFile)
+  if (!classDeclaration) return undefined
+
+  const prop = classDeclaration.members.find(
+    (member): member is ts.PropertyDeclaration =>
+      ts.isPropertyDeclaration(member) && getDeclarationName(member) === propertyName
+  )
+  if (prop) return prop.type ?? prop.initializer
+
+  const getter = classDeclaration.members.find(
+    (member): member is ts.GetAccessorDeclaration =>
+      ts.isGetAccessorDeclaration(member) && getDeclarationName(member) === propertyName
+  )
+  if (!getter) return undefined
+
+  if (getter.type) return getter.type
+  if (getter.body) {
+    const returnStatement = getter.body.statements.find((stmt): stmt is ts.ReturnStatement =>
+      ts.isReturnStatement(stmt)
+    )
+    if (returnStatement?.expression) return returnStatement.expression
+  }
+  return undefined
+}
+
 export function extractNestedProperties(
   typescriptFilePath: string,
   propertyPaths: string[]
@@ -102,28 +137,11 @@ export function extractNestedProperties(
   const sourceFile = getCachedSourceFile(typescriptFilePath)
 
   const rootPropertyName = propertyPaths[0]
-  const rootPropertyDeclaration = findPropertyDeclaration(sourceFile, rootPropertyName)
-  if (!rootPropertyDeclaration) return []
-
-  const startingNode = rootPropertyDeclaration.type ?? rootPropertyDeclaration.initializer
+  const startingNode = findPropertyTypeNode(sourceFile, rootPropertyName)
   if (!startingNode) return []
 
   const remainingPaths = propertyPaths.slice(1)
   return resolveNestedProperty(startingNode, remainingPaths, sourceFile, typescriptFilePath)
-}
-
-function findPropertyDeclaration(
-  sourceFile: ts.SourceFile,
-  propertyName: string
-): ts.PropertyDeclaration | undefined {
-  const classDeclaration = sourceFile.statements.find(
-    (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement)
-  )
-  if (!classDeclaration) return undefined
-  return classDeclaration.members.find(
-    (member): member is ts.PropertyDeclaration =>
-      ts.isPropertyDeclaration(member) && getDeclarationName(member) === propertyName
-  )
 }
 
 function resolveNestedProperty(
@@ -162,10 +180,24 @@ function extractPropertyNamesFromType(
   sourceFile: ts.SourceFile,
   filePath: string
 ): string[] {
+  if (ts.isArrayLiteralExpression(node)) {
+    return BUILTIN_CLASSES.Array
+  }
   if (ts.isObjectLiteralExpression(node)) {
     return extractPropertyNamesFromObjectLiteral(node)
   }
   if (ts.isTypeReferenceNode(node)) {
+    if (
+      ts.isIdentifier(node.typeName) &&
+      node.typeName.text === 'Array' &&
+      node.typeArguments !== undefined &&
+      node.typeArguments.length === 1
+    ) {
+      return [
+        ...BUILTIN_CLASSES.Array,
+        ...extractPropertyNamesFromType(node.typeArguments[0], sourceFile, filePath),
+      ]
+    }
     return extractPropertyNamesFromTypeReference(node, sourceFile, filePath)
   }
   if (ts.isArrayTypeNode(node)) {
@@ -221,10 +253,29 @@ function resolvePropertyType(
   sourceFile: ts.SourceFile,
   filePath: string
 ): ts.Node | undefined {
+  if (ts.isArrayLiteralExpression(node)) {
+    if (BUILTIN_CLASSES.Array.includes(propertyName)) {
+      const returnKind = BUILTIN_RETURN_TYPES[propertyName]
+      return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
+    }
+    return undefined
+  }
   if (ts.isObjectLiteralExpression(node)) {
     return resolvePropertyInObjectLiteral(node, propertyName)
   }
   if (ts.isTypeReferenceNode(node)) {
+    if (
+      ts.isIdentifier(node.typeName) &&
+      node.typeName.text === 'Array' &&
+      node.typeArguments !== undefined &&
+      node.typeArguments.length === 1
+    ) {
+      if (BUILTIN_CLASSES.Array.includes(propertyName)) {
+        const returnKind = BUILTIN_RETURN_TYPES[propertyName]
+        return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
+      }
+      return resolvePropertyType(node.typeArguments[0], propertyName, sourceFile, filePath)
+    }
     return resolvePropertyInTypeReference(node, propertyName, sourceFile, filePath)
   }
   if (ts.isArrayTypeNode(node)) {
