@@ -69,6 +69,14 @@ export function getHtmlAttributes() {
     'lang',
     'dir',
     'hidden',
+    'rows',
+    'cols',
+    'min',
+    'max',
+    'step',
+    'autocomplete',
+    'spellcheck',
+    'wrap',
   ]
 }
 

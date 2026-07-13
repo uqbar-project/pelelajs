@@ -1,7 +1,7 @@
 import * as assert from 'node:assert'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { after, before, describe, it } from 'mocha'
+import { after, afterEach, before, describe, it } from 'mocha'
 import * as vscode from 'vscode'
 import { scanDocument } from '../../src/diagnostics/scanDocument'
 import type { TagInfo } from '../../src/diagnostics/types'
@@ -59,6 +59,9 @@ describe('viewModelValidator', () => {
   const testVMPath = path.join(testFilesDir, 'viewModelTestViewModel.ts')
   const testPelelaPath = path.join(testFilesDir, 'viewModelTest.pelela')
   let context: ViewModelContext
+  let genericPath: string
+  let noTypePath: string
+  let getterPath: string
 
   before(() => {
     if (!fs.existsSync(testFilesDir)) {
@@ -70,6 +73,17 @@ describe('viewModelValidator', () => {
       pelelaPath: testPelelaPath,
       members: extractViewModelMembers(testVMPath),
     }
+    genericPath = path.join(testFilesDir, 'GenericArrayVM.ts')
+    noTypePath = path.join(testFilesDir, 'NoTypeArrayVM.ts')
+    getterPath = path.join(testFilesDir, 'GetterReturningArray.ts')
+  })
+
+  afterEach(() => {
+    ;[genericPath, noTypePath, getterPath].forEach((filePath) => {
+      if (filePath && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+      }
+    })
   })
 
   after(() => {
@@ -145,7 +159,6 @@ describe('viewModelValidator', () => {
     })
 
     it('accepts length on an Array<Type> generic property', () => {
-      const genericPath = path.join(testFilesDir, 'GenericArrayVM.ts')
       fs.writeFileSync(
         genericPath,
         `export class GenericArrayVM {
@@ -163,7 +176,6 @@ describe('viewModelValidator', () => {
     })
 
     it('accepts length on an array property without type annotation', () => {
-      const noTypePath = path.join(testFilesDir, 'NoTypeArrayVM.ts')
       fs.writeFileSync(
         noTypePath,
         `export class NoTypeArrayVM {
@@ -181,7 +193,6 @@ describe('viewModelValidator', () => {
     })
 
     it('accepts length on a getter returning an array', () => {
-      const getterPath = path.join(testFilesDir, 'GetterReturningArray.ts')
       fs.writeFileSync(
         getterPath,
         `export class GetterReturningArray {

@@ -58,6 +58,13 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('data-'))
       assert.ok(attributes.includes('aria-'))
     })
+
+    it('should include textarea-specific attributes', () => {
+      const attributes = getHtmlAttributes()
+
+      assert.ok(attributes.includes('rows'))
+      assert.ok(attributes.includes('cols'))
+    })
   })
 
   describe('getPelelaAttributes', () => {

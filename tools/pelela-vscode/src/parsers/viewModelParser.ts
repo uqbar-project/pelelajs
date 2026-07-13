@@ -178,12 +178,31 @@ function keywordNodeFromKind(kind: ts.KeywordTypeSyntaxKind): ts.KeywordTypeNode
   return ts.factory.createKeywordTypeNode(kind)
 }
 
+const COMPARISON_OPERATORS = new Set([
+  ts.SyntaxKind.EqualsEqualsEqualsToken,
+  ts.SyntaxKind.ExclamationEqualsEqualsToken,
+  ts.SyntaxKind.EqualsEqualsToken,
+  ts.SyntaxKind.ExclamationEqualsToken,
+  ts.SyntaxKind.LessThanToken,
+  ts.SyntaxKind.GreaterThanToken,
+  ts.SyntaxKind.LessThanEqualsToken,
+  ts.SyntaxKind.GreaterThanEqualsToken,
+  ts.SyntaxKind.AmpersandAmpersandToken,
+  ts.SyntaxKind.BarBarToken,
+])
+
 function extractPropertyNamesFromType(
   node: ts.Node,
   sourceFile: ts.SourceFile,
   filePath: string
 ): string[] {
   if (ts.isArrayLiteralExpression(node)) {
+    if (node.elements.length > 0) {
+      return [
+        ...BUILTIN_CLASSES.Array,
+        ...extractPropertyNamesFromType(node.elements[0], sourceFile, filePath),
+      ]
+    }
     return BUILTIN_CLASSES.Array
   }
   if (ts.isObjectLiteralExpression(node)) {
@@ -221,6 +240,16 @@ function extractPropertyNamesFromType(
     if (nonNullTypes.length === 0) return []
     return extractPropertyNamesFromType(nonNullTypes[0], sourceFile, filePath)
   }
+  if (ts.isNewExpression(node)) {
+    if (ts.isIdentifier(node.expression)) {
+      const typeRef = ts.factory.createTypeReferenceNode(node.expression, undefined)
+      return extractPropertyNamesFromTypeReference(typeRef, sourceFile, filePath)
+    }
+    return []
+  }
+  if (ts.isBinaryExpression(node) && COMPARISON_OPERATORS.has(node.operatorToken.kind)) {
+    return BUILTIN_CLASSES.Boolean
+  }
   if (node.kind === ts.SyntaxKind.StringKeyword) {
     return BUILTIN_CLASSES.String
   }
@@ -255,11 +284,8 @@ function extractPropertyNamesFromTypeReference(
 
 function extractPropertyNamesFromTypeLiteral(node: ts.TypeLiteralNode): string[] {
   return node.members
-    .filter((typeMember): typeMember is ts.PropertySignature => ts.isPropertySignature(typeMember))
-    .map((typeMember) =>
-      typeMember.name && ts.isIdentifier(typeMember.name) ? typeMember.name.text : ''
-    )
-    .filter((name) => name !== '')
+    .filter((typeMember) => typeMember.name !== undefined && ts.isIdentifier(typeMember.name))
+    .map((typeMember) => (typeMember.name as ts.Identifier).text)
 }
 
 function resolvePropertyType(
@@ -272,6 +298,9 @@ function resolvePropertyType(
     if (BUILTIN_CLASSES.Array.includes(propertyName)) {
       const returnKind = BUILTIN_RETURN_TYPES[propertyName]
       return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
+    }
+    if (node.elements.length > 0) {
+      return resolvePropertyType(node.elements[0], propertyName, sourceFile, filePath)
     }
     return undefined
   }
@@ -313,6 +342,20 @@ function resolvePropertyType(
     if (!first) return undefined
     return resolvePropertyType(first, propertyName, sourceFile, filePath)
   }
+  if (ts.isNewExpression(node)) {
+    if (ts.isIdentifier(node.expression)) {
+      const typeRef = ts.factory.createTypeReferenceNode(node.expression, undefined)
+      return resolvePropertyInTypeReference(typeRef, propertyName, sourceFile, filePath)
+    }
+    return undefined
+  }
+  if (ts.isBinaryExpression(node) && COMPARISON_OPERATORS.has(node.operatorToken.kind)) {
+    if (BUILTIN_CLASSES.Boolean.includes(propertyName)) {
+      const returnKind = BUILTIN_RETURN_TYPES[propertyName]
+      return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
+    }
+    return undefined
+  }
   if (node.kind === ts.SyntaxKind.StringKeyword && BUILTIN_CLASSES.String.includes(propertyName)) {
     const returnKind = BUILTIN_RETURN_TYPES[propertyName]
     return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
@@ -324,14 +367,14 @@ function resolvePropertyInTypeLiteral(
   node: ts.TypeLiteralNode,
   propertyName: string
 ): ts.Node | undefined {
-  const propertySignature = node.members.find(
-    (member): member is ts.PropertySignature =>
-      ts.isPropertySignature(member) &&
-      member.name &&
-      ts.isIdentifier(member.name) &&
-      member.name.text === propertyName
+  const member = node.members.find(
+    (member) =>
+      member.name !== undefined && ts.isIdentifier(member.name) && member.name.text === propertyName
   )
-  return propertySignature?.type
+  if (!member) return undefined
+  if (ts.isPropertySignature(member)) return member.type
+  if (ts.isMethodSignature(member)) return member.type
+  return undefined
 }
 
 function resolvePropertyInObjectLiteral(
@@ -376,9 +419,24 @@ function resolvePropertyInTypeReference(
         ts.isGetAccessorDeclaration(getterMember) &&
         getDeclarationName(getterMember) === propertyName
     )
-    if (getter) return getter.type
+    if (getter) {
+      if (getter.type) return getter.type
+      if (getter.body) {
+        const returnStatement = getter.body.statements.find((stmt): stmt is ts.ReturnStatement =>
+          ts.isReturnStatement(stmt)
+        )
+        if (returnStatement?.expression) return returnStatement.expression
+      }
+      return undefined
+    }
   }
   return undefined
+}
+
+function getImportStatements(sourceFile: ts.SourceFile): ts.ImportDeclaration[] {
+  return sourceFile.statements.filter((statement): statement is ts.ImportDeclaration =>
+    ts.isImportDeclaration(statement)
+  )
 }
 
 function resolveTypeReference(
@@ -390,7 +448,34 @@ function resolveTypeReference(
   const typeName = typeNode.typeName.text
   const localDeclaration = findDeclaration(sourceFile, typeName)
   if (localDeclaration) return localDeclaration
-  return findCrossFileDeclaration(typeName, sourceFile, filePath)
+  const crossFileDeclaration = findCrossFileDeclaration(typeName, sourceFile, filePath)
+  if (crossFileDeclaration) return crossFileDeclaration
+  return findDeclarationDeep(typeName, sourceFile, filePath, new Set<string>())
+}
+
+function findDeclarationDeep(
+  typeName: string,
+  sourceFile: ts.SourceFile,
+  filePath: string,
+  visited: Set<string>
+): ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration | undefined {
+  if (visited.has(filePath)) return undefined
+  visited.add(filePath)
+
+  for (const importDecl of getImportStatements(sourceFile)) {
+    if (!ts.isStringLiteral(importDecl.moduleSpecifier)) continue
+    const resolvedPath = resolveModulePath(filePath, importDecl.moduleSpecifier.text)
+    if (!resolvedPath || visited.has(resolvedPath)) continue
+
+    const importedFile = getCachedSourceFile(resolvedPath)
+    const declaration = findDeclaration(importedFile, typeName)
+    if (declaration) return declaration
+
+    const deeper = findDeclarationDeep(typeName, importedFile, resolvedPath, visited)
+    if (deeper) return deeper
+  }
+
+  return undefined
 }
 
 function findDeclaration(
@@ -408,18 +493,24 @@ function findDeclaration(
   )
 }
 
+function isParameterProperty(param: ts.ParameterDeclaration): boolean {
+  return (
+    (ts.getCombinedModifierFlags(param) &
+      (ts.ModifierFlags.Public |
+        ts.ModifierFlags.Protected |
+        ts.ModifierFlags.Private |
+        ts.ModifierFlags.Readonly)) !==
+    0
+  )
+}
+
 function getParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
   const ctor = declaration.members.find((member): member is ts.ConstructorDeclaration =>
     ts.isConstructorDeclaration(member)
   )
   if (!ctor) return []
   return ctor.parameters
-    .filter(
-      (param) =>
-        (ts.getCombinedModifierFlags(param) &
-          (ts.ModifierFlags.Public | ts.ModifierFlags.Protected | ts.ModifierFlags.Private)) !==
-        0
-    )
+    .filter((param) => isParameterProperty(param))
     .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
     .filter((name) => name !== '')
 }
@@ -434,9 +525,7 @@ function getParameterPropertyType(
   if (!ctor) return undefined
   const param = ctor.parameters.find(
     (param) =>
-      (ts.getCombinedModifierFlags(param) &
-        (ts.ModifierFlags.Public | ts.ModifierFlags.Protected | ts.ModifierFlags.Private)) !==
-        0 &&
+      isParameterProperty(param) &&
       param.name !== undefined &&
       ts.isIdentifier(param.name) &&
       param.name.text === propertyName

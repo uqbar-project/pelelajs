@@ -2,7 +2,7 @@ import * as assert from 'node:assert'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import { after, before, describe, it } from 'mocha'
+import { after, afterEach, before, describe, it } from 'mocha'
 import {
   extractInterfaceProperties,
   extractNestedProperties,
@@ -73,12 +73,23 @@ export interface Product {
 }
 `
 
+  const createdFiles: string[] = []
+
   before(() => {
     testFilesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-test-'))
     testVMPath = path.join(testFilesDir, 'testViewModel.ts')
     productFixturePath = path.join(testFilesDir, 'Product.ts')
     fs.writeFileSync(testVMPath, FIXTURE_CONTENT)
     fs.writeFileSync(productFixturePath, PRODUCT_FIXTURE_CONTENT)
+  })
+
+  afterEach(() => {
+    createdFiles.forEach((filePath) => {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+      }
+    })
+    createdFiles.length = 0
   })
 
   after(() => {
@@ -119,6 +130,7 @@ export interface Product {
   get baz() { return this.foo }
 }`
       )
+      createdFiles.push(paramClassPath)
       const vmWithParamRefPath = path.join(testFilesDir, 'vmWithParamRef.ts')
       fs.writeFileSync(
         vmWithParamRefPath,
@@ -127,6 +139,7 @@ export class ViewModelWithParamRef {
   param!: ParamClass
 }`
       )
+      createdFiles.push(vmWithParamRefPath)
       const properties = extractNestedProperties(vmWithParamRefPath, ['param'])
       assert.ok(properties.includes('foo'), 'should include parameter property foo')
       assert.ok(properties.includes('bar'), 'should include parameter property bar')
@@ -195,6 +208,7 @@ export class ViewModelWithParamRef {
   items: Array<{ title: string; completed: boolean }> = []
 }`
       )
+      createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['items'])
       assert.ok(properties.includes('length'), 'should include array built-in length')
       assert.ok(properties.includes('title'), 'should include element property title')
@@ -209,6 +223,7 @@ export class ViewModelWithParamRef {
   items: Array<{ name: string; child: { value: number } }> = []
 }`
       )
+      createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['items', 'child'])
       assert.ok(properties.includes('value'), 'should include child property value')
     })
@@ -221,6 +236,7 @@ export class ViewModelWithParamRef {
   names: Array<string> = []
 }`
       )
+      createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['names'])
       const stringBuiltins = Object.getOwnPropertyNames(String.prototype)
       stringBuiltins.forEach((prop) => {
@@ -236,6 +252,7 @@ export class ViewModelWithParamRef {
   items = [{ name: "test" }]
 }`
       )
+      createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['items'])
       assert.ok(properties.includes('length'), 'should include array built-in length')
     })
@@ -245,12 +262,13 @@ export class ViewModelWithParamRef {
       fs.writeFileSync(
         fPath,
         `export class GetterExplicitType {
-  get productos(): Array<{ name: string }> {
+  get products(): Array<{ name: string }> {
     return getProducts()
   }
 }`
       )
-      const properties = extractNestedProperties(fPath, ['productos'])
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['products'])
       assert.ok(properties.includes('length'), 'should include array built-in length')
       assert.ok(properties.includes('name'), 'should include element property name')
     })
@@ -260,12 +278,13 @@ export class ViewModelWithParamRef {
       fs.writeFileSync(
         fPath,
         `export class GetterArrayLiteral {
-  get productos() {
+  get products() {
     return [{ name: "test" }]
   }
 }`
       )
-      const properties = extractNestedProperties(fPath, ['productos'])
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['products'])
       assert.ok(
         properties.includes('length'),
         'should include array built-in length from ArrayLiteralExpression'
@@ -285,6 +304,7 @@ export class ExportedViewModel {
   handleClick(): void {}
 }`
       )
+      createdFiles.push(fPath)
       const members = extractViewModelMembers(fPath)
       assert.ok(members.properties.includes('items'), 'should include property from exported class')
       assert.ok(
@@ -301,23 +321,21 @@ export class ExportedViewModel {
       const fPath = path.join(testFilesDir, 'TypeAliasVM.ts')
       fs.writeFileSync(
         fPath,
-        `export type TipoApuesta = {
-  descripcion: string
-  ganancia: number
-  valoresAApostar: (number | string)[]
+        `export type BetType = {
+  description: string
+  gain: number
+  betValues: (number | string)[]
 }
 
 export class TypeAliasVM {
-  tipos: TipoApuesta[] = []
+  tipos: BetType[] = []
 }`
       )
+      createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['tipos'])
-      assert.ok(properties.includes('descripcion'), 'should include descripcion from type alias')
-      assert.ok(properties.includes('ganancia'), 'should include ganancia from type alias')
-      assert.ok(
-        properties.includes('valoresAApostar'),
-        'should include valoresAApostar from type alias'
-      )
+      assert.ok(properties.includes('description'), 'should include description from type alias')
+      assert.ok(properties.includes('gain'), 'should include gain from type alias')
+      assert.ok(properties.includes('betValues'), 'should include betValues from type alias')
     })
 
     it('should resolve properties through a union type', () => {
@@ -330,6 +348,7 @@ export class UnionTypeVM {
   field: Inner | null = null
 }`
       )
+      createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['field'])
       assert.ok(properties.includes('value'), 'should include value from the non-null union member')
       assert.ok(properties.includes('extra'), 'should include extra from the non-null union member')
@@ -338,6 +357,103 @@ export class UnionTypeVM {
     it('should resolve types across files via import', () => {
       const properties = extractNestedProperties(testVMPath, ['product'])
       assert.deepStrictEqual([...properties].sort(), [...EXPECTED_PRODUCT_INTERFACE].sort())
+    })
+
+    it('should resolve properties from a NewExpression initializer without type annotation', () => {
+      const fPath = path.join(testFilesDir, 'NewExpressionVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class Tweet {
+  text = ''
+  likes = 0
+}
+
+export class NewExpressionVM {
+  tweet = new Tweet()
+}`
+      )
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['tweet'])
+      assert.ok(properties.includes('text'), 'should include text from NewExpression target')
+      createdFiles.push(fPath)
+      assert.ok(properties.includes('likes'), 'should include likes from NewExpression target')
+    })
+
+    it('should include getter names from a type literal with method signatures', () => {
+      const fPath = path.join(testFilesDir, 'TypeLiteralGettersVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export type WithGetters = {
+  label: string
+  get count(): number
+}
+
+export class TypeLiteralGettersVM {
+  field!: WithGetters
+}`
+      )
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['field'])
+      assert.ok(properties.includes('label'), 'should include label PropertySignature')
+      createdFiles.push(fPath)
+      assert.ok(properties.includes('count'), 'should include count MethodSignature getter')
+    })
+
+    it('should resolve properties from a getter without explicit return type', () => {
+      const fPath = path.join(testFilesDir, 'GetterNoReturnTypeVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class InnerTarget {
+  value = 42
+  label = 'test'
+}
+
+export class GetterNoReturnTypeVM {
+  get inner() {
+    return new InnerTarget()
+  }
+}`
+      )
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['inner'])
+      assert.ok(properties.includes('value'), 'should include value from InnerTarget')
+      createdFiles.push(fPath)
+      assert.ok(properties.includes('label'), 'should include label from InnerTarget')
+    })
+
+    it('should resolve types through transitive imports', () => {
+      const deepTargetPath = path.join(testFilesDir, 'DeepTarget.ts')
+      fs.writeFileSync(
+        deepTargetPath,
+        `export class DeepTarget {
+  deepValue = 42
+  label = 'hello'
+}`
+      )
+      createdFiles.push(deepTargetPath)
+      const intermediatePath = path.join(testFilesDir, 'Intermediate.ts')
+      fs.writeFileSync(
+        intermediatePath,
+        `import { DeepTarget } from './DeepTarget'
+
+export class Intermediate {
+  target: DeepTarget | null = null
+}`
+      )
+      createdFiles.push(intermediatePath)
+      const transitiveVmPath = path.join(testFilesDir, 'TransitiveVM.ts')
+      fs.writeFileSync(
+        transitiveVmPath,
+        `import { Intermediate } from './Intermediate'
+
+export class TransitiveVM {
+  container!: Intermediate
+}`
+      )
+      createdFiles.push(transitiveVmPath)
+      const properties = extractNestedProperties(transitiveVmPath, ['container', 'target'])
+      assert.ok(properties.includes('deepValue'), 'should include deepValue from DeepTarget')
+      assert.ok(properties.includes('label'), 'should include label from DeepTarget')
     })
   })
 
