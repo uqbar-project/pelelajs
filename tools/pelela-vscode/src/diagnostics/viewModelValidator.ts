@@ -123,7 +123,7 @@ function validateForEachPath(
 
   return validatePropertyExists(
     attribute,
-    [forEachExpression.collectionName, ...remainingParts],
+    [...forEachExpression.collectionName.split('.'), ...remainingParts],
     tsPath
   )
 }

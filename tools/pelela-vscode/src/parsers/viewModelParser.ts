@@ -138,6 +138,21 @@ function resolveNestedProperty(
   return resolveNestedProperty(childNode, restOfPaths, sourceFile, filePath)
 }
 
+const BUILTIN_CLASSES: Record<string, string[]> = {
+  Array: Object.getOwnPropertyNames(Array.prototype),
+  String: Object.getOwnPropertyNames(String.prototype),
+  Number: Object.getOwnPropertyNames(Number.prototype),
+  Boolean: Object.getOwnPropertyNames(Boolean.prototype),
+}
+
+const BUILTIN_RETURN_TYPES: Record<string, ts.SyntaxKind> = {
+  length: ts.SyntaxKind.NumberKeyword,
+}
+
+function keywordNodeFromKind(kind: ts.KeywordTypeSyntaxKind): ts.KeywordTypeNode {
+  return ts.factory.createKeywordTypeNode(kind)
+}
+
 function extractPropertyNamesFromType(
   node: ts.Node,
   sourceFile: ts.SourceFile,
@@ -150,10 +165,22 @@ function extractPropertyNamesFromType(
     return extractPropertyNamesFromTypeReference(node, sourceFile, filePath)
   }
   if (ts.isArrayTypeNode(node)) {
-    return extractPropertyNamesFromType(node.elementType, sourceFile, filePath)
+    return [
+      ...BUILTIN_CLASSES.Array,
+      ...extractPropertyNamesFromType(node.elementType, sourceFile, filePath),
+    ]
   }
   if (ts.isTypeLiteralNode(node)) {
     return extractPropertyNamesFromTypeLiteral(node)
+  }
+  if (node.kind === ts.SyntaxKind.StringKeyword) {
+    return BUILTIN_CLASSES.String
+  }
+  if (node.kind === ts.SyntaxKind.NumberKeyword) {
+    return BUILTIN_CLASSES.Number
+  }
+  if (node.kind === ts.SyntaxKind.BooleanKeyword) {
+    return BUILTIN_CLASSES.Boolean
   }
   return []
 }
@@ -197,10 +224,18 @@ function resolvePropertyType(
     return resolvePropertyInTypeReference(node, propertyName, sourceFile, filePath)
   }
   if (ts.isArrayTypeNode(node)) {
+    if (BUILTIN_CLASSES.Array.includes(propertyName)) {
+      const returnKind = BUILTIN_RETURN_TYPES[propertyName]
+      return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
+    }
     return resolvePropertyType(node.elementType, propertyName, sourceFile, filePath)
   }
   if (ts.isTypeLiteralNode(node)) {
     return resolvePropertyInTypeLiteral(node, propertyName)
+  }
+  if (node.kind === ts.SyntaxKind.StringKeyword && BUILTIN_CLASSES.String.includes(propertyName)) {
+    const returnKind = BUILTIN_RETURN_TYPES[propertyName]
+    return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
   }
   return undefined
 }

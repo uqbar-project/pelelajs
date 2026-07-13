@@ -45,22 +45,36 @@ function collectAttributes(
   })
 }
 
+const COMMENT_PATTERN = /<!--[\s\S]*?-->/g
+
+function isInsideComment(
+  offset: number,
+  commentRanges: Array<{ start: number; end: number }>
+): boolean {
+  return commentRanges.some((range) => offset >= range.start && offset < range.end)
+}
+
 export function scanDocument(document: vscode.TextDocument): TagInfo[] {
   const fullText = Array.from(
     { length: document.lineCount },
     (_, i) => document.lineAt(i).text
   ).join('\n')
 
-  return Array.from(fullText.matchAll(TAG_PATTERN)).map((match) => {
+  const commentRanges = Array.from(fullText.matchAll(COMMENT_PATTERN)).map((match) => {
+    const matchStart = match.index ?? 0
+    return { start: matchStart, end: matchStart + match[0].length }
+  })
+
+  return Array.from(fullText.matchAll(TAG_PATTERN)).reduce((tags, match) => {
+    const tagStart = match.index ?? 0
+    if (isInsideComment(tagStart, commentRanges)) return tags
     const tagName = match[1]
     const attributeString = match[2] ?? ''
-    const tagStart = match.index ?? 0
-    const attributeStringStart = tagStart + 1 + tagName.length
-    const lineIndex = offsetToPosition(fullText, tagStart).line
-    return {
+    tags.push({
       tagName,
-      lineIndex,
-      attributes: collectAttributes(attributeString, attributeStringStart, fullText),
-    }
-  })
+      lineIndex: offsetToPosition(fullText, tagStart).line,
+      attributes: collectAttributes(attributeString, tagStart + 1 + tagName.length, fullText),
+    })
+    return tags
+  }, [] as TagInfo[])
 }

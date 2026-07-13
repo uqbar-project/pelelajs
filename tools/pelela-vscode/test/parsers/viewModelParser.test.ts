@@ -124,7 +124,34 @@ export interface Product {
 
     it('should extract properties from an interface when the property is an array', () => {
       const properties = extractNestedProperties(testVMPath, ['items'])
-      assert.deepStrictEqual([...properties].sort(), [...EXPECTED_ITEM_INTERFACE].sort())
+      EXPECTED_ITEM_INTERFACE.forEach((prop) => {
+        assert.ok(properties.includes(prop), `should include element property ${prop}`)
+      })
+      assert.ok(properties.includes('length'), 'should include array built-in length')
+    })
+
+    it('should include Array built-in properties', () => {
+      const properties = extractNestedProperties(testVMPath, ['items'])
+      const arrayBuiltins = Object.getOwnPropertyNames(Array.prototype)
+      arrayBuiltins.forEach((prop) => {
+        assert.ok(properties.includes(prop), `should include Array.${prop}`)
+      })
+    })
+
+    it('should include String built-in properties for a string property', () => {
+      const properties = extractNestedProperties(testVMPath, ['name'])
+      const stringBuiltins = Object.getOwnPropertyNames(String.prototype)
+      stringBuiltins.forEach((prop) => {
+        assert.ok(properties.includes(prop), `should include String.${prop}`)
+      })
+    })
+
+    it('should include Number built-in properties for a number property', () => {
+      const properties = extractNestedProperties(testVMPath, ['currentIndex'])
+      const numberBuiltins = Object.getOwnPropertyNames(Number.prototype)
+      numberBuiltins.forEach((prop) => {
+        assert.ok(properties.includes(prop), `should include Number.${prop}`)
+      })
     })
 
     it('should resolve types across files via import', () => {

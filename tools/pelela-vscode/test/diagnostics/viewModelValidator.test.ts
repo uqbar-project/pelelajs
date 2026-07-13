@@ -21,6 +21,9 @@ export class TestViewModel {
   count: number = 0
   obj = { value: "hello" }
   items: { name: string }[] = []
+  selectedBetClass: { bets: { name: string }[] } = { bets: [] }
+  claseSeleccion: string = "active"
+  producto: { imagen: string; descripcion: string } = { imagen: "", descripcion: "" }
 
   handleClick(): void {
     console.log("clicked")
@@ -28,6 +31,10 @@ export class TestViewModel {
 
   handleEnter(): void {
     console.log("enter")
+  }
+
+  irADetalle(): void {
+    console.log("detail")
   }
 }
 `
@@ -137,6 +144,45 @@ describe('viewModelValidator', () => {
       assert.strictEqual(diagnostics.length, 0)
     })
 
+    it('accepts a built-in property like length on an array', () => {
+      const { tags, document } = prepareValidation(['<div if="items.length">'], context)
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts length on a string property', () => {
+      const { tags, document } = prepareValidation(['<div if="name.length">'], context)
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts a dotted nested property in bind-src on img', () => {
+      const { tags, document } = prepareValidation(['<img bind-src="producto.imagen">'], context)
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts a dotted nested property in bind-alt on img', () => {
+      const { tags, document } = prepareValidation(
+        ['<img bind-alt="producto.descripcion">'],
+        context
+      )
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts a ViewModel property in bind-class', () => {
+      const { tags, document } = prepareValidation(['<div bind-class="claseSeleccion">'], context)
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts an existing method in click', () => {
+      const { tags } = prepareValidation(['<div click="irADetalle">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
     it('accepts a for-each index variable used in a binding', () => {
       const { tags, document } = prepareValidation(
         ['<div for-each="item of items" index="i">', '  <span bind-content="i"></span>', '</div>'],
@@ -149,6 +195,32 @@ describe('viewModelValidator', () => {
     it('accepts a for-each item nested property', () => {
       const { tags, document } = prepareValidation(
         ['<div for-each="item of items">', '  <span bind-content="item.name"></span>', '</div>'],
+        context
+      )
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts a for-each item variable from a dotted collection name', () => {
+      const { tags, document } = prepareValidation(
+        [
+          '<div for-each="bet of selectedBetClass.bets">',
+          '  <span bind-content="bet"></span>',
+          '</div>',
+        ],
+        context
+      )
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts a for-each item nested property from a dotted collection name', () => {
+      const { tags, document } = prepareValidation(
+        [
+          '<div for-each="bet of selectedBetClass.bets">',
+          '  <span bind-content="bet.name"></span>',
+          '</div>',
+        ],
         context
       )
       const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)

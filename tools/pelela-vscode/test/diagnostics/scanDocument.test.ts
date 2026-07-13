@@ -56,6 +56,35 @@ describe('scanDocument', () => {
     assert.strictEqual(tags[0].attributes.length, 0)
   })
 
+  it('ignores tags inside an HTML comment', () => {
+    const document = createMockDocument(['<!-- <div class="foo"> -->'])
+    const tags = scanDocument(document)
+    assert.strictEqual(tags.length, 0)
+  })
+
+  it('ignores tags inside a multi-line HTML comment', () => {
+    const document = createMockDocument(['<!--', '  <div class="foo">', '  <span id="bar">', '-->'])
+    const tags = scanDocument(document)
+    assert.strictEqual(tags.length, 0)
+  })
+
+  it('finds only tags outside comments when both are present', () => {
+    const document = createMockDocument([
+      '<header>',
+      '<!-- <div class="old"> -->',
+      '<main>',
+      '<!--',
+      '  <aside>',
+      '-->',
+      '<footer>',
+    ])
+    const tags = scanDocument(document)
+    assert.strictEqual(tags.length, 3)
+    assert.strictEqual(tags[0].tagName, 'header')
+    assert.strictEqual(tags[1].tagName, 'main')
+    assert.strictEqual(tags[2].tagName, 'footer')
+  })
+
   it('finds multiple tags across multi-line content', () => {
     const document = createMockDocument([
       '<div',

@@ -167,6 +167,14 @@ describe('documentParser', () => {
         collectionName: 'items',
       })
     })
+
+    it('should parse a dotted collection name', () => {
+      const result = parseForEachExpression('for-each="bet of selectedBetClass.bets"')
+      assert.deepStrictEqual(result, {
+        itemName: 'bet',
+        collectionName: 'selectedBetClass.bets',
+      })
+    })
   })
 
   describe('parsePropertyPath', () => {
@@ -283,6 +291,15 @@ describe('documentParser', () => {
       ])
       const result = findForEachInElement(document, 1)
       assert.strictEqual(result?.itemName, 'product')
+    })
+
+    it('should find for-each with dotted collection name', () => {
+      const document = createMockDocument([
+        '<div for-each="bet of selectedBetClass.bets">',
+        '  <span bind-content="bet">',
+      ])
+      const result = findForEachInElement(document, 1)
+      assert.strictEqual(result?.itemName, 'bet')
     })
   })
 })

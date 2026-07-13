@@ -250,12 +250,14 @@ function handleIteratedItemCompletions(
 
   if (!forEachExpr) return []
 
-  return extractNestedProperties(typescriptFilePath, [forEachExpr.collectionName]).map((name) => {
-    const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
-    item.detail = 'Pelela ViewModel nested property'
-    item.sortText = `!0_${name}`
-    return item
-  })
+  return extractNestedProperties(typescriptFilePath, forEachExpr.collectionName.split('.')).map(
+    (name) => {
+      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
+      item.detail = 'Pelela ViewModel nested property'
+      item.sortText = `!0_${name}`
+      return item
+    }
+  )
 }
 
 export function createCompletionProvider(): vscode.Disposable {
