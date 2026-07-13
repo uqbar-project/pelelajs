@@ -22,8 +22,8 @@ export class TestViewModel {
   obj = { value: "hello" }
   items: { name: string }[] = []
   selectedBetClass: { bets: { name: string }[] } = { bets: [] }
-  claseSeleccion: string = "active"
-  producto: { imagen: string; descripcion: string } = { imagen: "", descripcion: "" }
+  selectedClass: string = "active"
+  product: { image: string; description: string } = { image: "", description: "" }
 
   handleClick(): void {
     console.log("clicked")
@@ -33,7 +33,7 @@ export class TestViewModel {
     console.log("enter")
   }
 
-  irADetalle(): void {
+  goToDetail(): void {
     console.log("detail")
   }
 }
@@ -157,14 +157,14 @@ describe('viewModelValidator', () => {
     })
 
     it('accepts a dotted nested property in bind-src on img', () => {
-      const { tags, document } = prepareValidation(['<img bind-src="producto.imagen">'], context)
+      const { tags, document } = prepareValidation(['<img bind-src="product.image">'], context)
       const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
       assert.strictEqual(diagnostics.length, 0)
     })
 
     it('accepts a dotted nested property in bind-alt on img', () => {
       const { tags, document } = prepareValidation(
-        ['<img bind-alt="producto.descripcion">'],
+        ['<img bind-alt="product.description">'],
         context
       )
       const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
@@ -172,13 +172,13 @@ describe('viewModelValidator', () => {
     })
 
     it('accepts a ViewModel property in bind-class', () => {
-      const { tags, document } = prepareValidation(['<div bind-class="claseSeleccion">'], context)
+      const { tags, document } = prepareValidation(['<div bind-class="selectedClass">'], context)
       const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
       assert.strictEqual(diagnostics.length, 0)
     })
 
     it('accepts an existing method in click', () => {
-      const { tags } = prepareValidation(['<div click="irADetalle">'], context)
+      const { tags } = prepareValidation(['<div click="goToDetail">'], context)
       const diagnostics = validateEventMethods(tags, context.members)
       assert.strictEqual(diagnostics.length, 0)
     })

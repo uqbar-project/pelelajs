@@ -109,4 +109,13 @@ describe('scanDocument', () => {
     assert.strictEqual(spanTag.attributes[0].name, 'id')
     assert.strictEqual(spanTag.attributes[0].nameRange.start.line, 3)
   })
+
+  it('does not truncate a tag when an attribute value contains >', () => {
+    const document = createMockDocument(['<div if="counter > 0" class="foo">'])
+    const tags = scanDocument(document)
+    assert.strictEqual(tags.length, 1)
+    assert.strictEqual(tags[0].attributes.length, 2)
+    assert.strictEqual(tags[0].attributes[1].name, 'class')
+    assert.strictEqual(tags[0].attributes[1].value, 'foo')
+  })
 })

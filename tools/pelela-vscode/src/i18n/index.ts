@@ -21,7 +21,7 @@ function lookupPath(obj: Locale, path: string[]): string | undefined {
 
 export function interpolate(template: string, params: Record<string, string>): string {
   return Object.entries(params).reduce(
-    (result, [paramKey, paramValue]) => result.replaceAll(`{{${paramKey}}}`, paramValue),
+    (result, [paramKey, paramValue]) => result.replaceAll(`{{${paramKey}}}`, () => paramValue),
     template
   )
 }

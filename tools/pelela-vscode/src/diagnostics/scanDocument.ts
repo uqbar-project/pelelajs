@@ -4,18 +4,26 @@ import type { AttrInfo, TagInfo } from './types'
 const TAG_PATTERN = /<(\w[\w-]*)((?:\s+(?:[^>"']|"[^"]*"|'[^']*')*?)?)\s*\/?>/g
 const ATTR_PATTERN = /([\w-]+)(?:\s*=\s*"([^"]*)"|\s*=\s*'([^']*)')?/g
 
-function offsetToPosition(fullText: string, offset: number): vscode.Position {
-  const textUpToOffset = fullText.slice(0, offset)
-  const line = textUpToOffset.split('\n').length - 1
-  const lastNewline = textUpToOffset.lastIndexOf('\n')
-  const column = lastNewline === -1 ? offset : offset - lastNewline - 1
-  return new vscode.Position(line, column)
+function offsetToPosition(offset: number, lineStarts: number[]): vscode.Position {
+  const line = lineStarts.findIndex((_start, i) => offset < (lineStarts[i + 1] ?? Infinity))
+  return new vscode.Position(line, offset - lineStarts[line])
+}
+
+function buildLineStartOffsets(fullText: string): number[] {
+  const lines = fullText.split('\n')
+  return lines.slice(0, -1).reduce(
+    (acc, line) => {
+      acc.push(acc[acc.length - 1] + line.length + 1)
+      return acc
+    },
+    [0]
+  )
 }
 
 function collectAttributes(
   attributeString: string,
   attributeStringStart: number,
-  fullText: string
+  lineStarts: number[]
 ): AttrInfo[] {
   return Array.from(attributeString.matchAll(ATTR_PATTERN)).map((match) => {
     const [fullMatch, name, doubleQuotedValue, singleQuotedValue] = match
@@ -28,8 +36,8 @@ function collectAttributes(
 
     const valueRange = hasValue
       ? new vscode.Range(
-          offsetToPosition(fullText, matchEnd - value.length),
-          offsetToPosition(fullText, matchEnd)
+          offsetToPosition(matchEnd - value.length, lineStarts),
+          offsetToPosition(matchEnd, lineStarts)
         )
       : null
 
@@ -37,8 +45,8 @@ function collectAttributes(
       name,
       value,
       nameRange: new vscode.Range(
-        offsetToPosition(fullText, attrStart),
-        offsetToPosition(fullText, nameEnd)
+        offsetToPosition(attrStart, lineStarts),
+        offsetToPosition(nameEnd, lineStarts)
       ),
       valueRange,
     }
@@ -60,6 +68,8 @@ export function scanDocument(document: vscode.TextDocument): TagInfo[] {
     (_, i) => document.lineAt(i).text
   ).join('\n')
 
+  const lineStarts = buildLineStartOffsets(fullText)
+
   const commentRanges = Array.from(fullText.matchAll(COMMENT_PATTERN)).map((match) => {
     const matchStart = match.index ?? 0
     return { start: matchStart, end: matchStart + match[0].length }
@@ -72,8 +82,8 @@ export function scanDocument(document: vscode.TextDocument): TagInfo[] {
     const attributeString = match[2] ?? ''
     tags.push({
       tagName,
-      lineIndex: offsetToPosition(fullText, tagStart).line,
-      attributes: collectAttributes(attributeString, tagStart + 1 + tagName.length, fullText),
+      lineIndex: offsetToPosition(tagStart, lineStarts).line,
+      attributes: collectAttributes(attributeString, tagStart + 1 + tagName.length, lineStarts),
     })
     return tags
   }, [] as TagInfo[])

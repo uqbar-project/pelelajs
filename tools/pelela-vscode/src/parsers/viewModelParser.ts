@@ -65,12 +65,13 @@ function getMemberInfo(
 
 export function extractViewModelMembers(typescriptFilePath: string): ViewModelMembers {
   const sourceFile = getCachedSourceFile(typescriptFilePath)
-  const initialMembers: ViewModelMembers = { properties: [], methods: [] }
 
   const classDeclaration = sourceFile.statements.find(
     (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement)
   )
-  if (!classDeclaration) return initialMembers
+  if (!classDeclaration) return { properties: [], methods: [] }
+
+  const paramProperties = getParameterPropertyNames(classDeclaration)
 
   return classDeclaration.members
     .filter(isRelevantMember)
@@ -80,14 +81,17 @@ export function extractViewModelMembers(typescriptFilePath: string): ViewModelMe
       (memberInfo): memberInfo is { name: string; kind: 'property' | 'method' } =>
         memberInfo !== null
     )
-    .reduce((accumulator, { name, kind }) => {
-      if (kind === 'method') {
-        accumulator.methods.push(name)
-      } else {
-        accumulator.properties.push(name)
-      }
-      return accumulator
-    }, initialMembers)
+    .reduce(
+      (accumulator, { name, kind }) => {
+        if (kind === 'method') {
+          accumulator.methods.push(name)
+        } else {
+          accumulator.properties.push(name)
+        }
+        return accumulator
+      },
+      { properties: [...paramProperties], methods: [] as string[] }
+    )
 }
 
 export function extractNestedProperties(
@@ -282,8 +286,21 @@ function resolvePropertyInTypeReference(
       (ts.isPropertySignature(declarationMember) || ts.isPropertyDeclaration(declarationMember)) &&
       getDeclarationName(declarationMember) === propertyName
   )
-  if (!member) return undefined
-  return member.type ?? (ts.isPropertyDeclaration(member) ? member.initializer : undefined)
+  if (member) {
+    return member.type ?? (ts.isPropertyDeclaration(member) ? member.initializer : undefined)
+  }
+  if (ts.isClassDeclaration(declaration)) {
+    const paramType = getParameterPropertyType(declaration, propertyName)
+    if (paramType) return paramType
+
+    const getter = declaration.members.find(
+      (getterMember): getterMember is ts.GetAccessorDeclaration =>
+        ts.isGetAccessorDeclaration(getterMember) &&
+        getDeclarationName(getterMember) === propertyName
+    )
+    if (getter) return getter.type
+  }
+  return undefined
 }
 
 function resolveTypeReference(
@@ -313,11 +330,54 @@ function findDeclaration(
   )
 }
 
+function getParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
+  const ctor = declaration.members.find((member): member is ts.ConstructorDeclaration =>
+    ts.isConstructorDeclaration(member)
+  )
+  if (!ctor) return []
+  return ctor.parameters
+    .filter(
+      (param) =>
+        (ts.getCombinedModifierFlags(param) &
+          (ts.ModifierFlags.Public | ts.ModifierFlags.Protected | ts.ModifierFlags.Private)) !==
+        0
+    )
+    .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function getParameterPropertyType(
+  declaration: ts.ClassDeclaration,
+  propertyName: string
+): ts.TypeNode | undefined {
+  const ctor = declaration.members.find((member): member is ts.ConstructorDeclaration =>
+    ts.isConstructorDeclaration(member)
+  )
+  if (!ctor) return undefined
+  const param = ctor.parameters.find(
+    (param) =>
+      (ts.getCombinedModifierFlags(param) &
+        (ts.ModifierFlags.Public | ts.ModifierFlags.Protected | ts.ModifierFlags.Private)) !==
+        0 &&
+      param.name !== undefined &&
+      ts.isIdentifier(param.name) &&
+      param.name.text === propertyName
+  )
+  return param?.type
+}
+
+function getAccessorNames(declaration: ts.ClassDeclaration): string[] {
+  return declaration.members
+    .filter((member): member is ts.GetAccessorDeclaration => ts.isGetAccessorDeclaration(member))
+    .map((member) => (member.name && ts.isIdentifier(member.name) ? member.name.text : ''))
+    .filter((name) => name !== '')
+}
+
 function membersFromDeclaration(
   declaration: ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration
 ): string[] {
   if (ts.isTypeAliasDeclaration(declaration)) return []
-  return declaration.members
+  const regularMembers = declaration.members
     .filter(
       (declarationMember): declarationMember is ts.PropertySignature | ts.PropertyDeclaration =>
         ts.isPropertySignature(declarationMember) || ts.isPropertyDeclaration(declarationMember)
@@ -328,6 +388,15 @@ function membersFromDeclaration(
         : ''
     )
     .filter((name) => name !== '')
+
+  if (ts.isClassDeclaration(declaration)) {
+    return [
+      ...regularMembers,
+      ...getParameterPropertyNames(declaration),
+      ...getAccessorNames(declaration),
+    ]
+  }
+  return regularMembers
 }
 
 function findCrossFileDeclaration(

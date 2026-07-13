@@ -107,6 +107,31 @@ export interface Product {
   })
 
   describe('extractNestedProperties', () => {
+    it('should resolve properties from a class with constructor parameter properties', () => {
+      const paramClassPath = path.join(testFilesDir, 'ParamClass.ts')
+      fs.writeFileSync(
+        paramClassPath,
+        `export class ParamClass {
+  constructor(
+    public foo: number,
+    public bar: string,
+  ) {}
+  get baz() { return this.foo }
+}`
+      )
+      const vmWithParamRefPath = path.join(testFilesDir, 'vmWithParamRef.ts')
+      fs.writeFileSync(
+        vmWithParamRefPath,
+        `import { ParamClass } from './ParamClass'
+export class ViewModelWithParamRef {
+  param!: ParamClass
+}`
+      )
+      const properties = extractNestedProperties(vmWithParamRefPath, ['param'])
+      assert.ok(properties.includes('foo'), 'should include parameter property foo')
+      assert.ok(properties.includes('bar'), 'should include parameter property bar')
+      assert.ok(properties.includes('baz'), 'should include getter baz')
+    })
     it('should extract properties from an object literal', () => {
       const properties = extractNestedProperties(testVMPath, ['user'])
       assert.deepStrictEqual([...properties].sort(), [...EXPECTED_USER_PROPERTIES].sort())
@@ -151,6 +176,14 @@ export interface Product {
       const numberBuiltins = Object.getOwnPropertyNames(Number.prototype)
       numberBuiltins.forEach((prop) => {
         assert.ok(properties.includes(prop), `should include Number.${prop}`)
+      })
+    })
+
+    it('should include Boolean built-in properties for a boolean property', () => {
+      const properties = extractNestedProperties(testVMPath, ['isSelected'])
+      const booleanBuiltins = Object.getOwnPropertyNames(Boolean.prototype)
+      booleanBuiltins.forEach((prop) => {
+        assert.ok(properties.includes(prop), `should include Boolean.${prop}`)
       })
     })
 
