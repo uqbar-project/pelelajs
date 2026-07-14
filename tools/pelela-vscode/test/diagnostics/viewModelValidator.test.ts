@@ -272,6 +272,17 @@ describe('viewModelValidator', () => {
       assert.strictEqual(diagnostics.length, 0)
     })
 
+    it('rejects element property accessed directly on array outside for-each', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="items.name">'], context)
+      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'name' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
     it('accepts a for-each item variable from a dotted collection name', () => {
       const { tags, document } = prepareValidation(
         [

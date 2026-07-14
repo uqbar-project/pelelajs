@@ -1,7 +1,11 @@
 import * as vscode from 'vscode'
 import { findClassDefinition } from '../parsers/definitionFinder'
 import { findForEachInElement, parseForEachExpression } from '../parsers/documentParser'
-import { extractNestedProperties, type ViewModelMembers } from '../parsers/viewModelParser'
+import {
+  extractNestedProperties,
+  pathExists,
+  type ViewModelMembers,
+} from '../parsers/viewModelParser'
 import { makeDiagnostic } from './createDiagnostic'
 import type { AttrInfo, TagInfo } from './types'
 
@@ -121,11 +125,18 @@ function validateForEachPath(
   const remainingParts = pathParts.slice(1)
   if (remainingParts.length === 0) return []
 
-  return validatePropertyExists(
-    attribute,
-    [...forEachExpression.collectionName.split('.'), ...remainingParts],
-    tsPath
-  )
+  const fullPath = [...forEachExpression.collectionName.split('.'), ...remainingParts]
+  if (pathExists(tsPath, fullPath)) return []
+
+  const lastPart = fullPath[fullPath.length - 1]
+  return [
+    makeDiagnostic(
+      attribute.valueRange ?? attribute.nameRange,
+      'diagnostics.propertyNotFound',
+      { name: lastPart },
+      vscode.DiagnosticSeverity.Error
+    ),
+  ]
 }
 
 function validateNestedPath(

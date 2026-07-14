@@ -147,20 +147,39 @@ export function extractNestedProperties(
   return resolveNestedProperty(startingNode, remainingPaths, sourceFile, typescriptFilePath)
 }
 
+function resolveToNode(
+  node: ts.Node,
+  remainingPaths: string[],
+  sourceFile: ts.SourceFile,
+  filePath: string
+): ts.Node | undefined {
+  if (remainingPaths.length === 0) return node
+  const [currentPath, ...restOfPaths] = remainingPaths
+  const childNode = resolvePropertyType(node, currentPath, sourceFile, filePath)
+  if (!childNode) return undefined
+  return resolveToNode(childNode, restOfPaths, sourceFile, filePath)
+}
+
 function resolveNestedProperty(
   node: ts.Node,
   remainingPaths: string[],
   sourceFile: ts.SourceFile,
   filePath: string
 ): string[] {
-  if (remainingPaths.length === 0) {
-    return extractPropertyNamesFromType(node, sourceFile, filePath)
-  }
+  const resolved = resolveToNode(node, remainingPaths, sourceFile, filePath)
+  if (!resolved) return []
+  return extractPropertyNamesFromType(resolved, sourceFile, filePath)
+}
 
-  const [currentPath, ...restOfPaths] = remainingPaths
-  const childNode = resolvePropertyType(node, currentPath, sourceFile, filePath)
-  if (!childNode) return []
-  return resolveNestedProperty(childNode, restOfPaths, sourceFile, filePath)
+export function pathExists(typescriptFilePath: string, propertyPaths: string[]): boolean {
+  if (propertyPaths.length === 0) return false
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
+  const rootPropertyName = propertyPaths[0]
+  const startingNode = findPropertyTypeNode(sourceFile, rootPropertyName)
+  if (!startingNode) return false
+  const remainingPaths = propertyPaths.slice(1)
+  const finalNode = resolveToNode(startingNode, remainingPaths, sourceFile, typescriptFilePath)
+  return finalNode !== undefined
 }
 
 const BUILTIN_CLASSES: Record<string, string[]> = {
@@ -197,12 +216,6 @@ function extractPropertyNamesFromType(
   filePath: string
 ): string[] {
   if (ts.isArrayLiteralExpression(node)) {
-    if (node.elements.length > 0) {
-      return [
-        ...BUILTIN_CLASSES.Array,
-        ...extractPropertyNamesFromType(node.elements[0], sourceFile, filePath),
-      ]
-    }
     return BUILTIN_CLASSES.Array
   }
   if (ts.isObjectLiteralExpression(node)) {
@@ -215,18 +228,12 @@ function extractPropertyNamesFromType(
       node.typeArguments !== undefined &&
       node.typeArguments.length === 1
     ) {
-      return [
-        ...BUILTIN_CLASSES.Array,
-        ...extractPropertyNamesFromType(node.typeArguments[0], sourceFile, filePath),
-      ]
+      return BUILTIN_CLASSES.Array
     }
     return extractPropertyNamesFromTypeReference(node, sourceFile, filePath)
   }
   if (ts.isArrayTypeNode(node)) {
-    return [
-      ...BUILTIN_CLASSES.Array,
-      ...extractPropertyNamesFromType(node.elementType, sourceFile, filePath),
-    ]
+    return BUILTIN_CLASSES.Array
   }
   if (ts.isTypeLiteralNode(node)) {
     return extractPropertyNamesFromTypeLiteral(node)

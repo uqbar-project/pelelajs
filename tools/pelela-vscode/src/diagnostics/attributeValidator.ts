@@ -19,7 +19,7 @@ function isPelelaAttribute(name: string): boolean {
 }
 
 function isKnownAttribute(name: string): boolean {
-  return matchesAttribute(name, HTML_KNOWN) || isPelelaAttribute(name)
+  return matchesAttribute(name, HTML_KNOWN) || isPelelaAttribute(name) || name.startsWith('on')
 }
 
 export function validateUnknownAttributes(tags: TagInfo[]): vscode.Diagnostic[] {

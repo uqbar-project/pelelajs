@@ -162,10 +162,7 @@ export class ViewModelWithParamRef {
 
     it('should extract properties from an interface when the property is an array', () => {
       const properties = extractNestedProperties(testVMPath, ['items'])
-      EXPECTED_ITEM_INTERFACE.forEach((prop) => {
-        assert.ok(properties.includes(prop), `should include element property ${prop}`)
-      })
-      assert.ok(properties.includes('length'), 'should include array built-in length')
+      assert.ok(!properties.includes('id'), 'should NOT include element property id on array')
     })
 
     it('should include Array built-in properties', () => {
@@ -211,8 +208,7 @@ export class ViewModelWithParamRef {
       createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['items'])
       assert.ok(properties.includes('length'), 'should include array built-in length')
-      assert.ok(properties.includes('title'), 'should include element property title')
-      assert.ok(properties.includes('completed'), 'should include element property completed')
+      assert.ok(!properties.includes('title'), 'should NOT include element property title on array')
     })
 
     it('should resolve nested property through Array<Type> syntax', () => {
@@ -238,10 +234,11 @@ export class ViewModelWithParamRef {
       )
       createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['names'])
-      const stringBuiltins = Object.getOwnPropertyNames(String.prototype)
-      stringBuiltins.forEach((prop) => {
-        assert.ok(properties.includes(prop), `should include String.${prop}`)
-      })
+      assert.ok(properties.includes('length'), 'should include array built-in length')
+      assert.ok(
+        !properties.includes('charAt'),
+        'should NOT include element string property charAt on array'
+      )
     })
 
     it('should resolve Array built-in properties from an array literal initializer', () => {
@@ -270,7 +267,7 @@ export class ViewModelWithParamRef {
       createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['products'])
       assert.ok(properties.includes('length'), 'should include array built-in length')
-      assert.ok(properties.includes('name'), 'should include element property name')
+      assert.ok(!properties.includes('name'), 'should NOT include element property name on array')
     })
 
     it('should resolve properties from a getter returning an array literal', () => {
@@ -333,9 +330,11 @@ export class TypeAliasVM {
       )
       createdFiles.push(fPath)
       const properties = extractNestedProperties(fPath, ['tipos'])
-      assert.ok(properties.includes('description'), 'should include description from type alias')
-      assert.ok(properties.includes('gain'), 'should include gain from type alias')
-      assert.ok(properties.includes('betValues'), 'should include betValues from type alias')
+      assert.ok(properties.includes('length'), 'should include array built-in length')
+      assert.ok(
+        !properties.includes('description'),
+        'should NOT include element property description on array'
+      )
     })
 
     it('should resolve properties through a union type', () => {
