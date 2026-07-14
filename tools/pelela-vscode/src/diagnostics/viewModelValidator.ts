@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
-import { findClassDefinition } from '../parsers/definitionFinder'
 import { findForEachInElement, parseForEachExpression } from '../parsers/documentParser'
 import {
   extractNestedProperties,
+  isExportedClass,
   pathExists,
   type ViewModelMembers,
 } from '../parsers/viewModelParser'
@@ -24,7 +24,7 @@ export function validateViewModelExistence(tags: TagInfo[], tsPath: string): vsc
   return tags.flatMap((tag) =>
     tag.attributes
       .filter((attribute) => attribute.name === 'view-model')
-      .filter((attribute) => !findClassDefinition(tsPath, attribute.value))
+      .filter((attribute) => !isExportedClass(tsPath, attribute.value))
       .map((attribute) =>
         makeDiagnostic(
           attribute.valueRange ?? attribute.nameRange,

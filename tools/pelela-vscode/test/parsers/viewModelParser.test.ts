@@ -239,6 +239,51 @@ export class C extends B {
         'should include inherited property aProp from A'
       )
     })
+
+    it('should return empty members for a non-exported class', () => {
+      const fPath = path.join(testFilesDir, 'NonExportedVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class NonExported {
+  title: string = ''
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'NonExported')
+      assert.strictEqual(members.properties.length, 0)
+      assert.strictEqual(members.methods.length, 0)
+    })
+
+    it('should return empty members for an export default class (no named export)', () => {
+      const fPath = path.join(testFilesDir, 'DefaultExportVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export default class DefaultExported {
+  title: string = ''
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'DefaultExported')
+      assert.strictEqual(members.properties.length, 0)
+      assert.strictEqual(members.methods.length, 0)
+    })
+
+    it('should detect a class exported via export { X } specifier', () => {
+      const fPath = path.join(testFilesDir, 'ExportSpecifierVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class ExportSpecifier {
+  title: string = ''
+}
+export { ExportSpecifier }`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'ExportSpecifier')
+      assert.ok(
+        members.properties.includes('title'),
+        'should include property from class exported via specifier'
+      )
+    })
   })
 
   describe('extractNestedProperties', () => {

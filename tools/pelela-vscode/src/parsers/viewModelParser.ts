@@ -125,16 +125,51 @@ export function extractViewModelMembers(
 ): ViewModelMembers {
   const sourceFile = getCachedSourceFile(typescriptFilePath)
 
-  const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath)
+  const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath, true)
   if (!classDeclaration) return { properties: [], methods: [] }
 
   return collectViewModelMembers(classDeclaration, new Set<string>())
 }
 
+function isClassExportedDirectly(classDeclaration: ts.ClassDeclaration): boolean {
+  return (
+    classDeclaration.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ??
+    false
+  )
+}
+
+function isClassExportedViaSpecifier(sourceFile: ts.SourceFile, className: string): boolean {
+  return sourceFile.statements
+    .filter((statement): statement is ts.ExportDeclaration => ts.isExportDeclaration(statement))
+    .some((statement) => {
+      const clause = statement.exportClause
+      if (!clause || !ts.isNamedExports(clause)) return false
+      return clause.elements.some(
+        (element) => (element.propertyName ?? element.name).text === className
+      )
+    })
+}
+
+function isExportedClassDeclaration(
+  classDeclaration: ts.ClassDeclaration,
+  sourceFile: ts.SourceFile,
+  className: string
+): boolean {
+  const hasDefaultExport = classDeclaration.modifiers?.some(
+    (modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword
+  )
+  if (hasDefaultExport) return false
+
+  return (
+    isClassExportedDirectly(classDeclaration) || isClassExportedViaSpecifier(sourceFile, className)
+  )
+}
+
 function getClassDeclaration(
   sourceFile: ts.SourceFile,
   className: string,
-  filePath: string
+  filePath: string,
+  requireExport: boolean = false
 ): ts.ClassDeclaration | undefined {
   const classDeclarations = sourceFile.statements.filter(
     (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement)
@@ -144,12 +179,21 @@ function getClassDeclaration(
     (classDeclaration) =>
       classDeclaration.name !== undefined && classDeclaration.name.text === className
   )
-  if (namedClass) return namedClass
+  if (namedClass) {
+    if (!requireExport || isExportedClassDeclaration(namedClass, sourceFile, className)) {
+      return namedClass
+    }
+  }
 
   const deepDeclaration = findDeclarationDeep(className, sourceFile, filePath, new Set<string>())
   if (deepDeclaration && ts.isClassDeclaration(deepDeclaration)) return deepDeclaration
 
   return undefined
+}
+
+export function isExportedClass(typescriptFilePath: string, className: string): boolean {
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
+  return getClassDeclaration(sourceFile, className, typescriptFilePath, true) !== undefined
 }
 
 function findPropertyTypeNode(
