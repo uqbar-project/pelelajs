@@ -51,6 +51,43 @@ describe('attributeValidator', () => {
       assert.strictEqual(validateUnknownAttributes(tags).length, 0)
     })
 
+    it('allows on-* event handler attribute', () => {
+      const tags = prepareTags(['<div onclick="handler">'])
+      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+    })
+
+    it('allows colspan', () => {
+      const tags = prepareTags(['<td colspan="2">'])
+      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+    })
+
+    it('allows controls', () => {
+      const tags = prepareTags(['<video controls>'])
+      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+    })
+
+    it('allows method', () => {
+      const tags = prepareTags(['<form method="POST">'])
+      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+    })
+
+    it('allows autofocus', () => {
+      const tags = prepareTags(['<input autofocus>'])
+      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+    })
+
+    it('allows contenteditable', () => {
+      const tags = prepareTags(['<div contenteditable="true">'])
+      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+    })
+
+    it('recognizes all listed attributes as valid', () => {
+      const tags = prepareTags([
+        '<div id="x" class="y" style="z" title="t" lang="en" dir="ltr" hidden tabindex="0" draggable="true">',
+      ])
+      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+    })
+
     it('flags unknown attribute as Warning severity', () => {
       const tags = prepareTags(['<div foo="bar">'])
       const diagnostics = validateUnknownAttributes(tags)

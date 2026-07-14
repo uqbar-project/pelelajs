@@ -57,6 +57,7 @@ describe('htmlUtils', () => {
 
       assert.ok(attributes.includes('data-'))
       assert.ok(attributes.includes('aria-'))
+      assert.ok(attributes.includes('on-'))
     })
 
     it('should include textarea-specific attributes', () => {
@@ -64,6 +65,44 @@ describe('htmlUtils', () => {
 
       assert.ok(attributes.includes('rows'))
       assert.ok(attributes.includes('cols'))
+    })
+
+    it('should include table attributes', () => {
+      const attributes = getHtmlAttributes()
+
+      assert.ok(attributes.includes('colspan'))
+      assert.ok(attributes.includes('rowspan'))
+      assert.ok(attributes.includes('headers'))
+      assert.ok(attributes.includes('scope'))
+    })
+
+    it('should include form attributes', () => {
+      const attributes = getHtmlAttributes()
+
+      assert.ok(attributes.includes('method'))
+      assert.ok(attributes.includes('action'))
+      assert.ok(attributes.includes('enctype'))
+      assert.ok(attributes.includes('novalidate'))
+    })
+
+    it('should include media attributes', () => {
+      const attributes = getHtmlAttributes()
+
+      assert.ok(attributes.includes('controls'))
+      assert.ok(attributes.includes('autoplay'))
+      assert.ok(attributes.includes('loop'))
+      assert.ok(attributes.includes('muted'))
+      assert.ok(attributes.includes('poster'))
+    })
+
+    it('should include global attributes', () => {
+      const attributes = getHtmlAttributes()
+
+      assert.ok(attributes.includes('autofocus'))
+      assert.ok(attributes.includes('contenteditable'))
+      assert.ok(attributes.includes('draggable'))
+      assert.ok(attributes.includes('inert'))
+      assert.ok(attributes.includes('popover'))
     })
   })
 
