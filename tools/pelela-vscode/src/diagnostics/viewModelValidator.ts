@@ -40,13 +40,14 @@ export function validateBindingProperties(
   tags: TagInfo[],
   tsPath: string,
   members: ViewModelMembers,
-  document: vscode.TextDocument
+  document: vscode.TextDocument,
+  className: string
 ): vscode.Diagnostic[] {
   return tags.flatMap((tag) =>
     tag.attributes
       .filter((attribute) => isBindingAttribute(attribute.name))
       .flatMap((attribute) =>
-        validatePropertyPath(attribute, tag.lineIndex, tsPath, members, document)
+        validatePropertyPath(attribute, tag.lineIndex, tsPath, members, document, className)
       )
   )
 }
@@ -56,7 +57,8 @@ function validatePropertyPath(
   lineIndex: number,
   tsPath: string,
   members: ViewModelMembers,
-  document: vscode.TextDocument
+  document: vscode.TextDocument,
+  className: string
 ): vscode.Diagnostic[] {
   const pathParts = attribute.value.split('.')
   const firstPart = pathParts[0]
@@ -65,7 +67,7 @@ function validatePropertyPath(
 
   if (forEachResult) {
     if (forEachResult.itemName === firstPart) {
-      return validateForEachPath(attribute, pathParts, tsPath, forEachResult, document)
+      return validateForEachPath(attribute, pathParts, tsPath, forEachResult, document, className)
     }
     if (forEachResult.indexName === firstPart) {
       return []
@@ -84,7 +86,7 @@ function validatePropertyPath(
   }
 
   if (pathParts.length > 1) {
-    return validateNestedPath(attribute, pathParts, tsPath)
+    return validateNestedPath(attribute, pathParts, tsPath, className)
   }
 
   return []
@@ -93,11 +95,12 @@ function validatePropertyPath(
 function validatePropertyExists(
   attribute: AttrInfo,
   fullPathParts: string[],
-  tsPath: string
+  tsPath: string,
+  className: string
 ): vscode.Diagnostic[] {
   const parentPathParts = fullPathParts.slice(0, -1)
   const lastPart = fullPathParts[fullPathParts.length - 1]
-  const parentProperties = extractNestedProperties(tsPath, parentPathParts)
+  const parentProperties = extractNestedProperties(tsPath, parentPathParts, className)
 
   if (parentProperties.includes(lastPart)) return []
 
@@ -116,7 +119,8 @@ function validateForEachPath(
   pathParts: string[],
   tsPath: string,
   forEachResult: { line: number; itemName: string },
-  document: vscode.TextDocument
+  document: vscode.TextDocument,
+  className: string
 ): vscode.Diagnostic[] {
   const forEachLine = document.lineAt(forEachResult.line).text
   const forEachExpression = parseForEachExpression(forEachLine)
@@ -126,7 +130,7 @@ function validateForEachPath(
   if (remainingParts.length === 0) return []
 
   const fullPath = [...forEachExpression.collectionName.split('.'), ...remainingParts]
-  if (pathExists(tsPath, fullPath)) return []
+  if (pathExists(tsPath, fullPath, className)) return []
 
   const lastPart = fullPath[fullPath.length - 1]
   return [
@@ -142,9 +146,10 @@ function validateForEachPath(
 function validateNestedPath(
   attribute: AttrInfo,
   pathParts: string[],
-  tsPath: string
+  tsPath: string,
+  className: string
 ): vscode.Diagnostic[] {
-  return validatePropertyExists(attribute, pathParts, tsPath)
+  return validatePropertyExists(attribute, pathParts, tsPath, className)
 }
 
 export function validateEventMethods(

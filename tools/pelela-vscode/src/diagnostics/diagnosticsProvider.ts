@@ -36,10 +36,20 @@ export function createDiagnosticsProvider(): vscode.Disposable {
 
     const tsPath = findViewModelFile(document.uri)
     if (tsPath !== null) {
-      const members = extractViewModelMembers(tsPath)
       diagnostics.push(...validateViewModelExistence(tags, tsPath))
-      diagnostics.push(...validateBindingProperties(tags, tsPath, members, document))
-      diagnostics.push(...validateEventMethods(tags, members))
+
+      const viewModelAttribute = tags
+        .flatMap((tag) => tag.attributes)
+        .find((attribute) => attribute.name === 'view-model')
+      const viewModelName = viewModelAttribute?.value
+
+      if (viewModelName) {
+        const members = extractViewModelMembers(tsPath, viewModelName)
+        diagnostics.push(
+          ...validateBindingProperties(tags, tsPath, members, document, viewModelName)
+        )
+        diagnostics.push(...validateEventMethods(tags, members))
+      }
     }
 
     collection.set(document.uri, diagnostics)

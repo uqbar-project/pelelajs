@@ -101,7 +101,8 @@ describe('completionProvider', () => {
         testVMPath,
         'bind-content',
         document,
-        position
+        position,
+        'TestViewModel'
       )
 
       const labels = completions.map((item) => item.label)
@@ -125,7 +126,8 @@ describe('completionProvider', () => {
         testVMPath,
         'bind-content',
         document,
-        position
+        position,
+        'TestViewModel'
       )
 
       const labels = completions.map((item) => item.label)
@@ -140,7 +142,13 @@ describe('completionProvider', () => {
     it('should include only methods for event attributes', () => {
       const document = createMockDocument(['<div>', '  <button click="'])
       const position = createMockPosition(1, 17)
-      const completions = provideBasicViewModelCompletions(testVMPath, 'click', document, position)
+      const completions = provideBasicViewModelCompletions(
+        testVMPath,
+        'click',
+        document,
+        position,
+        'TestViewModel'
+      )
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes('handleClick'), 'should include method')
@@ -155,7 +163,13 @@ describe('completionProvider', () => {
         '  <button click="',
       ])
       const position = createMockPosition(1, 17)
-      const completions = provideBasicViewModelCompletions(testVMPath, 'click', document, position)
+      const completions = provideBasicViewModelCompletions(
+        testVMPath,
+        'click',
+        document,
+        position,
+        'TestViewModel'
+      )
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes('handleClick'), 'should include method')
@@ -169,7 +183,8 @@ describe('completionProvider', () => {
         testVMPath,
         'bind-content',
         document,
-        position
+        position,
+        'TestViewModel'
       )
 
       const labels = completions.map((item) => item.label)

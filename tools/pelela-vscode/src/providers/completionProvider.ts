@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { scanDocument } from '../diagnostics/scanDocument'
 import {
   type ForEachResult,
   findForEachInElement,
@@ -136,6 +137,14 @@ export function addPelelaAttributeCompletions(
   })
 }
 
+function extractViewModelName(document: vscode.TextDocument): string | undefined {
+  const tags = scanDocument(document)
+  const viewModelAttribute = tags
+    .flatMap((tag) => tag.attributes)
+    .find((attribute) => attribute.name === 'view-model')
+  return viewModelAttribute?.value
+}
+
 async function provideAttributeValueCompletions(
   document: vscode.TextDocument,
   position: vscode.Position,
@@ -154,25 +163,47 @@ async function provideAttributeValueCompletions(
   const typescriptFilePath = findViewModelFile(document.uri)
   if (!typescriptFilePath) return []
 
+  const viewModelName = extractViewModelName(document)
+  if (!viewModelName) return []
+
   const valueBeforeCursor = getAttributeValueMatch(textBeforeCursor)
   if (!valueBeforeCursor) {
-    return provideBasicViewModelCompletions(typescriptFilePath, attributeName, document, position)
+    return provideBasicViewModelCompletions(
+      typescriptFilePath,
+      attributeName,
+      document,
+      position,
+      viewModelName
+    )
   }
 
   const propertyPath = parsePropertyPath(valueBeforeCursor)
   return propertyPath
-    ? provideNestedPropertyCompletions(document, position, typescriptFilePath, propertyPath)
-    : provideBasicViewModelCompletions(typescriptFilePath, attributeName, document, position)
+    ? provideNestedPropertyCompletions(
+        document,
+        position,
+        typescriptFilePath,
+        propertyPath,
+        viewModelName
+      )
+    : provideBasicViewModelCompletions(
+        typescriptFilePath,
+        attributeName,
+        document,
+        position,
+        viewModelName
+      )
 }
 
 export function provideBasicViewModelCompletions(
   typescriptFilePath: string,
   attributeName: string,
   document: vscode.TextDocument,
-  position: vscode.Position
+  position: vscode.Position,
+  viewModelName: string
 ): vscode.CompletionItem[] {
   const items: vscode.CompletionItem[] = []
-  const { properties, methods } = extractViewModelMembers(typescriptFilePath)
+  const { properties, methods } = extractViewModelMembers(typescriptFilePath, viewModelName)
 
   if (EVENT_ATTRIBUTES.has(attributeName)) {
     items.push(...methods.map(createMethodCompletion))
@@ -215,15 +246,21 @@ async function provideNestedPropertyCompletions(
   document: vscode.TextDocument,
   position: vscode.Position,
   typescriptFilePath: string,
-  propertyPath: string[]
+  propertyPath: string[],
+  viewModelName: string
 ): Promise<vscode.CompletionItem[]> {
   const forEachInElement = findForEachInElement(document, position.line)
 
   if (isIteratedItemProperty(forEachInElement, propertyPath) && forEachInElement) {
-    return handleIteratedItemCompletions(document, forEachInElement, typescriptFilePath)
+    return handleIteratedItemCompletions(
+      document,
+      forEachInElement,
+      typescriptFilePath,
+      viewModelName
+    )
   }
 
-  return extractNestedProperties(typescriptFilePath, propertyPath).map((name) => {
+  return extractNestedProperties(typescriptFilePath, propertyPath, viewModelName).map((name) => {
     const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
     item.detail = 'Pelela ViewModel nested property'
     item.sortText = `!0_${name}`
@@ -243,21 +280,24 @@ function isIteratedItemProperty(
 function handleIteratedItemCompletions(
   document: vscode.TextDocument,
   forEachInElement: ForEachResult,
-  typescriptFilePath: string
+  typescriptFilePath: string,
+  viewModelName: string
 ): vscode.CompletionItem[] {
   const forEachLine = document.lineAt(forEachInElement.line).text
   const forEachExpr = parseForEachExpression(forEachLine)
 
   if (!forEachExpr) return []
 
-  return extractNestedProperties(typescriptFilePath, forEachExpr.collectionName.split('.')).map(
-    (name) => {
-      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
-      item.detail = 'Pelela ViewModel nested property'
-      item.sortText = `!0_${name}`
-      return item
-    }
-  )
+  return extractNestedProperties(
+    typescriptFilePath,
+    forEachExpr.collectionName.split('.'),
+    viewModelName
+  ).map((name) => {
+    const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
+    item.detail = 'Pelela ViewModel nested property'
+    item.sortText = `!0_${name}`
+    return item
+  })
 }
 
 export function createCompletionProvider(): vscode.Disposable {

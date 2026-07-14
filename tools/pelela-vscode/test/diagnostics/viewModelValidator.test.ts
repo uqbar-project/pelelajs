@@ -71,7 +71,7 @@ describe('viewModelValidator', () => {
     context = {
       tsPath: testVMPath,
       pelelaPath: testPelelaPath,
-      members: extractViewModelMembers(testVMPath),
+      members: extractViewModelMembers(testVMPath, 'TestViewModel'),
     }
     genericPath = path.join(testFilesDir, 'GenericArrayVM.ts')
     noTypePath = path.join(testFilesDir, 'NoTypeArrayVM.ts')
@@ -122,13 +122,25 @@ describe('viewModelValidator', () => {
   describe('validateBindingProperties', () => {
     it('accepts an existing property', () => {
       const { tags, document } = prepareValidation(['<div bind-content="name">'], context)
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
     it('rejects a non-existent property', () => {
       const { tags, document } = prepareValidation(['<div bind-content="nonExistent">'], context)
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -139,7 +151,13 @@ describe('viewModelValidator', () => {
 
     it('accepts an if attribute with an existing property', () => {
       const { tags, document } = prepareValidation(['<div if="count">'], context)
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -148,13 +166,25 @@ describe('viewModelValidator', () => {
         ['<div for-each="item of items">', '  <span bind-content="item"></span>', '</div>'],
         context
       )
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
     it('accepts a nested property path', () => {
       const { tags, document } = prepareValidation(['<div bind-content="obj.value">'], context)
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -165,13 +195,19 @@ describe('viewModelValidator', () => {
   productos: Array<{ name: string }> = []
 }`
       )
-      const genericMembers = extractViewModelMembers(genericPath)
+      const genericMembers = extractViewModelMembers(genericPath, 'GenericArrayVM')
       const { tags, document } = prepareValidation(['<div if="productos.length">'], {
         tsPath: genericPath,
         pelelaPath: testPelelaPath,
         members: genericMembers,
       })
-      const diagnostics = validateBindingProperties(tags, genericPath, genericMembers, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        genericPath,
+        genericMembers,
+        document,
+        'GenericArrayVM'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -182,13 +218,19 @@ describe('viewModelValidator', () => {
   items = [{ x: 1 }]
 }`
       )
-      const noTypeMembers = extractViewModelMembers(noTypePath)
+      const noTypeMembers = extractViewModelMembers(noTypePath, 'NoTypeArrayVM')
       const { tags, document } = prepareValidation(['<div if="items.length">'], {
         tsPath: noTypePath,
         pelelaPath: testPelelaPath,
         members: noTypeMembers,
       })
-      const diagnostics = validateBindingProperties(tags, noTypePath, noTypeMembers, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        noTypePath,
+        noTypeMembers,
+        document,
+        'NoTypeArrayVM'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -205,31 +247,55 @@ describe('viewModelValidator', () => {
   }
 }`
       )
-      const getterMembers = extractViewModelMembers(getterPath)
+      const getterMembers = extractViewModelMembers(getterPath, 'GetterReturningArray')
       const { tags, document } = prepareValidation(['<div if="productos.length">'], {
         tsPath: getterPath,
         pelelaPath: testPelelaPath,
         members: getterMembers,
       })
-      const diagnostics = validateBindingProperties(tags, getterPath, getterMembers, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        getterPath,
+        getterMembers,
+        document,
+        'GetterReturningArray'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
     it('accepts length on an Array built-in property', () => {
       const { tags, document } = prepareValidation(['<div if="items.length">'], context)
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
     it('accepts length on a string property', () => {
       const { tags, document } = prepareValidation(['<div if="name.length">'], context)
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
     it('accepts a dotted nested property in bind-src on img', () => {
       const { tags, document } = prepareValidation(['<img bind-src="product.image">'], context)
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -238,13 +304,25 @@ describe('viewModelValidator', () => {
         ['<img bind-alt="product.description">'],
         context
       )
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
     it('accepts a ViewModel property in bind-class', () => {
       const { tags, document } = prepareValidation(['<div bind-class="selectedClass">'], context)
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -259,7 +337,13 @@ describe('viewModelValidator', () => {
         ['<div for-each="item of items" index="i">', '  <span bind-content="i"></span>', '</div>'],
         context
       )
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -268,13 +352,25 @@ describe('viewModelValidator', () => {
         ['<div for-each="item of items">', '  <span bind-content="item.name"></span>', '</div>'],
         context
       )
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
     it('rejects element property accessed directly on array outside for-each', () => {
       const { tags, document } = prepareValidation(['<div bind-content="items.name">'], context)
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -292,7 +388,13 @@ describe('viewModelValidator', () => {
         ],
         context
       )
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -305,7 +407,13 @@ describe('viewModelValidator', () => {
         ],
         context
       )
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -318,7 +426,13 @@ describe('viewModelValidator', () => {
         ],
         context
       )
-      const diagnostics = validateBindingProperties(tags, context.tsPath, context.members, document)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],

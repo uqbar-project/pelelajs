@@ -63,10 +63,13 @@ function getMemberInfo(
   return { name, kind: 'property' }
 }
 
-export function extractViewModelMembers(typescriptFilePath: string): ViewModelMembers {
+export function extractViewModelMembers(
+  typescriptFilePath: string,
+  className: string
+): ViewModelMembers {
   const sourceFile = getCachedSourceFile(typescriptFilePath)
 
-  const classDeclaration = getClassDeclaration(sourceFile)
+  const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath)
   if (!classDeclaration) return { properties: [], methods: [] }
 
   const paramProperties = getParameterPropertyNames(classDeclaration)
@@ -92,22 +95,34 @@ export function extractViewModelMembers(typescriptFilePath: string): ViewModelMe
     )
 }
 
-function getClassDeclaration(sourceFile: ts.SourceFile): ts.ClassDeclaration | undefined {
-  const classes = sourceFile.statements.filter((statement): statement is ts.ClassDeclaration =>
-    ts.isClassDeclaration(statement)
+function getClassDeclaration(
+  sourceFile: ts.SourceFile,
+  className: string,
+  filePath: string
+): ts.ClassDeclaration | undefined {
+  const classDeclarations = sourceFile.statements.filter(
+    (statement): statement is ts.ClassDeclaration => ts.isClassDeclaration(statement)
   )
-  const exported = classes.find(
+
+  const namedClass = classDeclarations.find(
     (classDeclaration) =>
-      (ts.getCombinedModifierFlags(classDeclaration) & ts.ModifierFlags.Export) !== 0
+      classDeclaration.name !== undefined && classDeclaration.name.text === className
   )
-  return exported ?? classes[classes.length - 1]
+  if (namedClass) return namedClass
+
+  const deepDeclaration = findDeclarationDeep(className, sourceFile, filePath, new Set<string>())
+  if (deepDeclaration && ts.isClassDeclaration(deepDeclaration)) return deepDeclaration
+
+  return undefined
 }
 
 function findPropertyTypeNode(
   sourceFile: ts.SourceFile,
-  propertyName: string
+  propertyName: string,
+  className: string,
+  filePath: string
 ): ts.Node | undefined {
-  const classDeclaration = getClassDeclaration(sourceFile)
+  const classDeclaration = getClassDeclaration(sourceFile, className, filePath)
   if (!classDeclaration) return undefined
 
   const prop = classDeclaration.members.find(
@@ -134,13 +149,19 @@ function findPropertyTypeNode(
 
 export function extractNestedProperties(
   typescriptFilePath: string,
-  propertyPaths: string[]
+  propertyPaths: string[],
+  className: string
 ): string[] {
   if (propertyPaths.length === 0) return []
   const sourceFile = getCachedSourceFile(typescriptFilePath)
 
   const rootPropertyName = propertyPaths[0]
-  const startingNode = findPropertyTypeNode(sourceFile, rootPropertyName)
+  const startingNode = findPropertyTypeNode(
+    sourceFile,
+    rootPropertyName,
+    className,
+    typescriptFilePath
+  )
   if (!startingNode) return []
 
   const remainingPaths = propertyPaths.slice(1)
@@ -171,11 +192,20 @@ function resolveNestedProperty(
   return extractPropertyNamesFromType(resolved, sourceFile, filePath)
 }
 
-export function pathExists(typescriptFilePath: string, propertyPaths: string[]): boolean {
+export function pathExists(
+  typescriptFilePath: string,
+  propertyPaths: string[],
+  className: string
+): boolean {
   if (propertyPaths.length === 0) return false
   const sourceFile = getCachedSourceFile(typescriptFilePath)
   const rootPropertyName = propertyPaths[0]
-  const startingNode = findPropertyTypeNode(sourceFile, rootPropertyName)
+  const startingNode = findPropertyTypeNode(
+    sourceFile,
+    rootPropertyName,
+    className,
+    typescriptFilePath
+  )
   if (!startingNode) return false
   const remainingPaths = propertyPaths.slice(1)
   const finalNode = resolveToNode(startingNode, remainingPaths, sourceFile, typescriptFilePath)

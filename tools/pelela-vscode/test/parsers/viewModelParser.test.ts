@@ -100,20 +100,91 @@ export interface Product {
 
   describe('extractViewModelMembers', () => {
     it('should return all non-static properties including getters', () => {
-      const { properties } = extractViewModelMembers(testVMPath)
+      const { properties } = extractViewModelMembers(testVMPath, 'ProductRow')
       assert.deepStrictEqual([...properties].sort(), [...EXPECTED_PROPERTIES].sort())
     })
 
     it('should return all non-static methods', () => {
-      const { methods } = extractViewModelMembers(testVMPath)
+      const { methods } = extractViewModelMembers(testVMPath, 'ProductRow')
       assert.deepStrictEqual([...methods].sort(), [...EXPECTED_METHODS].sort())
     })
 
     it('should exclude constructor, static methods, and if', () => {
-      const { methods } = extractViewModelMembers(testVMPath)
+      const { methods } = extractViewModelMembers(testVMPath, 'ProductRow')
       assert.ok(!methods.includes('constructor'))
       assert.ok(!methods.includes('create'))
       assert.ok(!methods.includes('if'))
+    })
+
+    it('should pick the class matching the given name when multiple classes are exported', () => {
+      const fPath = path.join(testFilesDir, 'MultipleExportsVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class OtherHelper {
+  helperValue: number = 0
+}
+
+export class MainViewModel {
+  items: string[] = []
+  name: string = 'test'
+  handleClick(): void {}
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'MainViewModel')
+      assert.ok(members.properties.includes('items'), 'should include items from MainViewModel')
+      assert.ok(members.properties.includes('name'), 'should include name from MainViewModel')
+      assert.ok(
+        members.methods.includes('handleClick'),
+        'should include handleClick from MainViewModel'
+      )
+      assert.ok(
+        !members.properties.includes('helperValue'),
+        'should NOT include helperValue from OtherHelper'
+      )
+    })
+
+    it('should find the ViewModel class across transitive imports', () => {
+      const innerPath = path.join(testFilesDir, 'Inner.ts')
+      fs.writeFileSync(
+        innerPath,
+        `export class Inner {
+  attribute: string = 'value'
+}`
+      )
+      createdFiles.push(innerPath)
+
+      const outerPath = path.join(testFilesDir, 'Outer.ts')
+      fs.writeFileSync(
+        outerPath,
+        `import { Inner } from './Inner'
+
+export class Outer {
+  inner = new Inner()
+}`
+      )
+      createdFiles.push(outerPath)
+
+      const viewModelPath = path.join(testFilesDir, 'AppViewModel.ts')
+      fs.writeFileSync(
+        viewModelPath,
+        `import { Outer } from './Outer'
+
+export class OtherHelper {
+  helperValue: number = 0
+}
+
+export class AppViewModel {
+  outer = new Outer()
+}`
+      )
+      createdFiles.push(viewModelPath)
+      const members = extractViewModelMembers(viewModelPath, 'AppViewModel')
+      assert.ok(members.properties.includes('outer'), 'should include outer from AppViewModel')
+      assert.ok(
+        !members.properties.includes('helperValue'),
+        'should NOT include helperValue from OtherHelper'
+      )
     })
   })
 
@@ -140,33 +211,37 @@ export class ViewModelWithParamRef {
 }`
       )
       createdFiles.push(vmWithParamRefPath)
-      const properties = extractNestedProperties(vmWithParamRefPath, ['param'])
+      const properties = extractNestedProperties(
+        vmWithParamRefPath,
+        ['param'],
+        'ViewModelWithParamRef'
+      )
       assert.ok(properties.includes('foo'), 'should include parameter property foo')
       assert.ok(properties.includes('bar'), 'should include parameter property bar')
       assert.ok(properties.includes('baz'), 'should include getter baz')
     })
     it('should extract properties from an object literal', () => {
-      const properties = extractNestedProperties(testVMPath, ['user'])
+      const properties = extractNestedProperties(testVMPath, ['user'], 'ProductRow')
       assert.deepStrictEqual([...properties].sort(), [...EXPECTED_USER_PROPERTIES].sort())
     })
 
     it('should extract deeply nested properties from an object literal', () => {
-      const properties = extractNestedProperties(testVMPath, ['user', 'address'])
+      const properties = extractNestedProperties(testVMPath, ['user', 'address'], 'ProductRow')
       assert.deepStrictEqual([...properties].sort(), [...EXPECTED_ADDRESS_PROPERTIES].sort())
     })
 
     it('should return an empty array for non-existent properties', () => {
-      const properties = extractNestedProperties(testVMPath, ['nonExistent'])
+      const properties = extractNestedProperties(testVMPath, ['nonExistent'], 'ProductRow')
       assert.deepStrictEqual(properties, [])
     })
 
     it('should extract properties from an interface when the property is an array', () => {
-      const properties = extractNestedProperties(testVMPath, ['items'])
+      const properties = extractNestedProperties(testVMPath, ['items'], 'ProductRow')
       assert.ok(!properties.includes('id'), 'should NOT include element property id on array')
     })
 
     it('should include Array built-in properties', () => {
-      const properties = extractNestedProperties(testVMPath, ['items'])
+      const properties = extractNestedProperties(testVMPath, ['items'], 'ProductRow')
       const arrayBuiltins = Object.getOwnPropertyNames(Array.prototype)
       arrayBuiltins.forEach((prop) => {
         assert.ok(properties.includes(prop), `should include Array.${prop}`)
@@ -174,7 +249,7 @@ export class ViewModelWithParamRef {
     })
 
     it('should include String built-in properties for a string property', () => {
-      const properties = extractNestedProperties(testVMPath, ['name'])
+      const properties = extractNestedProperties(testVMPath, ['name'], 'ProductRow')
       const stringBuiltins = Object.getOwnPropertyNames(String.prototype)
       stringBuiltins.forEach((prop) => {
         assert.ok(properties.includes(prop), `should include String.${prop}`)
@@ -182,7 +257,7 @@ export class ViewModelWithParamRef {
     })
 
     it('should include Number built-in properties for a number property', () => {
-      const properties = extractNestedProperties(testVMPath, ['currentIndex'])
+      const properties = extractNestedProperties(testVMPath, ['currentIndex'], 'ProductRow')
       const numberBuiltins = Object.getOwnPropertyNames(Number.prototype)
       numberBuiltins.forEach((prop) => {
         assert.ok(properties.includes(prop), `should include Number.${prop}`)
@@ -190,7 +265,7 @@ export class ViewModelWithParamRef {
     })
 
     it('should include Boolean built-in properties for a boolean property', () => {
-      const properties = extractNestedProperties(testVMPath, ['isSelected'])
+      const properties = extractNestedProperties(testVMPath, ['isSelected'], 'ProductRow')
       const booleanBuiltins = Object.getOwnPropertyNames(Boolean.prototype)
       booleanBuiltins.forEach((prop) => {
         assert.ok(properties.includes(prop), `should include Boolean.${prop}`)
@@ -206,7 +281,7 @@ export class ViewModelWithParamRef {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['items'])
+      const properties = extractNestedProperties(fPath, ['items'], 'ArrayGenericVM')
       assert.ok(properties.includes('length'), 'should include array built-in length')
       assert.ok(!properties.includes('title'), 'should NOT include element property title on array')
     })
@@ -220,7 +295,7 @@ export class ViewModelWithParamRef {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['items', 'child'])
+      const properties = extractNestedProperties(fPath, ['items', 'child'], 'ArrayGenericNestedVM')
       assert.ok(properties.includes('value'), 'should include child property value')
     })
 
@@ -233,7 +308,7 @@ export class ViewModelWithParamRef {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['names'])
+      const properties = extractNestedProperties(fPath, ['names'], 'ArrayGenericPrimitiveVM')
       assert.ok(properties.includes('length'), 'should include array built-in length')
       assert.ok(
         !properties.includes('charAt'),
@@ -250,7 +325,7 @@ export class ViewModelWithParamRef {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['items'])
+      const properties = extractNestedProperties(fPath, ['items'], 'ArrayLiteralVM')
       assert.ok(properties.includes('length'), 'should include array built-in length')
     })
 
@@ -265,7 +340,7 @@ export class ViewModelWithParamRef {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['products'])
+      const properties = extractNestedProperties(fPath, ['products'], 'GetterExplicitType')
       assert.ok(properties.includes('length'), 'should include array built-in length')
       assert.ok(!properties.includes('name'), 'should NOT include element property name on array')
     })
@@ -281,7 +356,7 @@ export class ViewModelWithParamRef {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['products'])
+      const properties = extractNestedProperties(fPath, ['products'], 'GetterArrayLiteral')
       assert.ok(
         properties.includes('length'),
         'should include array built-in length from ArrayLiteralExpression'
@@ -302,7 +377,7 @@ export class ExportedViewModel {
 }`
       )
       createdFiles.push(fPath)
-      const members = extractViewModelMembers(fPath)
+      const members = extractViewModelMembers(fPath, 'ExportedViewModel')
       assert.ok(members.properties.includes('items'), 'should include property from exported class')
       assert.ok(
         members.methods.includes('handleClick'),
@@ -329,7 +404,7 @@ export class TypeAliasVM {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['tipos'])
+      const properties = extractNestedProperties(fPath, ['tipos'], 'TypeAliasVM')
       assert.ok(properties.includes('length'), 'should include array built-in length')
       assert.ok(
         !properties.includes('description'),
@@ -348,13 +423,13 @@ export class UnionTypeVM {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['field'])
+      const properties = extractNestedProperties(fPath, ['field'], 'UnionTypeVM')
       assert.ok(properties.includes('value'), 'should include value from the non-null union member')
       assert.ok(properties.includes('extra'), 'should include extra from the non-null union member')
     })
 
     it('should resolve types across files via import', () => {
-      const properties = extractNestedProperties(testVMPath, ['product'])
+      const properties = extractNestedProperties(testVMPath, ['product'], 'ProductRow')
       assert.deepStrictEqual([...properties].sort(), [...EXPECTED_PRODUCT_INTERFACE].sort())
     })
 
@@ -372,7 +447,7 @@ export class NewExpressionVM {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['tweet'])
+      const properties = extractNestedProperties(fPath, ['tweet'], 'NewExpressionVM')
       assert.ok(properties.includes('text'), 'should include text from NewExpression target')
       createdFiles.push(fPath)
       assert.ok(properties.includes('likes'), 'should include likes from NewExpression target')
@@ -392,7 +467,7 @@ export class TypeLiteralGettersVM {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['field'])
+      const properties = extractNestedProperties(fPath, ['field'], 'TypeLiteralGettersVM')
       assert.ok(properties.includes('label'), 'should include label PropertySignature')
       createdFiles.push(fPath)
       assert.ok(properties.includes('count'), 'should include count MethodSignature getter')
@@ -414,7 +489,7 @@ export class GetterNoReturnTypeVM {
 }`
       )
       createdFiles.push(fPath)
-      const properties = extractNestedProperties(fPath, ['inner'])
+      const properties = extractNestedProperties(fPath, ['inner'], 'GetterNoReturnTypeVM')
       assert.ok(properties.includes('value'), 'should include value from InnerTarget')
       createdFiles.push(fPath)
       assert.ok(properties.includes('label'), 'should include label from InnerTarget')
@@ -450,9 +525,53 @@ export class TransitiveVM {
 }`
       )
       createdFiles.push(transitiveVmPath)
-      const properties = extractNestedProperties(transitiveVmPath, ['container', 'target'])
+      const properties = extractNestedProperties(
+        transitiveVmPath,
+        ['container', 'target'],
+        'TransitiveVM'
+      )
       assert.ok(properties.includes('deepValue'), 'should include deepValue from DeepTarget')
       assert.ok(properties.includes('label'), 'should include label from DeepTarget')
+    })
+
+    it('should resolve deep nested property through transitive import chain', () => {
+      const aPath = path.join(testFilesDir, 'A.ts')
+      fs.writeFileSync(
+        aPath,
+        `export class A {
+  attribute: string = 'hello'
+}`
+      )
+      createdFiles.push(aPath)
+
+      const bPath = path.join(testFilesDir, 'B.ts')
+      fs.writeFileSync(
+        bPath,
+        `import { A } from './A'
+
+export class B {
+  a = new A()
+}`
+      )
+      createdFiles.push(bPath)
+
+      const appPath = path.join(testFilesDir, 'AppVM.ts')
+      fs.writeFileSync(
+        appPath,
+        `import { B } from './B'
+
+export class Other {
+  x: number = 0
+}
+
+export class AppVM {
+  b = new B()
+}`
+      )
+      createdFiles.push(appPath)
+
+      const properties = extractNestedProperties(appPath, ['b', 'a', 'attribute'], 'AppVM')
+      assert.ok(properties.includes('length'), 'should include String built-in length on attribute')
     })
   })
 
