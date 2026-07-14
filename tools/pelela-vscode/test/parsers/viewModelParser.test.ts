@@ -186,6 +186,59 @@ export class AppViewModel {
         'should NOT include helperValue from OtherHelper'
       )
     })
+
+    it('should include inherited members from a base class', () => {
+      const fPath = path.join(testFilesDir, 'BaseClassVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class BaseViewModel {
+  title: string = 'default'
+  count: number = 0
+}
+
+export class DerivedViewModel extends BaseViewModel {
+  items: string[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'DerivedViewModel')
+      assert.ok(members.properties.includes('items'), 'should include direct property items')
+      assert.ok(
+        members.properties.includes('title'),
+        'should include inherited property title from BaseViewModel'
+      )
+      assert.ok(
+        members.properties.includes('count'),
+        'should include inherited property count from BaseViewModel'
+      )
+    })
+
+    it('should include members through three-level inheritance chain (C extends B extends A)', () => {
+      const fPath = path.join(testFilesDir, 'ThreeLevelVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class A {
+  aProp: string = ''
+}
+export class B extends A {
+  bProp: number = 0
+}
+export class C extends B {
+  cProp: boolean = false
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'C')
+      assert.ok(members.properties.includes('cProp'), 'should include direct property cProp')
+      assert.ok(
+        members.properties.includes('bProp'),
+        'should include inherited property bProp from B'
+      )
+      assert.ok(
+        members.properties.includes('aProp'),
+        'should include inherited property aProp from A'
+      )
+    })
   })
 
   describe('extractNestedProperties', () => {

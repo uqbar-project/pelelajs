@@ -63,18 +63,20 @@ function getMemberInfo(
   return { name, kind: 'property' }
 }
 
-export function extractViewModelMembers(
-  typescriptFilePath: string,
-  className: string
-): ViewModelMembers {
-  const sourceFile = getCachedSourceFile(typescriptFilePath)
+function getClassName(declaration: ts.ClassDeclaration): string {
+  return declaration.name?.text ?? ''
+}
 
-  const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath)
-  if (!classDeclaration) return { properties: [], methods: [] }
+function collectViewModelMembers(
+  classDeclaration: ts.ClassDeclaration,
+  visited: Set<string>
+): ViewModelMembers {
+  const className = getClassName(classDeclaration)
+  if (visited.has(className)) return { properties: [], methods: [] }
+  visited.add(className)
 
   const paramProperties = getParameterPropertyNames(classDeclaration)
-
-  return classDeclaration.members
+  const directMembers = classDeclaration.members
     .filter(isRelevantMember)
     .filter((classMember) => !isStaticMember(classMember))
     .map(getMemberInfo)
@@ -93,6 +95,40 @@ export function extractViewModelMembers(
       },
       { properties: [...paramProperties], methods: [] as string[] }
     )
+
+  const extendsClause = classDeclaration.heritageClauses?.find(
+    (clause) => clause.token === ts.SyntaxKind.ExtendsKeyword
+  )
+
+  if (extendsClause && extendsClause.types.length > 0) {
+    const baseType = extendsClause.types[0]
+    if (ts.isIdentifier(baseType.expression)) {
+      const baseClassName = baseType.expression.text
+      const baseSourceFile = classDeclaration.getSourceFile()
+      const baseClass = getClassDeclaration(baseSourceFile, baseClassName, baseSourceFile.fileName)
+      if (baseClass) {
+        const baseMembers = collectViewModelMembers(baseClass, visited)
+        return {
+          properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
+          methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
+        }
+      }
+    }
+  }
+
+  return directMembers
+}
+
+export function extractViewModelMembers(
+  typescriptFilePath: string,
+  className: string
+): ViewModelMembers {
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
+
+  const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath)
+  if (!classDeclaration) return { properties: [], methods: [] }
+
+  return collectViewModelMembers(classDeclaration, new Set<string>())
 }
 
 function getClassDeclaration(
