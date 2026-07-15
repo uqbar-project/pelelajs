@@ -148,11 +148,16 @@ export const vscodeStub = {
     createDiagnosticCollection: () => new vscodeStub.DiagnosticCollection(),
   },
 
+  Disposable: {
+    from: (..._disposables: unknown[]) => ({ dispose: () => {} }),
+  },
+
   workspace: {
     onDidOpenTextDocument: () => ({ dispose: () => {} }),
     onDidChangeTextDocument: () => ({ dispose: () => {} }),
     onDidCloseTextDocument: () => ({ dispose: () => {} }),
-    findFiles: (_glob: string) => Promise.resolve([]),
+    onDidSaveTextDocument: () => ({ dispose: () => {} }),
+    findFiles: (_globPattern: string) => Promise.resolve([]),
   },
 
   env: {
@@ -161,6 +166,7 @@ export const vscodeStub = {
 
   window: {
     activeTextEditor: null,
+    onDidChangeActiveTextEditor: () => ({ dispose: () => {} }),
   },
 
   commands: {

@@ -15,6 +15,38 @@ import {
 
 const DEBOUNCE_DELAY = 300
 
+export function validatePelelaDocument(
+  collection: vscode.DiagnosticCollection,
+  document: vscode.TextDocument
+): void {
+  if (document.languageId !== 'pelela') return
+
+  const diagnostics: vscode.Diagnostic[] = []
+  const tags = scanDocument(document)
+
+  diagnostics.push(...validateUnknownAttributes(tags))
+  diagnostics.push(...validateComponentAttributes(tags))
+  diagnostics.push(...validateTagRestrictions(tags))
+
+  const tsPath = findViewModelFile(document.uri)
+  if (tsPath !== null) {
+    diagnostics.push(...validateViewModelExistence(tags, tsPath))
+
+    const viewModelAttribute = tags
+      .flatMap((tag) => tag.attributes)
+      .find((attribute) => attribute.name === 'view-model')
+    const viewModelName = viewModelAttribute?.value
+
+    if (viewModelName) {
+      const members = extractViewModelMembers(tsPath, viewModelName)
+      diagnostics.push(...validateBindingProperties(tags, tsPath, members, document, viewModelName))
+      diagnostics.push(...validateEventMethods(tags, members))
+    }
+  }
+
+  collection.set(document.uri, diagnostics)
+}
+
 export function createDiagnosticsProvider(): vscode.Disposable {
   const collection = vscode.languages.createDiagnosticCollection('pelela')
   const debounceTimers = new Map<string, NodeJS.Timeout>()
@@ -25,44 +57,13 @@ export function createDiagnosticsProvider(): vscode.Disposable {
       clearTimeout(existingTimer)
     }
 
-    const timer = setTimeout(() => validateDocument(document), DEBOUNCE_DELAY)
+    const timer = setTimeout(() => validatePelelaDocument(collection, document), DEBOUNCE_DELAY)
     debounceTimers.set(document.uri.toString(), timer)
-  }
-
-  function validateDocument(document: vscode.TextDocument): void {
-    if (document.languageId !== 'pelela') return
-
-    const diagnostics: vscode.Diagnostic[] = []
-    const tags = scanDocument(document)
-
-    diagnostics.push(...validateUnknownAttributes(tags))
-    diagnostics.push(...validateComponentAttributes(tags))
-    diagnostics.push(...validateTagRestrictions(tags))
-
-    const tsPath = findViewModelFile(document.uri)
-    if (tsPath !== null) {
-      diagnostics.push(...validateViewModelExistence(tags, tsPath))
-
-      const viewModelAttribute = tags
-        .flatMap((tag) => tag.attributes)
-        .find((attribute) => attribute.name === 'view-model')
-      const viewModelName = viewModelAttribute?.value
-
-      if (viewModelName) {
-        const members = extractViewModelMembers(tsPath, viewModelName)
-        diagnostics.push(
-          ...validateBindingProperties(tags, tsPath, members, document, viewModelName)
-        )
-        diagnostics.push(...validateEventMethods(tags, members))
-      }
-    }
-
-    collection.set(document.uri, diagnostics)
   }
 
   const openListener = vscode.workspace.onDidOpenTextDocument((document) => {
     if (document.languageId === 'pelela') {
-      validateDocument(document)
+      validatePelelaDocument(collection, document)
     }
   })
 
@@ -80,13 +81,13 @@ export function createDiagnosticsProvider(): vscode.Disposable {
         clearTimeout(timer)
         debounceTimers.delete(uriString)
       }
-      validateDocument(document)
+      validatePelelaDocument(collection, document)
     }
   })
 
   const activeEditorListener = vscode.window.onDidChangeActiveTextEditor((editor) => {
     if (editor !== undefined && editor.document.languageId === 'pelela') {
-      validateDocument(editor.document)
+      validatePelelaDocument(collection, editor.document)
     }
   })
 
@@ -100,10 +101,10 @@ export function createDiagnosticsProvider(): vscode.Disposable {
     collection.delete(document.uri)
   })
 
-  if (vscode.window.activeTextEditor !== undefined) {
+  if (vscode.window.activeTextEditor != null) {
     const activeDocument = vscode.window.activeTextEditor.document
     if (activeDocument.languageId === 'pelela') {
-      validateDocument(activeDocument)
+      validatePelelaDocument(collection, activeDocument)
     }
   }
 
