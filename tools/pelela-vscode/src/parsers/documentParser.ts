@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
 import { findFirst } from '../helpers'
 
-const FOR_EACH_REGEX = /for-each=["'](\w+)\s+of\s+(\w+)["']/
+const FOR_EACH_REGEX = /for-each=["'](\w+)\s+of\s+([\w.]+)["']/
 const INDEX_ATTR_REGEX = /(?:^|\s)index\s*=\s*["'](\w+)["']/
 
 export function getCurrentAttributeName(

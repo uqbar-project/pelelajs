@@ -1,10 +1,23 @@
 import * as vscode from 'vscode'
+import { t } from '../i18n/index'
 
 const ATTRIBUTE_HELP: Record<string, string> = {
-  'prop-': 'Pelela: one-way binding to pass data to a child component (parent → child)',
-  'link-': 'Pelela: two-way binding between parent and child component (parent ↔ child)',
-  'const-': 'Pelela: constant value binding to a child component',
-  index: 'Pelela: specifies the index variable name in a for-each loop',
+  'view-model': t('hover.viewModelHelp'),
+  click: t('hover.clickHelp'),
+  enter: t('hover.enterHelp'),
+  if: t('hover.ifHelp'),
+  'for-each': t('hover.forEachHelp'),
+  index: t('hover.indexHelp'),
+  'bind-alt': t('hover.bindAltHelp'),
+  'bind-class': t('hover.bindClassHelp'),
+  'bind-content': t('hover.bindContentHelp'),
+  'bind-enabled': t('hover.bindEnabledHelp'),
+  'bind-src': t('hover.bindSrcHelp'),
+  'bind-style': t('hover.bindStyleHelp'),
+  'bind-value': t('hover.bindValueHelp'),
+  'prop-': t('hover.propHelp'),
+  'link-': t('hover.linkHelp'),
+  'const-': t('hover.constHelp'),
 }
 
 export function provideHover(

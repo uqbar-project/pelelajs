@@ -3,6 +3,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { after, before, describe, it } from 'mocha'
 import * as vscode from 'vscode'
+import { t } from '../../src/i18n/index'
 import {
   addPelelaAttributeCompletions,
   provideBasicViewModelCompletions,
@@ -79,7 +80,7 @@ describe('completionProvider', () => {
       )
 
       // Verify detail
-      assert.strictEqual(constItem.detail, 'Pelela: valor constante para un componente')
+      assert.strictEqual(constItem.detail, t('completions.constDetail'))
 
       // Verify sortText
       assert.ok(
@@ -101,7 +102,8 @@ describe('completionProvider', () => {
         testVMPath,
         'bind-content',
         document,
-        position
+        position,
+        'TestViewModel'
       )
 
       const labels = completions.map((item) => item.label)
@@ -111,7 +113,7 @@ describe('completionProvider', () => {
       assert.ok(labels.includes('items'), 'should include array property')
 
       const itemVar = completions.find((item) => item.label === FOR_EACH_ITEM_VARIABLE)
-      assert.strictEqual(itemVar?.detail, 'Pelela iteration property')
+      assert.strictEqual(itemVar?.detail, t('completions.iterationPropertyDetail'))
       assert.strictEqual(itemVar?.kind, vscode.CompletionItemKind.Variable)
     })
 
@@ -125,22 +127,34 @@ describe('completionProvider', () => {
         testVMPath,
         'bind-content',
         document,
-        position
+        position,
+        'TestViewModel'
       )
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes(FOR_EACH_ITEM_VARIABLE), 'should include for-each variable')
-      assert.ok(labels.includes(FOR_EACH_INDEX_VARIABLE), 'should include index variable')
+      assert.deepStrictEqual(
+        labels.filter(
+          (label) => label === FOR_EACH_ITEM_VARIABLE || label === FOR_EACH_INDEX_VARIABLE
+        ),
+        [FOR_EACH_ITEM_VARIABLE, FOR_EACH_INDEX_VARIABLE]
+      )
 
       const indexVar = completions.find((item) => item.label === FOR_EACH_INDEX_VARIABLE)
-      assert.strictEqual(indexVar?.detail, 'Pelela iteration property')
+      assert.strictEqual(indexVar?.detail, t('completions.iterationPropertyDetail'))
       assert.strictEqual(indexVar?.kind, vscode.CompletionItemKind.Variable)
     })
 
     it('should include only methods for event attributes', () => {
       const document = createMockDocument(['<div>', '  <button click="'])
       const position = createMockPosition(1, 17)
-      const completions = provideBasicViewModelCompletions(testVMPath, 'click', document, position)
+      const completions = provideBasicViewModelCompletions(
+        testVMPath,
+        'click',
+        document,
+        position,
+        'TestViewModel'
+      )
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes('handleClick'), 'should include method')
@@ -155,7 +169,13 @@ describe('completionProvider', () => {
         '  <button click="',
       ])
       const position = createMockPosition(1, 17)
-      const completions = provideBasicViewModelCompletions(testVMPath, 'click', document, position)
+      const completions = provideBasicViewModelCompletions(
+        testVMPath,
+        'click',
+        document,
+        position,
+        'TestViewModel'
+      )
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes('handleClick'), 'should include method')
@@ -169,7 +189,8 @@ describe('completionProvider', () => {
         testVMPath,
         'bind-content',
         document,
-        position
+        position,
+        'TestViewModel'
       )
 
       const labels = completions.map((item) => item.label)

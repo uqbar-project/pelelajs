@@ -94,20 +94,87 @@ export const vscodeStub = {
     }
   },
 
+  DiagnosticSeverity: {
+    Error: 0,
+    Warning: 1,
+    Information: 2,
+    Hint: 3,
+  },
+
+  Diagnostic: class Diagnostic {
+    range: unknown
+    message: string
+    severity: unknown
+    source: string | undefined
+
+    constructor(range: unknown, message: string, severity?: unknown) {
+      this.range = range
+      this.message = message
+      this.severity = severity
+    }
+  },
+
+  DiagnosticCollection: class DiagnosticCollection {
+    _entries: Map<string, unknown[]> = new Map()
+
+    set(uri: unknown, diagnostics: unknown[]): void {
+      const key = (uri as { fsPath?: string }).fsPath ?? String(uri)
+      if (diagnostics.length === 0) {
+        this._entries.delete(key)
+      } else {
+        this._entries.set(key, diagnostics)
+      }
+    }
+
+    clear(): void {
+      this._entries.clear()
+    }
+
+    delete(uri: unknown): void {
+      const key = (uri as { fsPath?: string }).fsPath ?? String(uri)
+      this._entries.delete(key)
+    }
+
+    dispose(): void {
+      this._entries.clear()
+    }
+  },
+
   languages: {
     registerCompletionItemProvider: () => ({ dispose: () => {} }),
     registerDefinitionProvider: () => ({ dispose: () => {} }),
     setTextDocumentLanguage: () => Promise.resolve(),
     setLanguageConfiguration: () => ({ dispose: () => {} }),
+    createDiagnosticCollection: () => new vscodeStub.DiagnosticCollection(),
+  },
+
+  Disposable: {
+    from: (...disposables: unknown[]) => ({
+      dispose: () => {
+        disposables.forEach((disposable) => {
+          if (disposable && typeof disposable === 'object' && 'dispose' in disposable) {
+            ;(disposable as { dispose: () => void }).dispose()
+          }
+        })
+      },
+    }),
   },
 
   workspace: {
     onDidOpenTextDocument: () => ({ dispose: () => {} }),
-    findFiles: (_glob: string) => Promise.resolve([]),
+    onDidChangeTextDocument: () => ({ dispose: () => {} }),
+    onDidCloseTextDocument: () => ({ dispose: () => {} }),
+    onDidSaveTextDocument: () => ({ dispose: () => {} }),
+    findFiles: (_globPattern: string) => Promise.resolve([]),
+  },
+
+  env: {
+    language: 'es',
   },
 
   window: {
     activeTextEditor: null,
+    onDidChangeActiveTextEditor: () => ({ dispose: () => {} }),
   },
 
   commands: {

@@ -6,7 +6,6 @@ import {
   findClassDefinition,
   findMethodDefinition,
   findNestedPropertyDefinition,
-  findPropertyDefinition,
 } from '../parsers/definitionFinder'
 import { type ForEachResult, findForEachInElement } from '../parsers/documentParser'
 import { findViewModelFile } from '../utils/fileUtils'
@@ -142,7 +141,7 @@ function handleForEachDefinition(
   cursorOffsetInValue: number,
   typescriptFilePath: string
 ): vscode.Location | null {
-  const forEachMatch = /^\s*(\w+)\s+of\s+(\w+)\s*$/.exec(fullValue)
+  const forEachMatch = /^\s*(\w+)\s+of\s+([\w.]+)\s*$/.exec(fullValue)
   if (!forEachMatch) return null
 
   const collectionName = forEachMatch[2]
@@ -150,7 +149,8 @@ function handleForEachDefinition(
   const collectionEnd = collectionStart + collectionName.length
 
   if (cursorOffsetInValue >= collectionStart && cursorOffsetInValue <= collectionEnd) {
-    return findPropertyDefinition(typescriptFilePath, collectionName)
+    const collectionPath = collectionName.split('.')
+    return findNestedPropertyDefinition(typescriptFilePath, collectionPath)
   }
 
   return null
