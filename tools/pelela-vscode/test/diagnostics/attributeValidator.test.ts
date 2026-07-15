@@ -2,6 +2,7 @@ import * as assert from 'node:assert'
 import { describe, it } from 'mocha'
 import * as vscode from 'vscode'
 import {
+  validateComponentAttributes,
   validateTagRestrictions,
   validateUnknownAttributes,
 } from '../../src/diagnostics/attributeValidator'
@@ -207,6 +208,144 @@ describe('attributeValidator', () => {
       const tags = prepareTags(['<div bind-value="name">'])
       const diagnostics = validateTagRestrictions(tags)
       assert.strictEqual(diagnostics.length, 1)
+    })
+  })
+
+  describe('validateComponentAttributes', () => {
+    it('allows prop-* on a component tag', () => {
+      const tags = prepareTags(['<person-row prop-title="hello">'])
+      assert.strictEqual(validateComponentAttributes(tags).length, 0)
+    })
+
+    it('allows link-* on a component tag', () => {
+      const tags = prepareTags(['<person-row link-value="world">'])
+      assert.strictEqual(validateComponentAttributes(tags).length, 0)
+    })
+
+    it('allows const-* on a component tag', () => {
+      const tags = prepareTags(['<person-row const-foo="bar">'])
+      assert.strictEqual(validateComponentAttributes(tags).length, 0)
+    })
+
+    it('allows if on a component tag', () => {
+      const tags = prepareTags(['<person-row if="condition">'])
+      assert.strictEqual(validateComponentAttributes(tags).length, 0)
+    })
+
+    it('rejects class on a component tag', () => {
+      const tags = prepareTags(['<person-row class="x">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.invalidComponentAttribute', { name: 'class', tag: 'person-row' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects id on a component tag', () => {
+      const tags = prepareTags(['<person-row id="x">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects style on a component tag', () => {
+      const tags = prepareTags(['<person-row style="x">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects a bare HTML attribute on a component tag', () => {
+      const tags = prepareTags(['<person-row value="x">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects a boolean HTML attribute on a component tag', () => {
+      const tags = prepareTags(['<person-row disabled>'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects bind-* attribute on a component tag', () => {
+      const tags = prepareTags(['<person-row bind-value="x">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects data-* attribute on a component tag', () => {
+      const tags = prepareTags(['<person-row data-custom="x">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects onclick attribute on a component tag', () => {
+      const tags = prepareTags(['<person-row onclick="handler">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects click attribute on a component tag', () => {
+      const tags = prepareTags(['<person-row click="handler">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects for-each attribute on a component tag', () => {
+      const tags = prepareTags(['<person-row for-each="items">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects view-model attribute on a component tag', () => {
+      const tags = prepareTags(['<person-row view-model="X">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+    })
+
+    it('rejects multiple invalid attributes on the same component tag', () => {
+      const tags = prepareTags(['<person-row class="x" id="y" value="z">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 3)
+    })
+
+    it('ignores standard HTML tags', () => {
+      const tags = prepareTags(['<div class="x" id="y" onclick="handler">'])
+      assert.strictEqual(validateComponentAttributes(tags).length, 0)
+    })
+
+    it('ignores the root pelela tag', () => {
+      const tags = prepareTags(['<pelela view-model="App" class="x">'])
+      assert.strictEqual(validateComponentAttributes(tags).length, 0)
+    })
+
+    it('ignores the root component tag', () => {
+      const tags = prepareTags(['<component view-model="App" class="x">'])
+      assert.strictEqual(validateComponentAttributes(tags).length, 0)
+    })
+
+    it('rejects invalid attrs and allows valid ones on a component tag', () => {
+      const tags = prepareTags([
+        '<person-row class="x" prop-title="hello" id="y" link-value="world">',
+      ])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 2)
+    })
+
+    it('handles a multi-line component tag', () => {
+      const tags = prepareTags(['<person-row', '  class="x">'])
+      const diagnostics = validateComponentAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+      assert.strictEqual(diagnostics[0].range.start.line, 1)
+      assert.strictEqual(diagnostics[0].range.start.character, 2)
+    })
+
+    it('does not produce duplicate diagnostics with validateTagRestrictions', () => {
+      const tags = prepareTags(['<person-row bind-enabled="x">'])
+      const componentDiags = validateComponentAttributes(tags)
+      const restrictionDiags = validateTagRestrictions(tags)
+      assert.strictEqual(componentDiags.length, 1)
+      assert.strictEqual(restrictionDiags.length, 0)
     })
   })
 })

@@ -6,6 +6,8 @@ const diagnostics = {
   methodNotFound: "El método '{{name}}' no existe en el ViewModel",
   unknownAttribute: "Atributo desconocido: '{{name}}'",
   attributeNotAllowed: "El atributo '{{name}}' no está permitido en elemento '{{tag}}'",
+  invalidComponentAttribute:
+    "Componente '<{{tag}}>': el atributo '{{name}}' debe usar prefijo 'prop-', 'link-' o 'const-'",
 } as const satisfies TranslationSchema['diagnostics']
 
 export const es = {

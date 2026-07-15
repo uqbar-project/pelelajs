@@ -1,7 +1,11 @@
 import * as vscode from 'vscode'
 import { extractViewModelMembers } from '../parsers/viewModelParser'
 import { findViewModelFile } from '../utils/fileUtils'
-import { validateTagRestrictions, validateUnknownAttributes } from './attributeValidator'
+import {
+  validateComponentAttributes,
+  validateTagRestrictions,
+  validateUnknownAttributes,
+} from './attributeValidator'
 import { scanDocument } from './scanDocument'
 import {
   validateBindingProperties,
@@ -32,6 +36,7 @@ export function createDiagnosticsProvider(): vscode.Disposable {
     const tags = scanDocument(document)
 
     diagnostics.push(...validateUnknownAttributes(tags))
+    diagnostics.push(...validateComponentAttributes(tags))
     diagnostics.push(...validateTagRestrictions(tags))
 
     const tsPath = findViewModelFile(document.uri)

@@ -4,6 +4,7 @@ type DiagnosticsMessages = {
   methodNotFound: string
   unknownAttribute: string
   attributeNotAllowed: string
+  invalidComponentAttribute: string
 }
 
 export type TranslationSchema = {
