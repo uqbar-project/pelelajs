@@ -20,7 +20,7 @@ function isPelelaAttribute(name: string): boolean {
 }
 
 function isKnownAttribute(name: string): boolean {
-  return matchesAttribute(name, HTML_KNOWN) || isPelelaAttribute(name) || name.startsWith('on')
+  return matchesAttribute(name, HTML_KNOWN) || isPelelaAttribute(name)
 }
 
 function isComponentTag(tagName: string): boolean {
@@ -45,18 +45,20 @@ export function validateComponentAttributes(tags: TagInfo[]): vscode.Diagnostic[
 }
 
 export function validateUnknownAttributes(tags: TagInfo[]): vscode.Diagnostic[] {
-  return tags.flatMap((tag) =>
-    tag.attributes
-      .filter((attribute) => !isKnownAttribute(attribute.name))
-      .map((attribute) =>
-        makeDiagnostic(
-          attribute.nameRange,
-          'diagnostics.unknownAttribute',
-          { name: attribute.name },
-          vscode.DiagnosticSeverity.Warning
+  return tags
+    .filter((tag) => !isComponentTag(tag.tagName))
+    .flatMap((tag) =>
+      tag.attributes
+        .filter((attribute) => !isKnownAttribute(attribute.name))
+        .map((attribute) =>
+          makeDiagnostic(
+            attribute.nameRange,
+            'diagnostics.unknownAttribute',
+            { name: attribute.name },
+            vscode.DiagnosticSeverity.Warning
+          )
         )
-      )
-  )
+    )
 }
 
 export function validateTagRestrictions(tags: TagInfo[]): vscode.Diagnostic[] {

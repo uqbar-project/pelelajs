@@ -57,7 +57,6 @@ describe('htmlUtils', () => {
 
       assert.ok(attributes.includes('data-'))
       assert.ok(attributes.includes('aria-'))
-      assert.ok(attributes.includes('on-'))
     })
 
     it('should include textarea-specific attributes', () => {

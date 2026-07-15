@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { scanDocument } from '../diagnostics/scanDocument'
+import { getViewModelName, scanDocument } from '../diagnostics/scanDocument'
 import { t } from '../i18n/index'
 import {
   type ForEachResult,
@@ -138,14 +138,6 @@ export function addPelelaAttributeCompletions(
   })
 }
 
-function extractViewModelName(document: vscode.TextDocument): string | undefined {
-  const tags = scanDocument(document)
-  const viewModelAttribute = tags
-    .flatMap((tag) => tag.attributes)
-    .find((attribute) => attribute.name === 'view-model')
-  return viewModelAttribute?.value
-}
-
 async function provideAttributeValueCompletions(
   document: vscode.TextDocument,
   position: vscode.Position,
@@ -164,7 +156,7 @@ async function provideAttributeValueCompletions(
   const typescriptFilePath = findViewModelFile(document.uri)
   if (!typescriptFilePath) return []
 
-  const viewModelName = extractViewModelName(document)
+  const viewModelName = getViewModelName(scanDocument(document))
   if (!viewModelName) return []
 
   const valueBeforeCursor = getAttributeValueMatch(textBeforeCursor)

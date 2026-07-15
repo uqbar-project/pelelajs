@@ -133,7 +133,12 @@ describe('completionProvider', () => {
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes(FOR_EACH_ITEM_VARIABLE), 'should include for-each variable')
-      assert.ok(labels.includes(FOR_EACH_INDEX_VARIABLE), 'should include index variable')
+      assert.deepStrictEqual(
+        labels.filter(
+          (label) => label === FOR_EACH_ITEM_VARIABLE || label === FOR_EACH_INDEX_VARIABLE
+        ),
+        [FOR_EACH_ITEM_VARIABLE, FOR_EACH_INDEX_VARIABLE]
+      )
 
       const indexVar = completions.find((item) => item.label === FOR_EACH_INDEX_VARIABLE)
       assert.strictEqual(indexVar?.detail, t('completions.iterationPropertyDetail'))

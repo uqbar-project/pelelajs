@@ -149,7 +149,15 @@ export const vscodeStub = {
   },
 
   Disposable: {
-    from: (..._disposables: unknown[]) => ({ dispose: () => {} }),
+    from: (...disposables: unknown[]) => ({
+      dispose: () => {
+        disposables.forEach((disposable) => {
+          if (disposable && typeof disposable === 'object' && 'dispose' in disposable) {
+            ;(disposable as { dispose: () => void }).dispose()
+          }
+        })
+      },
+    }),
   },
 
   workspace: {

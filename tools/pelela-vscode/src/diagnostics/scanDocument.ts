@@ -1,3 +1,4 @@
+import { isPelelaRootTag } from 'pelelajs/dom'
 import * as vscode from 'vscode'
 import type { AttrInfo, TagInfo } from './types'
 
@@ -87,4 +88,11 @@ export function scanDocument(document: vscode.TextDocument): TagInfo[] {
     })
     return tags
   }, [] as TagInfo[])
+}
+
+export function getViewModelName(tags: TagInfo[]): string | undefined {
+  const rootTag = tags.find((tag) => isPelelaRootTag(tag.tagName))
+  if (!rootTag) return undefined
+  const viewModelAttribute = rootTag.attributes.find((attribute) => attribute.name === 'view-model')
+  return viewModelAttribute?.value
 }

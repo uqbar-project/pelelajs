@@ -23,6 +23,10 @@ const VIEW_MODEL_CONTENT = `export class TestViewModel {
   handleClick(): void {}
 }`
 
+const EXPECTED_VIEWMODEL_NOT_FOUND =
+  "ViewModel 'TestViewModel' no encontrado en el archivo TypeScript"
+const EXPECTED_PROPERTY_NOT_FOUND = "La propiedad 'nonExistentProperty' no existe en el ViewModel"
+
 function createMockDocument(
   content: string,
   languageId: string,
@@ -79,9 +83,17 @@ describe('diagnosticsProvider', () => {
       )
       validatePelelaDocument(collection, document)
       const entries = getEntries(collection)
-      assert.ok(entries.size > 0)
+      assert.strictEqual(entries.size, 1)
       const diagnostics = entries.get(pelelaPath) ?? []
-      assert.ok(diagnostics.length > 0)
+      assert.strictEqual(diagnostics.length, 1)
+      const diagnostic = diagnostics[0]
+      assert.strictEqual(diagnostic.message, EXPECTED_PROPERTY_NOT_FOUND)
+      assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
+      assert.strictEqual(diagnostic.source, 'pelela')
+      assert.strictEqual(diagnostic.range.start.line, 1)
+      assert.strictEqual(diagnostic.range.start.character, 22)
+      assert.strictEqual(diagnostic.range.end.line, 1)
+      assert.strictEqual(diagnostic.range.end.character, 41)
     })
 
     it('reports viewModelNotFound when the class is not exported', () => {
@@ -101,14 +113,50 @@ describe('diagnosticsProvider', () => {
       )
       validatePelelaDocument(collection, document)
       const diagnostics = getEntries(collection).get(noExportPelelaPath) ?? []
-      const viewModelDiag = diagnostics.find((diagnostic) =>
-        diagnostic.message.includes('ViewModel')
-      )
-      assert.ok(
-        viewModelDiag !== undefined,
-        `expected a viewModelNotFound diagnostic, got: ${diagnostics.map((diagnostic) => diagnostic.message).join(', ')}`
-      )
+      assert.strictEqual(diagnostics.length, 1)
+      const diagnostic = diagnostics[0]
+      assert.strictEqual(diagnostic.message, EXPECTED_VIEWMODEL_NOT_FOUND)
+      assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
+      assert.strictEqual(diagnostic.source, 'pelela')
+      assert.strictEqual(diagnostic.range.start.line, 0)
+      assert.strictEqual(diagnostic.range.start.character, 20)
+      assert.strictEqual(diagnostic.range.end.line, 0)
+      assert.strictEqual(diagnostic.range.end.character, 33)
       fs.unlinkSync(noExportTsPath)
+    })
+
+    it('skips binding and event validation when viewModelNotFound', () => {
+      const noBindPelelaPath = path.join(testFilesDir, 'NoBind.pelela')
+      const noBindTsPath = noBindPelelaPath.replace(/\.pelela$/, '.ts')
+      fs.writeFileSync(
+        noBindTsPath,
+        `class TestViewModel {
+  name: string = "test"
+  handleClick(): void {}
+}`
+      )
+      const collection = vscode.languages.createDiagnosticCollection()
+      const document = createMockDocument(
+        `<pelela view-model="TestViewModel">
+  <span bind-content="name"></span>
+  <button click="handleClick">Click me</button>
+  <input bind-value="count" />
+</pelela>`,
+        'pelela',
+        noBindPelelaPath
+      )
+      validatePelelaDocument(collection, document)
+      const diagnostics = getEntries(collection).get(noBindPelelaPath) ?? []
+      assert.strictEqual(diagnostics.length, 1)
+      const diagnostic = diagnostics[0]
+      assert.strictEqual(diagnostic.message, EXPECTED_VIEWMODEL_NOT_FOUND)
+      assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
+      assert.strictEqual(diagnostic.source, 'pelela')
+      assert.strictEqual(diagnostic.range.start.line, 0)
+      assert.strictEqual(diagnostic.range.start.character, 20)
+      assert.strictEqual(diagnostic.range.end.line, 0)
+      assert.strictEqual(diagnostic.range.end.character, 33)
+      fs.unlinkSync(noBindTsPath)
     })
   })
 

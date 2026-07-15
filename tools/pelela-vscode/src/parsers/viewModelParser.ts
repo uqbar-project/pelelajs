@@ -183,10 +183,13 @@ function getClassDeclaration(
     if (!requireExport || isExportedClassDeclaration(namedClass, sourceFile, className)) {
       return namedClass
     }
+    return undefined
   }
 
-  const deepDeclaration = findDeclarationDeep(className, sourceFile, filePath, new Set<string>())
-  if (deepDeclaration && ts.isClassDeclaration(deepDeclaration)) return deepDeclaration
+  if (!requireExport) {
+    const deepDeclaration = findDeclarationDeep(className, sourceFile, filePath, new Set<string>())
+    if (deepDeclaration && ts.isClassDeclaration(deepDeclaration)) return deepDeclaration
+  }
 
   return undefined
 }
@@ -200,8 +203,12 @@ function findPropertyTypeNode(
   sourceFile: ts.SourceFile,
   propertyName: string,
   className: string,
-  filePath: string
+  filePath: string,
+  visited: Set<string> = new Set<string>()
 ): ts.Node | undefined {
+  if (visited.has(className)) return undefined
+  visited.add(className)
+
   const classDeclaration = getClassDeclaration(sourceFile, className, filePath)
   if (!classDeclaration) return undefined
 
@@ -211,19 +218,36 @@ function findPropertyTypeNode(
   )
   if (prop) return prop.type ?? prop.initializer
 
+  const paramType = getParameterPropertyType(classDeclaration, propertyName)
+  if (paramType) return paramType
+
   const getter = classDeclaration.members.find(
     (member): member is ts.GetAccessorDeclaration =>
       ts.isGetAccessorDeclaration(member) && getDeclarationName(member) === propertyName
   )
-  if (!getter) return undefined
-
-  if (getter.type) return getter.type
-  if (getter.body) {
-    const returnStatement = getter.body.statements.find((stmt): stmt is ts.ReturnStatement =>
-      ts.isReturnStatement(stmt)
-    )
-    if (returnStatement?.expression) return returnStatement.expression
+  if (getter) {
+    if (getter.type) return getter.type
+    if (getter.body) {
+      const returnStatement = getter.body.statements.find((stmt): stmt is ts.ReturnStatement =>
+        ts.isReturnStatement(stmt)
+      )
+      if (returnStatement?.expression) return returnStatement.expression
+    }
+    return undefined
   }
+
+  const extendsClause = classDeclaration.heritageClauses?.find(
+    (clause) => clause.token === ts.SyntaxKind.ExtendsKeyword
+  )
+  if (extendsClause && extendsClause.types.length > 0) {
+    const baseType = extendsClause.types[0]
+    if (ts.isIdentifier(baseType.expression)) {
+      const baseClassName = baseType.expression.text
+      const baseSourceFile = classDeclaration.getSourceFile()
+      return findPropertyTypeNode(baseSourceFile, propertyName, baseClassName, filePath, visited)
+    }
+  }
+
   return undefined
 }
 
@@ -316,8 +340,6 @@ const COMPARISON_OPERATORS = new Set([
   ts.SyntaxKind.GreaterThanToken,
   ts.SyntaxKind.LessThanEqualsToken,
   ts.SyntaxKind.GreaterThanEqualsToken,
-  ts.SyntaxKind.AmpersandAmpersandToken,
-  ts.SyntaxKind.BarBarToken,
 ])
 
 function extractPropertyNamesFromType(
@@ -364,8 +386,17 @@ function extractPropertyNamesFromType(
     }
     return []
   }
-  if (ts.isBinaryExpression(node) && COMPARISON_OPERATORS.has(node.operatorToken.kind)) {
-    return BUILTIN_CLASSES.Boolean
+  if (ts.isBinaryExpression(node)) {
+    if (COMPARISON_OPERATORS.has(node.operatorToken.kind)) {
+      return BUILTIN_CLASSES.Boolean
+    }
+    if (node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+      return extractPropertyNamesFromType(node.right, sourceFile, filePath)
+    }
+    if (node.operatorToken.kind === ts.SyntaxKind.BarBarToken) {
+      return extractPropertyNamesFromType(node.left, sourceFile, filePath)
+    }
+    return []
   }
   if (node.kind === ts.SyntaxKind.StringKeyword) {
     return BUILTIN_CLASSES.String
@@ -466,10 +497,21 @@ function resolvePropertyType(
     }
     return undefined
   }
-  if (ts.isBinaryExpression(node) && COMPARISON_OPERATORS.has(node.operatorToken.kind)) {
-    if (BUILTIN_CLASSES.Boolean.includes(propertyName)) {
-      const returnKind = BUILTIN_RETURN_TYPES[propertyName]
-      return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
+  if (ts.isBinaryExpression(node)) {
+    if (COMPARISON_OPERATORS.has(node.operatorToken.kind)) {
+      if (BUILTIN_CLASSES.Boolean.includes(propertyName)) {
+        const returnKind = BUILTIN_RETURN_TYPES[propertyName]
+        return returnKind ? keywordNodeFromKind(returnKind as ts.KeywordTypeSyntaxKind) : node
+      }
+      return undefined
+    }
+    if (node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+      return resolvePropertyType(node.right, propertyName, sourceFile, filePath)
+    }
+    if (node.operatorToken.kind === ts.SyntaxKind.BarBarToken) {
+      const left = resolvePropertyType(node.left, propertyName, sourceFile, filePath)
+      if (left) return left
+      return resolvePropertyType(node.right, propertyName, sourceFile, filePath)
     }
     return undefined
   }

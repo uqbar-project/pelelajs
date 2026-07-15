@@ -21,10 +21,10 @@ const completions = {
   propDetail: 'Pelela: one-way binding para un componente hijo',
   linkDetail: 'Pelela: two-way binding para un componente hijo',
   constDetail: 'Pelela: valor constante para un componente',
-  methodDetail: 'Pelela ViewModel method',
-  propertyDetail: 'Pelela ViewModel property',
-  iterationPropertyDetail: 'Pelela iteration property',
-  nestedPropertyDetail: 'Pelela ViewModel nested property',
+  methodDetail: 'Método del ViewModel de Pelela',
+  propertyDetail: 'Propiedad del ViewModel de Pelela',
+  iterationPropertyDetail: 'Propiedad de iteración de Pelela',
+  nestedPropertyDetail: 'Propiedad anidada del ViewModel de Pelela',
 } as const satisfies TranslationSchema['completions']
 
 const hover = {

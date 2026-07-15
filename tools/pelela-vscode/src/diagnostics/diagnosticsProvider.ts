@@ -6,7 +6,7 @@ import {
   validateTagRestrictions,
   validateUnknownAttributes,
 } from './attributeValidator'
-import { scanDocument } from './scanDocument'
+import { getViewModelName, scanDocument } from './scanDocument'
 import {
   validateBindingProperties,
   validateEventMethods,
@@ -30,14 +30,12 @@ export function validatePelelaDocument(
 
   const tsPath = findViewModelFile(document.uri)
   if (tsPath !== null) {
-    diagnostics.push(...validateViewModelExistence(tags, tsPath))
+    const viewModelDiagnostics = validateViewModelExistence(tags, tsPath)
+    diagnostics.push(...viewModelDiagnostics)
 
-    const viewModelAttribute = tags
-      .flatMap((tag) => tag.attributes)
-      .find((attribute) => attribute.name === 'view-model')
-    const viewModelName = viewModelAttribute?.value
+    const viewModelName = getViewModelName(tags)
 
-    if (viewModelName) {
+    if (viewModelName && viewModelDiagnostics.length === 0) {
       const members = extractViewModelMembers(tsPath, viewModelName)
       diagnostics.push(...validateBindingProperties(tags, tsPath, members, document, viewModelName))
       diagnostics.push(...validateEventMethods(tags, members))

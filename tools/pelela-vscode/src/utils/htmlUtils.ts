@@ -130,7 +130,6 @@ export function getHtmlAttributes() {
     'nomodule',
     'nonce',
     'novalidate',
-    'on-',
     'open',
     'optimum',
     'part',

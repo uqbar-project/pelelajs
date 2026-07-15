@@ -7,6 +7,7 @@ import {
   extractInterfaceProperties,
   extractNestedProperties,
   extractViewModelMembers,
+  isExportedClass,
 } from '../../src/parsers/viewModelParser'
 
 const FIXTURE_CONTENT = `
@@ -254,6 +255,37 @@ export class C extends B {
       assert.strictEqual(members.methods.length, 0)
     })
 
+    it('should not find a non-exported class via deep resolution when an exported class with the same name exists in an imported file', () => {
+      const helperPath = path.join(testFilesDir, 'HelperWithShared.ts')
+      fs.writeFileSync(
+        helperPath,
+        `export class SharedName {
+  remoteProp: number = 42
+}`
+      )
+      createdFiles.push(helperPath)
+
+      const mainPath = path.join(testFilesDir, 'MainWithImport.ts')
+      fs.writeFileSync(
+        mainPath,
+        `import { Something } from './HelperWithShared'
+
+class SharedName {
+  localProp: string = 'hello'
+}`
+      )
+      createdFiles.push(mainPath)
+      const members = extractViewModelMembers(mainPath, 'SharedName')
+      assert.strictEqual(
+        members.properties.length,
+        0,
+        'should not include remoteProp from imported file'
+      )
+      assert.strictEqual(members.methods.length, 0, 'should not include any methods')
+      const found = isExportedClass(mainPath, 'SharedName')
+      assert.strictEqual(found, false, 'isExportedClass should return false')
+    })
+
     it('should return empty members for an export default class (no named export)', () => {
       const fPath = path.join(testFilesDir, 'DefaultExportVM.ts')
       fs.writeFileSync(
@@ -360,6 +392,75 @@ export class ViewModelWithParamRef {
       numberBuiltins.forEach((prop) => {
         assert.ok(properties.includes(prop), `should include Number.${prop}`)
       })
+    })
+
+    it('should resolve root property that is a constructor parameter property', () => {
+      const fPath = path.join(testFilesDir, 'ParamPropRoot.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class ParamPropRoot {
+  constructor(
+    public name: string,
+    public count: number,
+  ) {}
+}`
+      )
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['name'], 'ParamPropRoot')
+      const stringBuiltins = Object.getOwnPropertyNames(String.prototype)
+      stringBuiltins.forEach((prop) => {
+        assert.ok(properties.includes(prop), `should include String.${prop}`)
+      })
+    })
+
+    it('should resolve root property inherited from a base class', () => {
+      const fPath = path.join(testFilesDir, 'InheritedRootProp.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class Base {
+  value: number = 42
+}
+export class Derived extends Base {
+  extra: string = 'hello'
+}`
+      )
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['value'], 'Derived')
+      const numberBuiltins = Object.getOwnPropertyNames(Number.prototype)
+      numberBuiltins.forEach((prop) => {
+        assert.ok(properties.includes(prop), `should include Number.${prop}`)
+      })
+    })
+
+    it('should derive properties from && right operand instead of treating it as boolean', () => {
+      const fPath = path.join(testFilesDir, 'AndTypeInference.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class AndTypeInference {
+  ready: boolean = true
+  get config() { return this.ready && { apiUrl: "http://example.com", timeout: 5000 } }
+}`
+      )
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['config'], 'AndTypeInference')
+      assert.ok(properties.includes('apiUrl'), 'should include apiUrl from && right operand')
+      assert.ok(properties.includes('timeout'), 'should include timeout from && right operand')
+      assert.ok(!properties.includes('toString'), 'should NOT include Boolean built-in toString')
+    })
+
+    it('should derive properties from || left operand instead of treating it as boolean', () => {
+      const fPath = path.join(testFilesDir, 'OrTypeInference.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class OrTypeInference {
+  get display() { return { label: "default", count: 0 } || { label: "override" } }
+}`
+      )
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['display'], 'OrTypeInference')
+      assert.ok(properties.includes('label'), 'should include label from || left operand')
+      assert.ok(properties.includes('count'), 'should include count from || left operand')
+      assert.ok(!properties.includes('toString'), 'should NOT include Boolean built-in toString')
     })
 
     it('should include Boolean built-in properties for a boolean property', () => {
