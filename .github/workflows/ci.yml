@@ -41,6 +41,9 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test:coverage
 
+      - name: Run VS Code extension tests
+        run: pnpm test:vscode
+
       - name: Verify coverage files exist
         if: always()
         run: |

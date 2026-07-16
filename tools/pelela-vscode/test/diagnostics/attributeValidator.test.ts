@@ -52,9 +52,15 @@ describe('attributeValidator', () => {
       assert.strictEqual(validateUnknownAttributes(tags).length, 0)
     })
 
-    it('allows on-* event handler attribute', () => {
+    it('rejects HTML event handler attribute', () => {
       const tags = prepareTags(['<div onclick="handler">'])
-      assert.strictEqual(validateUnknownAttributes(tags).length, 0)
+      const diagnostics = validateUnknownAttributes(tags)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.unknownAttribute', { name: 'onclick' }),
+        vscode.DiagnosticSeverity.Warning
+      )
     })
 
     it('allows colspan', () => {
