@@ -14,7 +14,7 @@
     "test:coverage": "vitest run --coverage",
     "test:packages": "pnpm -r run test",
     "test:vscode": "pnpm -C tools/pelela-vscode test",
-    "test:all": "pnpm run test:packages && pnpm run test:vscode",
+    "test:all": "pnpm run test --run && pnpm run test:vscode",
     "biome:lint": "biome lint .",
     "biome:lint:fix": "biome lint --write .",
     "biome:format": "biome format .",
@@ -25,7 +25,7 @@
     "release:npm": "tsx scripts/check-npm-auth.ts && release-it",
     "release:vscode": "tsx scripts/check-vscode-auth.ts && pnpm -C tools/pelela-vscode run release",
     "audit": "pnpm audit --audit-level moderate",
-    "ci:local": "pnpm install && pnpm run biome:check && pnpm run typecheck && pnpm run build && pnpm run test:coverage",
+    "ci:local": "pnpm install && pnpm run biome:check && pnpm run typecheck && pnpm run build && pnpm run test:coverage && pnpm run test:vscode",
     "ci:act": "act -j ci"
   },
   "keywords": [],
