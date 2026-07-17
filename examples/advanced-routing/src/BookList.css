@@ -1,0 +1,48 @@
+/* BookList styles */
+
+h1 {
+  color: #1e293b;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+article {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+article h2 {
+  margin: 0 0 0.5rem;
+  color: #2563eb;
+  font-size: 1.125rem;
+}
+
+article p {
+  margin: 0.25rem 0;
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+button {
+  margin-top: 0.75rem;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+button:hover {
+  background-color: #1d4ed8;
+}

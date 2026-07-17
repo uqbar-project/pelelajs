@@ -72,6 +72,13 @@ describe('bindComponent validation', () => {
     expect(() => setupComponentBindings(container, vm)).not.toThrow()
   })
 
+  it('should NOT throw for outlet tags', () => {
+    container.innerHTML = '<outlet></outlet>'
+    const vm = createReactiveViewModel({}, () => {})
+
+    expect(() => setupComponentBindings(container, vm)).not.toThrow()
+  })
+
   it('should NOT throw for registered components', () => {
     class MyComp {}
     defineComponent('my-comp', MyComp, '<component view-model="MyComp"></component>')

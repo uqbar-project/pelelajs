@@ -1,0 +1,18 @@
+/* NotFoundPage styles */
+
+h1 {
+  color: #dc2626;
+  font-size: 2rem;
+}
+
+a {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a:hover {
+  text-decoration: underline;
+}
