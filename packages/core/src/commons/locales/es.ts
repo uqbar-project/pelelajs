@@ -53,6 +53,8 @@ const errors = {
       '[pelela] No se soportan layouts anidados. Cada nivel de hijos hereda el layout del padre automáticamente.',
     layoutMissingOutlet:
       '[pelela] El template del layout debe contener un elemento <outlet> como marcador para el contenido de la ruta hija.',
+    outletWithChildren:
+      '[pelela] El elemento <outlet> no puede tener hijos. Su contenido se reemplaza completamente por el de la página.',
     layoutWithoutChildren:
       '[pelela] Una ruta con layout debe tener hijos. Un layout envuelve rutas hijas mediante <outlet>.',
     childrenWithoutLayout:

@@ -588,7 +588,7 @@ describe('router', () => {
       }
 
       const layoutWithPropsTemplate =
-        '<pelela view-model="LayoutWithProps"><main><outlet prop-userName="userName" const-appName="\'Test App\'"></outlet></main></pelela>'
+        '<pelela view-model="LayoutWithProps"><main><outlet prop-user-name="userName" const-app-name="\'Test App\'"></outlet></main></pelela>'
       const pageWithPropsTemplate =
         '<pelela view-model="PageWithProps"><p bind-content="userName"></p><span bind-content="appName"></span></pelela>'
 
@@ -608,9 +608,9 @@ describe('router', () => {
       const layoutVM = (layoutElement! as PelelaElement<Record<string, unknown>>).__pelelaViewModel
       expect(layoutVM).toBeDefined()
 
-      const pageElement = container.querySelector(
-        'pelela[view-model="PageWithProps"]',
-      ) as PelelaElement<Record<string, unknown>> | null
+      const pageElement = container.querySelector('page-with-props') as PelelaElement<
+        Record<string, unknown>
+      > | null
       expect(pageElement).toBeInstanceOf(HTMLElement)
       const pageVM = pageElement!.__pelelaViewModel
       expect(pageVM).toBeDefined()
@@ -677,6 +677,28 @@ describe('router', () => {
           { path: '', layout: MainLayout, children: [] },
         ] as unknown as RouteDefinition[])
       }).toThrow('Route with layout must have children')
+    })
+
+    it('should throw when outlet has children in layout template', () => {
+      class LayoutWithOutletChildren {
+        title = 'My App'
+      }
+      defineComponent(
+        'LayoutWithOutletChildren',
+        LayoutWithOutletChildren,
+        '<pelela view-model="LayoutWithOutletChildren"><main><outlet><p>Default content</p></outlet></main></pelela>',
+      )
+      defineComponent('HomePage', HomePage, homePageTemplate)
+
+      expect(() => {
+        router.start(container, [
+          {
+            path: '',
+            layout: LayoutWithOutletChildren,
+            children: [{ path: '', component: HomePage }],
+          },
+        ])
+      }).toThrow('element cannot have children')
     })
 
     it('should throw when a route has children but no layout', () => {
@@ -814,7 +836,7 @@ describe('router', () => {
       }
 
       const linkLayoutTpl =
-        '<pelela view-model="LinkLayout"><header><span bind-content="userName">will-change</span></header><main><outlet link-userName="userName"></outlet></main></pelela>'
+        '<pelela view-model="LinkLayout"><header><span bind-content="userName">will-change</span></header><main><outlet link-user-name="userName"></outlet></main></pelela>'
       const linkPageTpl =
         '<pelela view-model="LinkPage"><p bind-content="userName">will-change</p></pelela>'
 
@@ -833,7 +855,7 @@ describe('router', () => {
       expect(container.querySelector('p')!.textContent).toBe('Alice')
       expect(container.querySelector('outlet')).toBeNull()
 
-      const pageEl = container.querySelector('pelela[view-model="LinkPage"]') as PelelaElement<
+      const pageEl = container.querySelector('link-page') as PelelaElement<
         Record<string, unknown>
       > | null
       const pageVM = pageEl!.__pelelaViewModel
@@ -852,7 +874,7 @@ describe('router', () => {
       }
 
       const propLayoutTpl =
-        '<pelela view-model="PropLayout"><header><span bind-content="userName">will-change</span></header><main><outlet prop-userName="userName"></outlet></main></pelela>'
+        '<pelela view-model="PropLayout"><header><span bind-content="userName">will-change</span></header><main><outlet prop-user-name="userName"></outlet></main></pelela>'
       const propPageTpl =
         '<pelela view-model="PropPage"><p bind-content="userName">will-change</p></pelela>'
 
@@ -871,7 +893,7 @@ describe('router', () => {
       expect(container.querySelector('p')!.textContent).toBe('Alice')
       expect(container.querySelector('outlet')).toBeNull()
 
-      const pageEl = container.querySelector('pelela[view-model="PropPage"]') as PelelaElement<
+      const pageEl = container.querySelector('prop-page') as PelelaElement<
         Record<string, unknown>
       > | null
       const pageVM = pageEl!.__pelelaViewModel
@@ -911,7 +933,7 @@ describe('router', () => {
       > | null
       layoutEl!.__pelelaViewModel.title = 'Updated'
 
-      const pageEl = container.querySelector('pelela[view-model="PropPage"]') as PelelaElement<
+      const pageEl = container.querySelector('prop-page') as PelelaElement<
         Record<string, unknown>
       > | null
       expect(pageEl!.__pelelaViewModel.title).toBe('Updated')
@@ -927,7 +949,7 @@ describe('router', () => {
       }
 
       const linkLayoutTpl =
-        '<pelela view-model="LinkLayout"><header><span bind-content="userName">will-change</span></header><main><outlet link-userName="userName"></outlet></main></pelela>'
+        '<pelela view-model="LinkLayout"><header><span bind-content="userName">will-change</span></header><main><outlet link-user-name="userName"></outlet></main></pelela>'
       const linkPageTpl =
         '<pelela view-model="LinkPage"><p bind-content="userName">will-change</p></pelela>'
 
@@ -949,7 +971,7 @@ describe('router', () => {
       > | null
       layoutEl!.__pelelaViewModel.userName = 'Bob'
 
-      const pageEl = container.querySelector('pelela[view-model="LinkPage"]') as PelelaElement<
+      const pageEl = container.querySelector('link-page') as PelelaElement<
         Record<string, unknown>
       > | null
       expect(pageEl!.__pelelaViewModel.userName).toBe('Bob')

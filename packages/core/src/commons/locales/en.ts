@@ -52,6 +52,8 @@ const errors = {
       '[pelela] Nested layouts are not supported. Each level of children inherits the parent layout automatically.',
     layoutMissingOutlet:
       '[pelela] Layout template must contain an <outlet> element as a placeholder for the child route content.',
+    outletWithChildren:
+      "[pelela] The <outlet> element cannot have children. It is replaced entirely by the page's content.",
     layoutWithoutChildren:
       '[pelela] Route with layout must have children. A layout wraps child routes via <outlet>.',
     childrenWithoutLayout:

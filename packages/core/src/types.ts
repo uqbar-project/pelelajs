@@ -9,5 +9,4 @@ export type PelelaOptions = {
 
 export interface PelelaElement<T = object> extends HTMLElement {
   __pelelaViewModel: T
-  __pelelaPostRender?: Array<(changedPath: string) => void>
 }

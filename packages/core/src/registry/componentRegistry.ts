@@ -14,6 +14,7 @@ type DefineComponentOptions = {
 
 const templatesByConstructor = new Map<ViewModelConstructor, ComponentEntry>()
 const componentsByTag = new Map<string, { creator: ViewModelConstructor; entry: ComponentEntry }>()
+const tagByCreator = new Map<ViewModelConstructor, string>()
 
 export function defineComponent(
   name: string,
@@ -33,6 +34,7 @@ export function defineComponent(
       }
     }
     templatesByConstructor.delete(existingCreator)
+    tagByCreator.delete(existingCreator)
     replaceViewModel(name, creator)
   } else if (!existingCreator) {
     registerViewModel(name, creator)
@@ -44,6 +46,7 @@ export function defineComponent(
   }
   templatesByConstructor.set(creator, entry)
   const tag = toKebabCase(name)
+  tagByCreator.set(creator, tag)
   componentsByTag.set(tag, { creator, entry })
 }
 
@@ -61,7 +64,12 @@ export function getRegisteredTags(): string[] {
   return Array.from(componentsByTag.keys())
 }
 
+export function getPageTag(creator: ViewModelConstructor): string | undefined {
+  return tagByCreator.get(creator)
+}
+
 export function clearComponentRegistry(): void {
   templatesByConstructor.clear()
   componentsByTag.clear()
+  tagByCreator.clear()
 }

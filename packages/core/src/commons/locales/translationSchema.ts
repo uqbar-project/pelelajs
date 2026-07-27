@@ -38,6 +38,7 @@ type ErrorTranslations = {
     routeWithChildrenAndComponent: string
     nestedLayoutsNotSupported: string
     layoutMissingOutlet: string
+    outletWithChildren: string
     layoutWithoutChildren: string
     childrenWithoutLayout: string
   }

@@ -4,6 +4,7 @@ import {
   defineComponent,
   getComponentByTag,
   getComponentEntry,
+  getPageTag,
   getRegisteredTags,
 } from './componentRegistry'
 import { clearRegistry, getViewModel } from './viewModelRegistry'
@@ -135,6 +136,22 @@ describe('componentRegistry', () => {
 
     it('should return undefined for a non-existent component tag', () => {
       expect(getComponentByTag('non-existent')).toBeUndefined()
+    })
+  })
+
+  describe('getPageTag', () => {
+    it('should return kebab-case tag for a registered component creator', () => {
+      defineComponent('TodoList', TodoList, '<pelela view-model="TodoList"></pelela>')
+
+      const tag = getPageTag(TodoList)
+
+      expect(tag).toBe('todo-list')
+    })
+
+    it('should return undefined for a non-registered component', () => {
+      const tag = getPageTag(TodoList)
+
+      expect(tag).toBeUndefined()
     })
   })
 

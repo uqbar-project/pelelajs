@@ -1,4 +1,3 @@
-import { getNestedProperty, isPathAffected, setNestedProperty } from '../bindings/nestedProperties'
 import { resetRouterActive, setRouterActive } from '../bootstrap/bootstrap'
 import { handleError, mountTemplate, renderErrorPage } from '../bootstrap/mountTemplate'
 import {
@@ -6,34 +5,18 @@ import {
   findExistingStylesheetLink,
   removeStylesheetLinks,
 } from '../commons/cssLoader'
-import { CONST_PREFIX, LINK_PREFIX, PROP_PREFIX } from '../commons/dom'
-import { toCamelCase, toKebabCase } from '../commons/helpers'
+import { toKebabCase } from '../commons/helpers'
 import { t } from '../commons/i18n'
-import { isUnsafeKey } from '../commons/sanitization'
 import { RoutingError } from '../errors/RoutingError'
 import {
   getComponentByTag,
   getComponentEntry,
+  getPageTag,
   getRegisteredTags,
 } from '../registry/componentRegistry'
-import type { PelelaElement, ViewModelConstructor } from '../types'
+import type { ViewModelConstructor } from '../types'
 import { flattenRoutes, matchRoute } from './routeMatcher'
 import type { FlattenedRoute, MatchedRoute, RouteDefinition } from './types'
-
-const OUTLET_BINDING_PROP = 'prop'
-const OUTLET_BINDING_CONST = 'const'
-const OUTLET_BINDING_LINK = 'link'
-
-const REACTIVE_OUTLET_BINDING_TYPES: OutletBinding['type'][] = [
-  OUTLET_BINDING_PROP,
-  OUTLET_BINDING_LINK,
-]
-
-interface OutletBinding {
-  type: 'prop' | 'const' | 'link'
-  pageProperty: string
-  sourceExpression: string
-}
 
 let container: HTMLElement | null = null
 let flatRoutes: FlattenedRoute[] = []
@@ -64,124 +47,15 @@ function collectChildComponentCssUrls(rawTemplate: string, visited = new Set<str
     })
 }
 
-function isNumberConstant(value: string): boolean {
-  return value.trim() !== '' && !Number.isNaN(Number(value))
-}
-
-function getOutletBindingType(attrName: string): OutletBinding['type'] | undefined {
-  if (attrName.startsWith(PROP_PREFIX)) return OUTLET_BINDING_PROP
-  if (attrName.startsWith(CONST_PREFIX)) return OUTLET_BINDING_CONST
-  if (attrName.startsWith(LINK_PREFIX)) return OUTLET_BINDING_LINK
-  return undefined
-}
-
-function getOutletBindingPageProperty(attrName: string): string | undefined {
-  let result: string | undefined
-  if (attrName.startsWith(PROP_PREFIX)) result = PROP_PREFIX
-  if (attrName.startsWith(CONST_PREFIX)) result = CONST_PREFIX
-  if (attrName.startsWith(LINK_PREFIX)) result = LINK_PREFIX
-  return result ? toCamelCase(attrName.slice(result.length)) : undefined
-}
-
-function parseOutletBindings(layoutTemplate: string): OutletBinding[] {
-  const outletRegex = /<outlet\b([^>]*)\/?>/i
-  const outletMatch = layoutTemplate.match(outletRegex)
-  if (!outletMatch) return []
-
-  const attrsString = outletMatch[1].trim()
-  if (!attrsString) return []
-
-  const attrRegex = /(\S+)\s*=\s*"([^"]*)"|(\S+)\s*=\s*'([^']*)'/g
-  const matches = Array.from(attrsString.matchAll(attrRegex))
-  return matches.flatMap((match) => {
-    const name = match[1] || match[3]
-    const value = match[2] || match[4]
-    const type = getOutletBindingType(name)
-    const pageProperty = getOutletBindingPageProperty(name)
-    return type && pageProperty ? [{ type, pageProperty, sourceExpression: value }] : []
-  })
-}
-
-function setupLinkPropagation(
-  pageViewModel: Record<string, unknown>,
-  layoutViewModel: Record<string, unknown>,
-  pageProperty: string,
-  sourceExpression: string,
-): void {
-  const rawTarget = (pageViewModel as Record<string, unknown>).$raw as
-    | Record<string, unknown>
-    | undefined
-  if (!rawTarget) return
-
-  let internalValue = rawTarget[pageProperty]
-
-  Object.defineProperty(rawTarget, pageProperty, {
-    get() {
-      return internalValue
-    },
-    set(newValue: unknown) {
-      if (internalValue !== newValue) {
-        internalValue = newValue
-        setNestedProperty(layoutViewModel, sourceExpression, newValue)
-      }
-    },
-    enumerable: true,
-    configurable: true,
-  })
-}
-
-function setupOutletBindings(rootContainer: HTMLElement, outletBindings: OutletBinding[]): void {
-  if (outletBindings.length === 0) return
-
-  const layoutElement = rootContainer.querySelector('pelela[view-model]') as PelelaElement | null
-  if (!layoutElement) return
-
-  const pageElement = layoutElement.querySelector('pelela[view-model]') as PelelaElement | null
-  if (!pageElement) return
-
-  const layoutViewModel = layoutElement.__pelelaViewModel as Record<string, unknown>
-  const pageViewModel = pageElement.__pelelaViewModel as Record<string, unknown>
-  if (!layoutViewModel || !pageViewModel) return
-
-  outletBindings
-    .filter((binding) => !isUnsafeKey(binding.pageProperty))
-    .forEach((binding) => {
-      const value =
-        binding.type === OUTLET_BINDING_CONST
-          ? isNumberConstant(binding.sourceExpression)
-            ? Number(binding.sourceExpression)
-            : binding.sourceExpression
-          : getNestedProperty(layoutViewModel, binding.sourceExpression)
-
-      pageViewModel[binding.pageProperty] = value
-
-      if (binding.type === OUTLET_BINDING_LINK) {
-        setupLinkPropagation(
-          pageViewModel,
-          layoutViewModel,
-          binding.pageProperty,
-          binding.sourceExpression,
-        )
-      }
-
-      if (REACTIVE_OUTLET_BINDING_TYPES.includes(binding.type)) {
-        layoutElement.__pelelaPostRender?.push((changedPath: string) => {
-          if (isPathAffected(binding.sourceExpression, changedPath)) {
-            const updatedValue = getNestedProperty(layoutViewModel, binding.sourceExpression)
-            pageViewModel[binding.pageProperty] = updatedValue
-          }
-        })
-      }
-    })
-}
-
-function combineLayoutAndPage(layoutTemplate: string, pageTemplate: string): string {
+function replaceOutletWithPageTag(layoutTemplate: string, pageTag: string): string {
   const outletRegex = /<outlet\b[^>]*\/?>(?:\s*<\/outlet\s*>)?/i
   if (!outletRegex.test(layoutTemplate)) {
     throw new Error(t('errors.routing.layoutMissingOutlet'))
   }
 
-  return layoutTemplate.replace(outletRegex, () => pageTemplate)
+  return layoutTemplate
+    .replace(/<outlet\b/gi, `<${pageTag}`)
+    .replace(/<\/outlet\s*>/gi, `</${pageTag}>`)
 }
 
 function loadRouteCss(entry: { cssUrls?: string[]; template: string }): void {
@@ -224,10 +98,12 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
         throw new RoutingError(match.route.layout.name || 'Unknown', 'component-not-registered')
       }
 
-      const outletBindings = parseOutletBindings(layoutEntry.template)
-      const combinedHtml = combineLayoutAndPage(layoutEntry.template, pageEntry.template)
+      const pageTag = getPageTag(match.route.component)
+      if (!pageTag) {
+        throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
+      }
+      const combinedHtml = replaceOutletWithPageTag(layoutEntry.template, pageTag)
       mountTemplate(container!, combinedHtml)
-      setupOutletBindings(container!, outletBindings)
       loadRouteCss(layoutEntry)
     } else {
       mountTemplate(container!, pageEntry.template)
@@ -281,13 +157,28 @@ function assertNoNestedLayouts(
   }
 }
 
+function assertOutletHasNoChildren(layoutCreator: ViewModelConstructor): void {
+  const entry = getComponentEntry(layoutCreator)
+  if (!entry) return
+
+  const template = entry.template
+  const outletPattern = /<outlet\b[^>]*>([\s\S]*?)<\/outlet\s*>|<outlet\b[^>]*\/?>/i
+  const match = template.match(outletPattern)
+  if (match && match[1] !== undefined && match[1].trim().length > 0) {
+    throw new Error(t('errors.routing.outletWithChildren'))
+  }
+}
+
 function validateRoutes(routeDefs: RouteDefinition[], parentLayout?: ViewModelConstructor): void {
   for (const routeDef of routeDefs) {
     assertLayoutHasChildren(routeDef)
     assertChildrenHaveLayout(routeDef)
     assertNoComponentWithChildren(routeDef)
     assertNoNestedLayouts(routeDef, parentLayout)
-    if (routeDef.layout) assertComponentIsRegistered(routeDef.layout)
+    if (routeDef.layout) {
+      assertComponentIsRegistered(routeDef.layout)
+      assertOutletHasNoChildren(routeDef.layout)
+    }
     if (routeDef.component) assertComponentIsRegistered(routeDef.component)
     if (routeDef.children) {
       validateRoutes(routeDef.children, routeDef.layout ?? parentLayout)
