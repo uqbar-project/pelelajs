@@ -808,6 +808,85 @@ describe('router', () => {
       expect(container.querySelector('header span')!.textContent).toBe('Alice')
       expect(container.querySelector('p')!.textContent).toBe('Bob')
     })
+
+    it('should propagate prop-* changes from layout VM to page VM', () => {
+      class PropLayout {
+        title = 'Initial'
+      }
+      class PropPage {
+        title = ''
+      }
+
+      const propLayoutTpl =
+        '<pelela view-model="PropLayout"><main><outlet prop-title="title"></outlet></main></pelela>'
+      const propPageTpl = '<pelela view-model="PropPage"><p bind-content="title"></p></pelela>'
+
+      defineComponent('PropLayout', PropLayout, propLayoutTpl)
+      defineComponent('PropPage', PropPage, propPageTpl)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: PropLayout,
+          children: [{ path: '', component: PropPage }],
+        },
+      ])
+
+      expect(container.querySelector('p')!.textContent).toBe('Initial')
+
+      const layoutEl = container.querySelector('pelela[view-model="PropLayout"]') as PelelaElement<
+        Record<string, unknown>
+      > | null
+      layoutEl!.__pelelaViewModel.title = 'Updated'
+
+      const pageEl = container.querySelector('pelela[view-model="PropPage"]') as PelelaElement<
+        Record<string, unknown>
+      > | null
+      expect(pageEl!.__pelelaViewModel.title).toBe('Updated')
+      expect(container.querySelector('p')!.textContent).toBe('Updated')
+    })
+
+    it('should propagate link-* changes from layout VM to page VM', () => {
+      class LinkLayout {
+        userName = 'Alice'
+      }
+      class LinkPage {
+        userName = ''
+      }
+
+      const linkLayoutTpl =
+        '<pelela view-model="LinkLayout"><header><span bind-content="userName">will-change</span></header><main><outlet link-userName="userName"></outlet></main></pelela>'
+      const linkPageTpl =
+        '<pelela view-model="LinkPage"><p bind-content="userName">will-change</p></pelela>'
+
+      defineComponent('LinkLayout', LinkLayout, linkLayoutTpl)
+      defineComponent('LinkPage', LinkPage, linkPageTpl)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: LinkLayout,
+          children: [{ path: '', component: LinkPage }],
+        },
+      ])
+
+      expect(container.querySelector('p')!.textContent).toBe('Alice')
+
+      const layoutEl = container.querySelector('pelela[view-model="LinkLayout"]') as PelelaElement<
+        Record<string, unknown>
+      > | null
+      layoutEl!.__pelelaViewModel.userName = 'Bob'
+
+      const pageEl = container.querySelector('pelela[view-model="LinkPage"]') as PelelaElement<
+        Record<string, unknown>
+      > | null
+      expect(pageEl!.__pelelaViewModel.userName).toBe('Bob')
+      expect(container.querySelector('p')!.textContent).toBe('Bob')
+
+      // Verify link-* still propagates child→parent
+      pageEl!.__pelelaViewModel.userName = 'Charlie'
+      expect(container.querySelector('header span')!.textContent).toBe('Charlie')
+    })
   })
 
   describe('layout CSS lifecycle', () => {

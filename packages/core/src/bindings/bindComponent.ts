@@ -20,7 +20,7 @@ import { UnknownComponentError, UnknownComponentPropertyError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
 import type { PelelaElement } from '../types'
-import { getNestedProperty, setNestedProperty } from './nestedProperties'
+import { getNestedProperty, isPathAffected, setNestedProperty } from './nestedProperties'
 import { setupBindings } from './setupBindings'
 import type { ComponentBinding, ViewModel } from './types'
 
@@ -286,12 +286,4 @@ export function renderComponentBindings<T extends object>(
       }
     })
   })
-}
-
-function isPathAffected(parentKey: string, changedPath: string): boolean {
-  return (
-    changedPath === parentKey ||
-    changedPath.startsWith(`${parentKey}.`) ||
-    changedPath.startsWith(`${parentKey}[`)
-  )
 }

@@ -7,7 +7,7 @@ import { ViewModelRegistrationError } from '../errors/index'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentEntry } from '../registry/componentRegistry'
 import { getViewModel } from '../registry/viewModelRegistry'
-import type { PelelaOptions } from '../types'
+import type { PelelaElement, PelelaOptions } from '../types'
 
 let isRouterActive = false
 
@@ -65,13 +65,18 @@ export function bootstrap(options: PelelaOptions = {}): void {
     }
     const instance = new creator()
     let render: (changedPath?: string) => void = () => {}
+    const postRenderCallbacks: Array<(changedPath: string) => void> = []
+    ;(root as PelelaElement).__pelelaPostRender = postRenderCallbacks
     const reactiveInstance = createReactiveViewModel(
       instance as Record<string, unknown>,
       (changedPath: string) => {
         render(changedPath)
+        postRenderCallbacks.forEach((postRenderCallback) => {
+          postRenderCallback(changedPath)
+        })
       },
     )
-    ;(root as HTMLElement & { __pelelaViewModel: unknown }).__pelelaViewModel = reactiveInstance
+    ;(root as PelelaElement).__pelelaViewModel = reactiveInstance
     render = setupBindings(root, reactiveInstance)
     console.log(`[pelela] View model "${name}" instantiated and bound`, reactiveInstance)
 

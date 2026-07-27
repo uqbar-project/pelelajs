@@ -1,4 +1,4 @@
-import { getNestedProperty, setNestedProperty } from '../bindings/nestedProperties'
+import { getNestedProperty, isPathAffected, setNestedProperty } from '../bindings/nestedProperties'
 import { resetRouterActive, setRouterActive } from '../bootstrap/bootstrap'
 import { handleError, mountTemplate, renderErrorPage } from '../bootstrap/mountTemplate'
 import {
@@ -19,6 +19,15 @@ import {
 import type { PelelaElement, ViewModelConstructor } from '../types'
 import { flattenRoutes, matchRoute } from './routeMatcher'
 import type { FlattenedRoute, MatchedRoute, RouteDefinition } from './types'
+
+const OUTLET_BINDING_PROP = 'prop'
+const OUTLET_BINDING_CONST = 'const'
+const OUTLET_BINDING_LINK = 'link'
+
+const REACTIVE_OUTLET_BINDING_TYPES: OutletBinding['type'][] = [
+  OUTLET_BINDING_PROP,
+  OUTLET_BINDING_LINK,
+]
 
 interface OutletBinding {
   type: 'prop' | 'const' | 'link'
@@ -59,10 +68,10 @@ function isNumberConstant(value: string): boolean {
   return value.trim() !== '' && !Number.isNaN(Number(value))
 }
 
-function getOutletBindingType(attrName: string): 'prop' | 'const' | 'link' | undefined {
-  if (attrName.startsWith(PROP_PREFIX)) return 'prop'
-  if (attrName.startsWith(CONST_PREFIX)) return 'const'
-  if (attrName.startsWith(LINK_PREFIX)) return 'link'
+function getOutletBindingType(attrName: string): OutletBinding['type'] | undefined {
+  if (attrName.startsWith(PROP_PREFIX)) return OUTLET_BINDING_PROP
+  if (attrName.startsWith(CONST_PREFIX)) return OUTLET_BINDING_CONST
+  if (attrName.startsWith(LINK_PREFIX)) return OUTLET_BINDING_LINK
   return undefined
 }
 
@@ -138,7 +147,7 @@ function setupOutletBindings(rootContainer: HTMLElement, outletBindings: OutletB
     .filter((binding) => !isUnsafeKey(binding.pageProperty))
     .forEach((binding) => {
       const value =
-        binding.type === 'const'
+        binding.type === OUTLET_BINDING_CONST
           ? isNumberConstant(binding.sourceExpression)
             ? Number(binding.sourceExpression)
             : binding.sourceExpression
@@ -146,13 +155,22 @@ function setupOutletBindings(rootContainer: HTMLElement, outletBindings: OutletB
 
       pageViewModel[binding.pageProperty] = value
 
-      if (binding.type === 'link') {
+      if (binding.type === OUTLET_BINDING_LINK) {
         setupLinkPropagation(
           pageViewModel,
           layoutViewModel,
           binding.pageProperty,
           binding.sourceExpression,
         )
+      }
+
+      if (REACTIVE_OUTLET_BINDING_TYPES.includes(binding.type)) {
+        layoutElement.__pelelaPostRender?.push((changedPath: string) => {
+          if (isPathAffected(binding.sourceExpression, changedPath)) {
+            const updatedValue = getNestedProperty(layoutViewModel, binding.sourceExpression)
+            pageViewModel[binding.pageProperty] = updatedValue
+          }
+        })
       }
     })
 }
