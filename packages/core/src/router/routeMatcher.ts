@@ -9,8 +9,8 @@ type CompiledRoute = {
   paramNames: string[]
 }
 export function joinPaths(parent: string, child: string): string {
-  const combined = parent.endsWith('/') || parent === '' ? parent + child : `${parent}/${child}`
-  const result = combined.replace(/\/+/g, '/') || '/'
+  const combined = [parent, child].filter((segment) => segment !== '').join('/')
+  const result = combined.replace(/\/+/g, '/').replace(/\/$/, '') || '/'
   if (result === '*') return result
   return result.startsWith('/') ? result : `/${result}`
 }

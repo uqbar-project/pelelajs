@@ -75,6 +75,14 @@ describe('joinPaths', () => {
   it('should prefix nested star with parent path', () => {
     expect(joinPaths('admin', '*')).toBe('/admin/*')
   })
+
+  it('should not add trailing slash when joining with empty child', () => {
+    expect(joinPaths('/admin', '')).toBe('/admin')
+  })
+
+  it('should not add trailing slash when joining with empty child and trailing slash in parent', () => {
+    expect(joinPaths('/admin/', '')).toBe('/admin')
+  })
 })
 
 describe('flattenRoutes', () => {
