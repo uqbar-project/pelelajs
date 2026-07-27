@@ -309,6 +309,24 @@ describe('routeMatcher', () => {
       const result = matchRoute('/admin/dashboard', '', routes)
       expect(result.route.component).toBe(AboutPage)
     })
+
+    it('should extract dynamic parameters from the prefix before the wildcard', () => {
+      const routes: FlattenedRoute[] = [{ path: '/admin/:orgId/*', component: NotFoundPage }]
+
+      const result = matchRoute('/admin/algo3/users', '', routes)
+
+      expect(result.route.component).toBe(NotFoundPage)
+      expect(result.urlParameters).toEqual({ orgId: 'algo3' })
+    })
+
+    it('should extract dynamic parameters from the prefix when matching the prefix path itself', () => {
+      const routes: FlattenedRoute[] = [{ path: '/admin/:orgId/*', component: NotFoundPage }]
+
+      const result = matchRoute('/admin/algo3', '', routes)
+
+      expect(result.route.component).toBe(NotFoundPage)
+      expect(result.urlParameters).toEqual({ orgId: 'algo3' })
+    })
   })
 
   describe('route not found', () => {

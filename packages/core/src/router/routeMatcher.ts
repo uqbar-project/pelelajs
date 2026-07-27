@@ -56,10 +56,14 @@ function compileRoute(route: FlattenedRoute): CompiledRoute {
 
   if (route.path.endsWith('/*')) {
     const prefix = route.path.slice(0, -2)
+    const paramNames: string[] = []
+    const segments = prefix.split('/').filter((segment) => segment.length > 0)
+    const regexParts = segments.map((segment) => mapSegmentToRegex(segment, paramNames))
+    const prefixPattern = regexParts.length > 0 ? `/${regexParts.join('/')}` : ''
     return {
       route,
-      regex: new RegExp(`^${escapeRegex(prefix)}(?:/.*)?$`),
-      paramNames: [],
+      regex: new RegExp(`^${prefixPattern}(?:/.*)?$`),
+      paramNames,
     }
   }
 
