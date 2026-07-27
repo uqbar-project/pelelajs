@@ -1,4 +1,3 @@
-import { t } from '../commons/i18n'
 import { RoutingError } from '../errors/RoutingError'
 import type { ViewModelConstructor } from '../types'
 import type { FlattenedRoute, MatchedRoute, RouteDefinition } from './types'
@@ -24,12 +23,6 @@ export function flattenRoutes(
     const layout = route.layout ?? parentLayout
 
     if (route.children) {
-      if (route.component) {
-        throw new Error(t('errors.routing.routeWithChildrenAndComponent'))
-      }
-      if (route.layout && parentLayout) {
-        throw new Error(t('errors.routing.nestedLayoutsNotSupported'))
-      }
       return flattenRoutes(route.children, fullPath, layout)
     }
 

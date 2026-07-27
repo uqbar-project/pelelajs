@@ -689,6 +689,47 @@ describe('router', () => {
       }).toThrow('Route with children must have a layout')
     })
 
+    it('should throw when a route has both component and children', () => {
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+      defineComponent('HomePage', HomePage, homePageTemplate)
+
+      expect(() => {
+        router.start(container, [
+          {
+            path: '',
+            component: HomePage,
+            layout: MainLayout,
+            children: [{ path: '', component: HomePage }],
+          },
+        ] as unknown as RouteDefinition[])
+      }).toThrow('cannot have a component')
+    })
+
+    it('should throw when nested layouts are detected', () => {
+      class AnotherLayout {
+        title = 'Another'
+      }
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+      defineComponent('AnotherLayout', AnotherLayout, layoutTemplate)
+      defineComponent('HomePage', HomePage, homePageTemplate)
+
+      expect(() => {
+        router.start(container, [
+          {
+            path: '',
+            layout: MainLayout,
+            children: [
+              {
+                path: 'sub',
+                layout: AnotherLayout,
+                children: [{ path: '', component: HomePage }],
+              },
+            ],
+          },
+        ])
+      }).toThrow('Nested layouts are not supported')
+    })
+
     it('should render page standalone when route has no layout', () => {
       defineComponent('HomePage', HomePage, homePageTemplate)
       defineComponent('LoginPage', LoginPage, loginPageTemplate)

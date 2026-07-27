@@ -254,17 +254,44 @@ function assertComponentIsRegistered(viewModel: ViewModelConstructor): void {
   }
 }
 
-function validateRoutesHaveTemplates(routeDefs: RouteDefinition[]): void {
+function assertLayoutHasChildren(routeDef: RouteDefinition): void {
+  if (routeDef.layout && (!routeDef.children || routeDef.children.length === 0)) {
+    throw new Error(t('errors.routing.layoutWithoutChildren'))
+  }
+}
+
+function assertChildrenHaveLayout(routeDef: RouteDefinition): void {
+  if (routeDef.children && !routeDef.layout) {
+    throw new Error(t('errors.routing.childrenWithoutLayout'))
+  }
+}
+
+function assertNoComponentWithChildren(routeDef: RouteDefinition): void {
+  if (routeDef.component && routeDef.children) {
+    throw new Error(t('errors.routing.routeWithChildrenAndComponent'))
+  }
+}
+
+function assertNoNestedLayouts(
+  routeDef: RouteDefinition,
+  parentLayout?: ViewModelConstructor,
+): void {
+  if (routeDef.layout && parentLayout) {
+    throw new Error(t('errors.routing.nestedLayoutsNotSupported'))
+  }
+}
+
+function validateRoutes(routeDefs: RouteDefinition[], parentLayout?: ViewModelConstructor): void {
   for (const routeDef of routeDefs) {
-    if (routeDef.layout && (!routeDef.children || routeDef.children.length === 0)) {
-      throw new Error(t('errors.routing.layoutWithoutChildren'))
-    }
-    if (routeDef.children && !routeDef.layout) {
-      throw new Error(t('errors.routing.childrenWithoutLayout'))
-    }
+    assertLayoutHasChildren(routeDef)
+    assertChildrenHaveLayout(routeDef)
+    assertNoComponentWithChildren(routeDef)
+    assertNoNestedLayouts(routeDef, parentLayout)
     if (routeDef.layout) assertComponentIsRegistered(routeDef.layout)
     if (routeDef.component) assertComponentIsRegistered(routeDef.component)
-    if (routeDef.children) validateRoutesHaveTemplates(routeDef.children)
+    if (routeDef.children) {
+      validateRoutes(routeDef.children, routeDef.layout ?? parentLayout)
+    }
   }
 }
 
@@ -287,8 +314,8 @@ export const router = {
 
     try {
       setRouterActive()
+      validateRoutes(routeDefs)
       flatRoutes = flattenRoutes(routeDefs)
-      validateRoutesHaveTemplates(routeDefs)
       resolveAndRender()
     } catch (error) {
       resetRouter()

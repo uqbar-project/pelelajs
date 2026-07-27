@@ -134,7 +134,7 @@ describe('flattenRoutes', () => {
     expect(result).toEqual([{ path: '/', component: ProductCatalog, layout: MainLayout }])
   })
 
-  it('should throw when a route has both component and children', () => {
+  it('should not validate when a route has both component and children (pure transformation)', () => {
     const routes = [
       {
         path: '',
@@ -144,10 +144,11 @@ describe('flattenRoutes', () => {
       },
     ] as unknown as RouteDefinition[]
 
-    expect(() => flattenRoutes(routes)).toThrow('cannot have a component')
+    const result = flattenRoutes(routes)
+    expect(result).toEqual([])
   })
 
-  it('should throw when nested layouts are detected (layout inside another layout)', () => {
+  it('should not validate nested layouts (pure transformation)', () => {
     const routes: RouteDefinition[] = [
       {
         path: '',
@@ -162,7 +163,8 @@ describe('flattenRoutes', () => {
       },
     ]
 
-    expect(() => flattenRoutes(routes)).toThrow('Nested layouts are not supported')
+    const result = flattenRoutes(routes)
+    expect(result).toEqual([{ path: '/sub', component: ProductCatalog, layout: AnotherLayout }])
   })
 
   it('should preserve layout for sibling routes under the same parent', () => {
