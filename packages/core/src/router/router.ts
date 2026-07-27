@@ -181,7 +181,7 @@ function combineLayoutAndPage(layoutTemplate: string, pageTemplate: string): str
     throw new Error(t('errors.routing.layoutMissingOutlet'))
   }
 
-  return layoutTemplate.replace(outletRegex, pageTemplate)
+  return layoutTemplate.replace(outletRegex, () => pageTemplate)
 }
 
 function loadRouteCss(entry: { cssUrls?: string[]; template: string }): void {

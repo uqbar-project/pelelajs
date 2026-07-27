@@ -557,6 +557,27 @@ describe('router', () => {
       expect(container.querySelector('outlet')).toBeNull()
     })
 
+    it('should not interpret $ sequences in the page template during outlet replacement', () => {
+      class PageWithDollarSign {
+        label = 'Electronics'
+      }
+      const pageWithDollarSignTemplate =
+        '<pelela view-model="PageWithDollarSign"><p>$& <span bind-content="label"></span></p></pelela>'
+
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+      defineComponent('PageWithDollarSign', PageWithDollarSign, pageWithDollarSignTemplate)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: MainLayout,
+          children: [{ path: '', component: PageWithDollarSign }],
+        },
+      ])
+
+      expect(container.querySelector('p')!.textContent).toBe('$& Electronics')
+    })
+
     it('should transfer prop-* attributes from <outlet> to the page ViewModel', () => {
       class LayoutWithProps {
         userName = 'John Doe'
