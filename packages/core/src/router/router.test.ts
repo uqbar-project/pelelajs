@@ -693,7 +693,7 @@ describe('router', () => {
       expect(container.querySelector('header')).toBeNull()
     })
 
-    it('should render grandchild component when navigating through three levels of nested routes', () => {
+    it('should render child routes with multi-segment paths under the same layout', () => {
       class AppLayout {
         title = 'App'
       }
