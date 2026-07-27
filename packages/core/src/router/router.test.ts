@@ -669,6 +669,16 @@ describe('router', () => {
       }).toThrow('Route with layout must have children')
     })
 
+    it('should throw when a route has layout with empty children array', () => {
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+
+      expect(() => {
+        router.start(container, [
+          { path: '', layout: MainLayout, children: [] },
+        ] as unknown as RouteDefinition[])
+      }).toThrow('Route with layout must have children')
+    })
+
     it('should throw when a route has children but no layout', () => {
       defineComponent('HomePage', HomePage, homePageTemplate)
 

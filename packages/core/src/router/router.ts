@@ -256,7 +256,7 @@ function assertComponentIsRegistered(viewModel: ViewModelConstructor): void {
 
 function validateRoutesHaveTemplates(routeDefs: RouteDefinition[]): void {
   for (const routeDef of routeDefs) {
-    if (routeDef.layout && !routeDef.children) {
+    if (routeDef.layout && (!routeDef.children || routeDef.children.length === 0)) {
       throw new Error(t('errors.routing.layoutWithoutChildren'))
     }
     if (routeDef.children && !routeDef.layout) {
