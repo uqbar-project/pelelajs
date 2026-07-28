@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## npm-v1.1.0 - 2026-07-28
+- 🔀 Routing with layout
+- 🤖 Deploy in CI
+- 📚 Add dynamic cheatsheet
+- 🐛 Fix forbidden attribute message for internal HTML tags
+- 🧹 Improve kebab-case validation for component tags
+
 ## npm-v1.0.2 - 2026-06-25
 - 🎨 Child components CSS manipulation fixed
 
