@@ -2,6 +2,7 @@ import * as assert from 'node:assert'
 import { describe, it } from 'mocha'
 import {
   getHtmlAttributes,
+  getHtmlAttributesForTag,
   getHtmlElements,
   getPelelaAttributes,
   getPelelaAttributesForTag,
@@ -129,6 +130,9 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('enter'))
       assert.ok(attributes.includes('for-each'))
       assert.ok(attributes.includes('if'))
+      assert.ok(attributes.includes('index'))
+      assert.ok(attributes.includes('link-'))
+      assert.ok(attributes.includes('prop-'))
     })
 
     it('should return exactly 16 attributes', () => {
@@ -199,6 +203,46 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('enter'))
       assert.ok(attributes.includes('view-model'))
       assert.strictEqual(attributes.length, 16)
+    })
+
+    it('should only allow prop-, link- and const- attributes for outlet', () => {
+      const attributes = getPelelaAttributesForTag('outlet')
+
+      assert.ok(attributes.includes('prop-'))
+      assert.ok(attributes.includes('link-'))
+      assert.ok(attributes.includes('const-'))
+      assert.ok(!attributes.includes('bind-class'))
+      assert.ok(!attributes.includes('bind-content'))
+      assert.ok(!attributes.includes('bind-enabled'))
+      assert.ok(!attributes.includes('bind-src'))
+      assert.ok(!attributes.includes('bind-style'))
+      assert.ok(!attributes.includes('bind-value'))
+      assert.ok(!attributes.includes('bind-alt'))
+      assert.ok(!attributes.includes('click'))
+      assert.ok(!attributes.includes('enter'))
+      assert.ok(!attributes.includes('for-each'))
+      assert.ok(!attributes.includes('if'))
+      assert.ok(!attributes.includes('index'))
+      assert.ok(!attributes.includes('view-model'))
+    })
+  })
+
+  describe('getHtmlAttributesForTag', () => {
+    it('should return all standard HTML attributes for normal tags', () => {
+      const attributes = getHtmlAttributesForTag('div')
+
+      assert.ok(attributes.includes('class'))
+      assert.ok(attributes.includes('id'))
+      assert.ok(attributes.includes('style'))
+      assert.ok(attributes.includes('href'))
+      assert.ok(attributes.includes('disabled'))
+      assert.ok(attributes.includes('checked'))
+    })
+
+    it('should return no attributes for outlet', () => {
+      const attributes = getHtmlAttributesForTag('outlet')
+
+      assert.strictEqual(attributes.length, 0)
     })
   })
 })

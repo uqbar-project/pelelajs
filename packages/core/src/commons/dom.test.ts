@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { isPelelaRootTag, isStandardHtmlTag, isValidComponentAttribute } from './dom'
+import {
+  isPelelaRootTag,
+  isRouterHtmlTag,
+  isStandardHtmlTag,
+  isValidComponentAttribute,
+} from './dom'
 
 describe('dom utilities', () => {
   describe('isStandardHtmlTag', () => {
@@ -34,6 +39,19 @@ describe('dom utilities', () => {
       expect(isPelelaRootTag('div')).toBe(false)
       expect(isPelelaRootTag('span')).toBe(false)
       expect(isPelelaRootTag('my-component')).toBe(false)
+    })
+  })
+
+  describe('isRouterHtmlTag', () => {
+    it('returns true for outlet', () => {
+      expect(isRouterHtmlTag('outlet')).toBe(true)
+      expect(isRouterHtmlTag('OUTLET')).toBe(true)
+    })
+
+    it('returns false for other tags', () => {
+      expect(isRouterHtmlTag('div')).toBe(false)
+      expect(isRouterHtmlTag('pelela')).toBe(false)
+      expect(isRouterHtmlTag('component')).toBe(false)
     })
   })
 

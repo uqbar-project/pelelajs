@@ -6,17 +6,20 @@ import {
   removeStylesheetLinks,
 } from '../commons/cssLoader'
 import { toKebabCase } from '../commons/helpers'
+import { t } from '../commons/i18n'
 import { RoutingError } from '../errors/RoutingError'
 import {
   getComponentByTag,
   getComponentEntry,
+  getComponentTag,
   getRegisteredTags,
 } from '../registry/componentRegistry'
-import { matchRoute } from './routeMatcher'
-import type { MatchedRoute, RouteDefinition } from './types'
+import type { ViewModelConstructor } from '../types'
+import { flattenRoutes, matchRoute } from './routeMatcher'
+import type { FlattenedRoute, MatchedRoute, RouteDefinition } from './types'
 
 let container: HTMLElement | null = null
-let routes: RouteDefinition[] = []
+let flatRoutes: FlattenedRoute[] = []
 let currentMatch: MatchedRoute | null = null
 let popstateHandler: (() => void) | null = null
 const currentRouteCss = new Set<string>()
@@ -44,12 +47,35 @@ function collectChildComponentCssUrls(rawTemplate: string, visited = new Set<str
     })
 }
 
+function replaceOutletWithPageTag(layoutTemplate: string, pageTag: string): string {
+  if (!/<outlet\b/i.test(layoutTemplate)) {
+    throw new Error(t('errors.routing.layoutMissingOutlet'))
+  }
+
+  const normalized = layoutTemplate.replace(/<outlet\b([^>]*)\/>/gi, '<outlet$1></outlet>')
+  return normalized
+    .replace(/<outlet\b/gi, `<${pageTag}`)
+    .replace(/<\/outlet\s*>/gi, `</${pageTag}>`)
+}
+
+function loadRouteCss(entry: { cssUrls?: string[]; template: string }): void {
+  const childCssUrls = collectChildComponentCssUrls(entry.template)
+  const allCssUrls = [...(entry.cssUrls ?? []), ...childCssUrls]
+  allCssUrls.forEach((cssUrl) => {
+    currentRouteCss.add(cssUrl)
+    const existingLink = findExistingStylesheetLink(cssUrl)
+    if (!existingLink) {
+      document.head.appendChild(createStylesheetLink(cssUrl))
+    }
+  })
+}
+
 function renderPath(pathname: string, search: string, nextPath?: string): void {
   try {
-    const match = matchRoute(pathname, search, routes)
+    const match = matchRoute(pathname, search, flatRoutes)
 
-    const entry = getComponentEntry(match.route.component)
-    if (!entry) {
+    const pageEntry = getComponentEntry(match.route.component)
+    if (!pageEntry) {
       throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
     }
 
@@ -57,26 +83,33 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
     currentRouteCss.clear()
 
     currentMatch = match
-    mountTemplate(container!, entry.template)
-
-    for (const cssUrl of oldRouteCss) {
-      removeStylesheetLinks(cssUrl)
-    }
-    const routeCssUrls = entry.cssUrls ?? []
-    const childCssUrls = collectChildComponentCssUrls(entry.template)
-    const allCssUrls = [...routeCssUrls, ...childCssUrls]
-    for (const cssUrl of allCssUrls) {
-      currentRouteCss.add(cssUrl)
-      const existingLink = findExistingStylesheetLink(cssUrl)
-      if (!existingLink) {
-        const linkElement = createStylesheetLink(cssUrl)
-        document.head.appendChild(linkElement)
-      }
-    }
 
     if (nextPath) {
       history.pushState(null, '', nextPath)
     }
+
+    oldRouteCss.forEach((cssUrl) => {
+      removeStylesheetLinks(cssUrl)
+    })
+
+    if (match.route.layout) {
+      const layoutEntry = getComponentEntry(match.route.layout)
+      if (!layoutEntry) {
+        throw new RoutingError(match.route.layout.name || 'Unknown', 'component-not-registered')
+      }
+
+      const pageTag = getComponentTag(match.route.component)
+      if (!pageTag) {
+        throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
+      }
+      const combinedHtml = replaceOutletWithPageTag(layoutEntry.template, pageTag)
+      mountTemplate(container!, combinedHtml)
+      loadRouteCss(layoutEntry)
+    } else {
+      mountTemplate(container!, pageEntry.template)
+    }
+
+    loadRouteCss(pageEntry)
   } catch (error) {
     resetRouterActive()
     handleError(error)
@@ -88,18 +121,83 @@ function resolveAndRender(): void {
   renderPath(pathname, search)
 }
 
-function validateRoutesHaveTemplates(routeDefs: RouteDefinition[]): void {
-  const missingComponent = routeDefs.find((routeDef) => !getComponentEntry(routeDef.component))
-
-  if (missingComponent) {
-    const error = new RoutingError(
-      missingComponent.component.name || 'Unknown',
-      'component-not-registered',
-    )
+function assertComponentIsRegistered(viewModel: ViewModelConstructor): void {
+  if (!getComponentEntry(viewModel)) {
+    const error = new RoutingError(viewModel.name || 'Unknown', 'component-not-registered')
     console.error(error)
     renderErrorPage(error)
     throw error
   }
+}
+
+function assertLayoutHasChildren(routeDef: RouteDefinition): void {
+  if (routeDef.layout && (!routeDef.children || routeDef.children.length === 0)) {
+    throw new Error(t('errors.routing.layoutWithoutChildren'))
+  }
+}
+
+function assertChildrenHaveLayout(routeDef: RouteDefinition): void {
+  if (routeDef.children && !routeDef.layout) {
+    throw new Error(t('errors.routing.childrenWithoutLayout'))
+  }
+}
+
+function assertNoComponentWithChildren(routeDef: RouteDefinition): void {
+  if (routeDef.component && routeDef.children) {
+    throw new Error(t('errors.routing.routeWithChildrenAndComponent'))
+  }
+}
+
+function assertNoNestedLayouts(
+  routeDef: RouteDefinition,
+  parentLayout?: ViewModelConstructor,
+): void {
+  if (routeDef.layout && parentLayout) {
+    throw new Error(t('errors.routing.nestedLayoutsNotSupported'))
+  }
+}
+
+function assertOutletHasNoChildren(layoutCreator: ViewModelConstructor): void {
+  const entry = getComponentEntry(layoutCreator)
+  if (!entry) return
+
+  const template = entry.template
+  const outletPattern = /<outlet\b[^>]*>([\s\S]*?)<\/outlet\s*>|<outlet\b[^>]*\/?>/i
+  const match = template.match(outletPattern)
+  if (match && match[1] !== undefined && match[1].trim().length > 0) {
+    throw new Error(t('errors.routing.outletWithChildren'))
+  }
+}
+
+function assertSingleOutlet(layoutCreator: ViewModelConstructor): void {
+  const entry = getComponentEntry(layoutCreator)
+  if (!entry) return
+
+  const outletCount = (entry.template.match(/<outlet\b/gi) || []).length
+  if (outletCount === 0) {
+    throw new Error(t('errors.routing.layoutMissingOutlet'))
+  }
+  if (outletCount > 1) {
+    throw new Error(t('errors.routing.multipleOutlets', { count: outletCount }))
+  }
+}
+
+function validateRoutes(routeDefs: RouteDefinition[], parentLayout?: ViewModelConstructor): void {
+  routeDefs.forEach((routeDef) => {
+    assertLayoutHasChildren(routeDef)
+    assertChildrenHaveLayout(routeDef)
+    assertNoComponentWithChildren(routeDef)
+    assertNoNestedLayouts(routeDef, parentLayout)
+    if (routeDef.layout) {
+      assertComponentIsRegistered(routeDef.layout)
+      assertOutletHasNoChildren(routeDef.layout)
+      assertSingleOutlet(routeDef.layout)
+    }
+    if (routeDef.component) assertComponentIsRegistered(routeDef.component)
+    if (routeDef.children) {
+      validateRoutes(routeDef.children, routeDef.layout ?? parentLayout)
+    }
+  })
 }
 
 export const router = {
@@ -113,7 +211,6 @@ export const router = {
     }
 
     container = rootContainer
-    routes = routeDefs
 
     popstateHandler = () => {
       resolveAndRender()
@@ -122,7 +219,8 @@ export const router = {
 
     try {
       setRouterActive()
-      validateRoutesHaveTemplates(routeDefs)
+      validateRoutes(routeDefs)
+      flatRoutes = flattenRoutes(routeDefs)
       resolveAndRender()
     } catch (error) {
       resetRouter()
@@ -175,7 +273,7 @@ export function resetRouter(): void {
     window.removeEventListener('popstate', popstateHandler)
   }
   container = null
-  routes = []
+  flatRoutes = []
   currentMatch = null
   popstateHandler = null
   currentRouteCss.clear()

@@ -35,3 +35,11 @@ export function setNestedProperty(obj: unknown, path: string, value: unknown): b
   ;(current as Record<string, unknown>)[lastPart] = value
   return true
 }
+
+export function isPathAffected(sourcePath: string, changedPath: string): boolean {
+  return (
+    changedPath === sourcePath ||
+    changedPath.startsWith(`${sourcePath}.`) ||
+    changedPath.startsWith(`${sourcePath}[`)
+  )
+}

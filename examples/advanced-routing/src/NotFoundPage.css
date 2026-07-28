@@ -1,0 +1,18 @@
+/* NotFoundPage styles */
+
+h1 {
+  color: #dc2626;
+  font-size: 2rem;
+}
+
+pelela[view-model="NotFoundPage"] a {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+pelela[view-model="NotFoundPage"] a:hover {
+  text-decoration: underline;
+}

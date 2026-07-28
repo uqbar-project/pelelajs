@@ -2,7 +2,6 @@
   "name": "eg-hello-world-pelelajs",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,10 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "pelelajs": "workspace:*",
-    "vite-plugin-pelelajs": "workspace:*"
+    "pelelajs": "workspace:*"
   },
   "devDependencies": {
+    "vite-plugin-pelelajs": "workspace:*",
     "vite": "7.2.4",
     "typescript": "5.9.3"
   }

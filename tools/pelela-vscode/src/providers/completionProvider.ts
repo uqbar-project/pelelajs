@@ -14,7 +14,11 @@ import {
 } from '../parsers/documentParser'
 import { extractNestedProperties, extractViewModelMembers } from '../parsers/viewModelParser'
 import { findViewModelFile } from '../utils/fileUtils'
-import { getHtmlAttributes, getHtmlElements, getPelelaAttributesForTag } from '../utils/htmlUtils'
+import {
+  getHtmlAttributesForTag,
+  getHtmlElements,
+  getPelelaAttributesForTag,
+} from '../utils/htmlUtils'
 
 const EVENT_ATTRIBUTES = new Set(['click', 'enter'])
 const PELELA_ATTRIBUTE_NAMES = new Set(['click', 'enter', 'if', 'for-each'])
@@ -43,7 +47,7 @@ async function provideCompletionItems(
     addHtmlElementCompletions(items)
   } else if (isInsideTag(textBeforeCursor)) {
     const tagName = getCurrentTagName(textBeforeCursor)
-    addHtmlAttributeCompletions(items)
+    addHtmlAttributeCompletions(items, tagName ?? undefined)
     addPelelaAttributeCompletions(items, tagName)
   }
 
@@ -58,8 +62,8 @@ function addHtmlElementCompletions(items: vscode.CompletionItem[]): void {
   })
 }
 
-function addHtmlAttributeCompletions(items: vscode.CompletionItem[]): void {
-  getHtmlAttributes().forEach((attr) => {
+function addHtmlAttributeCompletions(items: vscode.CompletionItem[], tagName?: string): void {
+  getHtmlAttributesForTag(tagName ?? '').forEach((attr: string) => {
     const item = new vscode.CompletionItem(attr, vscode.CompletionItemKind.Property)
     item.insertText = new vscode.SnippetString(`${attr}="\${1}"`)
     item.sortText = `z${attr}`

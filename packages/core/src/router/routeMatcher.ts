@@ -1,10 +1,33 @@
 import { RoutingError } from '../errors/RoutingError'
-import type { MatchedRoute, RouteDefinition } from './types'
+import type { ViewModelConstructor } from '../types'
+import type { FlattenedRoute, MatchedRoute, RouteDefinition } from './types'
 
 type CompiledRoute = {
-  route: RouteDefinition
+  route: FlattenedRoute
   regex: RegExp
   paramNames: string[]
+}
+export function joinPaths(parent: string, child: string): string {
+  const combined = [parent, child].filter((segment) => segment !== '').join('/')
+  const result = combined.replace(/\/+/g, '/').replace(/\/$/, '') || '/'
+  if (result === '*') return result
+  return result.startsWith('/') ? result : `/${result}`
+}
+export function flattenRoutes(
+  routes: RouteDefinition[],
+  parentPath: string = '',
+  parentLayout?: ViewModelConstructor,
+): FlattenedRoute[] {
+  return routes.flatMap((route) => {
+    const fullPath = joinPaths(parentPath, route.path)
+    const layout = route.layout ?? parentLayout
+
+    if (route.children) {
+      return flattenRoutes(route.children, fullPath, layout)
+    }
+
+    return [{ path: fullPath, component: route.component, layout }]
+  })
 }
 
 function escapeRegex(str: string): string {
@@ -19,9 +42,22 @@ function mapSegmentToRegex(segment: string, paramNames: string[]): string {
   return escapeRegex(segment)
 }
 
-function compileRoute(route: RouteDefinition): CompiledRoute {
+function compileRoute(route: FlattenedRoute): CompiledRoute {
   if (route.path === '*') {
     return { route, regex: /^.*$/, paramNames: [] }
+  }
+
+  if (route.path.endsWith('/*')) {
+    const prefix = route.path.slice(0, -2)
+    const paramNames: string[] = []
+    const segments = prefix.split('/').filter((segment) => segment.length > 0)
+    const regexParts = segments.map((segment) => mapSegmentToRegex(segment, paramNames))
+    const prefixPattern = regexParts.length > 0 ? `/${regexParts.join('/')}` : ''
+    return {
+      route,
+      regex: new RegExp(`^${prefixPattern}(?:/.*)?$`),
+      paramNames,
+    }
   }
 
   const paramNames: string[] = []
@@ -62,7 +98,7 @@ function extractSearchParameters(search: string): Record<string, string> {
 export function matchRoute(
   pathname: string,
   search: string,
-  routes: RouteDefinition[],
+  routes: FlattenedRoute[],
 ): MatchedRoute {
   const normalizedPath = pathname === '' ? '/' : pathname
   const compiled = routes.map(compileRoute)

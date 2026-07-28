@@ -23,6 +23,12 @@ export function isPelelaRootTag(tagName: string): boolean {
   return ['pelela', 'component'].includes(tagName.toLowerCase())
 }
 
+export const ROUTER_HTML_TAGS = ['outlet'] as const
+
+export function isRouterHtmlTag(tagName: string): boolean {
+  return ROUTER_HTML_TAGS.includes(tagName.toLowerCase() as (typeof ROUTER_HTML_TAGS)[number])
+}
+
 export const LINK_PREFIX = 'link-'
 export const PROP_PREFIX = 'prop-'
 export const CONST_PREFIX = 'const-'

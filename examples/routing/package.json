@@ -2,17 +2,16 @@
   "name": "eg-routing-pelelajs",
   "version": "1.0.0",
   "description": "Ejemplo de routing en PelelaJS",
-  "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "pelelajs": "workspace:*",
-    "vite-plugin-pelelajs": "workspace:*"
+    "pelelajs": "workspace:*"
   },
   "devDependencies": {
+    "vite-plugin-pelelajs": "workspace:*",
     "vite": "7.2.4",
     "typescript": "5.9.3"
   }

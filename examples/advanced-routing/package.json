@@ -1,15 +1,12 @@
 {
-  "name": "basic-converter",
+  "name": "eg-advanced-routing-pelelajs",
   "version": "1.0.0",
-  "description": "",
+  "description": "Advanced routing - nested layout example",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "pelelajs": "workspace:*"
   },
