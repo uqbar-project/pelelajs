@@ -130,6 +130,9 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('enter'))
       assert.ok(attributes.includes('for-each'))
       assert.ok(attributes.includes('if'))
+      assert.ok(attributes.includes('index'))
+      assert.ok(attributes.includes('link-'))
+      assert.ok(attributes.includes('prop-'))
     })
 
     it('should return exactly 16 attributes', () => {
