@@ -557,15 +557,17 @@ describe('router', () => {
       expect(container.querySelector('outlet')).toBeNull()
     })
 
-    it('should not interpret $ sequences in the page template during outlet replacement', () => {
+    it('should not interpret $ sequences in the layout template during outlet replacement', () => {
       class PageWithDollarSign {
         label = 'Electronics'
       }
-      const pageWithDollarSignTemplate =
-        '<pelela view-model="PageWithDollarSign"><p>$& <span bind-content="label"></span></p></pelela>'
+      const dollarLayout =
+        '<pelela view-model="MainLayout"><header><h1 bind-content="title"></h1></header><main><p>$&</p><outlet></outlet></main><footer>© 2026</footer></pelela>'
+      const pageTemplate =
+        '<pelela view-model="PageWithDollarSign"><p bind-content="label"></p></pelela>'
 
-      defineComponent('MainLayout', MainLayout, layoutTemplate)
-      defineComponent('PageWithDollarSign', PageWithDollarSign, pageWithDollarSignTemplate)
+      defineComponent('MainLayout', MainLayout, dollarLayout)
+      defineComponent('PageWithDollarSign', PageWithDollarSign, pageTemplate)
 
       router.start(container, [
         {
@@ -575,7 +577,9 @@ describe('router', () => {
         },
       ])
 
-      expect(container.querySelector('p')!.textContent).toBe('$& Electronics')
+      expect(container.querySelector('p')!.textContent).toBe('$&')
+      expect(container.textContent).toContain('Electronics')
+      expect(container.querySelector('outlet')).toBeNull()
     })
 
     it('should transfer prop-* attributes from <outlet> to the page ViewModel', () => {
