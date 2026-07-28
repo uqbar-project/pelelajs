@@ -229,3 +229,9 @@ export function getPelelaAttributesForTag(tagName: string | null): string[] {
     return allowedTags.includes(tagName)
   })
 }
+
+export function getHtmlAttributesForTag(tagName: string): string[] {
+  if (tagName === 'outlet') return []
+
+  return getHtmlAttributes()
+}

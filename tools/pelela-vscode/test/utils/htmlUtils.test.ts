@@ -2,6 +2,7 @@ import * as assert from 'node:assert'
 import { describe, it } from 'mocha'
 import {
   getHtmlAttributes,
+  getHtmlAttributesForTag,
   getHtmlElements,
   getPelelaAttributes,
   getPelelaAttributesForTag,
@@ -229,9 +230,28 @@ describe('htmlUtils', () => {
       standardHtml.forEach((attr) => {
         assert.ok(
           !attributes.includes(attr),
-          `Expected standard HTML attribute "${attr}" to be excluded from outlet`,
+          `Expected standard HTML attribute "${attr}" to be excluded from outlet`
         )
       })
+    })
+  })
+
+  describe('getHtmlAttributesForTag', () => {
+    it('should return all standard HTML attributes for normal tags', () => {
+      const attributes = getHtmlAttributesForTag('div')
+
+      assert.ok(attributes.includes('class'))
+      assert.ok(attributes.includes('id'))
+      assert.ok(attributes.includes('style'))
+      assert.ok(attributes.includes('href'))
+      assert.ok(attributes.includes('disabled'))
+      assert.ok(attributes.includes('checked'))
+    })
+
+    it('should return no attributes for outlet', () => {
+      const attributes = getHtmlAttributesForTag('outlet')
+
+      assert.strictEqual(attributes.length, 0)
     })
   })
 })
