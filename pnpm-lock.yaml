@@ -50,9 +50,6 @@ importers:
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
-      vite-plugin-pelelajs:
-        specifier: workspace:*
-        version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -60,15 +57,15 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
 
   examples/basic-converter:
     dependencies:
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
-      vite-plugin-pelelajs:
-        specifier: workspace:*
-        version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -76,15 +73,15 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
 
   examples/components:
     dependencies:
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
-      vite-plugin-pelelajs:
-        specifier: workspace:*
-        version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -92,15 +89,15 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
 
   examples/css-child-test:
     dependencies:
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
-      vite-plugin-pelelajs:
-        specifier: workspace:*
-        version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -108,15 +105,15 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
 
   examples/error-handling:
     dependencies:
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
-      vite-plugin-pelelajs:
-        specifier: workspace:*
-        version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -124,15 +121,15 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
 
   examples/for-each:
     dependencies:
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
-      vite-plugin-pelelajs:
-        specifier: workspace:*
-        version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -140,15 +137,15 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
 
   examples/hello-world:
     dependencies:
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
-      vite-plugin-pelelajs:
-        specifier: workspace:*
-        version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -156,15 +153,15 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
 
   examples/nested-prop-component:
     dependencies:
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
-      vite-plugin-pelelajs:
-        specifier: workspace:*
-        version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -172,15 +169,15 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
 
   examples/routing:
     dependencies:
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
-      vite-plugin-pelelajs:
-        specifier: workspace:*
-        version: link:../../packages/vite-plugin-pelelajs
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -188,6 +185,9 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
 
   packages/core:
     dependencies:

@@ -8,10 +8,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "pelelajs": "workspace:*",
-    "vite-plugin-pelelajs": "workspace:*"
+    "pelelajs": "workspace:*"
   },
   "devDependencies": {
+    "vite-plugin-pelelajs": "workspace:*",
     "vite": "7.2.4",
     "typescript": "5.9.3"
   }
