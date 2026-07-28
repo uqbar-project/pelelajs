@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getRouterActive, setRouterActive } from '../bootstrap/bootstrap'
 import * as mountTemplate from '../bootstrap/mountTemplate'
+import { t } from '../commons/i18n'
 import { RoutingError } from '../errors/index'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import { clearRegistry } from '../registry/viewModelRegistry'
@@ -670,7 +671,7 @@ describe('router', () => {
 
       expect(() => {
         router.start(container, [{ path: '', layout: MainLayout }] as unknown as RouteDefinition[])
-      }).toThrow('Route with layout must have children')
+      }).toThrow(t('errors.routing.layoutWithoutChildren'))
     })
 
     it('should throw when a route has layout with empty children array', () => {
@@ -680,7 +681,7 @@ describe('router', () => {
         router.start(container, [
           { path: '', layout: MainLayout, children: [] },
         ] as unknown as RouteDefinition[])
-      }).toThrow('Route with layout must have children')
+      }).toThrow(t('errors.routing.layoutWithoutChildren'))
     })
 
     it('should throw when outlet has children in layout template', () => {
@@ -702,7 +703,7 @@ describe('router', () => {
             children: [{ path: '', component: HomePage }],
           },
         ])
-      }).toThrow('element cannot have children')
+      }).toThrow(t('errors.routing.outletWithChildren'))
     })
 
     it('should throw when a route has children but no layout', () => {
@@ -712,7 +713,7 @@ describe('router', () => {
         router.start(container, [
           { path: '', children: [{ path: '', component: HomePage }] },
         ] as unknown as RouteDefinition[])
-      }).toThrow('Route with children must have a layout')
+      }).toThrow(t('errors.routing.childrenWithoutLayout'))
     })
 
     it('should throw when a route has both component and children', () => {
@@ -728,7 +729,7 @@ describe('router', () => {
             children: [{ path: '', component: HomePage }],
           },
         ] as unknown as RouteDefinition[])
-      }).toThrow('cannot have a component')
+      }).toThrow(t('errors.routing.routeWithChildrenAndComponent'))
     })
 
     it('should throw when nested layouts are detected', () => {
@@ -753,7 +754,7 @@ describe('router', () => {
             ],
           },
         ])
-      }).toThrow('Nested layouts are not supported')
+      }).toThrow(t('errors.routing.nestedLayoutsNotSupported'))
     })
 
     it('should render page standalone when route has no layout', () => {
