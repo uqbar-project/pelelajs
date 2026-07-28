@@ -583,6 +583,53 @@ describe('router', () => {
       expect(container.querySelector('outlet')).toBeNull()
     })
 
+    it('should throw when layout template has multiple outlets', () => {
+      const doubleOutletLayout =
+        '<pelela view-model="MainLayout"><main><outlet></outlet><aside><outlet></outlet></aside></main></pelela>'
+
+      defineComponent('MainLayout', MainLayout, doubleOutletLayout)
+      defineComponent('HomePage', HomePage, homePageTemplate)
+
+      expect(() => {
+        router.start(container, [
+          {
+            path: '',
+            layout: MainLayout,
+            children: [{ path: '', component: HomePage }],
+          },
+        ])
+      }).toThrow(/exactly one <outlet>/)
+      // restore MainLayout for subsequent tests
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+    })
+
+    it('should handle self-closing outlet tag', () => {
+      class SelfClosingPage {
+        label = 'Content'
+      }
+      const selfClosingLayout =
+        '<pelela view-model="MainLayout"><header>App</header><main><outlet/></main></pelela>'
+      const selfClosingPageTemplate =
+        '<pelela view-model="SelfClosingPage"><p bind-content="label"></p></pelela>'
+
+      defineComponent('MainLayout', MainLayout, selfClosingLayout)
+      defineComponent('SelfClosingPage', SelfClosingPage, selfClosingPageTemplate)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: MainLayout,
+          children: [{ path: '', component: SelfClosingPage }],
+        },
+      ])
+
+      expect(container.textContent).toContain('Content')
+      expect(container.textContent).toContain('App')
+      expect(container.querySelector('outlet')).toBeNull()
+      // restore MainLayout for subsequent tests
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+    })
+
     it('should transfer prop-* attributes from <outlet> to the page ViewModel', () => {
       class LayoutWithProps {
         userName = 'John Doe'

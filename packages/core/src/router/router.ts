@@ -48,12 +48,12 @@ function collectChildComponentCssUrls(rawTemplate: string, visited = new Set<str
 }
 
 function replaceOutletWithPageTag(layoutTemplate: string, pageTag: string): string {
-  const outletRegex = /<outlet\b[^>]*\/?>(?:\s*<\/outlet\s*>)?/i
-  if (!outletRegex.test(layoutTemplate)) {
+  if (!/<outlet\b/i.test(layoutTemplate)) {
     throw new Error(t('errors.routing.layoutMissingOutlet'))
   }
 
-  return layoutTemplate
+  const normalized = layoutTemplate.replace(/<outlet\b([^>]*)\/>/gi, '<outlet$1></outlet>')
+  return normalized
     .replace(/<outlet\b/gi, `<${pageTag}`)
     .replace(/<\/outlet\s*>/gi, `</${pageTag}>`)
 }
@@ -61,13 +61,13 @@ function replaceOutletWithPageTag(layoutTemplate: string, pageTag: string): stri
 function loadRouteCss(entry: { cssUrls?: string[]; template: string }): void {
   const childCssUrls = collectChildComponentCssUrls(entry.template)
   const allCssUrls = [...(entry.cssUrls ?? []), ...childCssUrls]
-  for (const cssUrl of allCssUrls) {
+  allCssUrls.forEach((cssUrl) => {
     currentRouteCss.add(cssUrl)
     const existingLink = findExistingStylesheetLink(cssUrl)
     if (!existingLink) {
       document.head.appendChild(createStylesheetLink(cssUrl))
     }
-  }
+  })
 }
 
 function renderPath(pathname: string, search: string, nextPath?: string): void {
@@ -169,8 +169,18 @@ function assertOutletHasNoChildren(layoutCreator: ViewModelConstructor): void {
   }
 }
 
+function assertSingleOutlet(layoutCreator: ViewModelConstructor): void {
+  const entry = getComponentEntry(layoutCreator)
+  if (!entry) return
+
+  const outletCount = (entry.template.match(/<outlet\b/gi) || []).length
+  if (outletCount !== 1) {
+    throw new Error(t('errors.routing.multipleOutlets', { count: outletCount }))
+  }
+}
+
 function validateRoutes(routeDefs: RouteDefinition[], parentLayout?: ViewModelConstructor): void {
-  for (const routeDef of routeDefs) {
+  routeDefs.forEach((routeDef) => {
     assertLayoutHasChildren(routeDef)
     assertChildrenHaveLayout(routeDef)
     assertNoComponentWithChildren(routeDef)
@@ -178,12 +188,13 @@ function validateRoutes(routeDefs: RouteDefinition[], parentLayout?: ViewModelCo
     if (routeDef.layout) {
       assertComponentIsRegistered(routeDef.layout)
       assertOutletHasNoChildren(routeDef.layout)
+      assertSingleOutlet(routeDef.layout)
     }
     if (routeDef.component) assertComponentIsRegistered(routeDef.component)
     if (routeDef.children) {
       validateRoutes(routeDef.children, routeDef.layout ?? parentLayout)
     }
-  }
+  })
 }
 
 export const router = {
