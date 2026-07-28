@@ -11,7 +11,7 @@ import { RoutingError } from '../errors/RoutingError'
 import {
   getComponentByTag,
   getComponentEntry,
-  getPageTag,
+  getComponentTag,
   getRegisteredTags,
 } from '../registry/componentRegistry'
 import type { ViewModelConstructor } from '../types'
@@ -98,7 +98,7 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
         throw new RoutingError(match.route.layout.name || 'Unknown', 'component-not-registered')
       }
 
-      const pageTag = getPageTag(match.route.component)
+      const pageTag = getComponentTag(match.route.component)
       if (!pageTag) {
         throw new RoutingError(match.route.component.name || 'Unknown', 'component-not-registered')
       }

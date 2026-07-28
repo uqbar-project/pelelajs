@@ -64,7 +64,7 @@ export function getRegisteredTags(): string[] {
   return Array.from(componentsByTag.keys())
 }
 
-export function getPageTag(creator: ViewModelConstructor): string | undefined {
+export function getComponentTag(creator: ViewModelConstructor): string | undefined {
   return tagByCreator.get(creator)
 }
 
