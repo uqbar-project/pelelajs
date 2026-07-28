@@ -5,7 +5,7 @@ h1 {
   font-size: 2rem;
 }
 
-a {
+pelela[view-model="NotFoundPage"] a {
   display: inline-block;
   margin-top: 1rem;
   color: #2563eb;
@@ -13,6 +13,6 @@ a {
   font-weight: 600;
 }
 
-a:hover {
+pelela[view-model="NotFoundPage"] a:hover {
   text-decoration: underline;
 }
