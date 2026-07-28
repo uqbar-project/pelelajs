@@ -230,7 +230,7 @@ export function getPelelaAttributesForTag(tagName: string | null): string[] {
 }
 
 export function getHtmlAttributesForTag(tagName: string): string[] {
-  if (tagName === 'outlet') return []
+  if (tagName in TAG_ONLY_ATTRIBUTES) return []
 
   return getHtmlAttributes()
 }
