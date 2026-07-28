@@ -4,7 +4,6 @@
   "private": true,
   "version": "1.0.2",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "preinstall": "node scripts/preinstall.js",
     "typecheck": "pnpm -r run typecheck",
