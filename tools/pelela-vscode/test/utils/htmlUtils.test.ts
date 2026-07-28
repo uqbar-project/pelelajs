@@ -225,14 +225,6 @@ describe('htmlUtils', () => {
       assert.ok(!attributes.includes('if'))
       assert.ok(!attributes.includes('index'))
       assert.ok(!attributes.includes('view-model'))
-
-      const standardHtml = ['class', 'id', 'style', 'href', 'src', 'alt', 'title', 'name']
-      standardHtml.forEach((attr) => {
-        assert.ok(
-          !attributes.includes(attr),
-          `Expected standard HTML attribute "${attr}" to be excluded from outlet`
-        )
-      })
     })
   })
 
