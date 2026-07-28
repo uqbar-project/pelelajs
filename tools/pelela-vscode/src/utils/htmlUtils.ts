@@ -209,10 +209,19 @@ const TAG_RESTRICTED_PELELA_ATTRIBUTES: Record<string, string[]> = {
   'view-model': ['pelela', 'component'],
 }
 
+const TAG_ONLY_ATTRIBUTES: Record<string, string[]> = {
+  outlet: ['prop-', 'link-', 'const-'],
+}
+
 export function getPelelaAttributesForTag(tagName: string | null): string[] {
   const allAttributes = getPelelaAttributes()
 
   if (!tagName) return allAttributes
+
+  const tagOnlyPrefixes = TAG_ONLY_ATTRIBUTES[tagName]
+  if (tagOnlyPrefixes) {
+    return allAttributes.filter((attr) => tagOnlyPrefixes.some((prefix) => attr.startsWith(prefix)))
+  }
 
   return allAttributes.filter((attr) => {
     const allowedTags = TAG_RESTRICTED_PELELA_ATTRIBUTES[attr]
