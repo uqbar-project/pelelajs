@@ -1,5 +1,8 @@
 # CHANGELOG - Pelela VSCode Extension
 
+## vscode-v1.1.0 - 2026-07-28
+- ⌨️ Autocomplete enhancements
+
 ## vscode-v1.0.2 - 2026-06-25
 - 📝 VS Code autocomplete fixes
 

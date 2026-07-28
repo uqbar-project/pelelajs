@@ -1,6 +1,6 @@
 {
   "name": "pelela-vscode",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "type": "commonjs",
   "publisher": "uqbar",
   "displayName": "Pelela Templates",
@@ -27,7 +27,7 @@
     "build": "tsup src/extension.ts --format cjs --external vscode --external typescript --clean",
     "typecheck": "tsc --noEmit",
     "test": "mocha --require tsx --require test/setup.ts test/**/*.test.ts",
-    "package": "vsce package",
+    "package": "vsce package --no-dependencies",
     "publish:marketplace": "vsce publish",
     "publish:openvsx": "ovsx publish",
     "release": "release-it"
