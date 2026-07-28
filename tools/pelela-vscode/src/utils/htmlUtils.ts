@@ -36,7 +36,6 @@ export function getHtmlElements() {
     'nav',
     'aside',
     'main',
-    'outlet',
   ]
 }
 
