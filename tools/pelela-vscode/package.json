@@ -28,8 +28,8 @@
     "typecheck": "tsc --noEmit",
     "test": "mocha --require tsx --require test/setup.ts test/**/*.test.ts",
     "package": "vsce package --no-dependencies",
-    "publish:marketplace": "vsce publish",
-    "publish:openvsx": "ovsx publish",
+    "publish:marketplace": "vsce publish --no-dependencies",
+    "publish:openvsx": "ovsx publish --no-dependencies",
     "release": "release-it"
   },
   "devDependencies": {

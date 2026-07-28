@@ -12,7 +12,7 @@ This document describes how to publish a new version of the `pelela-vscode` exte
 
 - Secrets configured in GitHub repository settings:
 
-  - `VSCE_PAT` — Azure DevOps Personal Access Token with `Marketplace (Manage)` scope.
+  - `VSCE_PAT` — Azure DevOps Personal Access Token with `Marketplace (Manage)` scope (created in https://dev.azure.com/uqbar/_usersSettings/tokens)
 
   - `OVSX_PAT` — OpenVSX access token.
 
