@@ -603,6 +603,26 @@ describe('router', () => {
       defineComponent('MainLayout', MainLayout, layoutTemplate)
     })
 
+    it('should throw when layout template has no outlet', () => {
+      const noOutletLayout =
+        '<pelela view-model="MainLayout"><main><p>No outlet here</p></main></pelela>'
+
+      defineComponent('MainLayout', MainLayout, noOutletLayout)
+      defineComponent('HomePage', HomePage, homePageTemplate)
+
+      expect(() => {
+        router.start(container, [
+          {
+            path: '',
+            layout: MainLayout,
+            children: [{ path: '', component: HomePage }],
+          },
+        ])
+      }).toThrow(t('errors.routing.layoutMissingOutlet'))
+      // restore MainLayout for subsequent tests
+      defineComponent('MainLayout', MainLayout, layoutTemplate)
+    })
+
     it('should handle self-closing outlet tag', () => {
       class SelfClosingPage {
         label = 'Content'

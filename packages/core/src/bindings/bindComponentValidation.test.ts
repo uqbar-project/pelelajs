@@ -72,11 +72,11 @@ describe('bindComponent validation', () => {
     expect(() => setupComponentBindings(container, vm)).not.toThrow()
   })
 
-  it('should NOT throw for outlet tags', () => {
+  it('should throw UnknownComponentError for outlet tags outside a layout', () => {
     container.innerHTML = '<outlet></outlet>'
     const vm = createReactiveViewModel({}, () => {})
 
-    expect(() => setupComponentBindings(container, vm)).not.toThrow()
+    expect(() => setupComponentBindings(container, vm)).toThrow(/Unknown component: <outlet>/)
   })
 
   it('should NOT throw for registered components', () => {

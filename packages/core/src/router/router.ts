@@ -174,7 +174,10 @@ function assertSingleOutlet(layoutCreator: ViewModelConstructor): void {
   if (!entry) return
 
   const outletCount = (entry.template.match(/<outlet\b/gi) || []).length
-  if (outletCount !== 1) {
+  if (outletCount === 0) {
+    throw new Error(t('errors.routing.layoutMissingOutlet'))
+  }
+  if (outletCount > 1) {
     throw new Error(t('errors.routing.multipleOutlets', { count: outletCount }))
   }
 }
