@@ -6,7 +6,7 @@ import {
   removeStylesheetLinks,
 } from '../commons/cssLoader'
 import { toKebabCase } from '../commons/helpers'
-import { t } from '../commons/i18n'
+import { initializeI18n, t } from '../commons/i18n'
 import { RoutingError } from '../errors/RoutingError'
 import {
   getComponentByTag,
@@ -206,6 +206,9 @@ export const router = {
    * All components must be registered with defineComponent() before calling start().
    */
   start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
+    // Route resolution can fail before any mount, and those errors need a translated message.
+    initializeI18n()
+
     if (popstateHandler) {
       window.removeEventListener('popstate', popstateHandler)
     }

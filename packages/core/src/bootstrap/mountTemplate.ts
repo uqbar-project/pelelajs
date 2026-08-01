@@ -105,18 +105,25 @@ function validateNoComponentsOutsideRoot(templateHtml: string): void {
 const ERROR_PAGE_CSS = `
 @import 'https://fonts.googleapis.com/css2?family=Geist:ital,wght@0,100..900;1,100..900&display=swap';
 
+/* The application stylesheet is still loaded, so every property that could constrain the
+   error page has to be reset explicitly, not just the ones we set. */
 body {
+  box-sizing: border-box;
   font-family: Geist, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   margin: 0;
   padding: 40px 20px;
+  max-width: none;
+  width: auto;
   min-height: 100vh;
+  text-align: left;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .error-container {
+  box-sizing: border-box;
   background: white;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);

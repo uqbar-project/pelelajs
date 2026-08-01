@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getRouterActive, setRouterActive } from '../bootstrap/bootstrap'
 import * as mountTemplate from '../bootstrap/mountTemplate'
+import * as i18n from '../commons/i18n'
 import { t } from '../commons/i18n'
 import { RoutingError } from '../errors/index'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
@@ -36,6 +37,7 @@ const DETAIL_TEMPLATE =
   '<pelela view-model="ProductDetail"><p bind-content="name"></p><img bind-src="imageUrl" /></pelela>'
 const NOT_FOUND_TEMPLATE =
   '<pelela view-model="NotFoundPage"><p bind-content="message"></p></pelela>'
+const UNMATCHED_PATH = '/nonexistent'
 
 function registerTestComponents(): void {
   defineComponent('ProductCatalog', ProductCatalog, CATALOG_TEMPLATE)
@@ -125,6 +127,33 @@ describe('router', () => {
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
       expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(RoutingError))
+    })
+
+    /**
+     * Route resolution fails before bootstrap() or mountTemplate() run, and those were the
+     * only ones initializing i18n, so every message rendered as "undefined".
+     */
+    it('should initialize i18n before rendering a route resolution error', () => {
+      const initializeI18nSpy = vi.spyOn(i18n, 'initializeI18n')
+      registerTestComponents()
+      window.history.replaceState(null, '', UNMATCHED_PATH)
+
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      expect(initializeI18nSpy).toHaveBeenCalledBefore(renderErrorPageSpy)
+    })
+
+    it('should render error page with a translated message when start URL does not match any route', () => {
+      registerTestComponents()
+      window.history.replaceState(null, '', UNMATCHED_PATH)
+
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      expect(renderErrorPageSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: t('errors.routing.routeNotFound', { path: UNMATCHED_PATH }),
+        }),
+      )
     })
 
     it('should reset isRouterActive when route resolution fails', () => {
