@@ -38,6 +38,7 @@ const DETAIL_TEMPLATE =
 const NOT_FOUND_TEMPLATE =
   '<pelela view-model="NotFoundPage"><p bind-content="message"></p></pelela>'
 const UNMATCHED_PATH = '/nonexistent'
+const ROUTE_NOT_FOUND_IN_ENGLISH = `[pelela] No route defined for "${UNMATCHED_PATH}"`
 
 function registerTestComponents(): void {
   defineComponent('ProductCatalog', ProductCatalog, CATALOG_TEMPLATE)
@@ -149,7 +150,7 @@ describe('router', () => {
 
       expect(handleErrorSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: t('errors.routing.routeNotFound', { path: UNMATCHED_PATH }),
+          message: ROUTE_NOT_FOUND_IN_ENGLISH,
         }),
       )
     })

@@ -204,9 +204,9 @@ export const router = {
   /**
    * Configures the router and mounts the route matching the current URL.
    * All components must be registered with defineComponent() before calling start().
+   * Initializes i18n first, so errors thrown before the first mount have a message.
    */
   start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
-    // Route resolution can fail before any mount, and those errors need a translated message.
     initializeI18n()
 
     if (popstateHandler) {
