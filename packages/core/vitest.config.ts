@@ -5,5 +5,6 @@ export default defineProject({
     name: 'core',
     environment: 'jsdom',
     setupFiles: ['./test-setup.ts'],
+    restoreMocks: true,
   },
 })

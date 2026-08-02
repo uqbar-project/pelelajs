@@ -6,7 +6,7 @@ import {
   removeStylesheetLinks,
 } from '../commons/cssLoader'
 import { toKebabCase } from '../commons/helpers'
-import { t } from '../commons/i18n'
+import { initializeI18n, t } from '../commons/i18n'
 import { RoutingError } from '../errors/RoutingError'
 import {
   getComponentByTag,
@@ -204,8 +204,11 @@ export const router = {
   /**
    * Configures the router and mounts the route matching the current URL.
    * All components must be registered with defineComponent() before calling start().
+   * Initializes i18n first, so errors thrown before the first mount have a message.
    */
   start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
+    initializeI18n()
+
     if (popstateHandler) {
       window.removeEventListener('popstate', popstateHandler)
     }
