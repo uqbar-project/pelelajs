@@ -116,14 +116,19 @@ describe('router', () => {
       expect(addSpy).toHaveBeenCalledTimes(2)
     })
 
-    it('should report a RoutingError when start URL does not match any route', () => {
+    it('should report a RoutingError with the translated message when start URL does not match', () => {
       const handleErrorSpy = vi.spyOn(mountTemplate, 'handleError')
       registerTestComponents()
       window.history.replaceState(null, '', UNMATCHED_PATH)
 
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      expect(handleErrorSpy).toHaveBeenCalledWith(expect.any(RoutingError))
+      expect(handleErrorSpy).toHaveBeenCalledTimes(1)
+
+      const [reportedError] = handleErrorSpy.mock.calls[0]
+
+      expect(reportedError).toBeInstanceOf(RoutingError)
+      expect((reportedError as RoutingError).message).toBe(ROUTE_NOT_FOUND_IN_ENGLISH)
     })
 
     /**
@@ -141,23 +146,9 @@ describe('router', () => {
       expect(initializeI18nSpy).toHaveBeenCalledBefore(handleErrorSpy)
     })
 
-    it('should report a translated message when start URL does not match any route', () => {
-      const handleErrorSpy = vi.spyOn(mountTemplate, 'handleError')
-      registerTestComponents()
-      window.history.replaceState(null, '', UNMATCHED_PATH)
-
-      router.start(container, [{ path: '/', component: ProductCatalog }])
-
-      expect(handleErrorSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: ROUTE_NOT_FOUND_IN_ENGLISH,
-        }),
-      )
-    })
-
     it('should reset isRouterActive when route resolution fails', () => {
       registerTestComponents()
-      window.history.replaceState(null, '', '/nonexistent')
+      window.history.replaceState(null, '', UNMATCHED_PATH)
 
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
@@ -198,7 +189,7 @@ describe('router', () => {
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      router.navigateTo('/unknown')
+      router.navigateTo(UNMATCHED_PATH)
 
       expect(handleErrorSpy).toHaveBeenCalledWith(expect.any(RoutingError))
     })
@@ -207,7 +198,7 @@ describe('router', () => {
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      router.navigateTo('/unknown')
+      router.navigateTo(UNMATCHED_PATH)
 
       expect(getRouterActive()).toBe(false)
     })
@@ -246,7 +237,7 @@ describe('router', () => {
       const initialPath = window.location.pathname
 
       try {
-        router.navigateTo('/unknown')
+        router.navigateTo(UNMATCHED_PATH)
       } catch {
         // Ignored, we want to check the URL
       }
