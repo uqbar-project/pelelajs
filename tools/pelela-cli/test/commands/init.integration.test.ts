@@ -48,7 +48,7 @@ describe('initCommand (Integration)', () => {
     await initCommand({ projectName: testDir })
 
     const baseTemplate = readFileSync(join(testDir, 'src', 'base.pelela'), 'utf-8')
-    const templateLines = baseTemplate.trim().split('\n')
+    const templateLines = baseTemplate.trim().split(/\r?\n/)
 
     expect(templateLines.at(0)).toBe(BASE_COMPONENT_OPENING_TAG)
     expect(templateLines.at(-1)).toBe(BASE_COMPONENT_CLOSING_TAG)
