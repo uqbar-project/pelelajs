@@ -1,5 +1,5 @@
 import { resetRouterActive, setRouterActive } from '../bootstrap/bootstrap'
-import { handleError, mountTemplate, renderErrorPage } from '../bootstrap/mountTemplate'
+import { handleError, mountTemplate } from '../bootstrap/mountTemplate'
 import {
   createStylesheetLink,
   findExistingStylesheetLink,
@@ -123,10 +123,7 @@ function resolveAndRender(): void {
 
 function assertComponentIsRegistered(viewModel: ViewModelConstructor): void {
   if (!getComponentEntry(viewModel)) {
-    const error = new RoutingError(viewModel.name || 'Unknown', 'component-not-registered')
-    console.error(error)
-    renderErrorPage(error)
-    throw error
+    throw new RoutingError(viewModel.name || 'Unknown', 'component-not-registered')
   }
 }
 
@@ -205,6 +202,7 @@ export const router = {
    * Configures the router and mounts the route matching the current URL.
    * All components must be registered with defineComponent() before calling start().
    * Initializes i18n first, so errors thrown before the first mount have a message.
+   * Invalid route definitions render the error page and are rethrown after resetting the router.
    */
   start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
     initializeI18n()
@@ -227,6 +225,7 @@ export const router = {
       resolveAndRender()
     } catch (error) {
       resetRouter()
+      handleError(error)
       throw error
     }
   },
