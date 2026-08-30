@@ -619,7 +619,8 @@ describe('router', () => {
       defineComponent('MainLayout', MainLayout, layoutTemplate)
     })
 
-    it('should throw when layout template has no outlet', () => {
+    it('should render the error page and throw when layout template has no outlet', () => {
+      const expectedErrorMessage = t('errors.routing.layoutMissingOutlet')
       const noOutletLayout =
         '<pelela view-model="MainLayout"><main><p>No outlet here</p></main></pelela>'
 
@@ -634,7 +635,8 @@ describe('router', () => {
             children: [{ path: '', component: HomePage }],
           },
         ])
-      }).toThrow(t('errors.routing.layoutMissingOutlet'))
+      }).toThrow(expectedErrorMessage)
+      expect(document.querySelector('.error-message')?.textContent).toBe(expectedErrorMessage)
       // restore MainLayout for subsequent tests
       defineComponent('MainLayout', MainLayout, layoutTemplate)
     })
