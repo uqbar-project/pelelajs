@@ -3,6 +3,9 @@ import { InvalidHandlerError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { setupClickBindings } from './bindClick'
 
+const ERROR_MESSAGE_SELECTOR = '.error-message'
+const HANDLER_ERROR_MESSAGE = 'Handler failed'
+
 describe('bindClick', () => {
   let container: HTMLElement
 
@@ -11,7 +14,7 @@ describe('bindClick', () => {
   })
 
   afterEach(() => {
-    testHelpers.cleanupTestContainer(container)
+    testHelpers.cleanupAllContainers()
   })
 
   describe('setupClickBindings', () => {
@@ -98,6 +101,61 @@ describe('bindClick', () => {
       expect(viewModel.count).toBe(3)
     })
 
+    it('should execute handlers declared as class methods', () => {
+      container.innerHTML = '<button click="increment">Increment</button>'
+      class TestViewModel {
+        [key: string]: unknown
+        count = 0
+
+        increment(): void {
+          this.count++
+        }
+      }
+      const viewModel = new TestViewModel()
+
+      setupClickBindings(container, viewModel)
+
+      container.querySelector('button')!.click()
+
+      expect(viewModel.count).toBe(1)
+    })
+
+    it('should render the error page when the handler throws', () => {
+      container.innerHTML = '<button click="handleClick">Click me</button>'
+      const viewModel = {
+        handleClick: () => {
+          throw new Error(HANDLER_ERROR_MESSAGE)
+        },
+      }
+
+      setupClickBindings(container, viewModel)
+
+      container.querySelector('button')!.click()
+
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        HANDLER_ERROR_MESSAGE,
+      )
+    })
+
+    it('should render the error page when an async handler rejects', async () => {
+      container.innerHTML = '<button click="handleClick">Click me</button>'
+      const viewModel = {
+        handleClick: async () => {
+          throw new Error(HANDLER_ERROR_MESSAGE)
+        },
+      }
+
+      setupClickBindings(container, viewModel)
+
+      container.querySelector('button')!.click()
+
+      await vi.waitFor(() => {
+        expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+          HANDLER_ERROR_MESSAGE,
+        )
+      })
+    })
+
     it('should handle elements without click attribute', () => {
       container.innerHTML = `
         <button>No handler</button>
@@ -128,21 +186,21 @@ describe('bindClick', () => {
       expect(handler).toHaveBeenCalledTimes(3)
     })
 
-    it('should throw InvalidHandlerError when handler is not a function', () => {
+    it('should render InvalidHandlerError when handler is not a function', () => {
       container.innerHTML = '<button click="notAFunction">Click me</button>'
       const viewModel = { notAFunction: 'this is a string' }
       const button = container.querySelector('button')!
-
-      const addEventListenerSpy = vi.spyOn(button, 'addEventListener')
       setupClickBindings(container, viewModel)
 
-      const clickListener = addEventListenerSpy.mock.calls[0][1] as EventListener
-      const mockEvent = new MouseEvent('click')
+      button.click()
 
-      expect(() => clickListener(mockEvent)).toThrow(InvalidHandlerError)
+      const expectedError = new InvalidHandlerError('notAFunction', 'Object', 'click')
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        expectedError.message,
+      )
     })
 
-    it('should throw InvalidHandlerError with correct parameters when handler is not a function', () => {
+    it('should render InvalidHandlerError with correct parameters when handler is not a function', () => {
       container.innerHTML = '<button click="invalidHandler">Click me</button>'
       class TestViewModel {
         [key: string]: unknown
@@ -150,44 +208,57 @@ describe('bindClick', () => {
       }
       const viewModel = new TestViewModel()
       const button = container.querySelector('button')!
-
-      const addEventListenerSpy = vi.spyOn(button, 'addEventListener')
       setupClickBindings(container, viewModel)
 
-      const clickListener = addEventListenerSpy.mock.calls[0][1] as EventListener
-      const mockEvent = new MouseEvent('click')
+      button.click()
 
-      expect(() => clickListener(mockEvent)).toThrow(
-        new InvalidHandlerError('invalidHandler', 'TestViewModel', 'click'),
+      const expectedError = new InvalidHandlerError('invalidHandler', 'TestViewModel', 'click')
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        expectedError.message,
       )
     })
 
-    it('should throw InvalidHandlerError when handler is undefined', () => {
+    it('should render InvalidHandlerError when handler is undefined', () => {
       container.innerHTML = '<button click="nonExistentHandler">Click me</button>'
       const viewModel = {}
       const button = container.querySelector('button')!
-
-      const addEventListenerSpy = vi.spyOn(button, 'addEventListener')
       setupClickBindings(container, viewModel)
 
-      const clickListener = addEventListenerSpy.mock.calls[0][1] as EventListener
-      const mockEvent = new MouseEvent('click')
+      button.click()
 
-      expect(() => clickListener(mockEvent)).toThrow(InvalidHandlerError)
+      const expectedError = new InvalidHandlerError('nonExistentHandler', 'Object', 'click')
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        expectedError.message,
+      )
     })
 
-    it('should throw InvalidHandlerError when handler is null', () => {
+    it('should render InvalidHandlerError when handler is null', () => {
       container.innerHTML = '<button click="nullHandler">Click me</button>'
       const viewModel = { nullHandler: null }
       const button = container.querySelector('button')!
-
-      const addEventListenerSpy = vi.spyOn(button, 'addEventListener')
       setupClickBindings(container, viewModel)
 
-      const clickListener = addEventListenerSpy.mock.calls[0][1] as EventListener
-      const mockEvent = new MouseEvent('click')
+      button.click()
 
-      expect(() => clickListener(mockEvent)).toThrow(InvalidHandlerError)
+      const expectedError = new InvalidHandlerError('nullHandler', 'Object', 'click')
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        expectedError.message,
+      )
+    })
+
+    it('should render InvalidHandlerError for unsafe inherited handler names', () => {
+      const handlerName = 'constructor'
+      container.innerHTML = `<button click="${handlerName}">Click me</button>`
+      const viewModel = {}
+      const button = container.querySelector('button')!
+      setupClickBindings(container, viewModel)
+
+      button.click()
+
+      const expectedError = new InvalidHandlerError(handlerName, 'Object', 'click')
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        expectedError.message,
+      )
     })
 
     it('should setup event listener even if the root element itself has the click attribute', () => {

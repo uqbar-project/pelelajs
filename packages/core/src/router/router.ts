@@ -1,5 +1,6 @@
 import { resetRouterActive, setRouterActive } from '../bootstrap/bootstrap'
-import { handleError, mountTemplate } from '../bootstrap/mountTemplate'
+import { renderErrorPage } from '../bootstrap/errorPage'
+import { mountTemplate } from '../bootstrap/mountTemplate'
 import {
   createStylesheetLink,
   findExistingStylesheetLink,
@@ -112,7 +113,7 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
     loadRouteCss(pageEntry)
   } catch (error) {
     resetRouterActive()
-    handleError(error)
+    renderErrorPage(error)
   }
 }
 
@@ -225,7 +226,7 @@ export const router = {
       resolveAndRender()
     } catch (error) {
       resetRouter()
-      handleError(error)
+      renderErrorPage(error)
       throw error
     }
   },
@@ -242,7 +243,7 @@ export const router = {
       const url = new URL(path, window.location.origin)
       renderPath(url.pathname, url.search, path)
     } catch (error) {
-      handleError(error)
+      renderErrorPage(error)
     }
   },
 

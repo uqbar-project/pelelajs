@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getRouterActive, setRouterActive } from '../bootstrap/bootstrap'
+import * as errorPage from '../bootstrap/errorPage'
 import * as mountTemplate from '../bootstrap/mountTemplate'
 import * as i18n from '../commons/i18n'
 import { t } from '../commons/i18n'
@@ -117,15 +118,15 @@ describe('router', () => {
     })
 
     it('should report a RoutingError with the translated message when start URL does not match', () => {
-      const handleErrorSpy = vi.spyOn(mountTemplate, 'handleError')
+      const renderErrorPageSpy = vi.spyOn(errorPage, 'renderErrorPage')
       registerTestComponents()
       window.history.replaceState(null, '', UNMATCHED_PATH)
 
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      expect(handleErrorSpy).toHaveBeenCalledTimes(1)
+      expect(renderErrorPageSpy).toHaveBeenCalledTimes(1)
 
-      const [reportedError] = handleErrorSpy.mock.calls[0]
+      const [reportedError] = renderErrorPageSpy.mock.calls[0]
 
       expect(reportedError).toBeInstanceOf(RoutingError)
       expect((reportedError as RoutingError).message).toBe(ROUTE_NOT_FOUND_IN_ENGLISH)
@@ -137,13 +138,13 @@ describe('router', () => {
      */
     it('should initialize i18n before reporting a route resolution error', () => {
       const initializeI18nSpy = vi.spyOn(i18n, 'initializeI18n')
-      const handleErrorSpy = vi.spyOn(mountTemplate, 'handleError')
+      const renderErrorPageSpy = vi.spyOn(errorPage, 'renderErrorPage')
       registerTestComponents()
       window.history.replaceState(null, '', UNMATCHED_PATH)
 
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      expect(initializeI18nSpy).toHaveBeenCalledBefore(handleErrorSpy)
+      expect(initializeI18nSpy).toHaveBeenCalledBefore(renderErrorPageSpy)
     })
 
     it('should reset isRouterActive when route resolution fails', () => {
@@ -185,13 +186,13 @@ describe('router', () => {
     })
 
     it('should report a RoutingError when navigating to an undefined route', () => {
-      const handleErrorSpy = vi.spyOn(mountTemplate, 'handleError')
+      const renderErrorPageSpy = vi.spyOn(errorPage, 'renderErrorPage')
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
       router.navigateTo(UNMATCHED_PATH)
 
-      expect(handleErrorSpy).toHaveBeenCalledWith(expect.any(RoutingError))
+      expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(RoutingError))
     })
 
     it('should reset isRouterActive when navigating to an undefined route', () => {
@@ -203,18 +204,18 @@ describe('router', () => {
       expect(getRouterActive()).toBe(false)
     })
 
-    it('should call handleError when renderPath fails during navigateTo', () => {
+    it('should render the error page when renderPath fails during navigateTo', () => {
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
 
-      const handleErrorSpy = vi.spyOn(mountTemplate, 'handleError')
+      const renderErrorPageSpy = vi.spyOn(errorPage, 'renderErrorPage')
       vi.spyOn(mountTemplate, 'mountTemplate').mockImplementation(() => {
         throw new Error('Mount failed')
       })
 
       router.navigateTo('/')
 
-      expect(handleErrorSpy).toHaveBeenCalledWith(expect.any(Error))
+      expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(Error))
     })
 
     it('should reset isRouterActive when mountTemplate throws during navigateTo', () => {
