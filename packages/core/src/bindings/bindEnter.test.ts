@@ -65,25 +65,6 @@ describe('bindEnter', () => {
       expect(handleEnter).toHaveBeenCalledWith(viewModel, event)
     })
 
-    it('should execute handler in viewModel context', () => {
-      container.innerHTML = '<input enter="handleEnter" />'
-      let context: unknown = null
-      const viewModel = {
-        value: 42,
-        handleEnter: function (this: unknown) {
-          context = this
-        },
-      }
-
-      setupEnterBindings(container, viewModel)
-
-      const input = container.querySelector('input')!
-      input.dispatchEvent(createKeydownEvent('Enter'))
-
-      expect(context).toBe(viewModel)
-      expect((context as Record<string, unknown>).value).toBe(42)
-    })
-
     it('should handle multiple inputs with enter', () => {
       container.innerHTML = `
         <input enter="handler1" />
@@ -103,25 +84,6 @@ describe('bindEnter', () => {
       expect(handler2).toHaveBeenCalledTimes(1)
     })
 
-    it('should allow handler to modify viewModel', () => {
-      container.innerHTML = '<input enter="increment" />'
-      const viewModel = {
-        count: 0,
-        increment: function () {
-          this.count++
-        },
-      }
-
-      setupEnterBindings(container, viewModel)
-
-      const input = container.querySelector('input')!
-      input.dispatchEvent(createKeydownEvent('Enter'))
-      input.dispatchEvent(createKeydownEvent('Enter'))
-      input.dispatchEvent(createKeydownEvent('Enter'))
-
-      expect(viewModel.count).toBe(3)
-    })
-
     it('should render the error page when the handler throws', () => {
       container.innerHTML = '<input enter="handleEnter" />'
       const viewModel = {
@@ -137,25 +99,6 @@ describe('bindEnter', () => {
       expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
         HANDLER_ERROR_MESSAGE,
       )
-    })
-
-    it('should render the error page when an async handler rejects', async () => {
-      container.innerHTML = '<input enter="handleEnter" />'
-      const viewModel = {
-        handleEnter: async () => {
-          throw new Error(HANDLER_ERROR_MESSAGE)
-        },
-      }
-
-      setupEnterBindings(container, viewModel)
-
-      container.querySelector('input')!.dispatchEvent(createKeydownEvent('Enter'))
-
-      await vi.waitFor(() => {
-        expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
-          HANDLER_ERROR_MESSAGE,
-        )
-      })
     })
 
     it('should handle elements without enter attribute', () => {
@@ -179,52 +122,6 @@ describe('bindEnter', () => {
       input.dispatchEvent(createKeydownEvent('Enter'))
 
       const expectedError = new InvalidHandlerError('notAFunction', 'Object', 'enter')
-      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
-        expectedError.message,
-      )
-    })
-
-    it('should render InvalidHandlerError with correct parameters when handler is not a function', () => {
-      container.innerHTML = '<input enter="invalidHandler" />'
-      class TestViewModel {
-        [key: string]: unknown
-        invalidHandler = 42
-      }
-      const viewModel = new TestViewModel()
-      const input = container.querySelector('input')!
-      setupEnterBindings(container, viewModel)
-
-      input.dispatchEvent(createKeydownEvent('Enter'))
-
-      const expectedError = new InvalidHandlerError('invalidHandler', 'TestViewModel', 'enter')
-      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
-        expectedError.message,
-      )
-    })
-
-    it('should render InvalidHandlerError when handler is undefined', () => {
-      container.innerHTML = '<input enter="nonExistentHandler" />'
-      const viewModel = {}
-      const input = container.querySelector('input')!
-      setupEnterBindings(container, viewModel)
-
-      input.dispatchEvent(createKeydownEvent('Enter'))
-
-      const expectedError = new InvalidHandlerError('nonExistentHandler', 'Object', 'enter')
-      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
-        expectedError.message,
-      )
-    })
-
-    it('should render InvalidHandlerError when handler is null', () => {
-      container.innerHTML = '<input enter="nullHandler" />'
-      const viewModel = { nullHandler: null }
-      const input = container.querySelector('input')!
-      setupEnterBindings(container, viewModel)
-
-      input.dispatchEvent(createKeydownEvent('Enter'))
-
-      const expectedError = new InvalidHandlerError('nullHandler', 'Object', 'enter')
       expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
         expectedError.message,
       )

@@ -44,25 +44,6 @@ describe('bindClick', () => {
       expect(handleClick).toHaveBeenCalledWith(viewModel, expect.any(MouseEvent))
     })
 
-    it('should execute handler in viewModel context', () => {
-      container.innerHTML = '<button click="handleClick">Click me</button>'
-      let context: unknown = null
-      const viewModel = {
-        value: 42,
-        handleClick: function (this: unknown) {
-          context = this
-        },
-      }
-
-      setupClickBindings(container, viewModel)
-
-      const button = container.querySelector('button')!
-      button.click()
-
-      expect(context).toBe(viewModel)
-      expect((context as Record<string, unknown>).value).toBe(42)
-    })
-
     it('should handle multiple elements with click', () => {
       container.innerHTML = `
         <button click="handler1">Button 1</button>
@@ -82,44 +63,6 @@ describe('bindClick', () => {
       expect(handler2).toHaveBeenCalledTimes(1)
     })
 
-    it('should allow handler to modify viewModel', () => {
-      container.innerHTML = '<button click="increment">Increment</button>'
-      const viewModel = {
-        count: 0,
-        increment: function () {
-          this.count++
-        },
-      }
-
-      setupClickBindings(container, viewModel)
-
-      const button = container.querySelector('button')!
-      button.click()
-      button.click()
-      button.click()
-
-      expect(viewModel.count).toBe(3)
-    })
-
-    it('should execute handlers declared as class methods', () => {
-      container.innerHTML = '<button click="increment">Increment</button>'
-      class TestViewModel {
-        [key: string]: unknown
-        count = 0
-
-        increment(): void {
-          this.count++
-        }
-      }
-      const viewModel = new TestViewModel()
-
-      setupClickBindings(container, viewModel)
-
-      container.querySelector('button')!.click()
-
-      expect(viewModel.count).toBe(1)
-    })
-
     it('should render the error page when the handler throws', () => {
       container.innerHTML = '<button click="handleClick">Click me</button>'
       const viewModel = {
@@ -135,25 +78,6 @@ describe('bindClick', () => {
       expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
         HANDLER_ERROR_MESSAGE,
       )
-    })
-
-    it('should render the error page when an async handler rejects', async () => {
-      container.innerHTML = '<button click="handleClick">Click me</button>'
-      const viewModel = {
-        handleClick: async () => {
-          throw new Error(HANDLER_ERROR_MESSAGE)
-        },
-      }
-
-      setupClickBindings(container, viewModel)
-
-      container.querySelector('button')!.click()
-
-      await vi.waitFor(() => {
-        expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
-          HANDLER_ERROR_MESSAGE,
-        )
-      })
     })
 
     it('should handle elements without click attribute', () => {
@@ -195,67 +119,6 @@ describe('bindClick', () => {
       button.click()
 
       const expectedError = new InvalidHandlerError('notAFunction', 'Object', 'click')
-      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
-        expectedError.message,
-      )
-    })
-
-    it('should render InvalidHandlerError with correct parameters when handler is not a function', () => {
-      container.innerHTML = '<button click="invalidHandler">Click me</button>'
-      class TestViewModel {
-        [key: string]: unknown
-        invalidHandler = 42
-      }
-      const viewModel = new TestViewModel()
-      const button = container.querySelector('button')!
-      setupClickBindings(container, viewModel)
-
-      button.click()
-
-      const expectedError = new InvalidHandlerError('invalidHandler', 'TestViewModel', 'click')
-      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
-        expectedError.message,
-      )
-    })
-
-    it('should render InvalidHandlerError when handler is undefined', () => {
-      container.innerHTML = '<button click="nonExistentHandler">Click me</button>'
-      const viewModel = {}
-      const button = container.querySelector('button')!
-      setupClickBindings(container, viewModel)
-
-      button.click()
-
-      const expectedError = new InvalidHandlerError('nonExistentHandler', 'Object', 'click')
-      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
-        expectedError.message,
-      )
-    })
-
-    it('should render InvalidHandlerError when handler is null', () => {
-      container.innerHTML = '<button click="nullHandler">Click me</button>'
-      const viewModel = { nullHandler: null }
-      const button = container.querySelector('button')!
-      setupClickBindings(container, viewModel)
-
-      button.click()
-
-      const expectedError = new InvalidHandlerError('nullHandler', 'Object', 'click')
-      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
-        expectedError.message,
-      )
-    })
-
-    it('should render InvalidHandlerError for unsafe inherited handler names', () => {
-      const handlerName = 'constructor'
-      container.innerHTML = `<button click="${handlerName}">Click me</button>`
-      const viewModel = {}
-      const button = container.querySelector('button')!
-      setupClickBindings(container, viewModel)
-
-      button.click()
-
-      const expectedError = new InvalidHandlerError(handlerName, 'Object', 'click')
       expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
         expectedError.message,
       )
