@@ -65,6 +65,25 @@ describe('bindEnter', () => {
       expect(handleEnter).toHaveBeenCalledWith(viewModel, event)
     })
 
+    it('should execute handler in viewModel context', () => {
+      container.innerHTML = '<input enter="handleEnter" />'
+      let context: unknown = null
+      const viewModel = {
+        value: 42,
+        handleEnter: function (this: unknown) {
+          context = this
+        },
+      }
+
+      setupEnterBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      input.dispatchEvent(createKeydownEvent('Enter'))
+
+      expect(context).toBe(viewModel)
+      expect((context as Record<string, unknown>).value).toBe(42)
+    })
+
     it('should handle multiple inputs with enter', () => {
       container.innerHTML = `
         <input enter="handler1" />
@@ -82,6 +101,25 @@ describe('bindEnter', () => {
 
       expect(handler1).toHaveBeenCalledTimes(1)
       expect(handler2).toHaveBeenCalledTimes(1)
+    })
+
+    it('should allow handler to modify viewModel', () => {
+      container.innerHTML = '<input enter="increment" />'
+      const viewModel = {
+        count: 0,
+        increment: function () {
+          this.count++
+        },
+      }
+
+      setupEnterBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      input.dispatchEvent(createKeydownEvent('Enter'))
+      input.dispatchEvent(createKeydownEvent('Enter'))
+      input.dispatchEvent(createKeydownEvent('Enter'))
+
+      expect(viewModel.count).toBe(3)
     })
 
     it('should render the error page when the handler throws', () => {

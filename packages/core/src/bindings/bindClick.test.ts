@@ -44,6 +44,25 @@ describe('bindClick', () => {
       expect(handleClick).toHaveBeenCalledWith(viewModel, expect.any(MouseEvent))
     })
 
+    it('should execute handler in viewModel context', () => {
+      container.innerHTML = '<button click="handleClick">Click me</button>'
+      let context: unknown = null
+      const viewModel = {
+        value: 42,
+        handleClick: function (this: unknown) {
+          context = this
+        },
+      }
+
+      setupClickBindings(container, viewModel)
+
+      const button = container.querySelector('button')!
+      button.click()
+
+      expect(context).toBe(viewModel)
+      expect((context as Record<string, unknown>).value).toBe(42)
+    })
+
     it('should handle multiple elements with click', () => {
       container.innerHTML = `
         <button click="handler1">Button 1</button>
@@ -61,6 +80,25 @@ describe('bindClick', () => {
 
       expect(handler1).toHaveBeenCalledTimes(1)
       expect(handler2).toHaveBeenCalledTimes(1)
+    })
+
+    it('should allow handler to modify viewModel', () => {
+      container.innerHTML = '<button click="increment">Increment</button>'
+      const viewModel = {
+        count: 0,
+        increment: function () {
+          this.count++
+        },
+      }
+
+      setupClickBindings(container, viewModel)
+
+      const button = container.querySelector('button')!
+      button.click()
+      button.click()
+      button.click()
+
+      expect(viewModel.count).toBe(3)
     })
 
     it('should render the error page when the handler throws', () => {
