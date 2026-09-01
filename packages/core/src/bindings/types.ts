@@ -3,9 +3,13 @@ export type ViewModel<T extends object = object> = T & {
   [key: string]: unknown
 }
 
-export type EventHandler<E extends Event = Event> = (viewModel: unknown, event?: E) => void
+export type EventHandler<T extends object = object, E extends Event = Event> = (
+  this: ViewModel<T>,
+  viewModel: ViewModel<T>,
+  event: E,
+) => unknown
 
-export type ClickHandler = EventHandler<MouseEvent>
+export type ClickHandler<T extends object = object> = EventHandler<T, MouseEvent>
 
 export type ValueBinding = {
   element: HTMLElement

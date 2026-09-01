@@ -4,6 +4,9 @@ import { InvalidHandlerError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { setupEnterBindings } from './bindEnter'
 
+const ERROR_MESSAGE_SELECTOR = '.error-message'
+const HANDLER_ERROR_MESSAGE = 'Handler failed'
+
 function createKeydownEvent(key: string): KeyboardEvent {
   return new KeyboardEvent('keydown', { key, bubbles: true })
 }
@@ -16,7 +19,7 @@ describe('bindEnter', () => {
   })
 
   afterEach(() => {
-    testHelpers.cleanupTestContainer(container)
+    testHelpers.cleanupAllContainers()
   })
 
   describe('setupEnterBindings', () => {
@@ -119,6 +122,23 @@ describe('bindEnter', () => {
       expect(viewModel.count).toBe(3)
     })
 
+    it('should render the error page when the handler throws', () => {
+      container.innerHTML = '<input enter="handleEnter" />'
+      const viewModel = {
+        handleEnter: () => {
+          throw new Error(HANDLER_ERROR_MESSAGE)
+        },
+      }
+
+      setupEnterBindings(container, viewModel)
+
+      container.querySelector('input')!.dispatchEvent(createKeydownEvent('Enter'))
+
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        HANDLER_ERROR_MESSAGE,
+      )
+    })
+
     it('should handle elements without enter attribute', () => {
       container.innerHTML = `
         <input placeholder="No handler" />
@@ -131,66 +151,18 @@ describe('bindEnter', () => {
       }).not.toThrow()
     })
 
-    it('should throw InvalidHandlerError when handler is not a function', () => {
+    it('should render InvalidHandlerError when handler is not a function', () => {
       container.innerHTML = '<input enter="notAFunction" />'
       const viewModel = { notAFunction: 'this is a string' }
       const input = container.querySelector('input')!
-
-      const addEventListenerSpy = vi.spyOn(input, 'addEventListener')
       setupEnterBindings(container, viewModel)
 
-      const keydownListener = addEventListenerSpy.mock.calls[0][1] as EventListener
-      const mockEvent = createKeydownEvent('Enter')
+      input.dispatchEvent(createKeydownEvent('Enter'))
 
-      expect(() => keydownListener(mockEvent)).toThrow(InvalidHandlerError)
-    })
-
-    it('should throw InvalidHandlerError with correct parameters when handler is not a function', () => {
-      container.innerHTML = '<input enter="invalidHandler" />'
-      class TestViewModel {
-        [key: string]: unknown
-        invalidHandler = 42
-      }
-      const viewModel = new TestViewModel()
-      const input = container.querySelector('input')!
-
-      const addEventListenerSpy = vi.spyOn(input, 'addEventListener')
-      setupEnterBindings(container, viewModel)
-
-      const keydownListener = addEventListenerSpy.mock.calls[0][1] as EventListener
-      const mockEvent = createKeydownEvent('Enter')
-
-      expect(() => keydownListener(mockEvent)).toThrow(
-        new InvalidHandlerError('invalidHandler', 'TestViewModel', 'enter'),
+      const expectedError = new InvalidHandlerError('notAFunction', 'Object', 'enter')
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        expectedError.message,
       )
-    })
-
-    it('should throw InvalidHandlerError when handler is undefined', () => {
-      container.innerHTML = '<input enter="nonExistentHandler" />'
-      const viewModel = {}
-      const input = container.querySelector('input')!
-
-      const addEventListenerSpy = vi.spyOn(input, 'addEventListener')
-      setupEnterBindings(container, viewModel)
-
-      const keydownListener = addEventListenerSpy.mock.calls[0][1] as EventListener
-      const mockEvent = createKeydownEvent('Enter')
-
-      expect(() => keydownListener(mockEvent)).toThrow(InvalidHandlerError)
-    })
-
-    it('should throw InvalidHandlerError when handler is null', () => {
-      container.innerHTML = '<input enter="nullHandler" />'
-      const viewModel = { nullHandler: null }
-      const input = container.querySelector('input')!
-
-      const addEventListenerSpy = vi.spyOn(input, 'addEventListener')
-      setupEnterBindings(container, viewModel)
-
-      const keydownListener = addEventListenerSpy.mock.calls[0][1] as EventListener
-      const mockEvent = createKeydownEvent('Enter')
-
-      expect(() => keydownListener(mockEvent)).toThrow(InvalidHandlerError)
     })
 
     it('should setup event listener even if the root element itself has the enter attribute', () => {

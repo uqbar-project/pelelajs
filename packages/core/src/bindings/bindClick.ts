@@ -1,5 +1,5 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
-import { InvalidHandlerError } from '../errors/index'
+import { executeEventHandler } from './executeEventHandler'
 import type { ViewModel } from './types'
 
 function setupSingleClickBinding<T extends object>(
@@ -10,17 +10,7 @@ function setupSingleClickBinding<T extends object>(
   if (!handlerName?.trim()) return
 
   element.addEventListener('click', (event) => {
-    const handler = viewModel[handlerName]
-
-    if (typeof handler !== 'function') {
-      throw new InvalidHandlerError(handlerName, viewModel.constructor?.name ?? 'Unknown', 'click')
-    }
-
-    // Pass viewModel as both this-context and first argument to support two handler styles:
-    // - Method-style handlers that use `this` (function() { this.value })
-    // - Function/property-style handlers that accept (vm, ev) => vm.value
-    // This is deliberate to avoid future confusion
-    handler.call(viewModel, viewModel, event)
+    executeEventHandler({ handlerName, viewModel, event, eventType: 'click' })
   })
 }
 

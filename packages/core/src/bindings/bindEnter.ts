@@ -1,6 +1,6 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { t } from '../commons/i18n'
-import { InvalidHandlerError } from '../errors/index'
+import { executeEventHandler } from './executeEventHandler'
 import type { ViewModel } from './types'
 
 function setupSingleEnterBinding<T extends object>(
@@ -17,13 +17,7 @@ function setupSingleEnterBinding<T extends object>(
   element.addEventListener('keydown', (event: KeyboardEvent) => {
     if (event.key !== 'Enter') return
 
-    const handler = viewModel[handlerName]
-
-    if (typeof handler !== 'function') {
-      throw new InvalidHandlerError(handlerName, viewModel.constructor?.name ?? 'Unknown', 'enter')
-    }
-
-    handler.call(viewModel, viewModel, event)
+    executeEventHandler({ handlerName, viewModel, event, eventType: 'enter' })
   })
 }
 
