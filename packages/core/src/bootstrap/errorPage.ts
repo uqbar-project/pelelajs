@@ -57,7 +57,7 @@ body {
 }
 
 .error-stack {
-  font-family: monospace, 'Consolas', 'Monaco', 'Courier New';
+  font-family: monospace, Consolas, Monaco, 'Courier New';
   background: #f7fafc;
   border-radius: 8px;
   padding: 20px;
