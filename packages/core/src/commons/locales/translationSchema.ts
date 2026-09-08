@@ -29,6 +29,8 @@ type ErrorTranslations = {
       missingExport: string
       wrongCase: string
       notFound: string
+      notAClassFunction: string
+      notAClassObject: string
     }
   }
   security: {

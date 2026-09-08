@@ -64,6 +64,7 @@ describe('viewModelValidator', () => {
   let getterPath: string
   let missingExportPath: string
   let wrongCasePath: string
+  let notAClassPath: string
 
   before(() => {
     if (!fs.existsSync(testFilesDir)) {
@@ -80,14 +81,17 @@ describe('viewModelValidator', () => {
     getterPath = path.join(testFilesDir, 'GetterReturningArray.ts')
     missingExportPath = path.join(testFilesDir, 'MissingExportVM.ts')
     wrongCasePath = path.join(testFilesDir, 'WrongCaseVM.ts')
+    notAClassPath = path.join(testFilesDir, 'NotAClassVM.ts')
   })
 
   afterEach(() => {
-    ;[genericPath, noTypePath, getterPath, missingExportPath, wrongCasePath].forEach((filePath) => {
-      if (filePath && fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath)
+    ;[genericPath, noTypePath, getterPath, missingExportPath, wrongCasePath, notAClassPath].forEach(
+      (filePath) => {
+        if (filePath && fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath)
+        }
       }
-    })
+    )
   })
 
   after(() => {
@@ -150,6 +154,36 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.viewModelWrongCase', { name: 'wrongcasevm', expectedName: 'WrongCaseVM' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('reports notAClass as an Object when the view model is an object literal', () => {
+      fs.writeFileSync(notAClassPath, `export const conversorObj = { millas: 100, kilometros: 2 }`)
+      const { tags } = prepareValidation(['<pelela view-model="conversorObj">'], context)
+      const diagnostics = validateViewModelExistence(tags, notAClassPath)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.viewModelNotAClassObject', {
+          name: 'conversorObj',
+          tsFileName: 'NotAClassVM.ts',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('reports notAClass as a Function when the view model is an exported function', () => {
+      fs.writeFileSync(notAClassPath, `export function conversor() { return 0 }`)
+      const { tags } = prepareValidation(['<pelela view-model="conversor">'], context)
+      const diagnostics = validateViewModelExistence(tags, notAClassPath)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.viewModelNotAClassFunction', {
+          name: 'conversor',
+          tsFileName: 'NotAClassVM.ts',
+        }),
         vscode.DiagnosticSeverity.Error
       )
     })

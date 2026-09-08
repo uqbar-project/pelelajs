@@ -1,11 +1,14 @@
-export class App {
-  counter: number = 0
+// export class App {
+//   counter: number = 0
 
-  increment() {
-    this.counter++
-  }
+//   increment() {
+//     this.counter++
+//   }
 
-  decrement() {
-    this.counter--
-  }
+//   decrement() {
+//     this.counter--
+//   }
+// }
+export function App() {
+  return 0
 }

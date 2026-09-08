@@ -3,13 +3,18 @@ import * as ts from 'typescript'
 export interface ViewModelModuleAnalysis {
   exportedNames: string[] | null
   declaredNames: string[]
+  classNames: string[]
+  functionNames: string[]
 }
+
+export type DeclaredAs = 'Function' | 'Object'
 
 export type ViewModelIssue =
   | { kind: 'ok' }
   | { kind: 'missingExport'; viewModelName: string }
   | { kind: 'wrongCase'; viewModelName: string; expectedName: string }
   | { kind: 'notFound'; viewModelName: string; suggestedName: string }
+  | { kind: 'notAClass'; viewModelName: string; declaredAs: DeclaredAs }
 
 export interface StatementExport {
   hasReExport: boolean
@@ -68,11 +73,31 @@ function unique(values: string[]): string[] {
   return Array.from(new Set(values))
 }
 
+function getClassName(statement: ts.Statement): string | undefined {
+  return ts.isClassDeclaration(statement) ? statement.name?.text : undefined
+}
+
+function getFunctionName(statement: ts.Statement): string | undefined {
+  return ts.isFunctionDeclaration(statement) ? statement.name?.text : undefined
+}
+
 export function analyzeViewModelModule(tsSource: string): ViewModelModuleAnalysis {
   const sourceFile = ts.createSourceFile('viewModel.ts', tsSource, ts.ScriptTarget.Latest, true)
   const statementExports = sourceFile.statements.map(getStatementExport)
 
   const declaredNames = unique(sourceFile.statements.flatMap(getDeclarationNames))
+  const classNames = unique(
+    sourceFile.statements.flatMap((statement) => {
+      const className = getClassName(statement)
+      return className ? [className] : []
+    }),
+  )
+  const functionNames = unique(
+    sourceFile.statements.flatMap((statement) => {
+      const functionName = getFunctionName(statement)
+      return functionName ? [functionName] : []
+    }),
+  )
   const hasReExport = statementExports.some((statementExport) => statementExport.hasReExport)
   const exportedNames = hasReExport
     ? []
@@ -81,6 +106,8 @@ export function analyzeViewModelModule(tsSource: string): ViewModelModuleAnalysi
   return {
     exportedNames: hasReExport ? null : exportedNames,
     declaredNames,
+    classNames,
+    functionNames,
   }
 }
 
@@ -99,6 +126,12 @@ export function classifyViewModelIssue(
   suggestedName: string,
 ): ViewModelIssue {
   if (analysis.exportedNames === null || analysis.exportedNames.includes(viewModelName)) {
+    const isDeclaredAsNonClass =
+      analysis.declaredNames.includes(viewModelName) && !analysis.classNames.includes(viewModelName)
+    if (isDeclaredAsNonClass) {
+      const declaredAs = analysis.functionNames.includes(viewModelName) ? 'Function' : 'Object'
+      return { kind: 'notAClass', viewModelName, declaredAs }
+    }
     return { kind: 'ok' }
   }
 

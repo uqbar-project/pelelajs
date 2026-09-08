@@ -41,6 +41,10 @@ const errors = {
         '[pelela] Debe definir el view model con camel case: la clase se llama "{{expectedName}}", no "{{viewModelName}}".',
       notFound:
         '[pelela] No existe la clase "{{viewModelName}}" en {{tsFilePath}}. Definí la clase con el nombre sugerido por el archivo: "{{suggestedName}}".',
+      notAClassObject:
+        '[pelela] No se puede definir un Object como view model: "{{viewModelName}}" ({{tsFilePath}}). Debe declarar una clase.',
+      notAClassFunction:
+        '[pelela] No se puede definir un Function como view model: "{{viewModelName}}" ({{tsFilePath}}). Debe declarar una clase.',
     },
   },
   security: {

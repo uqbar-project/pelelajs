@@ -317,6 +317,37 @@ describe('pelelajsPlugin', () => {
       })
     })
 
+    it('generates a runtime error stub when the view model is an object literal, not a class', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export const conversorObj = { millas: 100, kilometros: 2, convertir: () => 0 }',
+        '<pelela view-model="conversorObj"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).not.toContain('import { conversorObj } from "./src/conversor.ts"')
+      expect(result).toContain('import { defineComponent, ViewModelExportError } from "pelelajs"')
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'notAClass',
+        viewModelName: 'conversorObj',
+        declaredAs: 'Object',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
+    it('generates a runtime error stub when the view model is a function, not a class', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export function App() { return 0 }',
+        '<pelela view-model="App"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).not.toContain('import { App } from "./src/conversor.ts"')
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'notAClass',
+        viewModelName: 'App',
+        declaredAs: 'Function',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
     it('keeps the named import when a lowercase class matches the lowercase view model', () => {
       const result = loadAutoRegisterWithComponent(
         'export class conversor {}',

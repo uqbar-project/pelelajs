@@ -1,7 +1,9 @@
 import { t } from '../commons/i18n'
 import { PelelaError } from './PelelaError'
 
-export type ViewModelExportErrorKind = 'missingExport' | 'wrongCase' | 'notFound'
+export type ViewModelExportErrorKind = 'missingExport' | 'wrongCase' | 'notFound' | 'notAClass'
+
+export type DeclaredAs = 'Function' | 'Object'
 
 export type ViewModelExportErrorParams = {
   kind: ViewModelExportErrorKind
@@ -9,6 +11,7 @@ export type ViewModelExportErrorParams = {
   tsFilePath: string
   expectedName?: string
   suggestedName?: string
+  declaredAs?: DeclaredAs
 }
 
 const viewModelExportMessageBuilders: Record<
@@ -21,6 +24,10 @@ const viewModelExportMessageBuilders: Record<
     t('errors.viewmodel.export.wrongCase', { viewModelName, expectedName, tsFilePath }),
   notFound: ({ viewModelName, tsFilePath, suggestedName }) =>
     t('errors.viewmodel.export.notFound', { viewModelName, tsFilePath, suggestedName }),
+  notAClass: ({ viewModelName, tsFilePath, declaredAs }) =>
+    declaredAs === 'Function'
+      ? t('errors.viewmodel.export.notAClassFunction', { viewModelName, tsFilePath })
+      : t('errors.viewmodel.export.notAClassObject', { viewModelName, tsFilePath }),
 }
 
 /**

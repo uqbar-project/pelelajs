@@ -1,4 +1,5 @@
 import { toKebabCase } from '../commons/helpers'
+import { ViewModelExportError } from '../errors/index'
 import type { ViewModelConstructor } from '../types'
 import { getViewModel, registerViewModel, replaceViewModel } from './viewModelRegistry'
 
@@ -22,6 +23,14 @@ export function defineComponent(
   template: string,
   options: DefineComponentOptions = {},
 ): void {
+  if (typeof creator !== 'function') {
+    throw new ViewModelExportError({
+      kind: 'notAClass',
+      viewModelName: name,
+      tsFilePath: 'runtime',
+      declaredAs: 'Object',
+    })
+  }
   const { cssUrls = [] } = options
   const existingCreator = getViewModel(name)
   if (existingCreator && existingCreator !== creator) {

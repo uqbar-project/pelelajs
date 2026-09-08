@@ -19,6 +19,11 @@ import type { AttrInfo, TagInfo } from './types'
 const BINDING_PREFIXES = ['bind-', 'prop-', 'link-']
 const EVENT_NAMES = ['click', 'enter']
 
+const viewModelNotAClassDiagnosticKeys = {
+  Function: 'diagnostics.viewModelNotAClassFunction',
+  Object: 'diagnostics.viewModelNotAClassObject',
+} as const
+
 function isBindingAttribute(name: string): boolean {
   return name === 'if' || BINDING_PREFIXES.some((prefix) => name.startsWith(prefix))
 }
@@ -45,6 +50,14 @@ function buildViewModelIssueDiagnostic(
       range,
       'diagnostics.viewModelWrongCase',
       { name: issue.viewModelName, expectedName: issue.expectedName },
+      vscode.DiagnosticSeverity.Error
+    )
+  }
+  if (issue.kind === 'notAClass') {
+    return makeDiagnostic(
+      range,
+      viewModelNotAClassDiagnosticKeys[issue.declaredAs],
+      { name: issue.viewModelName, tsFileName },
       vscode.DiagnosticSeverity.Error
     )
   }

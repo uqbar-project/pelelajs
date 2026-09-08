@@ -8,6 +8,7 @@ import {
   createDiagnosticsProvider,
   validatePelelaDocument,
 } from '../../src/diagnostics/diagnosticsProvider'
+import { t } from '../../src/i18n/index'
 
 const PELELA_CONTENT = `<pelela view-model="TestViewModel">
   <div>
@@ -125,6 +126,32 @@ describe('diagnosticsProvider', () => {
       assert.strictEqual(diagnostic.range.end.line, 0)
       assert.strictEqual(diagnostic.range.end.character, 33)
       fs.unlinkSync(noExportTsPath)
+    })
+
+    it('reports notAClass when the view model is defined as an object literal', () => {
+      const notAClassPelelaPath = path.join(testFilesDir, 'NotAClass.pelela')
+      const notAClassTsPath = notAClassPelelaPath.replace(/\.pelela$/, '.ts')
+      fs.writeFileSync(notAClassTsPath, `export const TestViewModel = { name: "test" }`)
+      const collection = vscode.languages.createDiagnosticCollection()
+      const document = createMockDocument(
+        `<pelela view-model="TestViewModel"></pelela>`,
+        'pelela',
+        notAClassPelelaPath
+      )
+      validatePelelaDocument(collection, document)
+      const diagnostics = getEntries(collection).get(notAClassPelelaPath) ?? []
+      assert.strictEqual(diagnostics.length, 1)
+      const diagnostic = diagnostics[0]
+      assert.strictEqual(
+        diagnostic.message,
+        t('diagnostics.viewModelNotAClassObject', {
+          name: 'TestViewModel',
+          tsFileName: 'NotAClass.ts',
+        })
+      )
+      assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
+      assert.strictEqual(diagnostic.source, 'pelela')
+      fs.unlinkSync(notAClassTsPath)
     })
 
     it('skips binding and event validation when the view model is not exported', () => {

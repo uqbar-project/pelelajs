@@ -127,6 +127,7 @@ function toViewModelExportParams(
     tsFilePath: tsPath.replace(/^\.\//, ''),
     ...('expectedName' in issue && { expectedName: issue.expectedName }),
     ...('suggestedName' in issue && { suggestedName: issue.suggestedName }),
+    ...('declaredAs' in issue && { declaredAs: issue.declaredAs }),
   }
 }
 

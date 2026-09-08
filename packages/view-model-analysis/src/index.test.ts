@@ -12,6 +12,8 @@ describe('analyzeViewModelModule', () => {
     expect(analysis).toEqual({
       exportedNames: [CONVERSOR_CLASS_NAME],
       declaredNames: [CONVERSOR_CLASS_NAME],
+      classNames: [CONVERSOR_CLASS_NAME],
+      functionNames: [],
     })
   })
 
@@ -21,6 +23,8 @@ describe('analyzeViewModelModule', () => {
     expect(analysis).toEqual({
       exportedNames: ['miles', 'kilometers'],
       declaredNames: ['miles', 'kilometers'],
+      classNames: [],
+      functionNames: [],
     })
   })
 
@@ -36,6 +40,8 @@ describe('analyzeViewModelModule', () => {
     expect(analysis).toEqual({
       exportedNames: [],
       declaredNames: [CONVERSOR_CLASS_NAME],
+      classNames: [CONVERSOR_CLASS_NAME],
+      functionNames: [],
     })
   })
 
@@ -45,7 +51,16 @@ describe('analyzeViewModelModule', () => {
     expect(analysis).toEqual({
       exportedNames: [],
       declaredNames: [CONVERSOR_CLASS_NAME],
+      classNames: [CONVERSOR_CLASS_NAME],
+      functionNames: [],
     })
+  })
+
+  it('collects declared function names separately from classes', () => {
+    const analysis = analyzeViewModelModule('export function init() {}')
+
+    expect(analysis.functionNames).toEqual(['init'])
+    expect(analysis.classNames).toEqual([])
   })
 
   it('collects interfaces, types, enums and functions', () => {
@@ -74,6 +89,33 @@ describe('classifyViewModelIssue', () => {
   it('returns ok when a lowercase class matches the lowercase view model', () => {
     const analysis = analyzeViewModelModule(`export class ${CONVERSOR_VIEW_MODEL} {}`)
     const issue = classifyViewModelIssue(analysis, CONVERSOR_VIEW_MODEL, CONVERSOR_CLASS_NAME)
+
+    expect(issue).toEqual({ kind: 'ok' })
+  })
+
+  it('reports notAClass as an Object when the view model is an exported object literal', () => {
+    const analysis = analyzeViewModelModule(
+      'export const conversorObj = { millas: 100, convertir: () => 0 }',
+    )
+    const issue = classifyViewModelIssue(analysis, 'conversorObj', 'ConversorObj')
+
+    expect(issue).toEqual({
+      kind: 'notAClass',
+      viewModelName: 'conversorObj',
+      declaredAs: 'Object',
+    })
+  })
+
+  it('reports notAClass as a Function when the view model is an exported function', () => {
+    const analysis = analyzeViewModelModule('export function conversor() {}')
+    const issue = classifyViewModelIssue(analysis, 'conversor', 'Conversor')
+
+    expect(issue).toEqual({ kind: 'notAClass', viewModelName: 'conversor', declaredAs: 'Function' })
+  })
+
+  it('returns ok for a re-exported binding declared in another module', () => {
+    const analysis = analyzeViewModelModule(`export { ${CONVERSOR_CLASS_NAME} } from './model'`)
+    const issue = classifyViewModelIssue(analysis, CONVERSOR_CLASS_NAME, CONVERSOR_CLASS_NAME)
 
     expect(issue).toEqual({ kind: 'ok' })
   })

@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { initializeI18n } from '../commons/i18n'
+import { ViewModelExportError } from '../errors/index'
+import type { ViewModelConstructor } from '../types'
 import {
   clearComponentRegistry,
   defineComponent,
@@ -36,6 +39,19 @@ describe('componentRegistry', () => {
       defineComponent('TodoList', TodoList, '<pelela view-model="TodoList"></pelela>')
 
       expect(getViewModel('TodoList')).toBe(TodoList)
+    })
+
+    it('should throw a notAClass error when the creator is an object, not a class', () => {
+      initializeI18n('es')
+      const objectViewModel = { millas: 100 } as unknown as ViewModelConstructor
+      const template = '<pelela view-model="conversorObj"></pelela>'
+
+      expect(() => {
+        defineComponent('conversorObj', objectViewModel, template)
+      }).toThrow(ViewModelExportError)
+      expect(() => {
+        defineComponent('conversorObj', objectViewModel, template)
+      }).toThrow(/No se puede definir un Object como view model/)
     })
 
     it('should store the template for the component', () => {

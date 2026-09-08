@@ -7,6 +7,10 @@ const diagnostics = {
     'Debe definir el view model con camel case: la clase se llama "{{expectedName}}", no "{{name}}".',
   viewModelNotFound:
     'No existe la clase "{{name}}" en {{tsFileName}}. Definí la clase con el nombre sugerido por el archivo: "{{suggestedName}}".',
+  viewModelNotAClassObject:
+    'No se puede definir un Object como view model: "{{name}}" ({{tsFileName}}). Debe declarar una clase.',
+  viewModelNotAClassFunction:
+    'No se puede definir un Function como view model: "{{name}}" ({{tsFileName}}). Debe declarar una clase.',
   propertyNotFound: "La propiedad '{{name}}' no existe en el ViewModel",
   methodNotFound: "El método '{{name}}' no existe en el ViewModel",
   unknownAttribute: "Atributo desconocido: '{{name}}'",

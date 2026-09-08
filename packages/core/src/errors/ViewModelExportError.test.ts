@@ -67,4 +67,42 @@ describe('ViewModelExportError', () => {
       }),
     )
   })
+
+  it('builds the Spanish message when the view model is an object, not a class', () => {
+    initializeI18n('es')
+    const params: ViewModelExportErrorParams = {
+      kind: 'notAClass',
+      viewModelName: 'conversorObj',
+      tsFilePath: CONVERSOR_TS_FILE,
+      declaredAs: 'Object',
+    }
+
+    const error = new ViewModelExportError(params)
+
+    expect(error.message).toBe(
+      t('errors.viewmodel.export.notAClassObject', {
+        viewModelName: 'conversorObj',
+        tsFilePath: CONVERSOR_TS_FILE,
+      }),
+    )
+  })
+
+  it('builds the Spanish message when the view model is a function, not a class', () => {
+    initializeI18n('es')
+    const params: ViewModelExportErrorParams = {
+      kind: 'notAClass',
+      viewModelName: 'conversor',
+      tsFilePath: CONVERSOR_TS_FILE,
+      declaredAs: 'Function',
+    }
+
+    const error = new ViewModelExportError(params)
+
+    expect(error.message).toBe(
+      t('errors.viewmodel.export.notAClassFunction', {
+        viewModelName: 'conversor',
+        tsFilePath: CONVERSOR_TS_FILE,
+      }),
+    )
+  })
 })
