@@ -19,6 +19,9 @@ import {
 export { extractLinkAttributeMatches } from './templateValidation'
 
 const PLUGIN_NAME = 'vite-plugin-pelelajs'
+const VIRTUAL_MODULE_ID = 'virtual:pelela-auto-register'
+const RESOLVED_VIRTUAL_ID = '\0virtual:pelela-auto-register'
+const COMPONENT_SOURCE_EXTENSIONS = new Set(['.ts', '.pelela', '.css'])
 
 interface ComponentFileMetadata {
   name: string
@@ -131,6 +134,10 @@ function toViewModelExportParams(
   }
 }
 
+function isComponentSourceFile(file: string): boolean {
+  return COMPONENT_SOURCE_EXTENSIONS.has(path.extname(file))
+}
+
 function generateComponentMetadata(component: ComponentFileMetadata): ProcessedComponent {
   const { name, viewModelName, tsPath, pelelaPath, cssPaths, issue } = component
   const baseName = kebabToCamelCase(name)
@@ -208,14 +215,14 @@ export function pelelajsPlugin(): Plugin {
     enforce: 'pre',
 
     resolveId(id) {
-      if (id === 'virtual:pelela-auto-register') {
-        return '\0virtual:pelela-auto-register'
+      if (id === VIRTUAL_MODULE_ID) {
+        return RESOLVED_VIRTUAL_ID
       }
       return null
     },
 
     load(filePath) {
-      if (filePath === '\0virtual:pelela-auto-register') {
+      if (filePath === RESOLVED_VIRTUAL_ID) {
         const srcDir = path.join(process.cwd(), 'src')
         const components = findComponentFiles(srcDir)
 
@@ -244,6 +251,24 @@ export function pelelajsPlugin(): Plugin {
       const escapedTemplate = escapeTemplateForLiteral(sourceCode)
 
       return generateModuleCode(cssImport, viewModelName, escapedTemplate)
+    },
+
+    hotUpdate({ file, modules }) {
+      const srcDir = path.join(process.cwd(), 'src')
+      if (!file.startsWith(`${srcDir}${path.sep}`)) {
+        return undefined
+      }
+      if (!isComponentSourceFile(file)) {
+        return undefined
+      }
+      const autoRegisterModule = this.environment.moduleGraph.getModuleById(RESOLVED_VIRTUAL_ID)
+      if (!autoRegisterModule) {
+        return undefined
+      }
+      if (modules.some((module) => module.id === RESOLVED_VIRTUAL_ID)) {
+        return modules
+      }
+      return [...modules, autoRegisterModule]
     },
   }
 }

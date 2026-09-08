@@ -1271,4 +1271,75 @@ describe('pelelajsPlugin', () => {
       })
     })
   })
+
+  describe('hotUpdate', () => {
+    let tempDir: string
+
+    beforeEach(() => {
+      tempDir = createTempDir()
+    })
+
+    afterEach(() => {
+      removeTempDir(tempDir)
+    })
+
+    function callHotUpdate(
+      file: string,
+      modules: Array<{ id: string }> = [],
+      virtualModule: { id: string } | null = { id: RESOLVED_VIRTUAL_ID },
+    ): unknown {
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.hotUpdate!)
+      const environment = {
+        moduleGraph: {
+          getModuleById: (id: string) => (id === RESOLVED_VIRTUAL_ID ? virtualModule : undefined),
+        },
+      }
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+        return handler.call({ environment } as never, { file, modules } as never)
+      } finally {
+        process.cwd = originalCwd
+      }
+    }
+
+    it('includes the auto-register module when a component ts file changes', () => {
+      const modules = [{ id: '/src/app.pelela' }]
+      const result = callHotUpdate(path.join(tempDir, 'src', 'app.ts'), modules)
+
+      expect(result).toEqual([...modules, { id: RESOLVED_VIRTUAL_ID }])
+    })
+
+    it('includes the auto-register module when a component css file changes', () => {
+      const result = callHotUpdate(path.join(tempDir, 'src', 'app.css'))
+
+      expect(result).toEqual([{ id: RESOLVED_VIRTUAL_ID }])
+    })
+
+    it('keeps the existing modules when the auto-register module is already included', () => {
+      const modules = [{ id: RESOLVED_VIRTUAL_ID }, { id: '/src/app.pelela' }]
+      const result = callHotUpdate(path.join(tempDir, 'src', 'app.ts'), modules)
+
+      expect(result).toEqual(modules)
+    })
+
+    it('returns undefined for changes outside the src directory', () => {
+      const result = callHotUpdate(path.join(tempDir, 'styles.css'))
+
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined for changes to non-component extensions', () => {
+      const result = callHotUpdate(path.join(tempDir, 'src', 'README.md'))
+
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined when the auto-register module is not in the module graph', () => {
+      const result = callHotUpdate(path.join(tempDir, 'src', 'app.ts'), [], null)
+
+      expect(result).toBeUndefined()
+    })
+  })
 })
