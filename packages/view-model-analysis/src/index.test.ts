@@ -63,6 +63,13 @@ describe('analyzeViewModelModule', () => {
     expect(analysis.classNames).toEqual([])
   })
 
+  it('collects every function declarator from a single variable statement', () => {
+    const analysis = analyzeViewModelModule('export const app = () => {}, App = function () {}')
+
+    expect(analysis.functionNames).toEqual(['app', 'App'])
+    expect(analysis.classNames).toEqual([])
+  })
+
   it('collects interfaces, types, enums and functions', () => {
     const analysis = analyzeViewModelModule(
       'export interface Person {}; export type Id = number; export enum Status {}; export function init() {}',

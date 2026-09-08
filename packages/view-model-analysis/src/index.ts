@@ -82,22 +82,23 @@ function getClassName(statement: ts.Statement): string | undefined {
   return ts.isClassDeclaration(statement) ? statement.name?.text : undefined
 }
 
-function getFunctionName(statement: ts.Statement): string | undefined {
+function getFunctionNames(statement: ts.Statement): string[] {
   if (ts.isFunctionDeclaration(statement)) {
-    return statement.name?.text
+    return statement.name !== undefined ? [statement.name.text] : []
   }
   if (ts.isVariableStatement(statement)) {
-    const functionDeclarator = statement.declarationList.declarations.find(
-      (declaration) =>
-        declaration.initializer !== undefined &&
-        (ts.isArrowFunction(declaration.initializer) ||
-          ts.isFunctionExpression(declaration.initializer)),
-    )
-    return functionDeclarator !== undefined && ts.isIdentifier(functionDeclarator.name)
-      ? functionDeclarator.name.text
-      : undefined
+    return statement.declarationList.declarations
+      .filter(
+        (declaration) =>
+          declaration.initializer !== undefined &&
+          (ts.isArrowFunction(declaration.initializer) ||
+            ts.isFunctionExpression(declaration.initializer)),
+      )
+      .map((declaration) => declaration.name)
+      .filter(ts.isIdentifier)
+      .map((identifier) => identifier.text)
   }
-  return undefined
+  return []
 }
 
 export function analyzeViewModelModule(tsSource: string): ViewModelModuleAnalysis {
@@ -111,12 +112,7 @@ export function analyzeViewModelModule(tsSource: string): ViewModelModuleAnalysi
       return className ? [className] : []
     }),
   )
-  const functionNames = unique(
-    sourceFile.statements.flatMap((statement) => {
-      const functionName = getFunctionName(statement)
-      return functionName ? [functionName] : []
-    }),
-  )
+  const functionNames = unique(sourceFile.statements.flatMap(getFunctionNames))
   const hasReExport = statementExports.some((statementExport) => statementExport.hasReExport)
   const exportedNames = hasReExport
     ? []
