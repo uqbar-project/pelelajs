@@ -47,13 +47,18 @@ function hasModifier(statement: ts.Statement, kind: ts.SyntaxKind): boolean {
 
 function getStatementExport(statement: ts.Statement): StatementExport {
   if (ts.isExportDeclaration(statement)) {
+    if (statement.isTypeOnly) {
+      return { hasReExport: false, names: [] }
+    }
     if (statement.exportClause === undefined) {
       return { hasReExport: true, names: [] }
     }
     if (ts.isNamedExports(statement.exportClause)) {
       return {
         hasReExport: false,
-        names: statement.exportClause.elements.map((specifier) => specifier.name.text),
+        names: statement.exportClause.elements
+          .filter((specifier) => !specifier.isTypeOnly)
+          .map((specifier) => specifier.name.text),
       }
     }
     return { hasReExport: false, names: [] }
@@ -78,7 +83,21 @@ function getClassName(statement: ts.Statement): string | undefined {
 }
 
 function getFunctionName(statement: ts.Statement): string | undefined {
-  return ts.isFunctionDeclaration(statement) ? statement.name?.text : undefined
+  if (ts.isFunctionDeclaration(statement)) {
+    return statement.name?.text
+  }
+  if (ts.isVariableStatement(statement)) {
+    const functionDeclarator = statement.declarationList.declarations.find(
+      (declaration) =>
+        declaration.initializer !== undefined &&
+        (ts.isArrowFunction(declaration.initializer) ||
+          ts.isFunctionExpression(declaration.initializer)),
+    )
+    return functionDeclarator !== undefined && ts.isIdentifier(functionDeclarator.name)
+      ? functionDeclarator.name.text
+      : undefined
+  }
+  return undefined
 }
 
 export function analyzeViewModelModule(tsSource: string): ViewModelModuleAnalysis {

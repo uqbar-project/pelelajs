@@ -76,6 +76,24 @@ describe('analyzeViewModelModule', () => {
 
     expect(analysis.exportedNames).toBeNull()
   })
+
+  it('collects no exported names from a type-only export declaration', () => {
+    const analysis = analyzeViewModelModule('export type { Converter }')
+
+    expect(analysis.exportedNames).toEqual([])
+  })
+
+  it('ignores type-only specifiers within a named export', () => {
+    const analysis = analyzeViewModelModule('export { type Converter, converter }')
+
+    expect(analysis.exportedNames).toEqual(['converter'])
+  })
+
+  it('collects no exported names from a type-only re-export', () => {
+    const analysis = analyzeViewModelModule(`export type * from './models'`)
+
+    expect(analysis.exportedNames).toEqual([])
+  })
 })
 
 describe('classifyViewModelIssue', () => {
@@ -113,6 +131,20 @@ describe('classifyViewModelIssue', () => {
     expect(issue).toEqual({ kind: 'notAClass', viewModelName: 'conversor', declaredAs: 'Function' })
   })
 
+  it('reports notAClass as a Function when the view model is an exported arrow function', () => {
+    const analysis = analyzeViewModelModule('export const App = () => {}')
+    const issue = classifyViewModelIssue(analysis, 'App', 'App')
+
+    expect(issue).toEqual({ kind: 'notAClass', viewModelName: 'App', declaredAs: 'Function' })
+  })
+
+  it('reports notAClass as a Function when the view model is an exported function expression', () => {
+    const analysis = analyzeViewModelModule('export const App = function () {}')
+    const issue = classifyViewModelIssue(analysis, 'App', 'App')
+
+    expect(issue).toEqual({ kind: 'notAClass', viewModelName: 'App', declaredAs: 'Function' })
+  })
+
   it('returns ok for a re-exported binding declared in another module', () => {
     const analysis = analyzeViewModelModule(`export { ${CONVERTER_CLASS_NAME} } from './model'`)
     const issue = classifyViewModelIssue(analysis, CONVERTER_CLASS_NAME, CONVERTER_CLASS_NAME)
@@ -136,6 +168,22 @@ describe('classifyViewModelIssue', () => {
 
   it('reports missingExport for a default export class', () => {
     const analysis = analyzeViewModelModule(`export default class ${CONVERTER_CLASS_NAME} {}`)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_CLASS_NAME, CONVERTER_CLASS_NAME)
+
+    expect(issue).toEqual({ kind: 'missingExport', viewModelName: CONVERTER_CLASS_NAME })
+  })
+
+  it('reports missingExport when the class is only exported as a type', () => {
+    const analysis = analyzeViewModelModule(`export type { ${CONVERTER_CLASS_NAME} }
+class ${CONVERTER_CLASS_NAME} {}`)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_CLASS_NAME, CONVERTER_CLASS_NAME)
+
+    expect(issue).toEqual({ kind: 'missingExport', viewModelName: CONVERTER_CLASS_NAME })
+  })
+
+  it('reports missingExport when the only named export is type-only', () => {
+    const analysis = analyzeViewModelModule(`class ${CONVERTER_CLASS_NAME} {}
+export { type ${CONVERTER_CLASS_NAME} }`)
     const issue = classifyViewModelIssue(analysis, CONVERTER_CLASS_NAME, CONVERTER_CLASS_NAME)
 
     expect(issue).toEqual({ kind: 'missingExport', viewModelName: CONVERTER_CLASS_NAME })
