@@ -148,7 +148,7 @@ describe('i18n', () => {
           tsFilePath: 'src/conversor.ts',
         }),
       ).toBe(
-        '[pelela] Define el view model con la capitalización exacta de la clase: se llama "Conversor", no "conversor".',
+        '[pelela] Definí el view model con la capitalización exacta de la clase: se llama "Conversor", no "conversor".',
       )
 
       expect(

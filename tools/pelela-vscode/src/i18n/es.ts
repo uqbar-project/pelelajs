@@ -4,7 +4,7 @@ const diagnostics = {
   viewModelMissingExport:
     'Falta exportar la clase "{{name}}" en {{tsFileName}}. Agregá export delante de la clase.',
   viewModelWrongCase:
-    'Debe definir el view model con camel case: la clase se llama "{{expectedName}}", no "{{name}}".',
+    'Definí el view model con la capitalización exacta de la clase: se llama "{{expectedName}}", no "{{name}}".',
   viewModelNotFound:
     'No existe la clase "{{name}}" en {{tsFileName}}. Definí la clase con el nombre sugerido por el archivo: "{{suggestedName}}".',
   viewModelNotAClassObject:

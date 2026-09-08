@@ -38,7 +38,7 @@ const errors = {
       missingExport:
         '[pelela] Falta exportar la clase "{{viewModelName}}" en {{tsFilePath}}. Agregá export delante de la clase.',
       wrongCase:
-        '[pelela] Define el view model con la capitalización exacta de la clase: se llama "{{expectedName}}", no "{{viewModelName}}".',
+        '[pelela] Definí el view model con la capitalización exacta de la clase: se llama "{{expectedName}}", no "{{viewModelName}}".',
       notFound:
         '[pelela] No existe la clase "{{viewModelName}}" en {{tsFilePath}}. Definí la clase con el nombre sugerido por el archivo: "{{suggestedName}}".',
       notAClassObject:
