@@ -25,6 +25,11 @@ type ErrorTranslations = {
       duplicate: string
       missing: string
     }
+    export: {
+      missingExport: string
+      wrongCase: string
+      notFound: string
+    }
   }
   security: {
     domEnvironmentRequired: string

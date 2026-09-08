@@ -10,12 +10,19 @@ export {
 } from './commons/dom'
 export { findUniqueCollapsedTag } from './commons/helpers'
 export { initializeI18n, t } from './commons/i18n'
-export type { BindingKind, EventType, RegistrationType, RoutingErrorType } from './errors/index'
+export type {
+  BindingKind,
+  EventType,
+  RegistrationType,
+  RoutingErrorType,
+  ViewModelExportErrorParams,
+} from './errors/index'
 export {
   InvalidHandlerError,
   PelelaError,
   PropertyValidationError,
   RoutingError,
+  ViewModelExportError,
   ViewModelRegistrationError,
 } from './errors/index'
 export { registerViewModel as defineViewModel } from './registry/viewModelRegistry'

@@ -194,11 +194,6 @@ function getClassDeclaration(
   return undefined
 }
 
-export function isExportedClass(typescriptFilePath: string, className: string): boolean {
-  const sourceFile = getCachedSourceFile(typescriptFilePath)
-  return getClassDeclaration(sourceFile, className, typescriptFilePath, true) !== undefined
-}
-
 function findPropertyTypeNode(
   sourceFile: ts.SourceFile,
   propertyName: string,

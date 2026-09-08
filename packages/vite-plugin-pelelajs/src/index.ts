@@ -1,5 +1,12 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
+import {
+  analyzeViewModelModule,
+  classifyViewModelIssue,
+  pascalCaseFromFileName,
+  type ViewModelIssue,
+} from '@pelelajs/view-model-analysis'
+import type { ViewModelExportErrorParams } from 'pelelajs'
 import { initializeI18n } from 'pelelajs'
 
 import type { Plugin } from 'vite'
@@ -19,6 +26,14 @@ interface ComponentFileMetadata {
   pelelaPath: string
   viewModelName: string
   cssPaths: string[]
+  issue: ViewModelIssue
+}
+
+interface ProcessedComponent {
+  componentImport: string | null
+  templateImport: string
+  registration: string
+  hasExportIssue: boolean
 }
 
 export function escapeTemplateForLiteral(html: string): string {
@@ -75,6 +90,13 @@ function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
         /<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/,
       )?.[1]
       const viewModelName = viewModelMatch || componentName
+      const tsSource = fs.readFileSync(tsPath, 'utf-8')
+      const analysis = analyzeViewModelModule(tsSource)
+      const issue = classifyViewModelIssue(
+        analysis,
+        viewModelName,
+        pascalCaseFromFileName(componentName),
+      )
 
       const toImportPath = (filePath: string): string =>
         `./${path.relative(process.cwd(), filePath).split(path.sep).join('/')}`
@@ -85,6 +107,7 @@ function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
         pelelaPath: toImportPath(pelelaPath),
         viewModelName,
         cssPaths,
+        issue,
       }
     })
     .filter((component): component is ComponentFileMetadata => component !== null)
@@ -94,30 +117,60 @@ export function kebabToCamelCase(name: string): string {
   return name.replace(/[-.]([a-z])/g, (_, letter) => letter.toUpperCase())
 }
 
-function generateComponentMetadata(component: ComponentFileMetadata) {
-  const { name, viewModelName, tsPath, pelelaPath, cssPaths } = component
+function toViewModelExportParams(
+  issue: Exclude<ViewModelIssue, { kind: 'ok' }>,
+  tsPath: string,
+): ViewModelExportErrorParams {
+  return {
+    kind: issue.kind,
+    viewModelName: issue.viewModelName,
+    tsFilePath: tsPath.replace(/^\.\//, ''),
+    ...('expectedName' in issue && { expectedName: issue.expectedName }),
+    ...('suggestedName' in issue && { suggestedName: issue.suggestedName }),
+  }
+}
+
+function generateComponentMetadata(component: ComponentFileMetadata): ProcessedComponent {
+  const { name, viewModelName, tsPath, pelelaPath, cssPaths, issue } = component
   const baseName = kebabToCamelCase(name)
   const templateVar = `${baseName}Template`
   const cssUrlsVar = `${baseName}CssUrls`
   const hasCss = cssPaths.length > 0
+  const optionsSuffix = hasCss ? `, { cssUrls: ${cssUrlsVar} }` : ''
+
+  const templateImport = `import ${templateVar}${
+    hasCss ? `, { __pelelaCssUrls as ${cssUrlsVar} }` : ''
+  } from "${pelelaPath}";`
+
+  if (issue.kind !== 'ok') {
+    const stubName = `${viewModelName}Stub`
+    const errorParams = JSON.stringify(toViewModelExportParams(issue, tsPath))
+    return {
+      componentImport: null,
+      templateImport,
+      registration: `function ${stubName}() {
+  throw new ViewModelExportError(${errorParams});
+}
+
+defineComponent("${viewModelName}", ${stubName}, ${templateVar}${optionsSuffix});`,
+      hasExportIssue: true,
+    }
+  }
 
   return {
     componentImport: `import { ${viewModelName} } from "${tsPath}";`,
-
-    templateImport: `import ${templateVar}${
-      hasCss ? `, { __pelelaCssUrls as ${cssUrlsVar} }` : ''
-    } from "${pelelaPath}";`,
-
-    registration: hasCss
-      ? `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar}, { cssUrls: ${cssUrlsVar} });`
-      : `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar});`,
+    templateImport,
+    registration: `defineComponent("${viewModelName}", ${viewModelName}, ${templateVar}${optionsSuffix});`,
+    hasExportIssue: false,
   }
 }
 
 function generateAutoRegistrationCode(components: ComponentFileMetadata[]): string {
   const processedComponents = components.map(generateComponentMetadata)
+  const hasExportIssues = processedComponents.some((processed) => processed.hasExportIssue)
 
   const componentImports = processedComponents
+    .filter((processed) => processed.componentImport !== null)
     .map((processed) => processed.componentImport)
     .join('\n')
 
@@ -125,12 +178,16 @@ function generateAutoRegistrationCode(components: ComponentFileMetadata[]): stri
     .map((processed) => processed.templateImport)
     .join('\n')
 
+  const defineComponentImport = hasExportIssues
+    ? 'import { defineComponent, ViewModelExportError } from "pelelajs";'
+    : 'import { defineComponent } from "pelelajs";'
+
   const registrations = processedComponents.map((processed) => processed.registration).join('\n')
 
   return `
 ${componentImports}
 ${templateImports}
-import { defineComponent } from "pelelajs";
+${defineComponentImport}
 
 ${registrations}
 `

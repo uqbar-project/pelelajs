@@ -62,6 +62,8 @@ describe('viewModelValidator', () => {
   let genericPath: string
   let noTypePath: string
   let getterPath: string
+  let missingExportPath: string
+  let wrongCasePath: string
 
   before(() => {
     if (!fs.existsSync(testFilesDir)) {
@@ -76,10 +78,12 @@ describe('viewModelValidator', () => {
     genericPath = path.join(testFilesDir, 'GenericArrayVM.ts')
     noTypePath = path.join(testFilesDir, 'NoTypeArrayVM.ts')
     getterPath = path.join(testFilesDir, 'GetterReturningArray.ts')
+    missingExportPath = path.join(testFilesDir, 'MissingExportVM.ts')
+    wrongCasePath = path.join(testFilesDir, 'WrongCaseVM.ts')
   })
 
   afterEach(() => {
-    ;[genericPath, noTypePath, getterPath].forEach((filePath) => {
+    ;[genericPath, noTypePath, getterPath, missingExportPath, wrongCasePath].forEach((filePath) => {
       if (filePath && fs.existsSync(filePath)) {
         fs.unlinkSync(filePath)
       }
@@ -104,7 +108,48 @@ describe('viewModelValidator', () => {
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
-        t('diagnostics.viewModelNotFound', { name: 'NonExistentViewModel' }),
+        t('diagnostics.viewModelNotFound', {
+          name: 'NonExistentViewModel',
+          tsFileName: 'viewModelTestViewModel.ts',
+          suggestedName: 'ViewModelTestViewModel',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('reports missingExport when the class is declared but not exported', () => {
+      fs.writeFileSync(
+        missingExportPath,
+        `class MissingExportVM {
+  title: string = ""
+}`
+      )
+      const { tags } = prepareValidation(['<pelela view-model="MissingExportVM">'], context)
+      const diagnostics = validateViewModelExistence(tags, missingExportPath)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.viewModelMissingExport', {
+          name: 'MissingExportVM',
+          tsFileName: 'MissingExportVM.ts',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('reports wrongCase when the exported class differs only by case', () => {
+      fs.writeFileSync(
+        wrongCasePath,
+        `export class WrongCaseVM {
+  title: string = ""
+}`
+      )
+      const { tags } = prepareValidation(['<pelela view-model="wrongcasevm">'], context)
+      const diagnostics = validateViewModelExistence(tags, wrongCasePath)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.viewModelWrongCase', { name: 'wrongcasevm', expectedName: 'WrongCaseVM' }),
         vscode.DiagnosticSeverity.Error
       )
     })

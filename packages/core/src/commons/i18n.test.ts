@@ -98,6 +98,70 @@ describe('i18n', () => {
       expect(result).toBe('[pelela] El view model "MyVM" ya está registrado')
     })
 
+    it('should translate viewmodel export keys using real resources (en)', () => {
+      initializeI18n('en')
+      expect(
+        t('errors.viewmodel.export.missingExport', {
+          viewModelName: 'Conversor',
+          tsFilePath: 'src/conversor.ts',
+        }),
+      ).toBe(
+        '[pelela] The class "Conversor" must be exported in src/conversor.ts. Add the export keyword to the class.',
+      )
+
+      expect(
+        t('errors.viewmodel.export.wrongCase', {
+          viewModelName: 'conversor',
+          expectedName: 'Conversor',
+          tsFilePath: 'src/conversor.ts',
+        }),
+      ).toBe(
+        '[pelela] Define the view model with the exact class case: the class is named "Conversor", not "conversor".',
+      )
+
+      expect(
+        t('errors.viewmodel.export.notFound', {
+          viewModelName: 'Bicicleta',
+          tsFilePath: 'src/conversor.ts',
+          suggestedName: 'Conversor',
+        }),
+      ).toBe(
+        '[pelela] There is no class named "Bicicleta" in src/conversor.ts. Define the class with the name suggested by the file: "Conversor".',
+      )
+    })
+
+    it('should translate viewmodel export keys using real resources (es)', () => {
+      initializeI18n('es')
+      expect(
+        t('errors.viewmodel.export.missingExport', {
+          viewModelName: 'Conversor',
+          tsFilePath: 'src/conversor.ts',
+        }),
+      ).toBe(
+        '[pelela] Falta exportar la clase "Conversor" en src/conversor.ts. Agregá export delante de la clase.',
+      )
+
+      expect(
+        t('errors.viewmodel.export.wrongCase', {
+          viewModelName: 'conversor',
+          expectedName: 'Conversor',
+          tsFilePath: 'src/conversor.ts',
+        }),
+      ).toBe(
+        '[pelela] Debe definir el view model con camel case: la clase se llama "Conversor", no "conversor".',
+      )
+
+      expect(
+        t('errors.viewmodel.export.notFound', {
+          viewModelName: 'Bicicleta',
+          tsFilePath: 'src/conversor.ts',
+          suggestedName: 'Conversor',
+        }),
+      ).toBe(
+        '[pelela] No existe la clase "Bicicleta" en src/conversor.ts. Definí la clase con el nombre sugerido por el archivo: "Conversor".',
+      )
+    })
+
     it('should support interpolation with double curly braces', () => {
       initializeI18n('en')
       const result = t('errors.bindings.value.invalidElement', {

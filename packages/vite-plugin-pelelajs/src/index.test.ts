@@ -248,6 +248,85 @@ describe('pelelajsPlugin', () => {
 
       process.cwd = originalCwd
     })
+
+    function loadAutoRegisterWithComponent(tsSource: string, pelelaTemplate: string): string {
+      const srcDir = path.join(tempDir, 'src')
+      fs.writeFileSync(path.join(srcDir, 'conversor.ts'), tsSource)
+      fs.writeFileSync(path.join(srcDir, 'conversor.pelela'), pelelaTemplate)
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+        return handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+      } finally {
+        process.cwd = originalCwd
+      }
+    }
+
+    function parseViewModelExportParams(result: string): Record<string, string> {
+      const match = result.match(/throw new ViewModelExportError\((\{.*?\})\);/)
+      if (match === null) {
+        throw new Error('ViewModelExportError stub call not found')
+      }
+      return JSON.parse(match[1]) as Record<string, string>
+    }
+
+    it('generates a runtime error stub when the view model class is not exported', () => {
+      const result = loadAutoRegisterWithComponent(
+        'class Conversor {}',
+        '<pelela view-model="Conversor"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).not.toContain('import { Conversor } from "./src/conversor.ts"')
+      expect(result).toContain('import { defineComponent, ViewModelExportError } from "pelelajs"')
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'missingExport',
+        viewModelName: 'Conversor',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
+    it('generates a runtime error stub when the view model only differs in case from the exported class', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export class Conversor {}',
+        '<pelela view-model="conversor"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).not.toContain('import { conversor } from "./src/conversor.ts"')
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'wrongCase',
+        viewModelName: 'conversor',
+        expectedName: 'Conversor',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
+    it('generates a runtime error stub with the file-derived suggestion when no class matches', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export class Conversor {}',
+        '<pelela view-model="Bicicleta"><h1>Hola</h1></pelela>',
+      )
+
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'notFound',
+        viewModelName: 'Bicicleta',
+        suggestedName: 'Conversor',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
+    it('keeps the named import when a lowercase class matches the lowercase view model', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export class conversor {}',
+        '<pelela view-model="conversor"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).toContain('import { conversor } from "./src/conversor.ts"')
+      expect(result).toContain('defineComponent("conversor", conversor, conversorTemplate)')
+      expect(result).not.toContain('ViewModelExportError')
+    })
   })
 
   describe('load - pelela files', () => {

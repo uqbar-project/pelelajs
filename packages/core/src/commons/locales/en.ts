@@ -34,6 +34,14 @@ const errors = {
       duplicate: '[pelela] View model "{{name}}" is already registered',
       missing: '[pelela] View model "{{name}}" is not registered. Did you call defineViewModel?',
     },
+    export: {
+      missingExport:
+        '[pelela] The class "{{viewModelName}}" must be exported in {{tsFilePath}}. Add the export keyword to the class.',
+      wrongCase:
+        '[pelela] Define the view model with the exact class case: the class is named "{{expectedName}}", not "{{viewModelName}}".',
+      notFound:
+        '[pelela] There is no class named "{{viewModelName}}" in {{tsFilePath}}. Define the class with the name suggested by the file: "{{suggestedName}}".',
+    },
   },
   security: {
     domEnvironmentRequired: 'sanitizeHTML requires a DOM environment (document and DOMParser)',

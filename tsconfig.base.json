@@ -12,7 +12,8 @@
     "types": ["node"],
     "paths": {
       "pelelajs": ["./packages/core/src/index.ts"],
-      "pelelajs/dom": ["./packages/core/src/commons/dom.ts"]
+      "pelelajs/dom": ["./packages/core/src/commons/dom.ts"],
+      "@pelelajs/view-model-analysis": ["./packages/view-model-analysis/src/index.ts"]
     }
   }
 }

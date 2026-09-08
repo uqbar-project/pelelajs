@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ViewModelExportError } from '../errors'
 import { clearComponentRegistry } from '../registry/componentRegistry'
 import { clearRegistry, registerViewModel } from '../registry/viewModelRegistry'
 import { defineComponent } from '../router'
 import type { PelelaElement } from '../types'
+import * as errorPage from './errorPage'
 import { mountTemplate } from './mountTemplate'
 
 class TestViewModel {
@@ -162,6 +164,34 @@ describe('mountTemplate', () => {
   })
 
   describe('validation', () => {
+    it('should render the error page when a component throws a ViewModelExportError', () => {
+      class FailingConversor {
+        constructor() {
+          throw new ViewModelExportError({
+            kind: 'wrongCase',
+            viewModelName: 'conversor',
+            expectedName: 'Conversor',
+            tsFilePath: 'src/conversor.ts',
+          })
+        }
+      }
+      defineComponent(
+        'conversor',
+        FailingConversor,
+        '<component view-model="Conversor"></component>',
+      )
+
+      const renderErrorPageSpy = vi.spyOn(errorPage, 'renderErrorPage')
+      const template = '<pelela view-model="TestVM"><conversor prop-value="x"></conversor></pelela>'
+
+      registerViewModel('TestVM', TestViewModel)
+      mountTemplate(container, template)
+
+      expect(renderErrorPageSpy).toHaveBeenCalledTimes(1)
+      expect(renderErrorPageSpy).toHaveBeenCalledWith(expect.any(ViewModelExportError), container)
+      expect(container.innerHTML).toContain('error-container')
+    })
+
     it('should show error page when directives are used outside root tag', () => {
       const template =
         '<div bind-content="x">Test</div><pelela view-model="TestVM"><span bind-content="message"></span></pelela>'
