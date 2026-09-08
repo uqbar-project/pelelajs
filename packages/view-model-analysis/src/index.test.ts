@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { analyzeViewModelModule, classifyViewModelIssue, pascalCaseFromFileName } from './index'
 
-const CONVERSOR_SOURCE = 'export class Conversor {}'
-const CONVERSOR_VIEW_MODEL = 'conversor'
-const CONVERSOR_CLASS_NAME = 'Conversor'
+const CONVERTER_SOURCE = 'export class Converter {}'
+const CONVERTER_VIEW_MODEL = 'converter'
+const CONVERTER_CLASS_NAME = 'Converter'
 
 describe('analyzeViewModelModule', () => {
   it('collects an exported class in both exported and declared names', () => {
-    const analysis = analyzeViewModelModule(CONVERSOR_SOURCE)
+    const analysis = analyzeViewModelModule(CONVERTER_SOURCE)
 
     expect(analysis).toEqual({
-      exportedNames: [CONVERSOR_CLASS_NAME],
-      declaredNames: [CONVERSOR_CLASS_NAME],
-      classNames: [CONVERSOR_CLASS_NAME],
+      exportedNames: [CONVERTER_CLASS_NAME],
+      declaredNames: [CONVERTER_CLASS_NAME],
+      classNames: [CONVERTER_CLASS_NAME],
       functionNames: [],
     })
   })
@@ -35,23 +35,23 @@ describe('analyzeViewModelModule', () => {
   })
 
   it('does not treat a default export as a named export', () => {
-    const analysis = analyzeViewModelModule(`export default class ${CONVERSOR_CLASS_NAME} {}`)
+    const analysis = analyzeViewModelModule(`export default class ${CONVERTER_CLASS_NAME} {}`)
 
     expect(analysis).toEqual({
       exportedNames: [],
-      declaredNames: [CONVERSOR_CLASS_NAME],
-      classNames: [CONVERSOR_CLASS_NAME],
+      declaredNames: [CONVERTER_CLASS_NAME],
+      classNames: [CONVERTER_CLASS_NAME],
       functionNames: [],
     })
   })
 
   it('keeps declared names separate from exported names', () => {
-    const analysis = analyzeViewModelModule(`class ${CONVERSOR_CLASS_NAME} {}`)
+    const analysis = analyzeViewModelModule(`class ${CONVERTER_CLASS_NAME} {}`)
 
     expect(analysis).toEqual({
       exportedNames: [],
-      declaredNames: [CONVERSOR_CLASS_NAME],
-      classNames: [CONVERSOR_CLASS_NAME],
+      declaredNames: [CONVERTER_CLASS_NAME],
+      classNames: [CONVERTER_CLASS_NAME],
       functionNames: [],
     })
   })
@@ -80,28 +80,28 @@ describe('analyzeViewModelModule', () => {
 
 describe('classifyViewModelIssue', () => {
   it('returns ok when the view model matches an exported name exactly', () => {
-    const analysis = analyzeViewModelModule(CONVERSOR_SOURCE)
-    const issue = classifyViewModelIssue(analysis, CONVERSOR_CLASS_NAME, CONVERSOR_CLASS_NAME)
+    const analysis = analyzeViewModelModule(CONVERTER_SOURCE)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_CLASS_NAME, CONVERTER_CLASS_NAME)
 
     expect(issue).toEqual({ kind: 'ok' })
   })
 
   it('returns ok when a lowercase class matches the lowercase view model', () => {
-    const analysis = analyzeViewModelModule(`export class ${CONVERSOR_VIEW_MODEL} {}`)
-    const issue = classifyViewModelIssue(analysis, CONVERSOR_VIEW_MODEL, CONVERSOR_CLASS_NAME)
+    const analysis = analyzeViewModelModule(`export class ${CONVERTER_VIEW_MODEL} {}`)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_VIEW_MODEL, CONVERTER_CLASS_NAME)
 
     expect(issue).toEqual({ kind: 'ok' })
   })
 
   it('reports notAClass as an Object when the view model is an exported object literal', () => {
     const analysis = analyzeViewModelModule(
-      'export const conversorObj = { millas: 100, convertir: () => 0 }',
+      'export const converterObject = { miles: 100, convert: () => 0 }',
     )
-    const issue = classifyViewModelIssue(analysis, 'conversorObj', 'ConversorObj')
+    const issue = classifyViewModelIssue(analysis, 'converterObject', 'ConverterObject')
 
     expect(issue).toEqual({
       kind: 'notAClass',
-      viewModelName: 'conversorObj',
+      viewModelName: 'converterObject',
       declaredAs: 'Object',
     })
   })
@@ -114,59 +114,59 @@ describe('classifyViewModelIssue', () => {
   })
 
   it('returns ok for a re-exported binding declared in another module', () => {
-    const analysis = analyzeViewModelModule(`export { ${CONVERSOR_CLASS_NAME} } from './model'`)
-    const issue = classifyViewModelIssue(analysis, CONVERSOR_CLASS_NAME, CONVERSOR_CLASS_NAME)
+    const analysis = analyzeViewModelModule(`export { ${CONVERTER_CLASS_NAME} } from './model'`)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_CLASS_NAME, CONVERTER_CLASS_NAME)
 
     expect(issue).toEqual({ kind: 'ok' })
   })
 
   it('skips validation when exported names cannot be determined', () => {
     const analysis = analyzeViewModelModule(`export * from './models'`)
-    const issue = classifyViewModelIssue(analysis, CONVERSOR_VIEW_MODEL, CONVERSOR_CLASS_NAME)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_VIEW_MODEL, CONVERTER_CLASS_NAME)
 
     expect(issue).toEqual({ kind: 'ok' })
   })
 
   it('reports missingExport when the class is declared but not exported', () => {
-    const analysis = analyzeViewModelModule(`class ${CONVERSOR_CLASS_NAME} {}`)
-    const issue = classifyViewModelIssue(analysis, CONVERSOR_CLASS_NAME, CONVERSOR_CLASS_NAME)
+    const analysis = analyzeViewModelModule(`class ${CONVERTER_CLASS_NAME} {}`)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_CLASS_NAME, CONVERTER_CLASS_NAME)
 
-    expect(issue).toEqual({ kind: 'missingExport', viewModelName: CONVERSOR_CLASS_NAME })
+    expect(issue).toEqual({ kind: 'missingExport', viewModelName: CONVERTER_CLASS_NAME })
   })
 
   it('reports missingExport for a default export class', () => {
-    const analysis = analyzeViewModelModule(`export default class ${CONVERSOR_CLASS_NAME} {}`)
-    const issue = classifyViewModelIssue(analysis, CONVERSOR_CLASS_NAME, CONVERSOR_CLASS_NAME)
+    const analysis = analyzeViewModelModule(`export default class ${CONVERTER_CLASS_NAME} {}`)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_CLASS_NAME, CONVERTER_CLASS_NAME)
 
-    expect(issue).toEqual({ kind: 'missingExport', viewModelName: CONVERSOR_CLASS_NAME })
+    expect(issue).toEqual({ kind: 'missingExport', viewModelName: CONVERTER_CLASS_NAME })
   })
 
   it('reports missingExport when a declared class differs in case but is not exported', () => {
-    const analysis = analyzeViewModelModule(`class ${CONVERSOR_CLASS_NAME} {}`)
-    const issue = classifyViewModelIssue(analysis, CONVERSOR_VIEW_MODEL, CONVERSOR_CLASS_NAME)
+    const analysis = analyzeViewModelModule(`class ${CONVERTER_CLASS_NAME} {}`)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_VIEW_MODEL, CONVERTER_CLASS_NAME)
 
-    expect(issue).toEqual({ kind: 'missingExport', viewModelName: CONVERSOR_VIEW_MODEL })
+    expect(issue).toEqual({ kind: 'missingExport', viewModelName: CONVERTER_VIEW_MODEL })
   })
 
   it('reports wrongCase when an exported class differs only by case', () => {
-    const analysis = analyzeViewModelModule(CONVERSOR_SOURCE)
-    const issue = classifyViewModelIssue(analysis, CONVERSOR_VIEW_MODEL, CONVERSOR_CLASS_NAME)
+    const analysis = analyzeViewModelModule(CONVERTER_SOURCE)
+    const issue = classifyViewModelIssue(analysis, CONVERTER_VIEW_MODEL, CONVERTER_CLASS_NAME)
 
     expect(issue).toEqual({
       kind: 'wrongCase',
-      viewModelName: CONVERSOR_VIEW_MODEL,
-      expectedName: CONVERSOR_CLASS_NAME,
+      viewModelName: CONVERTER_VIEW_MODEL,
+      expectedName: CONVERTER_CLASS_NAME,
     })
   })
 
   it('reports notFound when no declared or exported class matches', () => {
-    const analysis = analyzeViewModelModule(CONVERSOR_SOURCE)
-    const issue = classifyViewModelIssue(analysis, 'Bicicleta', CONVERSOR_CLASS_NAME)
+    const analysis = analyzeViewModelModule(CONVERTER_SOURCE)
+    const issue = classifyViewModelIssue(analysis, 'Bicycle', CONVERTER_CLASS_NAME)
 
     expect(issue).toEqual({
       kind: 'notFound',
-      viewModelName: 'Bicicleta',
-      suggestedName: CONVERSOR_CLASS_NAME,
+      viewModelName: 'Bicycle',
+      suggestedName: CONVERTER_CLASS_NAME,
     })
   })
 })
