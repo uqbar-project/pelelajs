@@ -54,6 +54,48 @@ describe('componentRegistry', () => {
       }).toThrow(/No se puede definir un Object como view model/)
     })
 
+    it('should throw a notAClass error when the creator is a regular function, not a class', () => {
+      initializeI18n('es')
+      function regularFunctionViewModel() {}
+      const template = '<pelela view-model="regularFunction"></pelela>'
+
+      expect(() => {
+        defineComponent(
+          'regularFunction',
+          regularFunctionViewModel as unknown as ViewModelConstructor,
+          template,
+        )
+      }).toThrow(ViewModelExportError)
+      expect(() => {
+        defineComponent(
+          'regularFunction',
+          regularFunctionViewModel as unknown as ViewModelConstructor,
+          template,
+        )
+      }).toThrow(/No se puede definir un Function como view model/)
+    })
+
+    it('should throw a notAClass error when the creator is an arrow function, not a class', () => {
+      initializeI18n('es')
+      const arrowFunctionViewModel = () => {}
+      const template = '<pelela view-model="arrowFunction"></pelela>'
+
+      expect(() => {
+        defineComponent(
+          'arrowFunction',
+          arrowFunctionViewModel as unknown as ViewModelConstructor,
+          template,
+        )
+      }).toThrow(ViewModelExportError)
+      expect(() => {
+        defineComponent(
+          'arrowFunction',
+          arrowFunctionViewModel as unknown as ViewModelConstructor,
+          template,
+        )
+      }).toThrow(/No se puede definir un Function como view model/)
+    })
+
     it('should store the template for the component', () => {
       const template = '<pelela view-model="TodoList"><ul></ul></pelela>'
       defineComponent('TodoList', TodoList, template)

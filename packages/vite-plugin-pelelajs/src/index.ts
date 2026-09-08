@@ -149,8 +149,10 @@ function generateComponentMetadata(component: ComponentFileMetadata): ProcessedC
     return {
       componentImport: null,
       templateImport,
-      registration: `function ${stubName}() {
-  throw new ViewModelExportError(${errorParams});
+      registration: `class ${stubName} {
+  constructor() {
+    throw new ViewModelExportError(${errorParams});
+  }
 }
 
 defineComponent("${viewModelName}", ${stubName}, ${templateVar}${optionsSuffix});`,
