@@ -5,29 +5,42 @@ export type ViewModelExportErrorKind = 'missingExport' | 'wrongCase' | 'notFound
 
 export type DeclaredAs = 'Function' | 'Object'
 
-export type ViewModelExportErrorParams = {
-  kind: ViewModelExportErrorKind
-  viewModelName: string
-  tsFilePath: string
-  expectedName?: string
-  suggestedName?: string
-  declaredAs?: DeclaredAs
-}
+export type ViewModelExportErrorParams =
+  | { kind: 'missingExport'; viewModelName: string; tsFilePath: string }
+  | { kind: 'wrongCase'; viewModelName: string; tsFilePath: string; expectedName: string }
+  | { kind: 'notFound'; viewModelName: string; tsFilePath: string; suggestedName: string }
+  | { kind: 'notAClass'; viewModelName: string; tsFilePath: string; declaredAs: DeclaredAs }
 
-const viewModelExportMessageBuilders: Record<
-  ViewModelExportErrorKind,
-  (params: ViewModelExportErrorParams) => string
-> = {
-  missingExport: ({ viewModelName, tsFilePath }) =>
-    t('errors.viewmodel.export.missingExport', { viewModelName, tsFilePath }),
-  wrongCase: ({ viewModelName, expectedName, tsFilePath }) =>
-    t('errors.viewmodel.export.wrongCase', { viewModelName, expectedName, tsFilePath }),
-  notFound: ({ viewModelName, tsFilePath, suggestedName }) =>
-    t('errors.viewmodel.export.notFound', { viewModelName, tsFilePath, suggestedName }),
-  notAClass: ({ viewModelName, tsFilePath, declaredAs }) =>
-    declaredAs === 'Function'
-      ? t('errors.viewmodel.export.notAClassFunction', { viewModelName, tsFilePath })
-      : t('errors.viewmodel.export.notAClassObject', { viewModelName, tsFilePath }),
+function buildViewModelExportMessage(params: ViewModelExportErrorParams): string {
+  switch (params.kind) {
+    case 'missingExport':
+      return t('errors.viewmodel.export.missingExport', {
+        viewModelName: params.viewModelName,
+        tsFilePath: params.tsFilePath,
+      })
+    case 'wrongCase':
+      return t('errors.viewmodel.export.wrongCase', {
+        viewModelName: params.viewModelName,
+        expectedName: params.expectedName,
+        tsFilePath: params.tsFilePath,
+      })
+    case 'notFound':
+      return t('errors.viewmodel.export.notFound', {
+        viewModelName: params.viewModelName,
+        tsFilePath: params.tsFilePath,
+        suggestedName: params.suggestedName,
+      })
+    case 'notAClass':
+      return params.declaredAs === 'Function'
+        ? t('errors.viewmodel.export.notAClassFunction', {
+            viewModelName: params.viewModelName,
+            tsFilePath: params.tsFilePath,
+          })
+        : t('errors.viewmodel.export.notAClassObject', {
+            viewModelName: params.viewModelName,
+            tsFilePath: params.tsFilePath,
+          })
+  }
 }
 
 /**
@@ -41,6 +54,6 @@ export class ViewModelExportError extends PelelaError {
     public readonly params: ViewModelExportErrorParams,
     options?: ErrorOptions,
   ) {
-    super(viewModelExportMessageBuilders[params.kind](params), options)
+    super(buildViewModelExportMessage(params), options)
   }
 }

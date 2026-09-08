@@ -124,14 +124,7 @@ function toViewModelExportParams(
   issue: Exclude<ViewModelIssue, { kind: 'ok' }>,
   tsPath: string,
 ): ViewModelExportErrorParams {
-  return {
-    kind: issue.kind,
-    viewModelName: issue.viewModelName,
-    tsFilePath: tsPath.replace(/^\.\//, ''),
-    ...('expectedName' in issue && { expectedName: issue.expectedName }),
-    ...('suggestedName' in issue && { suggestedName: issue.suggestedName }),
-    ...('declaredAs' in issue && { declaredAs: issue.declaredAs }),
-  }
+  return { ...issue, tsFilePath: tsPath.replace(/^\.\//, '') }
 }
 
 function isComponentSourceFile(file: string): boolean {
