@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## npm-v1.2.0 - 2026-09-11
+- 🐛 Fix view model better errors (#187)
+- 🐛 Fix #188
+- 📝 Ignore plans from now
+- 🐛 fix: mostrar la página de error ante fallos en handlers de click y enter (#183)
+- 🐛 fix(router): render error page for invalid layouts (#180)
+- 🐛 fix(cli): generar <pelela> como raíz del template inicial (#181)
+- 🐛 Fix #165 - routing errors are rendered as undefined (#167)
+- 🐛 Fix typescript dependency
+- 🐛 Fix publish scripts
+
 ## npm-v1.1.0 - 2026-07-28
 - 🔀 Routing with layout
 - 🤖 Deploy in CI
