@@ -196,6 +196,58 @@ describe('pelelajsPlugin', () => {
         process.cwd = originalCwd
       }
     })
+
+    it('generates registration code for component in subfolder', () => {
+      const componentDir = path.join(tempDir, 'src', 'dashboard')
+      fs.mkdirSync(componentDir, { recursive: true })
+      fs.writeFileSync(path.join(componentDir, 'dashboard.ts'), 'export class Dashboard {}')
+      fs.writeFileSync(
+        path.join(componentDir, 'dashboard.pelela'),
+        '<pelela view-model="Dashboard"><h1>Dashboard</h1></pelela>',
+      )
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+
+      process.cwd = () => tempDir
+
+      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+
+      expect(result).toContain('import { Dashboard } from "./src/dashboard/dashboard.ts"')
+      expect(result).toContain('import dashboardTemplate from "./src/dashboard/dashboard.pelela"')
+      expect(result).toContain('defineComponent("Dashboard", Dashboard, dashboardTemplate)')
+
+      process.cwd = originalCwd
+    })
+
+    it('generates registration code with cssUrls for component in subfolder with adjacent css', () => {
+      const componentDir = path.join(tempDir, 'src', 'dashboard')
+      fs.mkdirSync(componentDir, { recursive: true })
+      fs.writeFileSync(path.join(componentDir, 'dashboard.ts'), 'export class Dashboard {}')
+      fs.writeFileSync(
+        path.join(componentDir, 'dashboard.pelela'),
+        '<pelela view-model="Dashboard"><h1>Dashboard</h1></pelela>',
+      )
+      fs.writeFileSync(path.join(componentDir, 'dashboard.css'), 'h1 { color: red; }')
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+
+      process.cwd = () => tempDir
+
+      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+
+      expect(result).toContain(
+        'import dashboardTemplate, { __pelelaCssUrls as dashboardCssUrls } from "./src/dashboard/dashboard.pelela"',
+      )
+      expect(result).toContain(
+        'defineComponent("Dashboard", Dashboard, dashboardTemplate, { cssUrls: dashboardCssUrls })',
+      )
+
+      process.cwd = originalCwd
+    })
   })
 
   describe('load - pelela files', () => {

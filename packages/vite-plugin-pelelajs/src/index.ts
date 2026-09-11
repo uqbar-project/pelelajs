@@ -46,43 +46,48 @@ export default template;
 `
 }
 
+function collectTsFiles(dir: string): string[] {
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      const entryPath = path.join(dir, entry.name)
+      return entry.isDirectory() ? collectTsFiles(entryPath) : [entryPath]
+    })
+    .filter((filePath) => filePath.endsWith('.ts'))
+}
+
 function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
   if (!fs.existsSync(srcDir)) return []
 
-  return fs
-    .readdirSync(srcDir)
-    .filter((file) => file.endsWith('.ts'))
-    .map((tsFile) => {
-      const componentName = tsFile.replace(/\.ts$/, '')
-      const pelelaFile = `${componentName}.pelela`
-      const pelelaPath = path.join(srcDir, pelelaFile)
-      const cssPath = path.join(srcDir, `${componentName}.css`)
-      const cssPaths = fs.existsSync(cssPath) ? [`./${componentName}.css`] : []
+  const tsPaths = collectTsFiles(srcDir)
 
-      return {
-        componentName,
-        tsFile,
-        pelelaFile,
-        pelelaPath,
-        cssPaths,
-      }
-    })
-    .filter(({ pelelaPath }) => fs.existsSync(pelelaPath))
-    .map(({ componentName, tsFile, pelelaFile, pelelaPath, cssPaths }) => {
+  return tsPaths
+    .map((tsPath) => {
+      const componentName = path.basename(tsPath).replace(/\.ts$/, '')
+      const pelelaPath = tsPath.replace(/\.ts$/, '.pelela')
+      if (!fs.existsSync(pelelaPath)) return null
+
+      const cssPath = tsPath.replace(/\.ts$/, '.css')
+      const cssPaths = fs.existsSync(cssPath) ? [`./${path.basename(cssPath)}`] : []
+
       const templateContent = fs.readFileSync(pelelaPath, 'utf-8')
       const viewModelMatch = templateContent.match(
         /<(?:pelela|component)[^>]*view-model\s*=\s*"([^"]+)"/,
       )?.[1]
       const viewModelName = viewModelMatch || componentName
 
+      const toImportPath = (filePath: string): string =>
+        `./${path.relative(process.cwd(), filePath).split(path.sep).join('/')}`
+
       return {
         name: componentName,
-        tsPath: `./src/${tsFile}`,
-        pelelaPath: `./src/${pelelaFile}`,
+        tsPath: toImportPath(tsPath),
+        pelelaPath: toImportPath(pelelaPath),
         viewModelName,
         cssPaths,
       }
     })
+    .filter((component): component is ComponentFileMetadata => component !== null)
 }
 
 export function kebabToCamelCase(name: string): string {
