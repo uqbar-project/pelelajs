@@ -1,5 +1,8 @@
 # CHANGELOG - Pelela VSCode Extension
 
+## vscode-v1.2.0 - 2026-09-11
+- 🛡️ Better error reporting
+
 ## vscode-v1.1.1 - 2026-07-29
 - 🪲 Fix Typescript dependency breaking extension
 
