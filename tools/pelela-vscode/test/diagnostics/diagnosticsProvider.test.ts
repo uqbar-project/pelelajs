@@ -8,6 +8,7 @@ import {
   createDiagnosticsProvider,
   validatePelelaDocument,
 } from '../../src/diagnostics/diagnosticsProvider'
+import { t } from '../../src/i18n/index'
 
 const PELELA_CONTENT = `<pelela view-model="TestViewModel">
   <div>
@@ -23,8 +24,10 @@ const VIEW_MODEL_CONTENT = `export class TestViewModel {
   handleClick(): void {}
 }`
 
-const EXPECTED_VIEWMODEL_NOT_FOUND =
-  "ViewModel 'TestViewModel' no encontrado en el archivo TypeScript"
+const EXPECTED_MISSING_EXPORT_NO_EXPORT =
+  'Falta exportar la clase "TestViewModel" en NoExport.ts. Agregá export delante de la clase.'
+const EXPECTED_MISSING_EXPORT_NO_BIND =
+  'Falta exportar la clase "TestViewModel" en NoBind.ts. Agregá export delante de la clase.'
 const EXPECTED_PROPERTY_NOT_FOUND = "La propiedad 'nonExistentProperty' no existe en el ViewModel"
 
 function createMockDocument(
@@ -96,7 +99,7 @@ describe('diagnosticsProvider', () => {
       assert.strictEqual(diagnostic.range.end.character, 41)
     })
 
-    it('reports viewModelNotFound when the class is not exported', () => {
+    it('reports missingExport when the class is not exported', () => {
       const noExportPelelaPath = path.join(testFilesDir, 'NoExport.pelela')
       const noExportTsPath = noExportPelelaPath.replace(/\.pelela$/, '.ts')
       fs.writeFileSync(
@@ -115,7 +118,7 @@ describe('diagnosticsProvider', () => {
       const diagnostics = getEntries(collection).get(noExportPelelaPath) ?? []
       assert.strictEqual(diagnostics.length, 1)
       const diagnostic = diagnostics[0]
-      assert.strictEqual(diagnostic.message, EXPECTED_VIEWMODEL_NOT_FOUND)
+      assert.strictEqual(diagnostic.message, EXPECTED_MISSING_EXPORT_NO_EXPORT)
       assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
       assert.strictEqual(diagnostic.source, 'pelela')
       assert.strictEqual(diagnostic.range.start.line, 0)
@@ -125,7 +128,33 @@ describe('diagnosticsProvider', () => {
       fs.unlinkSync(noExportTsPath)
     })
 
-    it('skips binding and event validation when viewModelNotFound', () => {
+    it('reports notAClass when the view model is defined as an object literal', () => {
+      const notAClassPelelaPath = path.join(testFilesDir, 'NotAClass.pelela')
+      const notAClassTsPath = notAClassPelelaPath.replace(/\.pelela$/, '.ts')
+      fs.writeFileSync(notAClassTsPath, `export const TestViewModel = { name: "test" }`)
+      const collection = vscode.languages.createDiagnosticCollection()
+      const document = createMockDocument(
+        `<pelela view-model="TestViewModel"></pelela>`,
+        'pelela',
+        notAClassPelelaPath
+      )
+      validatePelelaDocument(collection, document)
+      const diagnostics = getEntries(collection).get(notAClassPelelaPath) ?? []
+      assert.strictEqual(diagnostics.length, 1)
+      const diagnostic = diagnostics[0]
+      assert.strictEqual(
+        diagnostic.message,
+        t('diagnostics.viewModelNotAClassObject', {
+          name: 'TestViewModel',
+          tsFileName: 'NotAClass.ts',
+        })
+      )
+      assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
+      assert.strictEqual(diagnostic.source, 'pelela')
+      fs.unlinkSync(notAClassTsPath)
+    })
+
+    it('skips binding and event validation when the view model is not exported', () => {
       const noBindPelelaPath = path.join(testFilesDir, 'NoBind.pelela')
       const noBindTsPath = noBindPelelaPath.replace(/\.pelela$/, '.ts')
       fs.writeFileSync(
@@ -149,7 +178,7 @@ describe('diagnosticsProvider', () => {
       const diagnostics = getEntries(collection).get(noBindPelelaPath) ?? []
       assert.strictEqual(diagnostics.length, 1)
       const diagnostic = diagnostics[0]
-      assert.strictEqual(diagnostic.message, EXPECTED_VIEWMODEL_NOT_FOUND)
+      assert.strictEqual(diagnostic.message, EXPECTED_MISSING_EXPORT_NO_BIND)
       assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
       assert.strictEqual(diagnostic.source, 'pelela')
       assert.strictEqual(diagnostic.range.start.line, 0)

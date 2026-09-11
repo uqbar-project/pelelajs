@@ -1,7 +1,16 @@
 import type { TranslationSchema } from './translationSchema'
 
 const diagnostics = {
-  viewModelNotFound: "ViewModel '{{name}}' no encontrado en el archivo TypeScript",
+  viewModelMissingExport:
+    'Falta exportar la clase "{{name}}" en {{tsFileName}}. Agregá export delante de la clase.',
+  viewModelWrongCase:
+    'Definí el view model con la capitalización exacta de la clase: se llama "{{expectedName}}", no "{{name}}".',
+  viewModelNotFound:
+    'No existe la clase "{{name}}" en {{tsFileName}}. Definí la clase con el nombre sugerido por el archivo: "{{suggestedName}}".',
+  viewModelNotAClassObject:
+    'No se puede definir un Object como view model: "{{name}}" ({{tsFileName}}). Debe declarar una clase.',
+  viewModelNotAClassFunction:
+    'No se puede definir un Function como view model: "{{name}}" ({{tsFileName}}). Debe declarar una clase.',
   propertyNotFound: "La propiedad '{{name}}' no existe en el ViewModel",
   methodNotFound: "El método '{{name}}' no existe en el ViewModel",
   unknownAttribute: "Atributo desconocido: '{{name}}'",

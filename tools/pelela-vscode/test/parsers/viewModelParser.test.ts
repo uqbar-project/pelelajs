@@ -7,7 +7,6 @@ import {
   extractInterfaceProperties,
   extractNestedProperties,
   extractViewModelMembers,
-  isExportedClass,
 } from '../../src/parsers/viewModelParser'
 
 const FIXTURE_CONTENT = `
@@ -282,8 +281,6 @@ class SharedName {
         'should not include remoteProp from imported file'
       )
       assert.strictEqual(members.methods.length, 0, 'should not include any methods')
-      const found = isExportedClass(mainPath, 'SharedName')
-      assert.strictEqual(found, false, 'isExportedClass should return false')
     })
 
     it('should return empty members for an export default class (no named export)', () => {

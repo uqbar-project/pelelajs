@@ -33,6 +33,7 @@
     "release": "release-it"
   },
   "devDependencies": {
+    "@pelelajs/view-model-analysis": "workspace:*",
     "@types/mocha": "10.0.10",
     "@types/node": "24.10.1",
     "@types/vscode": "1.105.0",

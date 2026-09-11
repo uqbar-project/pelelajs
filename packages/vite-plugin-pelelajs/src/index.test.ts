@@ -248,6 +248,116 @@ describe('pelelajsPlugin', () => {
 
       process.cwd = originalCwd
     })
+
+    function loadAutoRegisterWithComponent(tsSource: string, pelelaTemplate: string): string {
+      const srcDir = path.join(tempDir, 'src')
+      fs.writeFileSync(path.join(srcDir, 'conversor.ts'), tsSource)
+      fs.writeFileSync(path.join(srcDir, 'conversor.pelela'), pelelaTemplate)
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+        return handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+      } finally {
+        process.cwd = originalCwd
+      }
+    }
+
+    function parseViewModelExportParams(result: string): Record<string, string> {
+      const match = result.match(/throw new ViewModelExportError\((\{.*?\})\);/)
+      if (match === null) {
+        throw new Error('ViewModelExportError stub call not found')
+      }
+      return JSON.parse(match[1]) as Record<string, string>
+    }
+
+    it('generates a runtime error stub when the view model class is not exported', () => {
+      const result = loadAutoRegisterWithComponent(
+        'class Conversor {}',
+        '<pelela view-model="Conversor"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).not.toContain('import { Conversor } from "./src/conversor.ts"')
+      expect(result).toContain('import { defineComponent, ViewModelExportError } from "pelelajs"')
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'missingExport',
+        viewModelName: 'Conversor',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
+    it('generates a runtime error stub when the view model only differs in case from the exported class', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export class Conversor {}',
+        '<pelela view-model="conversor"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).not.toContain('import { conversor } from "./src/conversor.ts"')
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'wrongCase',
+        viewModelName: 'conversor',
+        expectedName: 'Conversor',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
+    it('generates a runtime error stub with the file-derived suggestion when no class matches', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export class Conversor {}',
+        '<pelela view-model="Bicicleta"><h1>Hola</h1></pelela>',
+      )
+
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'notFound',
+        viewModelName: 'Bicicleta',
+        suggestedName: 'Conversor',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
+    it('generates a runtime error stub when the view model is an object literal, not a class', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export const conversorObj = { millas: 100, kilometros: 2, convertir: () => 0 }',
+        '<pelela view-model="conversorObj"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).not.toContain('import { conversorObj } from "./src/conversor.ts"')
+      expect(result).toContain('import { defineComponent, ViewModelExportError } from "pelelajs"')
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'notAClass',
+        viewModelName: 'conversorObj',
+        declaredAs: 'Object',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
+    it('generates a runtime error stub when the view model is a function, not a class', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export function App() { return 0 }',
+        '<pelela view-model="App"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).not.toContain('import { App } from "./src/conversor.ts"')
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'notAClass',
+        viewModelName: 'App',
+        declaredAs: 'Function',
+        tsFilePath: 'src/conversor.ts',
+      })
+    })
+
+    it('keeps the named import when a lowercase class matches the lowercase view model', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export class conversor {}',
+        '<pelela view-model="conversor"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).toContain('import { conversor } from "./src/conversor.ts"')
+      expect(result).toContain('defineComponent("conversor", conversor, conversorTemplate)')
+      expect(result).not.toContain('ViewModelExportError')
+    })
   })
 
   describe('load - pelela files', () => {
@@ -1159,6 +1269,77 @@ describe('pelelajsPlugin', () => {
         expect(escapeTemplateForLiteral('hello world')).toBe('hello world')
         expect(escapeTemplateForLiteral('<div>test</div>')).toBe('<div>test</div>')
       })
+    })
+  })
+
+  describe('hotUpdate', () => {
+    let tempDir: string
+
+    beforeEach(() => {
+      tempDir = createTempDir()
+    })
+
+    afterEach(() => {
+      removeTempDir(tempDir)
+    })
+
+    function callHotUpdate(
+      file: string,
+      modules: Array<{ id: string }> = [],
+      virtualModule: { id: string } | null = { id: RESOLVED_VIRTUAL_ID },
+    ): unknown {
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.hotUpdate!)
+      const environment = {
+        moduleGraph: {
+          getModuleById: (id: string) => (id === RESOLVED_VIRTUAL_ID ? virtualModule : undefined),
+        },
+      }
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+        return handler.call({ environment } as never, { file, modules } as never)
+      } finally {
+        process.cwd = originalCwd
+      }
+    }
+
+    it('includes the auto-register module when a component ts file changes', () => {
+      const modules = [{ id: '/src/app.pelela' }]
+      const result = callHotUpdate(path.join(tempDir, 'src', 'app.ts'), modules)
+
+      expect(result).toEqual([...modules, { id: RESOLVED_VIRTUAL_ID }])
+    })
+
+    it('includes the auto-register module when a component css file changes', () => {
+      const result = callHotUpdate(path.join(tempDir, 'src', 'app.css'))
+
+      expect(result).toEqual([{ id: RESOLVED_VIRTUAL_ID }])
+    })
+
+    it('keeps the existing modules when the auto-register module is already included', () => {
+      const modules = [{ id: RESOLVED_VIRTUAL_ID }, { id: '/src/app.pelela' }]
+      const result = callHotUpdate(path.join(tempDir, 'src', 'app.ts'), modules)
+
+      expect(result).toEqual(modules)
+    })
+
+    it('returns undefined for changes outside the src directory', () => {
+      const result = callHotUpdate(path.join(tempDir, 'styles.css'))
+
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined for changes to non-component extensions', () => {
+      const result = callHotUpdate(path.join(tempDir, 'src', 'README.md'))
+
+      expect(result).toBeUndefined()
+    })
+
+    it('returns undefined when the auto-register module is not in the module graph', () => {
+      const result = callHotUpdate(path.join(tempDir, 'src', 'app.ts'), [], null)
+
+      expect(result).toBeUndefined()
     })
   })
 })

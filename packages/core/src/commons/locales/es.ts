@@ -34,6 +34,18 @@ const errors = {
       duplicate: '[pelela] El view model "{{name}}" ya está registrado',
       missing: '[pelela] El view model "{{name}}" no está registrado. ¿Llamaste a defineViewModel?',
     },
+    export: {
+      missingExport:
+        '[pelela] Falta exportar la clase "{{viewModelName}}" en {{tsFilePath}}. Agregá export delante de la clase.',
+      wrongCase:
+        '[pelela] Definí el view model con la capitalización exacta de la clase: se llama "{{expectedName}}", no "{{viewModelName}}".',
+      notFound:
+        '[pelela] No existe la clase "{{viewModelName}}" en {{tsFilePath}}. Definí la clase con el nombre sugerido por el archivo: "{{suggestedName}}".',
+      notAClassObject:
+        '[pelela] No se puede definir un Object como view model: "{{viewModelName}}" ({{tsFilePath}}). Debe declarar una clase.',
+      notAClassFunction:
+        '[pelela] No se puede definir un Function como view model: "{{viewModelName}}" ({{tsFilePath}}). Debe declarar una clase.',
+    },
   },
   security: {
     domEnvironmentRequired: 'sanitizeHTML requiere un entorno DOM (document y DOMParser)',

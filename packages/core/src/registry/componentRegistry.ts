@@ -1,4 +1,5 @@
 import { toKebabCase } from '../commons/helpers'
+import { ViewModelExportError } from '../errors/index'
 import type { ViewModelConstructor } from '../types'
 import { getViewModel, registerViewModel, replaceViewModel } from './viewModelRegistry'
 
@@ -16,12 +17,31 @@ const templatesByConstructor = new Map<ViewModelConstructor, ComponentEntry>()
 const componentsByTag = new Map<string, { creator: ViewModelConstructor; entry: ComponentEntry }>()
 const tagByCreator = new Map<ViewModelConstructor, string>()
 
+function getNonClassDeclaredAs(creator: ViewModelConstructor): 'Object' | 'Function' | undefined {
+  if (typeof creator !== 'function') {
+    return 'Object'
+  }
+  if (/^\s*class\b/.test(Function.prototype.toString.call(creator))) {
+    return undefined
+  }
+  return 'Function'
+}
+
 export function defineComponent(
   name: string,
   creator: ViewModelConstructor,
   template: string,
   options: DefineComponentOptions = {},
 ): void {
+  const declaredAs = getNonClassDeclaredAs(creator)
+  if (declaredAs !== undefined) {
+    throw new ViewModelExportError({
+      kind: 'notAClass',
+      viewModelName: name,
+      tsFilePath: 'runtime',
+      declaredAs,
+    })
+  }
   const { cssUrls = [] } = options
   const existingCreator = getViewModel(name)
   if (existingCreator && existingCreator !== creator) {

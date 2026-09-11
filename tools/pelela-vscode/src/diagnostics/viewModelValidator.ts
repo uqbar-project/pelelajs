@@ -1,16 +1,28 @@
+import * as path from 'node:path'
+import {
+  analyzeViewModelModule,
+  classifyViewModelIssue,
+  pascalCaseFromFileName,
+  type ViewModelIssue,
+} from '@pelelajs/view-model-analysis'
 import * as vscode from 'vscode'
 import { findForEachInElement, parseForEachExpression } from '../parsers/documentParser'
 import {
   extractNestedProperties,
-  isExportedClass,
   pathExists,
   type ViewModelMembers,
 } from '../parsers/viewModelParser'
+import { readFileContent } from '../utils/fileUtils'
 import { makeDiagnostic } from './createDiagnostic'
 import type { AttrInfo, TagInfo } from './types'
 
 const BINDING_PREFIXES = ['bind-', 'prop-', 'link-']
 const EVENT_NAMES = ['click', 'enter']
+
+const viewModelNotAClassDiagnosticKeys = {
+  Function: 'diagnostics.viewModelNotAClassFunction',
+  Object: 'diagnostics.viewModelNotAClassObject',
+} as const
 
 function isBindingAttribute(name: string): boolean {
   return name === 'if' || BINDING_PREFIXES.some((prefix) => name.startsWith(prefix))
@@ -20,19 +32,57 @@ function isEventAttribute(name: string): boolean {
   return EVENT_NAMES.includes(name)
 }
 
+function buildViewModelIssueDiagnostic(
+  range: vscode.Range,
+  issue: Exclude<ViewModelIssue, { kind: 'ok' }>,
+  tsFileName: string
+): vscode.Diagnostic {
+  if (issue.kind === 'missingExport') {
+    return makeDiagnostic(
+      range,
+      'diagnostics.viewModelMissingExport',
+      { name: issue.viewModelName, tsFileName },
+      vscode.DiagnosticSeverity.Error
+    )
+  }
+  if (issue.kind === 'wrongCase') {
+    return makeDiagnostic(
+      range,
+      'diagnostics.viewModelWrongCase',
+      { name: issue.viewModelName, expectedName: issue.expectedName },
+      vscode.DiagnosticSeverity.Error
+    )
+  }
+  if (issue.kind === 'notAClass') {
+    return makeDiagnostic(
+      range,
+      viewModelNotAClassDiagnosticKeys[issue.declaredAs],
+      { name: issue.viewModelName, tsFileName },
+      vscode.DiagnosticSeverity.Error
+    )
+  }
+  return makeDiagnostic(
+    range,
+    'diagnostics.viewModelNotFound',
+    { name: issue.viewModelName, tsFileName, suggestedName: issue.suggestedName },
+    vscode.DiagnosticSeverity.Error
+  )
+}
+
 export function validateViewModelExistence(tags: TagInfo[], tsPath: string): vscode.Diagnostic[] {
+  const suggestedName = pascalCaseFromFileName(path.basename(tsPath).replace(/\.ts$/, ''))
+  const analysis = analyzeViewModelModule(readFileContent(tsPath))
+  const tsFileName = path.basename(tsPath)
+
   return tags.flatMap((tag) =>
     tag.attributes
       .filter((attribute) => attribute.name === 'view-model')
-      .filter((attribute) => !isExportedClass(tsPath, attribute.value))
-      .map((attribute) =>
-        makeDiagnostic(
-          attribute.valueRange ?? attribute.nameRange,
-          'diagnostics.viewModelNotFound',
-          { name: attribute.value },
-          vscode.DiagnosticSeverity.Error
-        )
-      )
+      .flatMap((attribute) => {
+        const issue = classifyViewModelIssue(analysis, attribute.value, suggestedName)
+        if (issue.kind === 'ok') return []
+        const range = attribute.valueRange ?? attribute.nameRange
+        return [buildViewModelIssueDiagnostic(range, issue, tsFileName)]
+      })
   )
 }
 
