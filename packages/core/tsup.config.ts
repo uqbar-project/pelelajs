@@ -29,7 +29,9 @@ export default defineConfig([
     entry: {
       analysis: 'src/analysis/index.ts',
     },
-    format: ['esm', 'cjs'],
+    // CJS only: the bundled TypeScript compiler performs dynamic require("fs"),
+    // which is illegal in strict ESM output.
+    format: ['cjs'],
     dts: true,
     clean: true,
     target: 'esnext',

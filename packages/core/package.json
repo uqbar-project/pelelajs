@@ -13,8 +13,8 @@
       "require": "./dist/index.cjs"
     },
     "./analysis": {
-      "types": "./dist/analysis.d.ts",
-      "import": "./dist/analysis.js",
+      "types": "./dist/analysis.d.cts",
+      "import": "./dist/analysis.cjs",
       "require": "./dist/analysis.cjs"
     }
   },
