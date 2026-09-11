@@ -1,13 +1,13 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
+import type { ViewModelExportErrorParams } from 'pelelajs'
+import { initializeI18n } from 'pelelajs'
 import {
   analyzeViewModelModule,
   classifyViewModelIssue,
   pascalCaseFromFileName,
   type ViewModelIssue,
-} from '@pelelajs/view-model-analysis'
-import type { ViewModelExportErrorParams } from 'pelelajs'
-import { initializeI18n } from 'pelelajs'
+} from 'pelelajs/analysis'
 
 import type { Plugin } from 'vite'
 import {

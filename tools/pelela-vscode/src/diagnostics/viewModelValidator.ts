@@ -4,7 +4,7 @@ import {
   classifyViewModelIssue,
   pascalCaseFromFileName,
   type ViewModelIssue,
-} from '@pelelajs/view-model-analysis'
+} from 'pelelajs/analysis'
 import * as vscode from 'vscode'
 import { findForEachInElement, parseForEachExpression } from '../parsers/documentParser'
 import {

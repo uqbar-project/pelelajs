@@ -26,7 +26,6 @@
   "author": "",
   "license": "GPL-3.0-or-later",
   "dependencies": {
-    "@pelelajs/view-model-analysis": "workspace:*",
     "pelelajs": "workspace:*"
   },
   "devDependencies": {

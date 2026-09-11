@@ -27,6 +27,16 @@ export default defineConfig([
   },
   {
     entry: {
+      analysis: 'src/analysis/index.ts',
+    },
+    format: ['esm', 'cjs'],
+    dts: true,
+    clean: true,
+    target: 'esnext',
+    outDir: 'dist',
+  },
+  {
+    entry: {
       cli: cliEntry,
     },
     format: ['cjs'],

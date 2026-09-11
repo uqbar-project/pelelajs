@@ -4,7 +4,7 @@ import { defineProject } from 'vitest/config'
 export default defineProject({
   resolve: {
     alias: {
-      '@pelelajs/view-model-analysis': resolve(__dirname, '../view-model-analysis/src/index.ts'),
+      'pelelajs/analysis': resolve(__dirname, '../core/src/analysis/index.ts'),
       pelelajs: resolve(__dirname, '../core/src/index.ts'),
     },
   },

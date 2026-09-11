@@ -33,7 +33,6 @@
     "release": "release-it"
   },
   "devDependencies": {
-    "@pelelajs/view-model-analysis": "workspace:*",
     "@types/mocha": "10.0.10",
     "@types/node": "24.10.1",
     "@types/vscode": "1.105.0",
@@ -41,6 +40,7 @@
     "glob": "13.0.0",
     "mocha": "10.2.0",
     "ovsx": "0.10.12",
+    "pelelajs": "workspace:*",
     "release-it": "17.10.0",
     "tsup": "8.5.1",
     "tsx": "4.21.0",

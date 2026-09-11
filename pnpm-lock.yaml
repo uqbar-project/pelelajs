@@ -232,27 +232,8 @@ importers:
         specifier: 4.0.14
         version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0)
 
-  packages/view-model-analysis:
-    dependencies:
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
-    devDependencies:
-      '@types/node':
-        specifier: 24.10.1
-        version: 24.10.1
-      tsup:
-        specifier: 8.5.1
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
-      vitest:
-        specifier: 4.0.14
-        version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0)
-
   packages/vite-plugin-pelelajs:
     dependencies:
-      '@pelelajs/view-model-analysis':
-        specifier: workspace:*
-        version: link:../view-model-analysis
       pelelajs:
         specifier: workspace:*
         version: link:../core
@@ -312,9 +293,6 @@ importers:
 
   tools/pelela-vscode:
     devDependencies:
-      '@pelelajs/view-model-analysis':
-        specifier: workspace:*
-        version: link:../../packages/view-model-analysis
       '@types/mocha':
         specifier: 10.0.10
         version: 10.0.10
@@ -336,6 +314,9 @@ importers:
       ovsx:
         specifier: 0.10.12
         version: 0.10.12
+      pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/core
       release-it:
         specifier: 17.10.0
         version: 17.10.0(typescript@5.9.3)

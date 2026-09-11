@@ -9,22 +9,28 @@ export function publishVitePlugin(
   const packageDir = dirname(packageJsonPath)
   const originalContent = readFileSync(packageJsonPath, 'utf-8')
   const packageJson = JSON.parse(originalContent)
-  const originalDependency = packageJson.dependencies?.pelelajs
-  const isWorkspaceDependency = originalDependency === 'workspace:*'
+  const workspaceDependencyNames = Object.entries(packageJson.dependencies ?? {})
+    .filter(([, dependencySpec]) => dependencySpec === 'workspace:*')
+    .map(([dependencyName]) => dependencyName)
+  const hasWorkspaceDependencies = workspaceDependencyNames.length > 0
 
-  if (isWorkspaceDependency) {
-    packageJson.dependencies.pelelajs = version
+  if (hasWorkspaceDependencies) {
+    for (const dependencyName of workspaceDependencyNames) {
+      packageJson.dependencies[dependencyName] = version
+    }
     writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
   }
 
   try {
-    execSync(`npm publish ${packageDir} --access public`, {
+    execSync(`npm publish ./${packageDir} --access public`, {
       stdio: 'inherit',
       encoding: 'utf-8',
     })
   } finally {
-    if (isWorkspaceDependency) {
-      packageJson.dependencies.pelelajs = 'workspace:*'
+    if (hasWorkspaceDependencies) {
+      for (const dependencyName of workspaceDependencyNames) {
+        packageJson.dependencies[dependencyName] = 'workspace:*'
+      }
       writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
     }
   }
