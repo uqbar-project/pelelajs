@@ -1,5 +1,8 @@
 # CHANGELOG - Pelela VSCode Extension
 
+## vscode-v1.2.1 - 2026-09-11
+- 🪲 Fix view model analysis dependency
+
 ## vscode-v1.2.0 - 2026-09-11
 - 🛡️ Better error reporting
 
