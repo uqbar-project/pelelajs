@@ -2,7 +2,7 @@
   "name": "pelela",
   "type": "module",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "",
   "scripts": {
     "preinstall": "node scripts/preinstall.js",

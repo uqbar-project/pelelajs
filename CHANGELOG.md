@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## npm-v1.2.1 - 2026-09-11
+- 🔀 Merge view-model-analysis into core
+
 ## npm-v1.2.0 - 2026-09-11
 - 🐛 Fix view model better errors (#187)
 - 🐛 Fix #188
