@@ -13,9 +13,14 @@
       "require": "./dist/index.cjs"
     },
     "./analysis": {
-      "types": "./dist/analysis.d.cts",
-      "import": "./dist/analysis.cjs",
-      "require": "./dist/analysis.cjs"
+      "import": {
+        "types": "./dist/analysis.d.ts",
+        "default": "./dist/analysis.js"
+      },
+      "require": {
+        "types": "./dist/analysis.d.cts",
+        "default": "./dist/analysis.cjs"
+      }
     }
   },
   "bin": {
@@ -50,6 +55,14 @@
     "commander": "12.1.0",
     "devalue": "^5.1.0",
     "i18next": "^23.7.6"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "24.10.1",

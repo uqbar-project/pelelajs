@@ -29,13 +29,14 @@ export default defineConfig([
     entry: {
       analysis: 'src/analysis/index.ts',
     },
-    // CJS only: the bundled TypeScript compiler performs dynamic require("fs"),
-    // which is illegal in strict ESM output.
-    format: ['cjs'],
+    format: ['esm', 'cjs'],
     dts: true,
     clean: true,
     target: 'esnext',
     outDir: 'dist',
+    // The TypeScript compiler is resolved from the consumer: bundling it would ship a copy of
+    // the whole compiler in every install, and its dynamic require("fs") breaks ESM output.
+    external: ['typescript'],
   },
   {
     entry: {
