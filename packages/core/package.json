@@ -13,9 +13,14 @@
       "require": "./dist/index.cjs"
     },
     "./analysis": {
-      "types": "./dist/analysis.d.ts",
-      "import": "./dist/analysis.js",
-      "require": "./dist/analysis.cjs"
+      "import": {
+        "types": "./dist/analysis.d.ts",
+        "default": "./dist/analysis.js"
+      },
+      "require": {
+        "types": "./dist/analysis.d.cts",
+        "default": "./dist/analysis.cjs"
+      }
     }
   },
   "bin": {
