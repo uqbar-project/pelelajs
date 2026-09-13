@@ -129,7 +129,7 @@ describe('bindEnter', () => {
     it('should render the error page when the handler throws', () => {
       container.innerHTML = '<input enter="handleEnter" />'
       const viewModel = {
-        handleEnter: () => {
+        handleEnter: function handleEnter() {
           throw new Error(HANDLER_ERROR_MESSAGE)
         },
       }

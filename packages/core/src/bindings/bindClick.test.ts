@@ -108,7 +108,7 @@ describe('bindClick', () => {
     it('should render the error page when the handler throws', () => {
       container.innerHTML = '<button click="handleClick">Click me</button>'
       const viewModel = {
-        handleClick: () => {
+        handleClick: function handleClick() {
           throw new Error(HANDLER_ERROR_MESSAGE)
         },
       }

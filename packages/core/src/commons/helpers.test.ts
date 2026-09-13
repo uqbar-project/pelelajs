@@ -65,7 +65,7 @@ describe('helpers', () => {
 
     it('should return false for a regular function field', () => {
       class ViewModel {
-        increment = () => {}
+        increment = function increment() {}
       }
       const viewModel = new ViewModel()
 

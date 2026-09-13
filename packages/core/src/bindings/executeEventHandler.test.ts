@@ -138,7 +138,7 @@ describe('executeEventHandler', () => {
   it('should render the error page when the handler throws', () => {
     const handlerError = new Error(HANDLER_ERROR_MESSAGE)
     const viewModel = {
-      [HANDLER_NAME]: () => {
+      [HANDLER_NAME]: function handleEvent() {
         throw handlerError
       },
     }
@@ -150,7 +150,9 @@ describe('executeEventHandler', () => {
 
   it('should render rejected non-Error values from async handlers', async () => {
     const viewModel = {
-      [HANDLER_NAME]: () => Promise.reject(HANDLER_ERROR_MESSAGE),
+      [HANDLER_NAME]: function handleEvent() {
+        return Promise.reject(HANDLER_ERROR_MESSAGE)
+      },
     }
 
     executeHandler(viewModel)
