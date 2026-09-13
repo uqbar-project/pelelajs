@@ -20,14 +20,22 @@ const errors = {
   },
   handlers: {
     invalid:
-      '[pelela] El handler "{{name}}" definido en {{eventInfo}} no es una función del view model "{{viewModel}}".',
+      '[pelela] El handler "{{name}}" definido en {{eventInfo}} no es un método del view model "{{viewModel}}".',
     unknownEvent: 'un manejador de eventos',
+    isGetter:
+      '[pelela] "{{name}}" es un getter del view model "{{viewModel}}", pero {{eventInfo}} debe invocar un método. Quitale la palabra "get" para convertirlo en un método: {{name}}() { ... }',
+    caseMismatch:
+      '[pelela] El handler "{{name}}" definido en {{eventInfo}} no existe, pero sí "{{suggestedName}}". En TypeScript los nombres de método distinguen mayúsculas.',
   },
   properties: {
     invalidType:
       '[pelela] La propiedad "{{name}}" usada en {{kind}} debe ser {{expected}}, pero se encontró un tipo diferente en el view model "{{viewModel}}". Elemento: {{snippet}}',
     validation:
       '[pelela] Propiedad desconocida "{{name}}" usada en {{kind}} en: {{snippet}}. Asegurate de que el view model "{{viewModel}}" la defina.',
+    isMethod:
+      '[pelela] "{{name}}" es un método del view model "{{viewModel}}", no una propiedad bindeable. Convertilo en un getter agregando "get": get {{name}}() { ... }',
+    caseMismatch:
+      '[pelela] La propiedad "{{name}}" no existe en el view model "{{viewModel}}", pero sí "{{suggestedName}}". En TypeScript los nombres distinguen mayúsculas.',
   },
   viewmodel: {
     registration: {

@@ -25,6 +25,8 @@ export class TestViewModel {
   selectedClass: string = "active"
   product: { image: string; description: string } = { image: "", description: "" }
 
+  get totalCount() { return 0 }
+
   handleClick(): void {
     console.log("clicked")
   }
@@ -519,6 +521,40 @@ describe('viewModelValidator', () => {
         vscode.DiagnosticSeverity.Error
       )
     })
+
+    it('rejects a binding to a method with methodNeedsGetter', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="handleClick">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNeedsGetter', { name: 'handleClick' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a binding with wrong-cased property using propertyCaseMismatch', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="Name">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', { name: 'Name', suggestedName: 'name' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
   })
 
   describe('validateEventMethods', () => {
@@ -550,6 +586,28 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.methodNotFound', { name: 'nonExistentEnter' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing a getter with getterAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="totalCount">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.getterAsMethod', { name: 'totalCount' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event with wrong-cased method using methodCaseMismatch', () => {
+      const { tags } = prepareValidation(['<button click="handleclick">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodCaseMismatch', { name: 'handleclick', suggestedName: 'handleClick' }),
         vscode.DiagnosticSeverity.Error
       )
     })

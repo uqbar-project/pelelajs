@@ -5,6 +5,7 @@ import * as ts from 'typescript'
 export interface ViewModelMembers {
   properties: string[]
   methods: string[]
+  getters: string[]
 }
 
 interface SourceFileCacheEntry {
@@ -55,11 +56,12 @@ function isStaticMember(classMember: ts.ClassElement): boolean {
 
 function getMemberInfo(
   classMember: ts.ClassElement
-): { name: string; kind: 'property' | 'method' } | null {
+): { name: string; kind: 'property' | 'method' | 'getter' } | null {
   const name = getDeclarationName(classMember)
   if (!name) return null
   if (name === 'constructor' || name === 'if') return null
   if (ts.isMethodDeclaration(classMember)) return { name, kind: 'method' }
+  if (ts.isGetAccessorDeclaration(classMember)) return { name, kind: 'getter' }
   return { name, kind: 'property' }
 }
 
@@ -72,7 +74,7 @@ function collectViewModelMembers(
   visited: Set<string>
 ): ViewModelMembers {
   const className = getClassName(classDeclaration)
-  if (visited.has(className)) return { properties: [], methods: [] }
+  if (visited.has(className)) return { properties: [], methods: [], getters: [] }
   visited.add(className)
 
   const paramProperties = getParameterPropertyNames(classDeclaration)
@@ -81,7 +83,7 @@ function collectViewModelMembers(
     .filter((classMember) => !isStaticMember(classMember))
     .map(getMemberInfo)
     .filter(
-      (memberInfo): memberInfo is { name: string; kind: 'property' | 'method' } =>
+      (memberInfo): memberInfo is { name: string; kind: 'property' | 'method' | 'getter' } =>
         memberInfo !== null
     )
     .reduce(
@@ -90,10 +92,13 @@ function collectViewModelMembers(
           accumulator.methods.push(name)
         } else {
           accumulator.properties.push(name)
+          if (kind === 'getter') {
+            accumulator.getters.push(name)
+          }
         }
         return accumulator
       },
-      { properties: [...paramProperties], methods: [] as string[] }
+      { properties: [...paramProperties], methods: [] as string[], getters: [] as string[] }
     )
 
   const extendsClause = classDeclaration.heritageClauses?.find(
@@ -111,6 +116,7 @@ function collectViewModelMembers(
         return {
           properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
           methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
+          getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
         }
       }
     }
@@ -126,7 +132,7 @@ export function extractViewModelMembers(
   const sourceFile = getCachedSourceFile(typescriptFilePath)
 
   const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath, true)
-  if (!classDeclaration) return { properties: [], methods: [] }
+  if (!classDeclaration) return { properties: [], methods: [], getters: [] }
 
   return collectViewModelMembers(classDeclaration, new Set<string>())
 }

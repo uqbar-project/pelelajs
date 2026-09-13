@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { InvalidHandlerError } from '../errors/index'
+import { GetterAsHandlerError, InvalidHandlerError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { setupClickBindings } from './bindClick'
 
@@ -148,7 +148,7 @@ describe('bindClick', () => {
       expect(handler).toHaveBeenCalledTimes(3)
     })
 
-    it('should render InvalidHandlerError when handler is not a function', () => {
+    it('should render InvalidHandlerError when handler is not a method', () => {
       container.innerHTML = '<button click="notAFunction">Click me</button>'
       const viewModel = { notAFunction: 'this is a string' }
       const button = container.querySelector('button')!
@@ -157,6 +157,24 @@ describe('bindClick', () => {
       button.click()
 
       const expectedError = new InvalidHandlerError('notAFunction', 'Object', 'click')
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        expectedError.message,
+      )
+    })
+
+    it('should render GetterAsHandlerError when the handler is a getter', () => {
+      container.innerHTML = '<button click="handleClick">Click me</button>'
+      const viewModel = {
+        get handleClick() {
+          return 42
+        },
+      }
+
+      setupClickBindings(container, viewModel)
+
+      container.querySelector('button')!.click()
+
+      const expectedError = new GetterAsHandlerError('handleClick', 'Object', 'click')
       expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
         expectedError.message,
       )

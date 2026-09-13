@@ -98,3 +98,29 @@ export function findAllElements(
 export function isValidIdentifier(value: string): boolean {
   return IDENTIFIER_PATTERN.test(value) && !isUnsafeKey(value)
 }
+
+interface ViewModelWithRaw {
+  $raw?: unknown
+}
+
+/**
+ * Looks up a member of the view model (or its prototype chain) whose name matches
+ * the given name ignoring case. Used to suggest the real member when a binding or
+ * event references a wrongly-cased name. Returns `null` when there is no match.
+ */
+export function findCaseInsensitiveMember(target: object, name: string): string | null {
+  if (isUnsafeKey(name)) return null
+
+  const viewModel: unknown = (target as ViewModelWithRaw).$raw ?? target
+  if (!isObject(viewModel)) return null
+
+  let proto: object | null = viewModel
+  while (proto !== null && proto !== Object.prototype) {
+    const match = Object.getOwnPropertyNames(proto).find(
+      (memberName) => !isUnsafeKey(memberName) && memberName.toLowerCase() === name.toLowerCase(),
+    )
+    if (match) return match
+    proto = Reflect.getPrototypeOf(proto)
+  }
+  return null
+}

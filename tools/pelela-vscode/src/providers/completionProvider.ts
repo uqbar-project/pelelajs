@@ -200,7 +200,10 @@ export function provideBasicViewModelCompletions(
   viewModelName: string
 ): vscode.CompletionItem[] {
   const items: vscode.CompletionItem[] = []
-  const { properties, methods } = extractViewModelMembers(typescriptFilePath, viewModelName)
+  const { properties, methods, getters } = extractViewModelMembers(
+    typescriptFilePath,
+    viewModelName
+  )
 
   if (EVENT_ATTRIBUTES.has(attributeName)) {
     items.push(...methods.map(createMethodCompletion))
@@ -212,7 +215,11 @@ export function provideBasicViewModelCompletions(
         items.push(createIterationPropertyCompletion(forEachInElement.indexName))
       }
     }
-    items.push(...properties.map(createPropertyCompletion))
+    items.push(
+      ...properties.map((name) =>
+        getters.includes(name) ? createGetterCompletion(name) : createPropertyCompletion(name)
+      )
+    )
   }
 
   return items
@@ -221,6 +228,13 @@ export function provideBasicViewModelCompletions(
 function createMethodCompletion(name: string): vscode.CompletionItem {
   const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Method)
   item.detail = t('completions.methodDetail')
+  item.sortText = `!0_${name}`
+  return item
+}
+
+function createGetterCompletion(name: string): vscode.CompletionItem {
+  const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Property)
+  item.detail = t('completions.getterDetail')
   item.sortText = `!0_${name}`
   return item
 }

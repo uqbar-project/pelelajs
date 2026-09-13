@@ -112,6 +112,11 @@ describe('completionProvider', () => {
       assert.ok(labels.includes('fullName'), 'should include getter as property')
       assert.ok(labels.includes('items'), 'should include array property')
 
+      const fullNameItem = completions.find((item) => item.label === 'fullName')
+      assert.ok(fullNameItem, 'getter completion should exist')
+      assert.strictEqual(fullNameItem.detail, t('completions.getterDetail'))
+      assert.strictEqual(fullNameItem.kind, vscode.CompletionItemKind.Property)
+
       const itemVar = completions.find((item) => item.label === FOR_EACH_ITEM_VARIABLE)
       assert.strictEqual(itemVar?.detail, t('completions.iterationPropertyDetail'))
       assert.strictEqual(itemVar?.kind, vscode.CompletionItemKind.Variable)
@@ -197,6 +202,28 @@ describe('completionProvider', () => {
       assert.ok(labels.includes('name'), 'should include property')
       assert.ok(labels.includes('fullName'), 'should include getter as property')
       assert.ok(!labels.includes('handleClick'), 'should NOT include methods')
+
+      const fullNameItem = completions.find((item) => item.label === 'fullName')
+      assert.ok(fullNameItem, 'getter completion should exist')
+      assert.strictEqual(fullNameItem.detail, t('completions.getterDetail'))
+      assert.strictEqual(fullNameItem.kind, vscode.CompletionItemKind.Property)
+    })
+  })
+
+  describe('provideBasicViewModelCompletions in binding vs event contexts', () => {
+    it('should never offer getters with completion items in click events', () => {
+      const document = createMockDocument(['<div>', '  <button click="'])
+      const position = createMockPosition(1, 17)
+      const completions = provideBasicViewModelCompletions(
+        testVMPath,
+        'click',
+        document,
+        position,
+        'TestViewModel'
+      )
+
+      const fullNameItem = completions.find((item) => item.label === 'fullName')
+      assert.ok(!fullNameItem, 'should NOT include getter in click events')
     })
   })
 })

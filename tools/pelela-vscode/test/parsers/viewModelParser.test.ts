@@ -109,6 +109,31 @@ export interface Product {
       assert.deepStrictEqual([...methods].sort(), [...EXPECTED_METHODS].sort())
     })
 
+    it('should return getters separately from properties', () => {
+      const { getters } = extractViewModelMembers(testVMPath, 'ProductRow')
+      assert.deepStrictEqual([...getters].sort(), ['delivery', 'isSelected', 'price'])
+    })
+
+    it('should include inherited getters from a base class', () => {
+      const fPath = path.join(testFilesDir, 'GetterBaseClassVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class BaseViewModel {
+  get totalCount() { return 0 }
+}
+
+export class DerivedViewModel extends BaseViewModel {
+  items: string[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'DerivedViewModel')
+      assert.ok(
+        members.getters.includes('totalCount'),
+        'should include inherited getter totalCount'
+      )
+    })
+
     it('should exclude constructor, static methods, and if', () => {
       const { methods } = extractViewModelMembers(testVMPath, 'ProductRow')
       assert.ok(!methods.includes('constructor'))

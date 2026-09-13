@@ -26,6 +26,17 @@ This installs both the library and the `pelela` CLI tool.
 
 If you are looking to contribute to the framework, understand its architecture, or see how to publish new releases, please refer to our **[Developer Documentation](./docs/README.md)**.
 
+#### Using AI assistants
+
+If you plan to work on this repository with any AI assistant, we recommend installing Graphify and running it on the repo root:
+
+```bash
+uv tool install graphifyy
+graphify .
+```
+
+It builds a knowledge graph (`graphify-out/`, see `graphify-out/GRAPH_REPORT.md`) that gives AI tools accurate context about the codebase (architecture, dependencies, "god" nodes), improving the quality of their answers and changes.
+
 
 ## Getting Started with CLI
 

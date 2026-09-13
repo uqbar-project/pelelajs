@@ -102,6 +102,11 @@ export function validateBindingProperties(
   )
 }
 
+function findCaseInsensitiveMember(members: string[], name: string): string | undefined {
+  const nameLowerCase = name.toLowerCase()
+  return members.find((member) => member.toLowerCase() === nameLowerCase)
+}
+
 function validatePropertyPath(
   attribute: AttrInfo,
   lineIndex: number,
@@ -125,6 +130,31 @@ function validatePropertyPath(
   }
 
   if (!members.properties.includes(firstPart)) {
+    if (members.methods.includes(firstPart)) {
+      return [
+        makeDiagnostic(
+          attribute.valueRange ?? attribute.nameRange,
+          'diagnostics.methodNeedsGetter',
+          { name: firstPart },
+          vscode.DiagnosticSeverity.Error
+        ),
+      ]
+    }
+
+    const suggestedName =
+      findCaseInsensitiveMember(members.properties, firstPart) ??
+      findCaseInsensitiveMember(members.methods, firstPart)
+    if (suggestedName) {
+      return [
+        makeDiagnostic(
+          attribute.valueRange ?? attribute.nameRange,
+          'diagnostics.propertyCaseMismatch',
+          { name: firstPart, suggestedName },
+          vscode.DiagnosticSeverity.Error
+        ),
+      ]
+    }
+
     return [
       makeDiagnostic(
         attribute.valueRange ?? attribute.nameRange,
@@ -209,14 +239,40 @@ export function validateEventMethods(
   return tags.flatMap((tag) =>
     tag.attributes
       .filter((attribute) => isEventAttribute(attribute.name))
-      .filter((attribute) => !members.methods.includes(attribute.value))
-      .map((attribute) =>
-        makeDiagnostic(
-          attribute.valueRange ?? attribute.nameRange,
-          'diagnostics.methodNotFound',
-          { name: attribute.value },
-          vscode.DiagnosticSeverity.Error
-        )
-      )
+      .flatMap((attribute) => {
+        if (members.methods.includes(attribute.value)) return []
+
+        if (members.getters.includes(attribute.value)) {
+          return [
+            makeDiagnostic(
+              attribute.valueRange ?? attribute.nameRange,
+              'diagnostics.getterAsMethod',
+              { name: attribute.value },
+              vscode.DiagnosticSeverity.Error
+            ),
+          ]
+        }
+
+        const suggestedName = findCaseInsensitiveMember(members.methods, attribute.value)
+        if (suggestedName) {
+          return [
+            makeDiagnostic(
+              attribute.valueRange ?? attribute.nameRange,
+              'diagnostics.methodCaseMismatch',
+              { name: attribute.value, suggestedName },
+              vscode.DiagnosticSeverity.Error
+            ),
+          ]
+        }
+
+        return [
+          makeDiagnostic(
+            attribute.valueRange ?? attribute.nameRange,
+            'diagnostics.methodNotFound',
+            { name: attribute.value },
+            vscode.DiagnosticSeverity.Error
+          ),
+        ]
+      })
   )
 }

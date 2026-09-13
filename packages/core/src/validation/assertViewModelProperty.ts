@@ -1,5 +1,16 @@
-import { extractElementSnippet, isObject } from '../commons/helpers'
-import { type BindingKind, PropertyValidationError } from '../errors'
+import { getNestedProperty } from '../bindings/nestedProperties'
+import {
+  extractElementSnippet,
+  findCaseInsensitiveMember,
+  isObject,
+  isValidIdentifier,
+} from '../commons/helpers'
+import {
+  type BindingKind,
+  MethodAsPropertyError,
+  PropertyCaseMismatchError,
+  PropertyValidationError,
+} from '../errors'
 
 function hasNestedProperty(targetObject: unknown, path: string): boolean {
   if (!isObject(targetObject)) {
@@ -38,14 +49,37 @@ export function assertViewModelProperty<T extends object>(
   kind: BindingKind,
   element: Element,
 ): void {
-  if (!hasNestedProperty(viewModel, propertyName)) {
-    const elementSnippet = extractElementSnippet(element)
-
-    throw new PropertyValidationError({
-      propertyName,
-      bindingKind: kind,
-      viewModelName: viewModel.constructor.name,
-      elementSnippet,
-    })
+  if (hasNestedProperty(viewModel, propertyName)) {
+    const resolvedValue = getNestedProperty(viewModel, propertyName)
+    if (typeof resolvedValue === 'function') {
+      throw new MethodAsPropertyError({
+        propertyName,
+        bindingKind: kind,
+        viewModelName: viewModel.constructor.name,
+        elementSnippet: extractElementSnippet(element),
+      })
+    }
+    return
   }
+
+  const elementSnippet = extractElementSnippet(element)
+  if (isValidIdentifier(propertyName)) {
+    const suggestedName = findCaseInsensitiveMember(viewModel, propertyName)
+    if (suggestedName) {
+      throw new PropertyCaseMismatchError({
+        propertyName,
+        bindingKind: kind,
+        viewModelName: viewModel.constructor.name,
+        elementSnippet,
+        suggestedName,
+      })
+    }
+  }
+
+  throw new PropertyValidationError({
+    propertyName,
+    bindingKind: kind,
+    viewModelName: viewModel.constructor.name,
+    elementSnippet,
+  })
 }

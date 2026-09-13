@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { ELEMENT_SNIPPET_MAX_LENGTH, extractElementSnippet } from '../commons/helpers'
-import { PropertyValidationError } from '../errors/index'
+import {
+  MethodAsPropertyError,
+  PropertyCaseMismatchError,
+  PropertyValidationError,
+} from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { assertViewModelProperty } from './assertViewModelProperty'
 
@@ -177,5 +181,36 @@ describe('assertViewModelProperty', () => {
 
     expect(error).toBeInstanceOf(PropertyValidationError)
     expect(error.propertyName).toBe('user.name')
+  })
+
+  it('should throw MethodAsPropertyError when the referenced member is a method, not a bindable property', () => {
+    class ViewModelWithMethod {
+      handleEvent(): void {}
+    }
+    const viewModel = new ViewModelWithMethod()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'handleEvent')
+
+    const error = catchError<MethodAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'handleEvent', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(MethodAsPropertyError)
+    expect(error.propertyName).toBe('handleEvent')
+    expect(error.bindingKind).toBe('bind-content')
+    expect(error.viewModelName).toBe('ViewModelWithMethod')
+  })
+
+  it('should throw PropertyCaseMismatchError when only the case differs from an existing property', () => {
+    const viewModel = new TestViewModel()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'ExistingProperty')
+
+    const error = catchError<PropertyCaseMismatchError>(() =>
+      assertViewModelProperty(viewModel, 'ExistingProperty', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(PropertyCaseMismatchError)
+    expect(error.suggestedName).toBe('existingProperty')
   })
 })

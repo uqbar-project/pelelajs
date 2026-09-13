@@ -13,6 +13,14 @@ const diagnostics = {
     'No se puede definir un Function como view model: "{{name}}" ({{tsFileName}}). Debe declarar una clase.',
   propertyNotFound: "La propiedad '{{name}}' no existe en el ViewModel",
   methodNotFound: "El método '{{name}}' no existe en el ViewModel",
+  methodNeedsGetter:
+    'El método \'{{name}}\' existe pero no se puede bindear. Convertilo en un getter agregando la palabra "get": get {{name}}() { ... }',
+  getterAsMethod:
+    '\'{{name}}\' es un getter, pero los eventos click/enter deben invocar un método. Quitale la palabra "get": {{name}}() { ... }',
+  propertyCaseMismatch:
+    "La propiedad '{{name}}' no coincide por mayúsculas. ¿Quisiste decir '{{suggestedName}}'?",
+  methodCaseMismatch:
+    "El método '{{name}}' no coincide por mayúsculas. ¿Quisiste decir '{{suggestedName}}'?",
   unknownAttribute: "Atributo desconocido: '{{name}}'",
   attributeNotAllowed: "El atributo '{{name}}' no está permitido en elemento '{{tag}}'",
   invalidComponentAttribute:
@@ -32,6 +40,7 @@ const completions = {
   constDetail: 'Pelela: valor constante para un componente',
   methodDetail: 'Método del ViewModel de Pelela',
   propertyDetail: 'Propiedad del ViewModel de Pelela',
+  getterDetail: 'Getter del ViewModel de Pelela',
   iterationPropertyDetail: 'Propiedad de iteración de Pelela',
   nestedPropertyDetail: 'Propiedad anidada del ViewModel de Pelela',
 } as const satisfies TranslationSchema['completions']

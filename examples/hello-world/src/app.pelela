@@ -4,8 +4,8 @@
   <h2>Contador</h2>
 
   <div class="counter">
-    <button click="decrement">-</button>
-    <p bind-content="counter"></p>
+    <button click="decrement2">-</button>
+    <p bind-content="counteRPlusOne"></p>
     <button click="increment">+</button>
   </div>
 </pelela>

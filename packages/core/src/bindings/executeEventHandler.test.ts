@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as errorPage from '../bootstrap/errorPage'
-import { InvalidHandlerError } from '../errors/index'
+import {
+  GetterAsHandlerError,
+  HandlerCaseMismatchError,
+  InvalidHandlerError,
+} from '../errors/index'
 import { executeEventHandler } from './executeEventHandler'
 import type { ViewModel } from './types'
 
@@ -142,5 +146,39 @@ describe('executeEventHandler', () => {
 
     expect(handler).toHaveBeenCalledTimes(1)
     expect(errorPage.renderErrorPage).not.toHaveBeenCalled()
+  })
+
+  it('should render GetterAsHandlerError when the handler is a getter, not a method', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      get handleEvent(): string {
+        return 'this is not callable'
+      }
+    }
+    const viewModel = new TestViewModel()
+
+    executeHandler(viewModel)
+
+    const expectedError = new GetterAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
+  it('should render HandlerCaseMismatchError when only the case differs from an existing method', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      handleEvent(): void {}
+    }
+    const viewModel = new TestViewModel()
+    const wrongCaseHandlerName = 'handleevent'
+
+    executeHandler(viewModel, wrongCaseHandlerName)
+
+    const expectedError = new HandlerCaseMismatchError(
+      wrongCaseHandlerName,
+      'TestViewModel',
+      EVENT_TYPE,
+      HANDLER_NAME,
+    )
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 })

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { t } from '../commons/i18n'
-import { InvalidHandlerError } from '../errors/index'
+import { GetterAsHandlerError, InvalidHandlerError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { setupEnterBindings } from './bindEnter'
 
@@ -151,7 +151,7 @@ describe('bindEnter', () => {
       }).not.toThrow()
     })
 
-    it('should render InvalidHandlerError when handler is not a function', () => {
+    it('should render InvalidHandlerError when handler is not a method', () => {
       container.innerHTML = '<input enter="notAFunction" />'
       const viewModel = { notAFunction: 'this is a string' }
       const input = container.querySelector('input')!
@@ -160,6 +160,24 @@ describe('bindEnter', () => {
       input.dispatchEvent(createKeydownEvent('Enter'))
 
       const expectedError = new InvalidHandlerError('notAFunction', 'Object', 'enter')
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        expectedError.message,
+      )
+    })
+
+    it('should render GetterAsHandlerError when the handler is a getter', () => {
+      container.innerHTML = '<input enter="handleEnter" />'
+      const viewModel = {
+        get handleEnter() {
+          return 42
+        },
+      }
+
+      setupEnterBindings(container, viewModel)
+
+      container.querySelector('input')!.dispatchEvent(createKeydownEvent('Enter'))
+
+      const expectedError = new GetterAsHandlerError('handleEnter', 'Object', 'enter')
       expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
         expectedError.message,
       )
