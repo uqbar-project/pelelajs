@@ -24,6 +24,8 @@ const errors = {
     unknownEvent: 'un manejador de eventos',
     isGetter:
       '[pelela] "{{name}}" es un getter del view model "{{viewModel}}", pero {{eventInfo}} debe invocar un método. Quitale la palabra "get" para convertirlo en un método: {{name}}() { ... }',
+    isArrow:
+      '[pelela] "{{name}}" es una arrow function del view model "{{viewModel}}", pero {{eventInfo}} debe invocar un método. Las arrow functions no están permitidas en un view model. Convertila en un método: {{name}}() { ... }',
     caseMismatch:
       '[pelela] El handler "{{name}}" definido en {{eventInfo}} no existe, pero sí "{{suggestedName}}". En TypeScript los nombres de método distinguen mayúsculas.',
   },
@@ -34,6 +36,8 @@ const errors = {
       '[pelela] Propiedad desconocida "{{name}}" usada en {{kind}} en: {{snippet}}. Asegurate de que el view model "{{viewModel}}" la defina.',
     isMethod:
       '[pelela] "{{name}}" es un método del view model "{{viewModel}}", no una propiedad bindeable. Convertilo en un getter agregando "get": get {{name}}() { ... }',
+    isArrow:
+      '[pelela] "{{name}}" es una arrow function del view model "{{viewModel}}", pero las propiedades deben ser valores bindeables. Las arrow functions no están permitidas en un view model. Convertila en un getter: get {{name}}() { ... }',
     caseMismatch:
       '[pelela] La propiedad "{{name}}" no existe en el view model "{{viewModel}}", pero sí "{{suggestedName}}". En TypeScript los nombres distinguen mayúsculas.',
   },

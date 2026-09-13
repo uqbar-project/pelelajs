@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ELEMENT_SNIPPET_MAX_LENGTH, extractElementSnippet } from '../commons/helpers'
 import {
+  ArrowFunctionAsPropertyError,
   MethodAsPropertyError,
   PropertyCaseMismatchError,
   PropertyValidationError,
@@ -199,6 +200,24 @@ describe('assertViewModelProperty', () => {
     expect(error.propertyName).toBe('handleEvent')
     expect(error.bindingKind).toBe('bind-content')
     expect(error.viewModelName).toBe('ViewModelWithMethod')
+  })
+
+  it('should throw ArrowFunctionAsPropertyError when the referenced member is an arrow function field of the view model class', () => {
+    class ViewModelWithArrow {
+      handleEvent = () => {}
+    }
+    const viewModel = new ViewModelWithArrow()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'handleEvent')
+
+    const error = catchError<ArrowFunctionAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'handleEvent', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(ArrowFunctionAsPropertyError)
+    expect(error.propertyName).toBe('handleEvent')
+    expect(error.bindingKind).toBe('bind-content')
+    expect(error.viewModelName).toBe('ViewModelWithArrow')
   })
 
   it('should throw PropertyCaseMismatchError when only the case differs from an existing property', () => {

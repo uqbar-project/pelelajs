@@ -130,6 +130,17 @@ function validatePropertyPath(
   }
 
   if (!members.properties.includes(firstPart)) {
+    if (members.arrows.includes(firstPart)) {
+      return [
+        makeDiagnostic(
+          attribute.valueRange ?? attribute.nameRange,
+          'diagnostics.arrowFunctionNotAllowed',
+          { name: firstPart },
+          vscode.DiagnosticSeverity.Error
+        ),
+      ]
+    }
+
     if (members.methods.includes(firstPart)) {
       return [
         makeDiagnostic(
@@ -241,6 +252,17 @@ export function validateEventMethods(
       .filter((attribute) => isEventAttribute(attribute.name))
       .flatMap((attribute) => {
         if (members.methods.includes(attribute.value)) return []
+
+        if (members.arrows.includes(attribute.value)) {
+          return [
+            makeDiagnostic(
+              attribute.valueRange ?? attribute.nameRange,
+              'diagnostics.arrowFunctionAsMethod',
+              { name: attribute.value },
+              vscode.DiagnosticSeverity.Error
+            ),
+          ]
+        }
 
         if (members.getters.includes(attribute.value)) {
           return [

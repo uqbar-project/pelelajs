@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { GetterAsHandlerError, InvalidHandlerError } from '../errors/index'
+import {
+  ArrowFunctionAsHandlerError,
+  GetterAsHandlerError,
+  InvalidHandlerError,
+} from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { setupClickBindings } from './bindClick'
 
@@ -115,6 +119,24 @@ describe('bindClick', () => {
 
       expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
         HANDLER_ERROR_MESSAGE,
+      )
+    })
+
+    it('should render an arrow function error page when the handler is an arrow function field of the view model class', () => {
+      container.innerHTML = '<button click="handleClick">Click me</button>'
+      class ViewModel {
+        [key: string]: unknown
+        handleClick = () => {}
+      }
+      const viewModel = new ViewModel()
+
+      setupClickBindings(container, viewModel)
+
+      container.querySelector('button')!.click()
+
+      const expectedError = new ArrowFunctionAsHandlerError('handleClick', 'ViewModel', 'click')
+      expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
+        expectedError.message,
       )
     })
 

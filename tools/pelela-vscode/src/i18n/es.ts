@@ -17,6 +17,10 @@ const diagnostics = {
     'El método \'{{name}}\' existe pero no se puede bindear. Convertilo en un getter agregando la palabra "get": get {{name}}() { ... }',
   getterAsMethod:
     '\'{{name}}\' es un getter, pero los eventos click/enter deben invocar un método. Quitale la palabra "get": {{name}}() { ... }',
+  arrowFunctionAsMethod:
+    "'{{name}}' es una arrow function, pero los eventos click/enter deben invocar un método. Las arrow functions no están permitidas en un view model. Convertila en un método: {{name}}() { ... }",
+  arrowFunctionNotAllowed:
+    "'{{name}}' es una arrow function, pero los bindings deben leer una propiedad. Las arrow functions no están permitidas en un view model. Convertila en un getter: get {{name}}() { ... }",
   propertyCaseMismatch:
     "La propiedad '{{name}}' no coincide por mayúsculas. ¿Quisiste decir '{{suggestedName}}'?",
   methodCaseMismatch:

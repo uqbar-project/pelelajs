@@ -2,10 +2,12 @@ import { getNestedProperty } from '../bindings/nestedProperties'
 import {
   extractElementSnippet,
   findCaseInsensitiveMember,
+  isArrowFunctionMember,
   isObject,
   isValidIdentifier,
 } from '../commons/helpers'
 import {
+  ArrowFunctionAsPropertyError,
   type BindingKind,
   MethodAsPropertyError,
   PropertyCaseMismatchError,
@@ -52,6 +54,16 @@ export function assertViewModelProperty<T extends object>(
   if (hasNestedProperty(viewModel, propertyName)) {
     const resolvedValue = getNestedProperty(viewModel, propertyName)
     if (typeof resolvedValue === 'function') {
+      const memberName = propertyName.split('.')[0]
+      const memberValue = (viewModel as Record<string, unknown>)[memberName]
+      if (isArrowFunctionMember(viewModel, memberName, memberValue)) {
+        throw new ArrowFunctionAsPropertyError({
+          propertyName,
+          bindingKind: kind,
+          viewModelName: viewModel.constructor.name,
+          elementSnippet: extractElementSnippet(element),
+        })
+      }
       throw new MethodAsPropertyError({
         propertyName,
         bindingKind: kind,

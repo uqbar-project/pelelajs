@@ -1,7 +1,8 @@
 import { renderErrorPage } from '../bootstrap/errorPage'
-import { findCaseInsensitiveMember, isObject } from '../commons/helpers'
+import { findCaseInsensitiveMember, isArrowFunctionMember, isObject } from '../commons/helpers'
 import { isUnsafeKey } from '../commons/sanitization'
 import {
+  ArrowFunctionAsHandlerError,
   type EventType,
   GetterAsHandlerError,
   HandlerCaseMismatchError,
@@ -76,6 +77,9 @@ export function executeEventHandler<T extends object, E extends Event>({
     const viewModelName = viewModel.constructor?.name ?? 'Unknown'
 
     if (isEventHandler<T, E>(handler)) {
+      if (isArrowFunctionMember(viewModel, handlerName, handler)) {
+        throw new ArrowFunctionAsHandlerError(handlerName, viewModelName, eventType)
+      }
       const handlerResult = handler.call(viewModel, viewModel, event)
       if (isPromiseLike(handlerResult)) {
         void Promise.resolve(handlerResult).catch(renderErrorPage)

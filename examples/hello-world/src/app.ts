@@ -9,8 +9,4 @@ export class App {
     this.counter--
     return 0
   }
-
-  get counteRPlusOne() {
-    return this.counter + 1
-  }
 }

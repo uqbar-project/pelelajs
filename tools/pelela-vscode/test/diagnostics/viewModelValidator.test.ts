@@ -24,6 +24,7 @@ export class TestViewModel {
   selectedBetClass: { bets: { name: string }[] } = { bets: [] }
   selectedClass: string = "active"
   product: { image: string; description: string } = { image: "", description: "" }
+  increment = () => { this.count = this.count + 1 }
 
   get totalCount() { return 0 }
 
@@ -539,6 +540,23 @@ describe('viewModelValidator', () => {
       )
     })
 
+    it('rejects a binding to an arrow function field with arrowFunctionNotAllowed', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="increment">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionNotAllowed', { name: 'increment' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
     it('rejects a binding with wrong-cased property using propertyCaseMismatch', () => {
       const { tags, document } = prepareValidation(['<div bind-content="Name">'], context)
       const diagnostics = validateBindingProperties(
@@ -597,6 +615,17 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.getterAsMethod', { name: 'totalCount' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow function field with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="increment">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'increment' }),
         vscode.DiagnosticSeverity.Error
       )
     })

@@ -13,6 +13,7 @@ const VIEWMODEL_FIXTURE = `
 export class TestViewModel {
   name: string = "test"
   items: Item[] = []
+  increment = () => { this.name = "incremented" }
 
   get fullName() {
     return this.name
@@ -166,6 +167,7 @@ describe('completionProvider', () => {
       assert.ok(labels.includes('helperMethod'), 'should include private method')
       assert.ok(!labels.includes('name'), 'should NOT include properties')
       assert.ok(!labels.includes('fullName'), 'should NOT include getters')
+      assert.ok(!labels.includes('increment'), 'should NOT include arrow function fields')
     })
 
     it('should exclude for-each variables from event attribute completions', () => {
@@ -202,6 +204,7 @@ describe('completionProvider', () => {
       assert.ok(labels.includes('name'), 'should include property')
       assert.ok(labels.includes('fullName'), 'should include getter as property')
       assert.ok(!labels.includes('handleClick'), 'should NOT include methods')
+      assert.ok(!labels.includes('increment'), 'should NOT include arrow function fields')
 
       const fullNameItem = completions.find((item) => item.label === 'fullName')
       assert.ok(fullNameItem, 'getter completion should exist')

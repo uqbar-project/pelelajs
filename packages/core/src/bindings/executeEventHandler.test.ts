@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as errorPage from '../bootstrap/errorPage'
 import {
+  ArrowFunctionAsHandlerError,
   GetterAsHandlerError,
   HandlerCaseMismatchError,
   InvalidHandlerError,
@@ -65,6 +66,28 @@ describe('executeEventHandler', () => {
     executeHandler(viewModel)
 
     expect(viewModel.count).toBe(1)
+  })
+
+  it('should render ArrowFunctionAsHandlerError when the handler is an arrow function field of the view model class', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      handleEvent = () => {}
+    }
+    const viewModel = new TestViewModel()
+
+    executeHandler(viewModel)
+
+    const expectedError = new ArrowFunctionAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
+  it('should render ArrowFunctionAsHandlerError when the handler is an arrow function of a plain object view model', () => {
+    const viewModel = { [HANDLER_NAME]: () => {} }
+
+    executeHandler(viewModel)
+
+    const expectedError = new ArrowFunctionAsHandlerError(HANDLER_NAME, 'Object', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 
   it('should render InvalidHandlerError when the handler is missing', () => {

@@ -124,3 +124,29 @@ export function findCaseInsensitiveMember(target: object, name: string): string 
   }
   return null
 }
+
+/**
+ * Detects whether a member of the view model is declared as an arrow function
+ * field (e.g. `increment = () => {}`). Arrow functions are not allowed as view
+ * model members: they bind `this` lexically and cannot use the view model as
+ * context.
+ *
+ * The signal is unambiguous for class instances (the only valid view models):
+ * class methods live on the prototype, so an own property whose value is a
+ * function without a `prototype` (arrows are not constructible) can only be an
+ * arrow function field.
+ */
+export function isArrowFunctionMember(
+  viewModel: object,
+  memberName: string,
+  value: unknown,
+): boolean {
+  if (isUnsafeKey(memberName)) return false
+  const rawViewModel: unknown = (viewModel as ViewModelWithRaw).$raw ?? viewModel
+  return (
+    isObject(rawViewModel) &&
+    Object.hasOwn(rawViewModel, memberName) &&
+    typeof value === 'function' &&
+    value.prototype === undefined
+  )
+}

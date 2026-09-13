@@ -1,3 +1,5 @@
+export { ArrowFunctionAsHandlerError } from './ArrowFunctionAsHandlerError'
+export { ArrowFunctionAsPropertyError } from './ArrowFunctionAsPropertyError'
 export { DOMEnvironmentError } from './DOMEnvironmentError'
 export { GetterAsHandlerError } from './GetterAsHandlerError'
 export { HandlerCaseMismatchError } from './HandlerCaseMismatchError'
