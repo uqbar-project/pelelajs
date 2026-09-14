@@ -203,6 +203,45 @@ describe('assertViewModelProperty', () => {
     expect(error.viewModelName).toBe('ViewModelWithMethod')
   })
 
+  it('should throw MethodAsPropertyError when the method is inherited from a base class', () => {
+    class BaseViewModel {
+      handleClick(): void {}
+    }
+    class DerivedViewModel extends BaseViewModel {}
+    const viewModel = new DerivedViewModel()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'handleClick')
+
+    const error = catchError<MethodAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'handleClick', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(MethodAsPropertyError)
+    expect(error.propertyName).toBe('handleClick')
+    expect(error.bindingKind).toBe('bind-content')
+    expect(error.viewModelName).toBe('DerivedViewModel')
+  })
+
+  it('should throw FunctionAsPropertyError for a function reachable only through a proxy member without a resolved descriptor', () => {
+    const viewModel = new Proxy(
+      {},
+      {
+        has: (_target, key) => key === 'phantomHandler',
+        get: (target, key) =>
+          key === 'phantomHandler' ? function phantomHandler() {} : Reflect.get(target, key),
+      },
+    ) as object
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'phantomHandler')
+
+    const error = catchError<FunctionAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'phantomHandler', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(FunctionAsPropertyError)
+    expect(error.propertyName).toBe('phantomHandler')
+  })
+
   it('should throw ArrowFunctionAsPropertyError when the referenced member is an arrow function field of the view model class', () => {
     class ViewModelWithArrow {
       handleEvent = () => {}

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { PropertyValidationError } from '../errors/index'
+import { ArrowFunctionAsPropertyError, PropertyValidationError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { renderClassBindings, setupClassBindings } from './bindClass'
 import type { ViewModel } from './types'
@@ -44,6 +44,19 @@ describe('bindClass', () => {
       expect(() => {
         setupClassBindings(container, viewModel)
       }).toThrow(PropertyValidationError)
+    })
+
+    it('should throw ArrowFunctionAsPropertyError when the bound property is an arrow function field of the view model class', () => {
+      container.innerHTML = '<div bind-class="claseKilometros"></div>'
+      class ClassViewModel {
+        [key: string]: unknown
+        claseKilometros = (): string => 'big'
+      }
+      const viewModel = new ClassViewModel()
+
+      expect(() => {
+        setupClassBindings(container, viewModel)
+      }).toThrow(ArrowFunctionAsPropertyError)
     })
   })
 

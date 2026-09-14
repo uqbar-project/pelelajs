@@ -28,6 +28,12 @@ export class TestViewModel {
 
   get totalCount() { return 0 }
 
+  get dEcrement() { return 0 }
+
+  counTerPlusOne(): void {
+    this.count = 0
+  }
+
   handleClick(): void {
     console.log("clicked")
   }
@@ -557,6 +563,35 @@ describe('viewModelValidator', () => {
       )
     })
 
+    it('accepts a binding to a getter', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="totalCount">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a binding with wrong-cased getter using propertyCaseMismatch', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="TotalCount">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', { name: 'TotalCount', suggestedName: 'totalCount' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
     it('rejects a binding with wrong-cased property using propertyCaseMismatch', () => {
       const { tags, document } = prepareValidation(['<div bind-content="Name">'], context)
       const diagnostics = validateBindingProperties(
@@ -570,6 +605,29 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.propertyCaseMismatch', { name: 'Name', suggestedName: 'name' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a binding whose property name differs only by case from a method member using propertyCaseMismatch', () => {
+      const { tags, document } = prepareValidation(
+        ['<div bind-content="counterPlusOne">'],
+        context
+      )
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', {
+          name: 'counterPlusOne',
+          suggestedName: 'counTerPlusOne',
+        }),
         vscode.DiagnosticSeverity.Error
       )
     })
@@ -637,6 +695,17 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.methodCaseMismatch', { name: 'handleclick', suggestedName: 'handleClick' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event whose handler name differs only by case from a getter member using methodCaseMismatch', () => {
+      const { tags } = prepareValidation(['<button click="decrement">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodCaseMismatch', { name: 'decrement', suggestedName: 'dEcrement' }),
         vscode.DiagnosticSeverity.Error
       )
     })

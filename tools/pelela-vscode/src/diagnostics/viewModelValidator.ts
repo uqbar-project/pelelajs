@@ -129,7 +129,7 @@ function validatePropertyPath(
     }
   }
 
-  if (!members.properties.includes(firstPart)) {
+  if (!members.properties.includes(firstPart) && !members.getters.includes(firstPart)) {
     if (members.arrows.includes(firstPart)) {
       return [
         makeDiagnostic(
@@ -154,6 +154,7 @@ function validatePropertyPath(
 
     const suggestedName =
       findCaseInsensitiveMember(members.properties, firstPart) ??
+      findCaseInsensitiveMember(members.getters, firstPart) ??
       findCaseInsensitiveMember(members.methods, firstPart)
     if (suggestedName) {
       return [
@@ -275,7 +276,11 @@ export function validateEventMethods(
           ]
         }
 
-        const suggestedName = findCaseInsensitiveMember(members.methods, attribute.value)
+        const suggestedName =
+      findCaseInsensitiveMember(members.methods, attribute.value) ??
+      findCaseInsensitiveMember(members.getters, attribute.value) ??
+      findCaseInsensitiveMember(members.properties, attribute.value) ??
+      findCaseInsensitiveMember(members.arrows, attribute.value)
         if (suggestedName) {
           return [
             makeDiagnostic(
