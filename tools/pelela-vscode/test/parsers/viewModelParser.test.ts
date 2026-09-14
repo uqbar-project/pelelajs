@@ -152,6 +152,70 @@ export interface Product {
       assert.ok(members.properties.includes('count'), 'regular field would be a property')
     })
 
+    it('should classify arrow function fields wrapped in an as expression as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'AsExpressionArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class AsExpressionArrowFieldViewModel {
+  increment = (() => this.count++) as () => void
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'AsExpressionArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
+    it('should classify arrow function fields wrapped in a type assertion as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'TypeAssertionArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class TypeAssertionArrowFieldViewModel {
+  increment = <() => void>(() => this.count++)
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'TypeAssertionArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
+    it('should classify arrow function fields wrapped in a satisfies expression as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'SatisfiesArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class SatisfiesArrowFieldViewModel {
+  increment = (() => this.count++) satisfies () => void
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'SatisfiesArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
+    it('should classify arrow function fields wrapped in a non-null expression as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'NonNullArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class NonNullArrowFieldViewModel {
+  increment = (() => this.count++)!
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'NonNullArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
     it('should not classify regular function fields as arrows', () => {
       const fPath = path.join(testFilesDir, 'FunctionFieldVM.ts')
       fs.writeFileSync(

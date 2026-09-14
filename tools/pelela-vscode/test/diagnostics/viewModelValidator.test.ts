@@ -26,6 +26,10 @@ export class TestViewModel {
   product: { image: string; description: string } = { image: "", description: "" }
   increment = () => { this.count = this.count + 1 }
   incrementParen = (() => { this.count = this.count + 1 })
+  incrementAs = (() => { this.count = this.count + 1 }) as () => void
+  incrementAssert = <() => void>(() => { this.count = this.count + 1 })
+  incrementSatisfies = (() => { this.count = this.count + 1 }) satisfies () => void
+  incrementNonNull = (() => { this.count = this.count + 1 })!
 
   get totalCount() { return 0 }
 
@@ -716,6 +720,50 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.arrowFunctionAsMethod', { name: 'increment' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow wrapped in an as expression with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="incrementAs">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'incrementAs' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow wrapped in a type assertion with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="incrementAssert">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'incrementAssert' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow wrapped in a satisfies expression with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="incrementSatisfies">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'incrementSatisfies' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow wrapped in a non-null expression with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="incrementNonNull">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'incrementNonNull' }),
         vscode.DiagnosticSeverity.Error
       )
     })

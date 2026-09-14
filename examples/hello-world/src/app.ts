@@ -7,6 +7,5 @@ export class App {
 
   decrement() {
     this.counter--
-    return 0
   }
 }
