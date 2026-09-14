@@ -316,6 +316,40 @@ describe('assertViewModelProperty', () => {
     expect(error.viewModelName).toBe('ViewModelWithNestedFunction')
   })
 
+  it('should throw FunctionAsPropertyError when the referenced member is an async function field', () => {
+    class ViewModelWithAsyncFunctionField {
+      loadData = async function loadData() {}
+    }
+    const viewModel = new ViewModelWithAsyncFunctionField()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'loadData')
+
+    const error = catchError<FunctionAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'loadData', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(FunctionAsPropertyError)
+    expect(error.propertyName).toBe('loadData')
+    expect(error.viewModelName).toBe('ViewModelWithAsyncFunctionField')
+  })
+
+  it('should throw FunctionAsPropertyError when the referenced member is a function created with bind()', () => {
+    class ViewModelWithBoundFunctionField {
+      bound = function handleValue() {}.bind(this)
+    }
+    const viewModel = new ViewModelWithBoundFunctionField()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'bound')
+
+    const error = catchError<FunctionAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'bound', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(FunctionAsPropertyError)
+    expect(error.propertyName).toBe('bound')
+    expect(error.viewModelName).toBe('ViewModelWithBoundFunctionField')
+  })
+
   it('should throw PropertyCaseMismatchError when only the case differs from an existing property', () => {
     const viewModel = new TestViewModel()
     const element = document.createElement('div')

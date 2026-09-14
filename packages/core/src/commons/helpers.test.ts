@@ -83,6 +83,24 @@ describe('helpers', () => {
       expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(false)
     })
 
+    it('should return false for an async function field', () => {
+      class ViewModel {
+        increment = async function increment() {}
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(false)
+    })
+
+    it('should return false for a function created with bind()', () => {
+      class ViewModel {
+        bound = function increment() {}.bind(this)
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'bound', viewModel.bound)).toBe(false)
+    })
+
     it('should return false for missing members', () => {
       const viewModel = {}
 

@@ -146,10 +146,41 @@ export function isArrowFunctionMember(
   const rawViewModel: unknown = isProxy(viewModel)
     ? ((viewModel as ViewModelWithRaw).$raw ?? viewModel)
     : viewModel
-  return (
-    isObject(rawViewModel) &&
-    Object.hasOwn(rawViewModel, memberName) &&
-    typeof value === 'function' &&
-    value.prototype === undefined
-  )
+  return isObject(rawViewModel) && Object.hasOwn(rawViewModel, memberName) && isArrowFunction(value)
+}
+
+function isArrowFunction(value: unknown): boolean {
+  if (typeof value !== 'function' || value.prototype !== undefined) {
+    return false
+  }
+
+  return !isAsyncFunction(value) && !isConstructableFunction(value)
+}
+
+/**
+ * Async functions share the prototype-less shape of arrows (both have an
+ * undefined .prototype), but they are not arrow functions, so they are
+ * classified as generic functions instead.
+ */
+function isAsyncFunction(value: unknown): boolean {
+  return typeof value === 'function' && value.constructor.name === 'AsyncFunction'
+}
+
+/**
+ * Bound functions also lose their .prototype, yet unlike arrows they remain
+ * constructable. Probing constructability is the only side-effect-free way to
+ * tell them apart, so the construction failure here is meaningful, not an
+ * error to swallow silently.
+ */
+function isConstructableFunction(value: unknown): boolean {
+  if (typeof value !== 'function') {
+    return false
+  }
+
+  try {
+    Reflect.construct(Object, [], value)
+    return true
+  } catch {
+    return false
+  }
 }
