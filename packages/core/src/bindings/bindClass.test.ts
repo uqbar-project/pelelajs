@@ -47,10 +47,10 @@ describe('bindClass', () => {
     })
 
     it('should throw ArrowFunctionAsPropertyError when the bound property is an arrow function field of the view model class', () => {
-      container.innerHTML = '<div bind-class="claseKilometros"></div>'
+      container.innerHTML = '<div bind-class="cssClass"></div>'
       class ClassViewModel {
         [key: string]: unknown
-        claseKilometros = (): string => 'big'
+        cssClass = (): string => 'big'
       }
       const viewModel = new ClassViewModel()
 
