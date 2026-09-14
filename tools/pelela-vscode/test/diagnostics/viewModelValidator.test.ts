@@ -24,6 +24,20 @@ export class TestViewModel {
   selectedBetClass: { bets: { name: string }[] } = { bets: [] }
   selectedClass: string = "active"
   product: { image: string; description: string } = { image: "", description: "" }
+  increment = () => { this.count = this.count + 1 }
+  incrementParen = (() => { this.count = this.count + 1 })
+  incrementAs = (() => { this.count = this.count + 1 }) as () => void
+  incrementAssert = <() => void>(() => { this.count = this.count + 1 })
+  incrementSatisfies = (() => { this.count = this.count + 1 }) satisfies () => void
+  incrementNonNull = (() => { this.count = this.count + 1 })!
+
+  get totalCount() { return 0 }
+
+  get dEcrement() { return 0 }
+
+  counTerPlusOne(): void {
+    this.count = 0
+  }
 
   handleClick(): void {
     console.log("clicked")
@@ -519,6 +533,140 @@ describe('viewModelValidator', () => {
         vscode.DiagnosticSeverity.Error
       )
     })
+
+    it('rejects a binding to a method with methodNeedsGetter', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="handleClick">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNeedsGetter', { name: 'handleClick' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a binding to an arrow function field with arrowFunctionNotAllowed', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="increment">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionNotAllowed', { name: 'increment' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a binding to an arrow function field wrapped in parentheses with arrowFunctionNotAllowed', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="incrementParen">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionNotAllowed', { name: 'incrementParen' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('accepts a binding to a getter', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="totalCount">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a binding with wrong-cased getter using propertyCaseMismatch', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="TotalCount">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', { name: 'TotalCount', suggestedName: 'totalCount' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a binding with wrong-cased property using propertyCaseMismatch', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="Name">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', { name: 'Name', suggestedName: 'name' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a binding whose property name differs only by case from a method member using propertyCaseMismatch', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="counterPlusOne">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', {
+          name: 'counterPlusOne',
+          suggestedName: 'counTerPlusOne',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a binding whose property name differs only by case from an arrow function field using propertyCaseMismatch', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="Increment">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', { name: 'Increment', suggestedName: 'increment' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
   })
 
   describe('validateEventMethods', () => {
@@ -550,6 +698,94 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.methodNotFound', { name: 'nonExistentEnter' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing a getter with getterAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="totalCount">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.getterAsMethod', { name: 'totalCount' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow function field with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="increment">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'increment' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow wrapped in an as expression with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="incrementAs">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'incrementAs' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow wrapped in a type assertion with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="incrementAssert">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'incrementAssert' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow wrapped in a satisfies expression with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="incrementSatisfies">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'incrementSatisfies' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing an arrow wrapped in a non-null expression with arrowFunctionAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="incrementNonNull">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'incrementNonNull' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event with wrong-cased method using methodCaseMismatch', () => {
+      const { tags } = prepareValidation(['<button click="handleclick">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodCaseMismatch', { name: 'handleclick', suggestedName: 'handleClick' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event whose handler name differs only by case from a getter member using methodCaseMismatch', () => {
+      const { tags } = prepareValidation(['<button click="decrement">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodCaseMismatch', { name: 'decrement', suggestedName: 'dEcrement' }),
         vscode.DiagnosticSeverity.Error
       )
     })

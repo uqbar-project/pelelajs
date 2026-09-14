@@ -89,6 +89,7 @@ describe('virtual auto-register module hot reload', () => {
       expect(fixedCode).not.toContain('AppStub')
       expect(fixedCode).toContain('defineComponent("App", App, appTemplate)')
     } finally {
+      // biome-ignore lint/suspicious/noUnnecessaryConditions: server stays undefined when createDevServer rejects before the try completes; TS flow analysis assumes the try succeeded
       await server?.close().catch(() => undefined)
       process.cwd = originalCwd
     }

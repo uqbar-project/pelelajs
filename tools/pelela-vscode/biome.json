@@ -1,6 +1,6 @@
 {
   "root": false,
-  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -29,11 +29,12 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "suspicious": {
         "noConsole": "off",
         "noExplicitAny": "off",
-        "noEmptyBlockStatements": "off"
+        "noEmptyBlockStatements": "off",
+        "noUnusedExpressions": "off"
       },
       "style": {
         "useConst": "warn"
@@ -51,9 +52,7 @@
       "performance": {
         "noAccumulatingSpread": "warn"
       },
-      "nursery": {
-        "noUnusedExpressions": "off"
-      }
+      "nursery": {}
     }
   },
   "vcs": {

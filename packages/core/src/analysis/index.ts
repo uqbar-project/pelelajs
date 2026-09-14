@@ -41,6 +41,7 @@ function getDeclarationNames(statement: ts.Statement): string[] {
 }
 
 function hasModifier(statement: ts.Statement, kind: ts.SyntaxKind): boolean {
+  // biome-ignore lint/suspicious/noUnnecessaryConditions: ts.canHaveModifiers is a compiler-API type guard; Biome's type checker models it as always falsy (false positive)
   const modifiers = ts.canHaveModifiers(statement) ? ts.getModifiers(statement) : undefined
   return modifiers?.some((modifier) => modifier.kind === kind) ?? false
 }
@@ -84,7 +85,7 @@ function getClassName(statement: ts.Statement): string | undefined {
 
 function getFunctionNames(statement: ts.Statement): string[] {
   if (ts.isFunctionDeclaration(statement)) {
-    return statement.name !== undefined ? [statement.name.text] : []
+    return statement.name === undefined ? [] : [statement.name.text]
   }
   if (ts.isVariableStatement(statement)) {
     return statement.declarationList.declarations

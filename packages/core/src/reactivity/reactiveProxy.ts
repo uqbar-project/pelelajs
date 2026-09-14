@@ -1,4 +1,5 @@
 import { isObject } from '../commons/helpers'
+import { isProxy, registerReactiveProxy } from './proxyIdentity'
 
 const ARRAY_MUTATION_METHODS = [
   'push',
@@ -11,12 +12,10 @@ const ARRAY_MUTATION_METHODS = [
 ] as const
 
 /**
- * Caches to keep track of proxies and their original objects.
- * This prevents creating multiple proxies for the same object and
- * allows retrieving the raw object from a proxy.
+ * Cache to keep track of created proxies.
+ * This prevents creating multiple proxies for the same object.
  */
 const proxyCache = new WeakMap<object, object>()
-const rawObjectCache = new WeakMap<object, object>()
 
 /**
  * Handler for the reactive proxy.
@@ -156,13 +155,6 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
 }
 
 /**
- * Checks if a value is a reactive proxy.
- */
-export function isProxy(value: unknown): boolean {
-  return isObject(value) && rawObjectCache.has(value)
-}
-
-/**
  * Creates a reactive proxy for the given target object.
  *
  * Why we use WeakMap/WeakSet:
@@ -199,7 +191,7 @@ function makeReactive<T>(
   const proxy = new Proxy(target, handler) as T & object
 
   proxyCache.set(target, proxy)
-  rawObjectCache.set(proxy, target)
+  registerReactiveProxy(proxy, target)
 
   return proxy as T
 }

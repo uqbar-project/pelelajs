@@ -43,4 +43,4 @@ function getCurrentLanguage(): SupportedLanguage {
     : 'en'
 }
 
-export { initializeI18n, t, getCurrentLanguage }
+export { getCurrentLanguage, initializeI18n, t }

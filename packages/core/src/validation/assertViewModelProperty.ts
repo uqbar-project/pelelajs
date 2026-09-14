@@ -1,5 +1,19 @@
-import { extractElementSnippet, isObject } from '../commons/helpers'
-import { type BindingKind, PropertyValidationError } from '../errors'
+import { getNestedProperty } from '../bindings/nestedProperties'
+import {
+  extractElementSnippet,
+  findCaseInsensitiveMember,
+  isArrowFunctionMember,
+  isObject,
+  isValidIdentifier,
+} from '../commons/helpers'
+import {
+  ArrowFunctionAsPropertyError,
+  type BindingKind,
+  FunctionAsPropertyError,
+  MethodAsPropertyError,
+  PropertyCaseMismatchError,
+  PropertyValidationError,
+} from '../errors'
 
 function hasNestedProperty(targetObject: unknown, path: string): boolean {
   if (!isObject(targetObject)) {
@@ -23,6 +37,21 @@ function hasNestedProperty(targetObject: unknown, path: string): boolean {
   })
 }
 
+function isViewModelMethod(viewModel: unknown, memberName: string): boolean {
+  if (!isObject(viewModel) || Object.hasOwn(viewModel, memberName)) return false
+
+  let proto: object | null = Object.getPrototypeOf(viewModel)
+  while (proto) {
+    const descriptor = Object.getOwnPropertyDescriptor(proto, memberName)
+    if (descriptor) {
+      return descriptor.get === undefined && typeof descriptor.value === 'function'
+    }
+    proto = Object.getPrototypeOf(proto)
+  }
+
+  return false
+}
+
 /**
  * Asserts that a property exists in the view model.
  * If the property is missing, it throws a PropertyValidationError.
@@ -38,14 +67,55 @@ export function assertViewModelProperty<T extends object>(
   kind: BindingKind,
   element: Element,
 ): void {
-  if (!hasNestedProperty(viewModel, propertyName)) {
-    const elementSnippet = extractElementSnippet(element)
-
-    throw new PropertyValidationError({
-      propertyName,
-      bindingKind: kind,
-      viewModelName: viewModel.constructor.name,
-      elementSnippet,
-    })
+  if (hasNestedProperty(viewModel, propertyName)) {
+    const resolvedValue = getNestedProperty(viewModel, propertyName)
+    if (typeof resolvedValue === 'function') {
+      const memberName = propertyName.split('.')[0]
+      const memberValue = (viewModel as Record<string, unknown>)[memberName]
+      if (isArrowFunctionMember(viewModel, memberName, memberValue)) {
+        throw new ArrowFunctionAsPropertyError({
+          propertyName,
+          bindingKind: kind,
+          viewModelName: viewModel.constructor.name,
+          elementSnippet: extractElementSnippet(element),
+        })
+      }
+      if (isViewModelMethod(viewModel, memberName)) {
+        throw new MethodAsPropertyError({
+          propertyName,
+          bindingKind: kind,
+          viewModelName: viewModel.constructor.name,
+          elementSnippet: extractElementSnippet(element),
+        })
+      }
+      throw new FunctionAsPropertyError({
+        propertyName,
+        bindingKind: kind,
+        viewModelName: viewModel.constructor.name,
+        elementSnippet: extractElementSnippet(element),
+      })
+    }
+    return
   }
+
+  const elementSnippet = extractElementSnippet(element)
+  if (isValidIdentifier(propertyName)) {
+    const suggestedName = findCaseInsensitiveMember(viewModel, propertyName)
+    if (suggestedName) {
+      throw new PropertyCaseMismatchError({
+        propertyName,
+        bindingKind: kind,
+        viewModelName: viewModel.constructor.name,
+        elementSnippet,
+        suggestedName,
+      })
+    }
+  }
+
+  throw new PropertyValidationError({
+    propertyName,
+    bindingKind: kind,
+    viewModelName: viewModel.constructor.name,
+    elementSnippet,
+  })
 }

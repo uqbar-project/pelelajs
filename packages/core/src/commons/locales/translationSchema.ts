@@ -15,10 +15,17 @@ type ErrorTranslations = {
   handlers: {
     invalid: string
     unknownEvent: string
+    isGetter: string
+    isArrow: string
+    caseMismatch: string
   }
   properties: {
     invalidType: string
     validation: string
+    isMethod: string
+    isArrow: string
+    isFunction: string
+    caseMismatch: string
   }
   viewmodel: {
     registration: {

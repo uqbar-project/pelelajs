@@ -109,6 +109,172 @@ export interface Product {
       assert.deepStrictEqual([...methods].sort(), [...EXPECTED_METHODS].sort())
     })
 
+    it('should return getters separately from properties', () => {
+      const { getters } = extractViewModelMembers(testVMPath, 'ProductRow')
+      assert.deepStrictEqual([...getters].sort(), ['delivery', 'isSelected', 'price'])
+    })
+
+    it('should classify arrow function fields as arrows, not properties, methods, or getters', () => {
+      const fPath = path.join(testFilesDir, 'ArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class ArrowFieldViewModel {
+  increment = () => this.count++
+  count = 0
+  handleClick(): void {}
+  get totalCount() { return this.count }
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'ArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(!members.methods.includes('increment'), 'arrow should NOT be a method')
+      assert.ok(!members.getters.includes('increment'), 'arrow should NOT be a getter')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+      assert.ok(members.methods.includes('handleClick'), 'method still classified as method')
+      assert.ok(members.getters.includes('totalCount'), 'getter still classified as getter')
+    })
+
+    it('should classify arrow function fields wrapped in parentheses as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'ParenthesizedArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class ParenthesizedArrowFieldViewModel {
+  increment = (() => this.count++)
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'ParenthesizedArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
+    it('should classify arrow function fields wrapped in an as expression as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'AsExpressionArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class AsExpressionArrowFieldViewModel {
+  increment = (() => this.count++) as () => void
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'AsExpressionArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
+    it('should classify arrow function fields wrapped in a type assertion as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'TypeAssertionArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class TypeAssertionArrowFieldViewModel {
+  increment = <() => void>(() => this.count++)
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'TypeAssertionArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
+    it('should classify arrow function fields wrapped in a satisfies expression as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'SatisfiesArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class SatisfiesArrowFieldViewModel {
+  increment = (() => this.count++) satisfies () => void
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'SatisfiesArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
+    it('should classify arrow function fields wrapped in a non-null expression as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'NonNullArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class NonNullArrowFieldViewModel {
+  increment = (() => this.count++)!
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'NonNullArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
+    it('should not classify regular function fields as arrows', () => {
+      const fPath = path.join(testFilesDir, 'FunctionFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class FunctionFieldViewModel {
+  handleClick = function () {}
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'FunctionFieldViewModel')
+      assert.deepStrictEqual(members.arrows, [])
+      assert.ok(
+        members.properties.includes('handleClick'),
+        'regular function field should remain a property'
+      )
+    })
+
+    it('should include inherited arrow function fields from a base class', () => {
+      const fPath = path.join(testFilesDir, 'ArrowBaseClassVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class BaseViewModel {
+  baseIncrement = () => {}
+}
+
+export class DerivedViewModel extends BaseViewModel {
+  increment = () => {}
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'DerivedViewModel')
+      assert.ok(members.arrows.includes('increment'), 'should include direct arrow')
+      assert.ok(members.arrows.includes('baseIncrement'), 'should include inherited arrow')
+      assert.ok(
+        !members.properties.includes('baseIncrement'),
+        'inherited arrow should NOT be a property'
+      )
+    })
+
+    it('should include inherited getters from a base class', () => {
+      const fPath = path.join(testFilesDir, 'GetterBaseClassVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class BaseViewModel {
+  get totalCount() { return 0 }
+}
+
+export class DerivedViewModel extends BaseViewModel {
+  items: string[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'DerivedViewModel')
+      assert.ok(
+        members.getters.includes('totalCount'),
+        'should include inherited getter totalCount'
+      )
+    })
+
     it('should exclude constructor, static methods, and if', () => {
       const { methods } = extractViewModelMembers(testVMPath, 'ProductRow')
       assert.ok(!methods.includes('constructor'))

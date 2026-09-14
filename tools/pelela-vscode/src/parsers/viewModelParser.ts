@@ -5,6 +5,8 @@ import * as ts from 'typescript'
 export interface ViewModelMembers {
   properties: string[]
   methods: string[]
+  getters: string[]
+  arrows: string[]
 }
 
 interface SourceFileCacheEntry {
@@ -53,13 +55,37 @@ function isStaticMember(classMember: ts.ClassElement): boolean {
   return (ts.getCombinedModifierFlags(classMember) & ts.ModifierFlags.Static) !== 0
 }
 
+function unwrapInitializerWrappers(expression: ts.Expression): ts.Expression {
+  let currentExpression = expression
+  while (
+    ts.isParenthesizedExpression(currentExpression) ||
+    ts.isAsExpression(currentExpression) ||
+    ts.isTypeAssertionExpression(currentExpression) ||
+    ts.isSatisfiesExpression(currentExpression) ||
+    ts.isNonNullExpression(currentExpression)
+  ) {
+    currentExpression = currentExpression.expression
+  }
+  return currentExpression
+}
+
+function isArrowProperty(classMember: ts.ClassElement): boolean {
+  return (
+    ts.isPropertyDeclaration(classMember) &&
+    classMember.initializer !== undefined &&
+    ts.isArrowFunction(unwrapInitializerWrappers(classMember.initializer))
+  )
+}
+
 function getMemberInfo(
   classMember: ts.ClassElement
-): { name: string; kind: 'property' | 'method' } | null {
+): { name: string; kind: 'property' | 'method' | 'getter' | 'arrow' } | null {
   const name = getDeclarationName(classMember)
   if (!name) return null
   if (name === 'constructor' || name === 'if') return null
   if (ts.isMethodDeclaration(classMember)) return { name, kind: 'method' }
+  if (ts.isGetAccessorDeclaration(classMember)) return { name, kind: 'getter' }
+  if (isArrowProperty(classMember)) return { name, kind: 'arrow' }
   return { name, kind: 'property' }
 }
 
@@ -72,7 +98,9 @@ function collectViewModelMembers(
   visited: Set<string>
 ): ViewModelMembers {
   const className = getClassName(classDeclaration)
-  if (visited.has(className)) return { properties: [], methods: [] }
+  if (visited.has(className)) {
+    return { properties: [], methods: [], getters: [], arrows: [] }
+  }
   visited.add(className)
 
   const paramProperties = getParameterPropertyNames(classDeclaration)
@@ -81,19 +109,31 @@ function collectViewModelMembers(
     .filter((classMember) => !isStaticMember(classMember))
     .map(getMemberInfo)
     .filter(
-      (memberInfo): memberInfo is { name: string; kind: 'property' | 'method' } =>
+      (
+        memberInfo
+      ): memberInfo is { name: string; kind: 'property' | 'method' | 'getter' | 'arrow' } =>
         memberInfo !== null
     )
     .reduce(
       (accumulator, { name, kind }) => {
         if (kind === 'method') {
           accumulator.methods.push(name)
+        } else if (kind === 'arrow') {
+          accumulator.arrows.push(name)
         } else {
           accumulator.properties.push(name)
+          if (kind === 'getter') {
+            accumulator.getters.push(name)
+          }
         }
         return accumulator
       },
-      { properties: [...paramProperties], methods: [] as string[] }
+      {
+        properties: [...paramProperties],
+        methods: [] as string[],
+        getters: [] as string[],
+        arrows: [] as string[],
+      }
     )
 
   const extendsClause = classDeclaration.heritageClauses?.find(
@@ -111,6 +151,8 @@ function collectViewModelMembers(
         return {
           properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
           methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
+          getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
+          arrows: [...new Set([...directMembers.arrows, ...baseMembers.arrows])],
         }
       }
     }
@@ -126,7 +168,9 @@ export function extractViewModelMembers(
   const sourceFile = getCachedSourceFile(typescriptFilePath)
 
   const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath, true)
-  if (!classDeclaration) return { properties: [], methods: [] }
+  if (!classDeclaration) {
+    return { properties: [], methods: [], getters: [], arrows: [] }
+  }
 
   return collectViewModelMembers(classDeclaration, new Set<string>())
 }

@@ -15,4 +15,4 @@ export function autoRegisterComponent(creator: ViewModelConstructor, template: s
   defineComponentOriginal(componentName, creator, template)
 }
 
-export { defineComponentOriginal as defineComponent, getComponentEntry, clearComponentRegistry }
+export { clearComponentRegistry, defineComponentOriginal as defineComponent, getComponentEntry }
