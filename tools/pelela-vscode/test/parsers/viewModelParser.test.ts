@@ -136,6 +136,22 @@ export interface Product {
       assert.ok(members.getters.includes('totalCount'), 'getter still classified as getter')
     })
 
+    it('should classify arrow function fields wrapped in parentheses as arrows, not properties', () => {
+      const fPath = path.join(testFilesDir, 'ParenthesizedArrowFieldVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class ParenthesizedArrowFieldViewModel {
+  increment = (() => this.count++)
+  count = 0
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'ParenthesizedArrowFieldViewModel')
+      assert.deepStrictEqual(members.arrows, ['increment'])
+      assert.ok(!members.properties.includes('increment'), 'arrow should NOT be a property')
+      assert.ok(members.properties.includes('count'), 'regular field would be a property')
+    })
+
     it('should not classify regular function fields as arrows', () => {
       const fPath = path.join(testFilesDir, 'FunctionFieldVM.ts')
       fs.writeFileSync(

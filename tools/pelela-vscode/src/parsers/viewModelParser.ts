@@ -55,11 +55,19 @@ function isStaticMember(classMember: ts.ClassElement): boolean {
   return (ts.getCombinedModifierFlags(classMember) & ts.ModifierFlags.Static) !== 0
 }
 
+function unwrapParentheses(expression: ts.Expression): ts.Expression {
+  let currentExpression = expression
+  while (ts.isParenthesizedExpression(currentExpression)) {
+    currentExpression = currentExpression.expression
+  }
+  return currentExpression
+}
+
 function isArrowProperty(classMember: ts.ClassElement): boolean {
   return (
     ts.isPropertyDeclaration(classMember) &&
     classMember.initializer !== undefined &&
-    ts.isArrowFunction(classMember.initializer)
+    ts.isArrowFunction(unwrapParentheses(classMember.initializer))
   )
 }
 

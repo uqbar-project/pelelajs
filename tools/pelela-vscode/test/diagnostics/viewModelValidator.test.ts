@@ -25,6 +25,7 @@ export class TestViewModel {
   selectedClass: string = "active"
   product: { image: string; description: string } = { image: "", description: "" }
   increment = () => { this.count = this.count + 1 }
+  incrementParen = (() => { this.count = this.count + 1 })
 
   get totalCount() { return 0 }
 
@@ -559,6 +560,23 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.arrowFunctionNotAllowed', { name: 'increment' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a binding to an arrow function field wrapped in parentheses with arrowFunctionNotAllowed', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="incrementParen">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionNotAllowed', { name: 'incrementParen' }),
         vscode.DiagnosticSeverity.Error
       )
     })

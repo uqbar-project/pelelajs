@@ -124,16 +124,15 @@ describe('executeEventHandler', () => {
     expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 
-  it.each([
-    '__proto__',
-    'constructor',
-    'prototype',
-  ])('should reject the unsafe handler name %s', (unsafeHandlerName) => {
-    executeHandler({}, unsafeHandlerName)
+  it.each(['__proto__', 'constructor', 'prototype'])(
+    'should reject the unsafe handler name %s',
+    (unsafeHandlerName) => {
+      executeHandler({}, unsafeHandlerName)
 
-    const expectedError = new InvalidHandlerError(unsafeHandlerName, 'Object', EVENT_TYPE)
-    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
-  })
+      const expectedError = new InvalidHandlerError(unsafeHandlerName, 'Object', EVENT_TYPE)
+      expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+    },
+  )
 
   it('should render the error page when the handler throws', () => {
     const handlerError = new Error(HANDLER_ERROR_MESSAGE)

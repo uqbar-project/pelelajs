@@ -1,15 +1,25 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "suspicious": {
         "noExplicitAny": "error",
         "noConsole": "off",
         "noEmptyBlockStatements": "off",
         "useIsArray": "error",
-        "noPrototypeBuiltins": "error"
+        "noPrototypeBuiltins": "error",
+        "noUnusedExpressions": "error",
+        "noDuplicateDependencies": "error",
+        "noEqualsToNull": "error",
+        "noDeprecatedImports": "error",
+        "noEmptySource": "error",
+        "noForIn": "error",
+        "noProto": "error",
+        "noShadow": "error",
+        "noUnknownAttribute": "error",
+        "noUnnecessaryConditions": "error"
       },
       "style": {
         "noNonNullAssertion": "off",
@@ -22,46 +32,36 @@
           "options": {
             "strictCase": false
           }
-        }
+        },
+        "noContinue": "error",
+        "useConsistentArrowReturn": "error"
       },
       "correctness": {
         "noUnusedVariables": "warn",
         "noConstantCondition": "warn",
         "noSwitchDeclarations": "off",
         "noInnerDeclarations": "off",
-        "useYield": "off"
+        "useYield": "off",
+        "noUnresolvedImports": "off"
       },
       "complexity": {
-        "noExcessiveCognitiveComplexity": "warn"
-      },
-      "performance": {
-        "noAccumulatingSpread": "warn"
-      },
-      "nursery": {
-        "noUnusedExpressions": "error",
-        "noContinue": "error",
-        "noDuplicateDependencies": "error",
-        "noEqualsToNull": "error",
-        "noDeprecatedImports": "error",
-        "noEmptySource": "error",
-        "noFloatingPromises": "error",
-        "noForIn": "error",
-        "noMisusedPromises": "error",
-        "noProto": "error",
-        "noShadow": "error",
-        "noUnknownAttribute": "error",
-        "noUnnecessaryConditions": "error",
+        "noExcessiveCognitiveComplexity": "warn",
         "useMaxParams": {
           "level": "warn",
           "options": {
             "max": 4
           }
         },
-        "useFind": "error",
-        "useConsistentArrowReturn": "error",
+        "useArrayFind": "error",
         "noUselessUndefined": "off",
-        "noUselessCatchBinding": "error",
-        "noUnresolvedImports": "off"
+        "noUselessCatchBinding": "error"
+      },
+      "performance": {
+        "noAccumulatingSpread": "warn"
+      },
+      "nursery": {
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "error"
       }
     }
   },
