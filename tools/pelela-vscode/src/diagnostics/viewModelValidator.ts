@@ -277,10 +277,10 @@ export function validateEventMethods(
         }
 
         const suggestedName =
-      findCaseInsensitiveMember(members.methods, attribute.value) ??
-      findCaseInsensitiveMember(members.getters, attribute.value) ??
-      findCaseInsensitiveMember(members.properties, attribute.value) ??
-      findCaseInsensitiveMember(members.arrows, attribute.value)
+          findCaseInsensitiveMember(members.methods, attribute.value) ??
+          findCaseInsensitiveMember(members.getters, attribute.value) ??
+          findCaseInsensitiveMember(members.properties, attribute.value) ??
+          findCaseInsensitiveMember(members.arrows, attribute.value)
         if (suggestedName) {
           return [
             makeDiagnostic(

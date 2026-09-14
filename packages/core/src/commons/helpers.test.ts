@@ -105,6 +105,17 @@ describe('helpers', () => {
 
       expect(isArrowFunctionMember(reactive, 'increment', reactive.increment)).toBe(true)
     })
+
+    it('should not confuse an arbitrary $raw property with the reactive unwrap', () => {
+      class ViewModel {
+        [key: string]: unknown
+        $raw = { unrelated: true }
+        increment = () => {}
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(true)
+    })
   })
 
   describe('extractElementSnippet', () => {

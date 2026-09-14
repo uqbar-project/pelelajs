@@ -1,3 +1,4 @@
+import { isProxy } from '../reactivity/proxyIdentity'
 import { getRegisteredTags } from '../registry/componentRegistry'
 import { t } from './i18n'
 import { isUnsafeKey } from './sanitization'
@@ -142,7 +143,9 @@ export function isArrowFunctionMember(
   value: unknown,
 ): boolean {
   if (isUnsafeKey(memberName)) return false
-  const rawViewModel: unknown = (viewModel as ViewModelWithRaw).$raw ?? viewModel
+  const rawViewModel: unknown = isProxy(viewModel)
+    ? ((viewModel as ViewModelWithRaw).$raw ?? viewModel)
+    : viewModel
   return (
     isObject(rawViewModel) &&
     Object.hasOwn(rawViewModel, memberName) &&

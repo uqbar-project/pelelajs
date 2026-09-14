@@ -610,10 +610,7 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects a binding whose property name differs only by case from a method member using propertyCaseMismatch', () => {
-      const { tags, document } = prepareValidation(
-        ['<div bind-content="counterPlusOne">'],
-        context
-      )
+      const { tags, document } = prepareValidation(['<div bind-content="counterPlusOne">'], context)
       const diagnostics = validateBindingProperties(
         tags,
         context.tsPath,
