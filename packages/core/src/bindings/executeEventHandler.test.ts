@@ -188,6 +188,21 @@ describe('executeEventHandler', () => {
     expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 
+  it('should render GetterAsHandlerError when the getter returns a function', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      get handleEvent() {
+        return () => {}
+      }
+    }
+    const viewModel = new TestViewModel()
+
+    executeHandler(viewModel)
+
+    const expectedError = new GetterAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
   it('should render HandlerCaseMismatchError when only the case differs from an existing method', () => {
     class TestViewModel {
       [key: string]: unknown

@@ -73,8 +73,13 @@ export function executeEventHandler<T extends object, E extends Event>({
   eventType,
 }: ExecuteEventHandlerOptions<T, E>): void {
   try {
-    const handler = getHandler(viewModel, handlerName)
     const viewModelName = viewModel.constructor?.name ?? 'Unknown'
+
+    if (isGetterProperty(viewModel, handlerName)) {
+      throw new GetterAsHandlerError(handlerName, viewModelName, eventType)
+    }
+
+    const handler = getHandler(viewModel, handlerName)
 
     if (isEventHandler<T, E>(handler)) {
       if (isArrowFunctionMember(viewModel, handlerName, handler)) {
@@ -85,10 +90,6 @@ export function executeEventHandler<T extends object, E extends Event>({
         void Promise.resolve(handlerResult).catch(renderErrorPage)
       }
       return
-    }
-
-    if (isGetterProperty(viewModel, handlerName)) {
-      throw new GetterAsHandlerError(handlerName, viewModelName, eventType)
     }
 
     const suggestedName = findPropertyOwner(viewModel, handlerName)
