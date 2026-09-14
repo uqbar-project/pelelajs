@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ELEMENT_SNIPPET_MAX_LENGTH, extractElementSnippet } from '../commons/helpers'
 import {
   ArrowFunctionAsPropertyError,
+  FunctionAsPropertyError,
   MethodAsPropertyError,
   PropertyCaseMismatchError,
   PropertyValidationError,
@@ -218,6 +219,62 @@ describe('assertViewModelProperty', () => {
     expect(error.propertyName).toBe('handleEvent')
     expect(error.bindingKind).toBe('bind-content')
     expect(error.viewModelName).toBe('ViewModelWithArrow')
+  })
+
+  it('should throw FunctionAsPropertyError when the referenced member is a getter that returns a function', () => {
+    class ViewModelWithGetterReturningFunction {
+      get callback() {
+        return () => {}
+      }
+    }
+    const viewModel = new ViewModelWithGetterReturningFunction()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'callback')
+
+    const error = catchError<FunctionAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'callback', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(FunctionAsPropertyError)
+    expect(error.propertyName).toBe('callback')
+    expect(error.bindingKind).toBe('bind-content')
+    expect(error.viewModelName).toBe('ViewModelWithGetterReturningFunction')
+  })
+
+  it('should throw FunctionAsPropertyError when the referenced member is an instance function field', () => {
+    class ViewModelWithFunctionField {
+      handleValue = function handleValue() {}
+    }
+    const viewModel = new ViewModelWithFunctionField()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'handleValue')
+
+    const error = catchError<FunctionAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'handleValue', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(FunctionAsPropertyError)
+    expect(error.propertyName).toBe('handleValue')
+    expect(error.bindingKind).toBe('bind-content')
+    expect(error.viewModelName).toBe('ViewModelWithFunctionField')
+  })
+
+  it('should throw FunctionAsPropertyError when the referenced property is a nested function value', () => {
+    class ViewModelWithNestedFunction {
+      user = { callback: function callback() {} }
+    }
+    const viewModel = new ViewModelWithNestedFunction()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'user.callback')
+
+    const error = catchError<FunctionAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'user.callback', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(FunctionAsPropertyError)
+    expect(error.propertyName).toBe('user.callback')
+    expect(error.bindingKind).toBe('bind-content')
+    expect(error.viewModelName).toBe('ViewModelWithNestedFunction')
   })
 
   it('should throw PropertyCaseMismatchError when only the case differs from an existing property', () => {

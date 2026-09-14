@@ -38,6 +38,8 @@ const errors = {
       '[pelela] "{{name}}" is a method of view model "{{viewModel}}", not a bindable property. Convert it into a getter by adding "get": get {{name}}() { ... }',
     isArrow:
       '[pelela] "{{name}}" is an arrow function of view model "{{viewModel}}", but properties must be bindable values. Arrow functions are not allowed in a view model. Convert it into a getter: get {{name}}() { ... }',
+    isFunction:
+      '[pelela] "{{name}}" is a function value that cannot be bound as a property of view model "{{viewModel}}". A bindable property must resolve to a plain value, not a function.',
     caseMismatch:
       '[pelela] Property "{{name}}" does not exist in view model "{{viewModel}}", but "{{suggestedName}}" does. TypeScript names are case-sensitive.',
   },

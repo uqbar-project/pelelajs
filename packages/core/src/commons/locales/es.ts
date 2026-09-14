@@ -38,6 +38,8 @@ const errors = {
       '[pelela] "{{name}}" es un método del view model "{{viewModel}}", no una propiedad bindeable. Convertilo en un getter agregando "get": get {{name}}() { ... }',
     isArrow:
       '[pelela] "{{name}}" es una arrow function del view model "{{viewModel}}", pero las propiedades deben ser valores bindeables. Las arrow functions no están permitidas en un view model. Convertila en un getter: get {{name}}() { ... }',
+    isFunction:
+      '[pelela] "{{name}}" es un valor de función que no puede bindearse como propiedad del view model "{{viewModel}}". Una propiedad bindeable debe resolver a un valor plano, no a una función.',
     caseMismatch:
       '[pelela] La propiedad "{{name}}" no existe en el view model "{{viewModel}}", pero sí "{{suggestedName}}". En TypeScript los nombres distinguen mayúsculas.',
   },

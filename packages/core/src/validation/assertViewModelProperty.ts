@@ -9,6 +9,7 @@ import {
 import {
   ArrowFunctionAsPropertyError,
   type BindingKind,
+  FunctionAsPropertyError,
   MethodAsPropertyError,
   PropertyCaseMismatchError,
   PropertyValidationError,
@@ -34,6 +35,21 @@ function hasNestedProperty(targetObject: unknown, path: string): boolean {
 
     return false
   })
+}
+
+function isViewModelMethod(viewModel: unknown, memberName: string): boolean {
+  if (!isObject(viewModel) || Object.hasOwn(viewModel, memberName)) return false
+
+  let proto: object | null = Object.getPrototypeOf(viewModel)
+  while (proto) {
+    const descriptor = Object.getOwnPropertyDescriptor(proto, memberName)
+    if (descriptor) {
+      return descriptor.get === undefined && typeof descriptor.value === 'function'
+    }
+    proto = Object.getPrototypeOf(proto)
+  }
+
+  return false
 }
 
 /**
@@ -64,7 +80,15 @@ export function assertViewModelProperty<T extends object>(
           elementSnippet: extractElementSnippet(element),
         })
       }
-      throw new MethodAsPropertyError({
+      if (isViewModelMethod(viewModel, memberName)) {
+        throw new MethodAsPropertyError({
+          propertyName,
+          bindingKind: kind,
+          viewModelName: viewModel.constructor.name,
+          elementSnippet: extractElementSnippet(element),
+        })
+      }
+      throw new FunctionAsPropertyError({
         propertyName,
         bindingKind: kind,
         viewModelName: viewModel.constructor.name,

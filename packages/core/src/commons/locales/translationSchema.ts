@@ -24,6 +24,7 @@ type ErrorTranslations = {
     validation: string
     isMethod: string
     isArrow: string
+    isFunction: string
     caseMismatch: string
   }
   viewmodel: {
