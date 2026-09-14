@@ -19,7 +19,7 @@
     "biome:format": "biome format .",
     "biome:format:fix": "biome format --write .",
     "biome:check": "biome check .",
-    "biome:check:fix": "biome check --write .",
+    "biome:check:fix": "biome check --write --skip=nursery/noFloatingPromises --skip=nursery/noMisusedPromises .",
     "install:vscode": "node scripts/install-pelela-vscode.cjs",
     "release:npm": "tsx scripts/check-npm-auth.ts && release-it",
     "release:vscode": "set -a; [ -f .env ] && . ./.env; set +a; tsx scripts/check-vscode-auth.ts && pnpm -C tools/pelela-vscode run release",
