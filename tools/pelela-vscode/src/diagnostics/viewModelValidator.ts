@@ -155,7 +155,8 @@ function validatePropertyPath(
     const suggestedName =
       findCaseInsensitiveMember(members.properties, firstPart) ??
       findCaseInsensitiveMember(members.getters, firstPart) ??
-      findCaseInsensitiveMember(members.methods, firstPart)
+      findCaseInsensitiveMember(members.methods, firstPart) ??
+      findCaseInsensitiveMember(members.arrows, firstPart)
     if (suggestedName) {
       return [
         makeDiagnostic(

@@ -646,6 +646,23 @@ describe('viewModelValidator', () => {
         vscode.DiagnosticSeverity.Error
       )
     })
+
+    it('rejects a binding whose property name differs only by case from an arrow function field using propertyCaseMismatch', () => {
+      const { tags, document } = prepareValidation(['<div bind-content="Increment">'], context)
+      const diagnostics = validateBindingProperties(
+        tags,
+        context.tsPath,
+        context.members,
+        document,
+        'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', { name: 'Increment', suggestedName: 'increment' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
   })
 
   describe('validateEventMethods', () => {
