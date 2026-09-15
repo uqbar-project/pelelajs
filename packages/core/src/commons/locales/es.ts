@@ -122,6 +122,12 @@ const errors = {
       'Componente desconocido: <{{tagName}}>. ¿Olvidaste registrarlo?\nEncontrado en: {{snippet}}',
     unknownComponentProperty:
       'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{propertyName}}" no está definida en el ViewModel hijo.\nEncontrado en: {{snippet}}',
+    invalidConstValue:
+      'Componente <{{tag}}> (ViewModel: {{viewModel}}): el const "{{name}}" recibe "{{value}}" pero {{expected}}. Encontrado en: {{snippet}}',
+    constExpectedNumber: 'debe ser un número',
+    constExpectedBoolean: "debe ser 'true' o 'false'",
+    constUnsupportedValue:
+      'no admite objetos ni otros valores; solo se permiten literales number, boolean o string',
   },
   ui: {
     errorPage: {

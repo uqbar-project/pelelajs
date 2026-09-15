@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { analyzeViewModelModule, classifyViewModelIssue, pascalCaseFromFileName } from './index'
+import {
+  analyzeViewModelModule,
+  classifyViewModelIssue,
+  extractViewModelPropertyTypes,
+  pascalCaseFromFileName,
+} from './index'
 
 const CONVERTER_SOURCE = 'export class Converter {}'
 const CONVERTER_VIEW_MODEL = 'converter'
@@ -237,5 +242,119 @@ describe('pascalCaseFromFileName', () => {
 
   it('handles dots as separators', () => {
     expect(pascalCaseFromFileName('foo.tsfile')).toBe('FooTsfile')
+  })
+})
+
+describe('extractViewModelPropertyTypes', () => {
+  const extractCounter = (tsSource: string) => extractViewModelPropertyTypes(tsSource, 'Counter')
+
+  it('classifies typed properties, initializer-inferred properties and definite-assignment properties', () => {
+    const types = extractViewModelPropertyTypes(
+      `export class Counter {
+  value = 0
+  total = 0
+  quantity!: number
+  active = false
+  label = ''
+  config = {}
+  when: Date = new Date()
+  items: string[] = []
+  dynamic
+}`,
+      'Counter',
+    )
+
+    expect(types).toEqual({
+      value: 'number',
+      total: 'number',
+      quantity: 'number',
+      active: 'boolean',
+      label: 'string',
+      config: 'other',
+      when: 'other',
+      items: 'other',
+      dynamic: 'unknown',
+    })
+  })
+
+  it('drops nullable union members to classify number | undefined as number', () => {
+    const types = extractCounter('export class Counter {\n  fromNumber: number | undefined\n}')
+
+    expect(types).toEqual({ fromNumber: 'number' })
+  })
+
+  it('classifies getters from their return type annotation', () => {
+    const types = extractCounter(`export class Counter {
+  private _count = 1
+
+  get count(): number {
+    return this._count
+  }
+}`)
+
+    expect(types).toEqual({ count: 'number' })
+  })
+
+  it('classifies getters from their returned literal when there is no annotation', () => {
+    const types = extractCounter(`export class Counter {
+  get toggled() {
+    return true
+  }
+}`)
+
+    expect(types).toEqual({ toggled: 'boolean' })
+  })
+
+  it('classifies constructor parameter properties from their parameter type', () => {
+    const types = extractCounter(
+      'export class Counter {\n  constructor(public title: string) {}\n}',
+    )
+
+    expect(types).toEqual({ title: 'string' })
+  })
+
+  it('ignores static members', () => {
+    const types = extractCounter('export class Counter {\n  static total = 0\n  value = 0\n}')
+
+    expect(types).toEqual({ value: 'number' })
+  })
+
+  it('ignores private and protected members', () => {
+    const types = extractCounter(
+      'export class Counter {\n  private _count = 1\n  protected hidden = 0\n  value = 0\n}',
+    )
+
+    expect(types).toEqual({ value: 'number' })
+  })
+
+  it('ignores private and protected parameter properties', () => {
+    const types = extractCounter(
+      'export class Counter {\n  constructor(private hidden: string, protected reserved: number) {}\n}',
+    )
+
+    expect(types).toEqual({})
+  })
+
+  it('collects base class types for same-file inheritance and prefers own members', () => {
+    const types = extractViewModelPropertyTypes(
+      `export class BaseCounter {
+  base = 0
+  shared = 'from-base'
+}
+
+export class Counter extends BaseCounter {
+  shared = 2
+  own = 1
+}`,
+      'Counter',
+    )
+
+    expect(types).toEqual({ base: 'number', shared: 'number', own: 'number' })
+  })
+
+  it('returns an empty map when the class does not exist', () => {
+    const types = extractViewModelPropertyTypes('export class BaseCounter {}', 'MissingClass')
+
+    expect(types).toEqual({})
   })
 })

@@ -6,6 +6,8 @@ import {
   validateTagRestrictions,
   validateUnknownAttributes,
 } from './attributeValidator'
+import { validateBindingTargets, validateBindingTypes } from './bindingTargetValidator'
+import { validateConstValues } from './constValidator'
 import { getViewModelName, scanDocument } from './scanDocument'
 import {
   validateBindingProperties,
@@ -27,6 +29,9 @@ export function validatePelelaDocument(
   diagnostics.push(...validateUnknownAttributes(tags))
   diagnostics.push(...validateComponentAttributes(tags))
   diagnostics.push(...validateTagRestrictions(tags))
+  diagnostics.push(...validateConstValues(tags, document))
+  diagnostics.push(...validateBindingTargets(tags, document))
+  diagnostics.push(...validateBindingTypes(tags, document))
 
   const tsPath = findViewModelFile(document.uri)
   if (tsPath !== null) {

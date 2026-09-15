@@ -76,6 +76,10 @@ type ErrorTranslations = {
     directiveOutsideRoot: string
     unknownComponent: string
     unknownComponentProperty: string
+    invalidConstValue: string
+    constExpectedNumber: string
+    constExpectedBoolean: string
+    constUnsupportedValue: string
   }
   ui: {
     errorPage: {
