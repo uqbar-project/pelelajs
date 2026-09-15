@@ -30,6 +30,22 @@ const diagnostics = {
   attributeNotAllowed: "Attribute '{{name}}' is not allowed on element '{{tag}}'",
   invalidComponentAttribute:
     "Component '<{{tag}}>': attribute '{{name}}' must use 'prop-', 'link-', or 'const-' prefix",
+  constValueInvalid:
+    'Component <{{tag}}> (ViewModel: {{viewModel}}): const "{{name}}" receives "{{value}}" but {{expected}}.',
+  constValueExpectedNumber: 'it must be a number',
+  constValueExpectedBoolean: "it must be 'true' or 'false'",
+  constValueUnsupported:
+    'it does not accept objects or other values; only number, boolean or string literals are allowed',
+  childPropertyNotFound:
+    'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{name}}" is not defined in the child ViewModel.',
+  childPropertyCaseMismatch:
+    'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{name}}" is not defined in the child ViewModel. Did you mean "{{suggestedName}}"?',
+  bindingTypeMismatch:
+    'Component <{{tag}}>: attribute "{{attr}}" receives {{parentKind}} (parent property "{{parentKey}}") but the child property "{{childKey}}" is {{childKind}}.',
+  bindingKindNumber: 'a number',
+  bindingKindString: 'a string',
+  bindingKindBoolean: 'a boolean',
+  bindingKindOther: 'an object or other value',
 } as const satisfies TranslationSchema['diagnostics']
 
 const completions = {
@@ -48,6 +64,7 @@ const completions = {
   getterDetail: 'Pelela ViewModel getter',
   iterationPropertyDetail: 'Pelela iteration property',
   nestedPropertyDetail: 'Pelela ViewModel nested property',
+  childPropertyDetail: 'Child ViewModel property',
 } as const satisfies TranslationSchema['completions']
 
 const hover = {

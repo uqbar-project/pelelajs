@@ -5,8 +5,10 @@ import { initializeI18n } from 'pelelajs'
 import {
   analyzeViewModelModule,
   classifyViewModelIssue,
+  extractViewModelPropertyTypes,
   pascalCaseFromFileName,
   type ViewModelIssue,
+  type ViewModelPropertyTypes,
 } from 'pelelajs/analysis'
 
 import type { Plugin } from 'vite'
@@ -29,6 +31,7 @@ interface ComponentFileMetadata {
   pelelaPath: string
   viewModelName: string
   cssPaths: string[]
+  typeMap: ViewModelPropertyTypes
   issue: ViewModelIssue
 }
 
@@ -110,6 +113,7 @@ function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
         pelelaPath: toImportPath(pelelaPath),
         viewModelName,
         cssPaths,
+        typeMap: extractViewModelPropertyTypes(tsSource, viewModelName),
         issue,
       }
     })
@@ -132,12 +136,21 @@ function isComponentSourceFile(file: string): boolean {
 }
 
 function generateComponentMetadata(component: ComponentFileMetadata): ProcessedComponent {
-  const { name, viewModelName, tsPath, pelelaPath, cssPaths, issue } = component
+  const { name, viewModelName, tsPath, pelelaPath, cssPaths, typeMap, issue } = component
   const baseName = kebabToCamelCase(name)
   const templateVar = `${baseName}Template`
   const cssUrlsVar = `${baseName}CssUrls`
   const hasCss = cssPaths.length > 0
-  const optionsSuffix = hasCss ? `, { cssUrls: ${cssUrlsVar} }` : ''
+  const typeMapEntries = Object.entries(typeMap).filter(([, kind]) => kind !== 'unknown')
+  const optionsParts: string[] = []
+  if (typeMapEntries.length > 0) {
+    optionsParts.push(`typeMap: ${JSON.stringify(Object.fromEntries(typeMapEntries))}`)
+  }
+  if (hasCss) {
+    optionsParts.push(`cssUrls: ${cssUrlsVar}`)
+  }
+  const optionsSuffix = optionsParts.length > 0 ? `, { ${optionsParts.join(', ')} }` : ''
+  const cssSuffix = hasCss ? `, { cssUrls: ${cssUrlsVar} }` : ''
 
   const templateImport = `import ${templateVar}${
     hasCss ? `, { __pelelaCssUrls as ${cssUrlsVar} }` : ''
@@ -155,7 +168,7 @@ function generateComponentMetadata(component: ComponentFileMetadata): ProcessedC
   }
 }
 
-defineComponent("${viewModelName}", ${stubName}, ${templateVar}${optionsSuffix});`,
+defineComponent("${viewModelName}", ${stubName}, ${templateVar}${cssSuffix});`,
       hasExportIssue: true,
     }
   }

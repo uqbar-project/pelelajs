@@ -1,5 +1,7 @@
+// biome-ignore-all lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
 import * as assert from 'node:assert'
 import * as fs from 'node:fs'
+import * as os from 'node:os'
 import * as path from 'node:path'
 import { after, before, describe, it } from 'mocha'
 import * as vscode from 'vscode'
@@ -7,6 +9,7 @@ import { t } from '../../src/i18n/index'
 import {
   addPelelaAttributeCompletions,
   provideBasicViewModelCompletions,
+  provideCompletionItems,
 } from '../../src/providers/completionProvider'
 
 const VIEWMODEL_FIXTURE = `
@@ -76,7 +79,6 @@ describe('completionProvider', () => {
       assert.ok(constItem.insertText instanceof vscode.SnippetString)
       assert.strictEqual(
         (constItem.insertText as vscode.SnippetString).value,
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
         'const-${1:field-name}="${2:value}"'
       )
 
@@ -99,13 +101,13 @@ describe('completionProvider', () => {
         '  <span bind-content="',
       ])
       const position = createMockPosition(1, 22)
-      const completions = provideBasicViewModelCompletions(
-        testVMPath,
-        'bind-content',
+      const completions = provideBasicViewModelCompletions({
+        typescriptFilePath: testVMPath,
+        attributeName: 'bind-content',
         document,
         position,
-        'TestViewModel'
-      )
+        viewModelName: 'TestViewModel',
+      })
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes(FOR_EACH_ITEM_VARIABLE), 'should include for-each variable')
@@ -129,13 +131,13 @@ describe('completionProvider', () => {
         '  <span bind-content="',
       ])
       const position = createMockPosition(1, 22)
-      const completions = provideBasicViewModelCompletions(
-        testVMPath,
-        'bind-content',
+      const completions = provideBasicViewModelCompletions({
+        typescriptFilePath: testVMPath,
+        attributeName: 'bind-content',
         document,
         position,
-        'TestViewModel'
-      )
+        viewModelName: 'TestViewModel',
+      })
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes(FOR_EACH_ITEM_VARIABLE), 'should include for-each variable')
@@ -154,13 +156,13 @@ describe('completionProvider', () => {
     it('should include only methods for event attributes', () => {
       const document = createMockDocument(['<div>', '  <button click="'])
       const position = createMockPosition(1, 17)
-      const completions = provideBasicViewModelCompletions(
-        testVMPath,
-        'click',
+      const completions = provideBasicViewModelCompletions({
+        typescriptFilePath: testVMPath,
+        attributeName: 'click',
         document,
         position,
-        'TestViewModel'
-      )
+        viewModelName: 'TestViewModel',
+      })
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes('handleClick'), 'should include method')
@@ -176,13 +178,13 @@ describe('completionProvider', () => {
         '  <button click="',
       ])
       const position = createMockPosition(1, 17)
-      const completions = provideBasicViewModelCompletions(
-        testVMPath,
-        'click',
+      const completions = provideBasicViewModelCompletions({
+        typescriptFilePath: testVMPath,
+        attributeName: 'click',
         document,
         position,
-        'TestViewModel'
-      )
+        viewModelName: 'TestViewModel',
+      })
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes('handleClick'), 'should include method')
@@ -192,13 +194,13 @@ describe('completionProvider', () => {
     it('should include only properties for binding attributes', () => {
       const document = createMockDocument(['<div>', '  <span bind-content="'])
       const position = createMockPosition(1, 22)
-      const completions = provideBasicViewModelCompletions(
-        testVMPath,
-        'bind-content',
+      const completions = provideBasicViewModelCompletions({
+        typescriptFilePath: testVMPath,
+        attributeName: 'bind-content',
         document,
         position,
-        'TestViewModel'
-      )
+        viewModelName: 'TestViewModel',
+      })
 
       const labels = completions.map((item) => item.label)
       assert.ok(labels.includes('name'), 'should include property')
@@ -217,16 +219,143 @@ describe('completionProvider', () => {
     it('should never offer getters with completion items in click events', () => {
       const document = createMockDocument(['<div>', '  <button click="'])
       const position = createMockPosition(1, 17)
-      const completions = provideBasicViewModelCompletions(
-        testVMPath,
-        'click',
+      const completions = provideBasicViewModelCompletions({
+        typescriptFilePath: testVMPath,
+        attributeName: 'click',
         document,
         position,
-        'TestViewModel'
-      )
+        viewModelName: 'TestViewModel',
+      })
 
       const fullNameItem = completions.find((item) => item.label === 'fullName')
       assert.ok(!fullNameItem, 'should NOT include getter in click events')
+    })
+  })
+
+  describe('child component property completions', () => {
+    const COUNTER_VIEW_MODEL = `export class CounterViewModel {
+  lastNumber = 0
+  isLucky = false
+
+  get total() {
+    return this.lastNumber + 1
+  }
+}`
+
+    const COUNTER_TEMPLATE = `<component view-model="CounterViewModel"></component>`
+
+    const APP_VIEW_MODEL = `export class AppViewModel {
+  count = 0
+}`
+
+    let fixtureDir: string
+    let documentPath: string
+
+    before(() => {
+      fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-child-completions-'))
+      fs.writeFileSync(path.join(fixtureDir, 'counter.ts'), COUNTER_VIEW_MODEL)
+      fs.writeFileSync(path.join(fixtureDir, 'counter.pelela'), COUNTER_TEMPLATE)
+      fs.writeFileSync(path.join(fixtureDir, 'app.ts'), APP_VIEW_MODEL)
+      documentPath = path.join(fixtureDir, 'app.pelela')
+    })
+
+    after(() => {
+      fs.rmSync(fixtureDir, { recursive: true, force: true })
+    })
+
+    function createDocumentWithUri(lines: string[]): vscode.TextDocument {
+      return {
+        lineCount: lines.length,
+        lineAt: (lineIndex: number) => ({ text: lines[lineIndex] }),
+        uri: vscode.Uri.file(documentPath),
+      } as unknown as vscode.TextDocument
+    }
+
+    async function provideCompletions(
+      lines: string[],
+      position: vscode.Position
+    ): Promise<vscode.CompletionItem[]> {
+      return provideCompletionItems(
+        createDocumentWithUri(lines),
+        position,
+        {} as vscode.CancellationToken,
+        {} as vscode.CompletionContext
+      )
+    }
+
+    it('adds child ViewModel properties for a resolvable component tag', () => {
+      const items: vscode.CompletionItem[] = []
+      addPelelaAttributeCompletions(items, 'counter', createDocumentWithUri(['<counter ']))
+
+      const labels = items.map((item) => item.label)
+      assert.ok(labels.includes('prop-last-number'), 'should offer prop-last-number')
+      assert.ok(labels.includes('link-last-number'), 'should offer link-last-number')
+      assert.ok(labels.includes('const-is-lucky'), 'should offer const-is-lucky')
+      assert.ok(!labels.includes('prop-total'), 'should NOT offer getters')
+
+      const childItem = items.find((item) => item.label === 'prop-last-number')
+      assert.ok(childItem, 'child property completion should exist')
+      assert.strictEqual(childItem.detail, t('completions.childPropertyDetail'))
+      assert.strictEqual(childItem.kind, vscode.CompletionItemKind.Field)
+    })
+
+    it('does not add child properties for HTML tags', () => {
+      const items: vscode.CompletionItem[] = []
+      addPelelaAttributeCompletions(items, 'div', createDocumentWithUri(['<div ']))
+
+      const labels = items.map((item) => item.label)
+      assert.ok(!labels.includes('prop-last-number'), 'should NOT offer child properties')
+    })
+
+    it('offers child properties when typing a binding prefix on a component', async () => {
+      const line = '  <counter prop-'
+      const position = createMockPosition(1, line.length)
+      const completions = await provideCompletions(['<pelela>', line], position)
+
+      const childItem = completions.find((item) => item.label === 'prop-last-number')
+      assert.ok(childItem, 'should offer prop-last-number when typing prop-')
+      assert.strictEqual(childItem.detail, t('completions.childPropertyDetail'))
+
+      const snippet = childItem.insertText as vscode.SnippetString
+      assert.ok(snippet instanceof vscode.SnippetString)
+      assert.strictEqual(snippet.value, 'prop-last-number="${1:value}"')
+
+      const range = childItem.range as vscode.Range
+      assert.deepStrictEqual(range.start, createMockPosition(1, '  <counter '.length))
+      assert.deepStrictEqual(range.end, position)
+
+      assert.strictEqual(
+        completions.filter((item) => item.label === 'prop-last-number').length,
+        1,
+        'the child property should appear exactly once'
+      )
+      assert.ok(
+        !completions.some((item) => item.label === 'prop-total'),
+        'should NOT offer getters'
+      )
+    })
+
+    it('does not offer parent properties as const- values', async () => {
+      const line = '  <counter const-count="'
+      const position = createMockPosition(1, line.length)
+      const completions = await provideCompletions(
+        ['<pelela view-model="AppViewModel">', line],
+        position
+      )
+
+      assert.strictEqual(completions.length, 0)
+    })
+
+    it('still offers parent properties as prop- values', async () => {
+      const line = '  <counter prop-count="'
+      const position = createMockPosition(1, line.length)
+      const completions = await provideCompletions(
+        ['<pelela view-model="AppViewModel">', line],
+        position
+      )
+
+      const labels = completions.map((item) => item.label)
+      assert.ok(labels.includes('count'), 'should offer the parent ViewModel property')
     })
   })
 })

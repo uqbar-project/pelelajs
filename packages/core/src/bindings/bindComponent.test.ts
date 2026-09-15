@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initializeI18n, t } from '../commons/i18n'
+import { InvalidConstValueError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import type { PelelaElement } from '../types'
@@ -545,6 +546,320 @@ describe('bindComponent', () => {
       expect(childVM.count).toBe(42)
       expect(bindings).toHaveLength(1)
       expect(bindings[0].mappings).toEqual([])
+    })
+
+    it('should convert true/false literals to booleans when the property is a boolean', () => {
+      class ChildVM {
+        active = false
+        inactive = true
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="active"></span></component>',
+      )
+
+      container.innerHTML = '<test-comp const-active="true" const-inactive="false"></test-comp>'
+
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.active).toBe(true)
+      expect(childVM.inactive).toBe(false)
+      expect(bindings).toHaveLength(1)
+      expect(bindings[0].mappings).toEqual([])
+    })
+
+    it('should throw InvalidConstValueError when a boolean property receives a non-boolean literal', () => {
+      class ChildVM {
+        active = false
+      }
+      defineComponent(
+        'test-comp',
+        ChildVM,
+        '<component view-model="ChildVM"><span bind-content="active"></span></component>',
+      )
+
+      container.innerHTML = '<test-comp const-active="yes"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(
+        /it must be 'true' or 'false'/,
+      )
+    })
+
+    it('should throw InvalidConstValueError when a number property receives a non-numeric literal (const-desde="a")', () => {
+      class ChildVM {
+        desde = 1
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-desde="a"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
+    })
+
+    it('should keep const literals as strings when the property is a string', () => {
+      class ChildVM {
+        label = ''
+        code = ''
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-label="Hello" const-code="42"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.label).toBe('Hello')
+      expect(childVM.code).toBe('42')
+    })
+
+    it('should throw InvalidConstValueError when the target property is an object', () => {
+      class ChildVM {
+        config: Record<string, unknown> = {}
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-config="anything"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
+    })
+
+    it('should throw InvalidConstValueError when the target property is an array', () => {
+      class ChildVM {
+        items: string[] = []
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-items="a"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
+    })
+
+    it('should throw InvalidConstValueError when the target property is a date', () => {
+      class ChildVM {
+        when: Date = new Date('2026-01-01')
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-when="2026-01-01"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
+    })
+
+    it('should parse scalar literals best-effort when the property has no initializer', () => {
+      class ChildVM {
+        numeric!: number
+        flag!: boolean
+        label!: string
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML =
+        '<test-comp const-numeric="42" const-flag="true" const-label="hi"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.numeric).toBe(42)
+      expect(childVM.flag).toBe(true)
+      expect(childVM.label).toBe('hi')
+    })
+
+    it('should validate const literals against the type returned by a getter', () => {
+      class ChildVM {
+        private _count = 1
+
+        get count(): number {
+          return this._count
+        }
+
+        set count(value: number) {
+          this._count = value
+        }
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-count="5"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.count).toBe(5)
+    })
+
+    it('should throw InvalidConstValueError when a getter-returned number receives a non-numeric literal', () => {
+      class ChildVM {
+        private _count = 1
+
+        get count(): number {
+          return this._count
+        }
+
+        set count(value: number) {
+          this._count = value
+        }
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-count="a"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
+    })
+
+    it('should use the declared property type from typeMap to reject non-numeric const literals', () => {
+      class ChildVM {
+        quantity!: number
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>', {
+        typeMap: { quantity: 'number' },
+      })
+
+      container.innerHTML = '<test-comp const-quantity="s"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
+    })
+
+    it('should accept a numeric const literal for a definite-assignment property declared in typeMap', () => {
+      class ChildVM {
+        quantity!: number
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>', {
+        typeMap: { quantity: 'number' },
+      })
+
+      container.innerHTML = '<test-comp const-quantity="5"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.quantity).toBe(5)
+    })
+
+    it('should keep const literals as strings for a definite-assignment string property declared in typeMap', () => {
+      class ChildVM {
+        tag!: string
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>', {
+        typeMap: { tag: 'string' },
+      })
+
+      container.innerHTML = '<test-comp const-tag="42"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.tag).toBe('42')
+    })
+
+    it('should parse booleans for a definite-assignment boolean property declared in typeMap', () => {
+      class ChildVM {
+        enabled!: boolean
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>', {
+        typeMap: { enabled: 'boolean' },
+      })
+
+      container.innerHTML = '<test-comp const-enabled="true"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.enabled).toBe(true)
+    })
+
+    it('should reject non-boolean literals for a definite-assignment boolean property declared in typeMap', () => {
+      class ChildVM {
+        enabled!: boolean
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>', {
+        typeMap: { enabled: 'boolean' },
+      })
+
+      container.innerHTML = '<test-comp const-enabled="maybe"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
+    })
+
+    it('should keep const literals as strings when the declared type in typeMap is a string', () => {
+      class ChildVM {
+        label = ''
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>', {
+        typeMap: { label: 'string' },
+      })
+
+      container.innerHTML = '<test-comp const-label="42"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.label).toBe('42')
+    })
+
+    it('should reject const literals when the declared type in typeMap is other', () => {
+      class ChildVM {
+        config: Record<string, unknown> = {}
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>', {
+        typeMap: { config: 'other' },
+      })
+
+      container.innerHTML = '<test-comp const-config="x"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
+    })
+
+    it('should fall back to runtime inference when the declared type in typeMap is unknown', () => {
+      class ChildVM {
+        numeric!: number
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>', {
+        typeMap: { numeric: 'unknown' },
+      })
+
+      container.innerHTML = '<test-comp const-numeric="42"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.numeric).toBe(42)
+    })
+
+    it('should give precedence to the declared type in typeMap over the runtime initializer', () => {
+      class ChildVM {
+        label = 'hello'
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>', {
+        typeMap: { label: 'number' },
+      })
+
+      container.innerHTML = '<test-comp const-label="5"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.label).toBe(5)
     })
   })
 

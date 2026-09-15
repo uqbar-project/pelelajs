@@ -1,4 +1,8 @@
+// biome-ignore-all lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
+import { toKebabCase } from 'pelelajs'
 import * as vscode from 'vscode'
+import { isSettableField } from '../diagnostics/bindingTargetValidator'
+import { isComponentTag, resolveChildComponent } from '../diagnostics/childComponentResolver'
 import { getViewModelName, scanDocument } from '../diagnostics/scanDocument'
 import { t } from '../i18n/index'
 import {
@@ -22,8 +26,9 @@ import {
 
 const EVENT_ATTRIBUTES = new Set(['click', 'enter'])
 const PELELA_ATTRIBUTE_NAMES = new Set(['click', 'enter', 'if', 'for-each'])
+const CHILD_BINDING_PREFIXES = ['const-', 'prop-', 'link-'] as const
 
-async function provideCompletionItems(
+export async function provideCompletionItems(
   document: vscode.TextDocument,
   position: vscode.Position,
   _token: vscode.CancellationToken,
@@ -47,8 +52,23 @@ async function provideCompletionItems(
     addHtmlElementCompletions(items)
   } else if (isInsideTag(textBeforeCursor)) {
     const tagName = getCurrentTagName(textBeforeCursor)
+    const typedChildPrefix = CHILD_BINDING_PREFIXES.find((candidate) =>
+      textBeforeCursor.endsWith(candidate)
+    )
     addHtmlAttributeCompletions(items, tagName ?? undefined)
-    addPelelaAttributeCompletions(items, tagName)
+    addPelelaAttributeCompletions(items, tagName, document, {
+      skipChildProperties: typedChildPrefix !== undefined,
+    })
+    if (tagName !== null && typedChildPrefix !== undefined) {
+      addTypedChildPropertyCompletions({
+        items,
+        document,
+        tagName,
+        prefix: typedChildPrefix,
+        textBeforeCursor,
+        position,
+      })
+    }
   }
 
   return items
@@ -73,38 +93,34 @@ function addHtmlAttributeCompletions(items: vscode.CompletionItem[], tagName?: s
 
 export function addPelelaAttributeCompletions(
   items: vscode.CompletionItem[],
-  tagName?: string | null
+  tagName?: string | null,
+  document?: vscode.TextDocument,
+  options?: { skipChildProperties?: boolean }
 ): void {
   const attrNames = getPelelaAttributesForTag(tagName ?? null)
 
   const attributeSnippets: Record<string, { text: string; detail: string }> = {
     'view-model': {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'view-model="${1:App}"',
       detail: t('completions.viewModelDetail'),
     },
     click: {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'click="${1:handler}"',
       detail: t('completions.clickDetail'),
     },
     enter: {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'enter="${1:handler}"',
       detail: t('completions.enterDetail'),
     },
     if: {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'if="${1:condicion}"',
       detail: t('completions.ifDetail'),
     },
     'for-each': {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'for-each="${1:item} of ${2:collection}"',
       detail: t('completions.forEachDetail'),
     },
     index: {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       text: 'index="${1:index}"',
       detail: t('completions.indexDetail'),
     },
@@ -122,22 +138,90 @@ export function addPelelaAttributeCompletions(
       item.detail = t('completions.bindDetail')
       item.sortText = `!0_${name}`
     } else if (name.startsWith('prop-')) {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       item.insertText = new vscode.SnippetString('prop-${1:field-name}="${2:value}"')
       item.detail = t('completions.propDetail')
       item.sortText = `!0_${name}`
     } else if (name.startsWith('link-')) {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       item.insertText = new vscode.SnippetString('link-${1:field-name}="${2:value}"')
       item.detail = t('completions.linkDetail')
       item.sortText = `!0_${name}`
     } else if (name.startsWith('const-')) {
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: VSCode snippet syntax
       item.insertText = new vscode.SnippetString('const-${1:field-name}="${2:value}"')
       item.detail = t('completions.constDetail')
       item.sortText = `!0_${name}`
     }
 
+    items.push(item)
+  })
+
+  if (
+    tagName !== null &&
+    tagName !== undefined &&
+    document !== undefined &&
+    options?.skipChildProperties !== true
+  ) {
+    addChildPropertyAttributeCompletions(items, document, tagName)
+  }
+}
+
+function addChildPropertyAttributeCompletions(
+  items: vscode.CompletionItem[],
+  document: vscode.TextDocument,
+  tagName: string
+): void {
+  const childProperties = getChildSettableProperties(document, tagName)
+  if (childProperties === null) return
+
+  childProperties.forEach((childProperty) => {
+    CHILD_BINDING_PREFIXES.forEach((prefix) => {
+      const label = `${prefix}${toKebabCase(childProperty)}`
+      const item = new vscode.CompletionItem(label, vscode.CompletionItemKind.Field)
+      item.detail = t('completions.childPropertyDetail')
+      item.sortText = `!0_${label}`
+      items.push(item)
+    })
+  })
+}
+
+function getChildSettableProperties(
+  document: vscode.TextDocument,
+  tagName: string
+): string[] | null {
+  if (!isComponentTag(tagName)) return null
+  const childComponent = resolveChildComponent(tagName, document)
+  if (childComponent === null) return null
+
+  const members = extractViewModelMembers(childComponent.tsPath, childComponent.viewModelName)
+  return members.properties.filter((name) => isSettableField(members, name))
+}
+
+function addTypedChildPropertyCompletions(params: {
+  items: vscode.CompletionItem[]
+  document: vscode.TextDocument
+  tagName: string
+  prefix: string
+  textBeforeCursor: string
+  position: vscode.Position
+}): void {
+  const { items, document, tagName, prefix, textBeforeCursor, position } = params
+  const childProperties = getChildSettableProperties(document, tagName)
+  if (childProperties === null) return
+
+  const prefixStart = textBeforeCursor.length - prefix.length
+  const replaceRange = new vscode.Range(
+    position.line,
+    prefixStart,
+    position.line,
+    position.character
+  )
+
+  childProperties.forEach((childProperty) => {
+    const label = `${prefix}${toKebabCase(childProperty)}`
+    const item = new vscode.CompletionItem(label, vscode.CompletionItemKind.Field)
+    item.detail = t('completions.childPropertyDetail')
+    item.sortText = `!0_${label}`
+    item.insertText = new vscode.SnippetString(`${label}="\${1:value}"`)
+    item.range = replaceRange
     items.push(item)
   })
 }
@@ -157,6 +241,8 @@ async function provideAttributeValueCompletions(
 
   if (!isPelelaAttribute) return []
 
+  if (attributeName.startsWith('const-')) return []
+
   const typescriptFilePath = findViewModelFile(document.uri)
   if (!typescriptFilePath) return []
 
@@ -165,40 +251,41 @@ async function provideAttributeValueCompletions(
 
   const valueBeforeCursor = getAttributeValueMatch(textBeforeCursor)
   if (!valueBeforeCursor) {
-    return provideBasicViewModelCompletions(
+    return provideBasicViewModelCompletions({
       typescriptFilePath,
       attributeName,
       document,
       position,
-      viewModelName
-    )
+      viewModelName,
+    })
   }
 
   const propertyPath = parsePropertyPath(valueBeforeCursor)
   return propertyPath
-    ? provideNestedPropertyCompletions(
+    ? provideNestedPropertyCompletions({
         document,
         position,
         typescriptFilePath,
         propertyPath,
-        viewModelName
-      )
-    : provideBasicViewModelCompletions(
+        viewModelName,
+      })
+    : provideBasicViewModelCompletions({
         typescriptFilePath,
         attributeName,
         document,
         position,
-        viewModelName
-      )
+        viewModelName,
+      })
 }
 
-export function provideBasicViewModelCompletions(
-  typescriptFilePath: string,
-  attributeName: string,
-  document: vscode.TextDocument,
-  position: vscode.Position,
+export function provideBasicViewModelCompletions(params: {
+  typescriptFilePath: string
+  attributeName: string
+  document: vscode.TextDocument
+  position: vscode.Position
   viewModelName: string
-): vscode.CompletionItem[] {
+}): vscode.CompletionItem[] {
+  const { typescriptFilePath, attributeName, document, position, viewModelName } = params
   const items: vscode.CompletionItem[] = []
   const { properties, methods, getters } = extractViewModelMembers(
     typescriptFilePath,
@@ -253,13 +340,14 @@ function createIterationPropertyCompletion(name: string): vscode.CompletionItem 
   return item
 }
 
-async function provideNestedPropertyCompletions(
-  document: vscode.TextDocument,
-  position: vscode.Position,
-  typescriptFilePath: string,
-  propertyPath: string[],
+async function provideNestedPropertyCompletions(params: {
+  document: vscode.TextDocument
+  position: vscode.Position
+  typescriptFilePath: string
+  propertyPath: string[]
   viewModelName: string
-): Promise<vscode.CompletionItem[]> {
+}): Promise<vscode.CompletionItem[]> {
+  const { document, position, typescriptFilePath, propertyPath, viewModelName } = params
   const forEachInElement = findForEachInElement(document, position.line)
 
   if (isIteratedItemProperty(forEachInElement, propertyPath) && forEachInElement) {
