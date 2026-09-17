@@ -309,6 +309,33 @@ describe('bindForEach', () => {
       expect(spans[1].innerHTML).toBe('Bob')
     })
 
+    it('should skip rendering elements whose index is not affected by the changed path', () => {
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <span bind-content="order.status"></span>
+        </div>
+      `
+
+      const viewModel = {
+        orders: [{ status: 'PENDING' }, { status: 'PENDING' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const renderSpies = bindings[0].renderedElements.map((rendered) => {
+        const originalRender = rendered.render
+        const spy = vi.fn(() => originalRender())
+        rendered.render = spy
+        return spy
+      })
+
+      renderForEachBindings(bindings, viewModel, 'orders.1.status')
+
+      expect(renderSpies[0]).not.toHaveBeenCalled()
+      expect(renderSpies[1]).toHaveBeenCalledTimes(1)
+    })
+
     it('should add new elements when array grows', () => {
       container.innerHTML = `
         <div for-each="item of items">
@@ -759,6 +786,125 @@ describe('bindForEach', () => {
 
       expect(spans[0].classList.contains('active')).toBe(false)
       expect(spans[1].classList.contains('active')).toBe(true)
+    })
+
+    it('should re-render the child component when a nested property of an item inside for-each changes', () => {
+      class OrderItemVM {
+        order: { status: string } = { status: 'PENDING' }
+      }
+      defineComponent(
+        'order-item',
+        OrderItemVM,
+        `<component view-model="OrderItemVM">
+          <span bind-content="order.status"></span>
+        </component>`,
+      )
+
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <order-item prop-order="order"></order-item>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{ orders: { status: string }[] }>(
+        {
+          orders: [{ status: 'PENDING' }, { status: 'PENDING' }],
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+      expect(spans[0].innerHTML).toBe('PENDING')
+
+      parentVM.orders[0].status = 'DONE'
+
+      expect(container.querySelectorAll('span')[0].innerHTML).toBe('DONE')
+    })
+
+    it('should re-render only the item whose index matches the changed path', () => {
+      class OrderItemVM {
+        order: { status: string } = { status: 'PENDING' }
+      }
+      defineComponent(
+        'order-item',
+        OrderItemVM,
+        `<component view-model="OrderItemVM">
+          <span bind-content="order.status"></span>
+        </component>`,
+      )
+
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <order-item prop-order="order"></order-item>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{ orders: { status: string }[] }>(
+        {
+          orders: [{ status: 'PENDING' }, { status: 'PENDING' }],
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const spans = container.querySelectorAll('span')
+
+      parentVM.orders[1].status = 'DONE'
+
+      expect(spans[0].innerHTML).toBe('PENDING')
+      expect(spans[1].innerHTML).toBe('DONE')
+    })
+
+    it('should re-render the child component when an internal button click confirms the item inside for-each', () => {
+      class OrderItemVM {
+        order!: { status: string }
+
+        confirm(): void {
+          this.order.status = 'DONE'
+        }
+      }
+      defineComponent(
+        'order-click-item',
+        OrderItemVM,
+        `<component view-model="OrderItemVM">
+          <button click="confirm" bind-content="order.status"></button>
+        </component>`,
+      )
+
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <order-click-item prop-order="order"></order-click-item>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{ orders: { status: string }[] }>(
+        {
+          orders: [{ status: 'PENDING' }],
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const button = container.querySelector('button')!
+      expect(button.innerHTML).toBe('PENDING')
+
+      button.click()
+
+      expect(container.querySelector('button')!.innerHTML).toBe('DONE')
     })
   })
 

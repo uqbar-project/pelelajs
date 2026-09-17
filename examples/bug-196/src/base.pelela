@@ -1,12 +1,18 @@
 <pelela view-model="Base">
   <div class="card">
-    <h1>Pedidos</h1>
+    <h1>Orders</h1>
 
-    <div for-each="pedido of pedidos">
-      <div bind-content="pedido.descripcion"
+    <div for-each="order of orders">
+      <div bind-content="order.description"
            class="chip"
-           bind-class="pedido.clasePedido"
-           click="confirmarse"></div>
+           bind-class="order.statusClass"
+           click="confirm"></div>
+    </div>
+
+    <h2>Orders with component</h2>
+
+    <div for-each="order of orders">
+      <order-component prop-order="order"></order-component>
     </div>
   </div>
 </pelela>

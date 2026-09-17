@@ -71,7 +71,7 @@ export type ForEachBinding = {
     viewModel: ViewModel
     itemRef: { current: unknown }
     indexRef: { current: number }
-    render: () => void
+    render: (changedPath?: string) => void
   }[]
   previousLength: number
   extraDependencies: string[]

@@ -118,7 +118,7 @@ function executeRenderPipeline<T extends object>(
   }> = [
     {
       condition: () => targetBindings.forEachBindings.length > 0,
-      render: () => renderForEachBindings(targetBindings.forEachBindings, viewModel),
+      render: () => renderForEachBindings(targetBindings.forEachBindings, viewModel, changedPath),
     },
     {
       condition: () => targetBindings.valueBindings.length > 0,
