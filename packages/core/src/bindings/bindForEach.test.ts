@@ -652,6 +652,36 @@ describe('bindForEach', () => {
       expect(handleItemClick).toHaveBeenCalledTimes(2)
     })
 
+    it('should invoke view model instance methods when buttons inside for-each loop are clicked', () => {
+      class ListViewModel {
+        [key: string]: unknown
+        items: { name: string }[] = [{ name: 'Item 1' }, { name: 'Item 2' }]
+        clickedNames: string[] = []
+
+        handleItemClick({ item }: { item: { name: string } }): void {
+          this.clickedNames.push(item.name)
+        }
+      }
+      const viewModel = new ListViewModel()
+
+      container.innerHTML = `
+        <ul>
+          <li for-each="item of items">
+            <button click="handleItemClick" bind-content="item.name"></button>
+          </li>
+        </ul>
+      `
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const buttons = container.querySelectorAll('button')
+      buttons[0].click()
+      buttons[1].click()
+
+      expect(viewModel.clickedNames).toEqual(['Item 1', 'Item 2'])
+    })
+
     it('should initialize components inside for-each loop', () => {
       class ItemVM {
         name = ''
