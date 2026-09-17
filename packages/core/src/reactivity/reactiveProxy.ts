@@ -11,12 +11,20 @@ const ARRAY_MUTATION_METHODS = [
 ] as const
 
 /**
- * Caches to keep track of proxies and their original objects.
- * This prevents creating multiple proxies for the same object and
- * allows retrieving the raw object from a proxy.
+ * Keeps track of each proxy's original object so proxies can be unwrapped
+ * when values move between reactive view model contexts.
  */
-const proxyCache = new WeakMap<object, object>()
 const rawObjectCache = new WeakMap<object, object>()
+type ReactiveProxyCache = WeakMap<object, object>
+
+function getRawObject(value: object): object {
+  const rawObject = rawObjectCache.get(value)
+  return rawObject ? getRawObject(rawObject) : value
+}
+
+function getRawValue<T>(value: T): T {
+  return isObject(value) ? (getRawObject(value) as T) : value
+}
 
 /**
  * Handler for the reactive proxy.
@@ -26,6 +34,7 @@ const rawObjectCache = new WeakMap<object, object>()
 class ReactiveHandler<T extends object> implements ProxyHandler<T> {
   constructor(
     private readonly onChange: (changedPath: string) => void,
+    private readonly proxyCache: ReactiveProxyCache,
     private readonly parentPath = '',
   ) {}
 
@@ -51,7 +60,13 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
     // Deep reactivity: if the value is an object, wrap it in a proxy.
     if (isObject(value)) {
       const childPath = this.buildPath(String(propertyKey))
-      return makeReactive(value, this.onChange, new WeakSet([targetObject]), childPath)
+      return makeReactive(
+        value,
+        this.onChange,
+        this.proxyCache,
+        new WeakSet([targetObject]),
+        childPath,
+      )
     }
 
     return value
@@ -59,16 +74,17 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
 
   set(targetObject: T, propertyKey: string | symbol, value: unknown, receiver: unknown): boolean {
     const oldValue = Reflect.get(targetObject, propertyKey, receiver)
+    const rawValue = getRawValue(value)
 
     // Always notify for array property assignments (like .length) to catch in-place mutations
     const isArrayMutation =
       Array.isArray(targetObject) &&
       (propertyKey === 'length' || (typeof propertyKey === 'string' && /^\d+$/.test(propertyKey)))
-    if (!isArrayMutation && oldValue === value) {
+    if (!isArrayMutation && getRawValue(oldValue) === rawValue) {
       return true
     }
 
-    const result = Reflect.set(targetObject, propertyKey, value, receiver)
+    const result = Reflect.set(targetObject, propertyKey, rawValue, receiver)
 
     if (result) {
       this.notifyChange(propertyKey)
@@ -112,11 +128,11 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
   private handleSetHelper(): (target: object, key: PropertyKey, value: unknown) => void {
     return (target: object, key: PropertyKey, value: unknown) => {
       if (isProxy(target)) {
-        Reflect.set(target, key, value)
+        Reflect.set(target, key, getRawValue(value))
         return
       }
 
-      const result = Reflect.set(target, key, value)
+      const result = Reflect.set(target, key, getRawValue(value))
 
       if (result) {
         this.notifyChange(key)
@@ -148,7 +164,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
   ): (...args: unknown[]) => unknown {
     return (...args: unknown[]) => {
       const method = Array.prototype[methodName] as (...methodArgs: unknown[]) => unknown
-      const result = method.apply(targetArray, args)
+      const result = method.apply(targetArray, args.map(getRawValue))
       this.onChange(this.parentPath || 'root')
       return result
     }
@@ -166,13 +182,14 @@ export function isProxy(value: unknown): boolean {
  * Creates a reactive proxy for the given target object.
  *
  * Why we use WeakMap/WeakSet:
- * - proxyCache: To avoid creating redundant proxies for the same object.
- * - rawObjectCache: To map proxies back to their original objects if needed.
+ * - proxyCache: To avoid creating redundant proxies within one reactive context.
+ * - rawObjectCache: To unwrap proxies when values cross reactive contexts.
  * - visited: To handle circular references and prevent infinite recursion.
  */
 function makeReactive<T>(
   target: T,
   onChange: (changedPath: string) => void,
+  proxyCache: ReactiveProxyCache,
   visited = new WeakSet<object>(),
   parentPath = '',
 ): T {
@@ -180,26 +197,24 @@ function makeReactive<T>(
     return target
   }
 
-  if (isProxy(target)) {
-    return target as T
-  }
+  const rawTarget = getRawValue(target)
 
-  const existingProxy = proxyCache.get(target) as T | undefined
+  const existingProxy = proxyCache.get(rawTarget as object) as T | undefined
   if (existingProxy) {
     return existingProxy
   }
 
-  if (visited.has(target)) {
-    return target
+  if (visited.has(rawTarget as object)) {
+    return rawTarget
   }
 
-  visited.add(target)
+  visited.add(rawTarget as object)
 
-  const handler = new ReactiveHandler<object>(onChange, parentPath)
-  const proxy = new Proxy(target, handler) as T & object
+  const handler = new ReactiveHandler<object>(onChange, proxyCache, parentPath)
+  const proxy = new Proxy(rawTarget, handler) as T & object
 
-  proxyCache.set(target, proxy)
-  rawObjectCache.set(proxy, target)
+  proxyCache.set(rawTarget as object, proxy)
+  rawObjectCache.set(proxy, rawTarget as object)
 
   return proxy as T
 }
@@ -214,5 +229,6 @@ export function createReactiveViewModel<T extends object>(
   target: T,
   onChange: (changedPath: string) => void,
 ): ReactiveViewModel<T> {
-  return makeReactive(target, onChange) as ReactiveViewModel<T>
+  const proxyCache: ReactiveProxyCache = new WeakMap<object, object>()
+  return makeReactive(target, onChange, proxyCache) as ReactiveViewModel<T>
 }
