@@ -1,0 +1,6 @@
+<component view-model="OrderComponent">
+  <div bind-content="order.description"
+        class="chip"
+        bind-class="order.statusClass"
+        click="confirm"></div>
+</component>

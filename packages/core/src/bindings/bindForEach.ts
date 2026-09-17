@@ -110,7 +110,7 @@ function setupBindingsForElement<T extends object>(
   setupClickBindings(element, viewModel)
   setupEnterBindings(element, viewModel)
 
-  return () => {
+  return (changedPath?: string) => {
     renderValueBindings(bindings.valueBindings, viewModel)
     renderContentBindings(bindings.contentBindings, viewModel)
     renderSrcBindings(bindings.srcBindings, viewModel)
@@ -119,7 +119,7 @@ function setupBindingsForElement<T extends object>(
     renderIfBindings(bindings.ifBindings, viewModel)
     renderClassBindings(bindings.classBindings, viewModel)
     renderStyleBindings(bindings.styleBindings, viewModel)
-    renderComponentBindings(componentBindings, viewModel)
+    renderComponentBindings(componentBindings, viewModel, changedPath)
   }
 }
 
@@ -297,7 +297,37 @@ function removeExtraElements(binding: ForEachBinding, currentLength: number): vo
   })
 }
 
-function updateExistingElements(binding: ForEachBinding, collection: unknown[]): void {
+function isIndexScopedChangedPath(changedPath: string, collectionName: string): boolean {
+  const collectionPrefix = `${collectionName}.`
+  if (!changedPath.startsWith(collectionPrefix)) return false
+  const firstSegment = changedPath.substring(collectionPrefix.length).split('.')[0]
+  return /^\d+$/.test(firstSegment)
+}
+
+function isScopedToIndex(changedPath: string, collectionName: string, index: number): boolean {
+  const itemSegment = `${collectionName}.${index}`
+  return changedPath === itemSegment || changedPath.startsWith(`${itemSegment}.`)
+}
+
+function remapChangedPathForElement(
+  changedPath: string | undefined,
+  collectionName: string,
+  index: number,
+  itemName: string,
+): string | undefined {
+  if (changedPath === undefined || !isScopedToIndex(changedPath, collectionName, index)) {
+    return changedPath
+  }
+  const itemSegment = `${collectionName}.${index}`
+  if (changedPath === itemSegment) return itemName
+  return `${itemName}${changedPath.substring(itemSegment.length)}`
+}
+
+function updateExistingElements(
+  binding: ForEachBinding,
+  collection: unknown[],
+  changedPath?: string,
+): void {
   binding.renderedElements.forEach((rendered, index) => {
     rendered.itemRef.current = collection[index]
     rendered.indexRef.current = index
@@ -306,13 +336,26 @@ function updateExistingElements(binding: ForEachBinding, collection: unknown[]):
       setOptionElementValue(rendered.element as HTMLOptionElement, collection[index], index)
     }
 
-    rendered.render()
+    const isUnrelatedIndexScopedChange =
+      changedPath !== undefined &&
+      isIndexScopedChangedPath(changedPath, binding.collectionName) &&
+      !isScopedToIndex(changedPath, binding.collectionName, index)
+    if (isUnrelatedIndexScopedChange) return
+
+    const scopedPath = remapChangedPathForElement(
+      changedPath,
+      binding.collectionName,
+      index,
+      binding.itemName,
+    )
+    rendered.render(scopedPath)
   })
 }
 
 function renderSingleForEachBinding<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
+  changedPath?: string,
 ): void {
   const collection = binding.collectionName.includes('.')
     ? getNestedProperty(viewModel, binding.collectionName)
@@ -322,15 +365,16 @@ function renderSingleForEachBinding<T extends object>(
   const previousLength = binding.previousLength
   if (currentLength > previousLength) addNewElements(binding, viewModel, collection, previousLength)
   else if (currentLength < previousLength) removeExtraElements(binding, currentLength)
-  updateExistingElements(binding, collection)
+  updateExistingElements(binding, collection, changedPath)
   binding.previousLength = currentLength
 }
 
 export function renderForEachBindings<T extends object>(
   bindings: ForEachBinding[],
   viewModel: ViewModel<T>,
+  changedPath?: string,
 ): void {
   bindings.forEach((binding) => {
-    renderSingleForEachBinding(binding, viewModel)
+    renderSingleForEachBinding(binding, viewModel, changedPath)
   })
 }

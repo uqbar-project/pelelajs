@@ -1,11 +1,11 @@
-import type { Pedido } from './pedido'
-import { pedidoService } from './pedidoService'
+import type { Order } from './order'
+import { orderService } from './orderService'
 
 export class Base {
-  pedidos: Pedido[] = pedidoService.getAll()
+  orders: Order[] = orderService.getAll()
 
-  confirmarse({ pedido }: { pedido: Pedido }): void {
-    pedido.confirmar()
-    console.info(pedido)
+  confirm({ order }: { order: Order }): void {
+    order.confirm()
+    console.info(order)
   }
 }
