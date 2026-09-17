@@ -25,6 +25,8 @@ const COUNTER_VIEW_MODEL_CONTENT = `export class CounterViewModel {
   }
 
   increment() {}
+
+  onUpdate = () => {}
 }`
 
 const NO_VIEW_MODEL_PELELA_CONTENT = `<component>
@@ -153,6 +155,46 @@ describe('validateBindingTargets', () => {
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
       childPropertyNotFound('isLucky'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects a method as a prop target (it cannot be set)', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-increment="count"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('increment'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects a method as a link target (it cannot be set)', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter link-increment="count"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('increment'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects a method as a const target (it cannot be set)', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter const-increment="1"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('increment'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects an arrow field as a prop target (it cannot be set)', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-on-update="count"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('onUpdate'),
       vscode.DiagnosticSeverity.Error
     )
   })
