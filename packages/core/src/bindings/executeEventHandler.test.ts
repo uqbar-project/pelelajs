@@ -82,7 +82,7 @@ describe('executeEventHandler', () => {
     const extendedViewModel = createExtendedViewModel({
       parentViewModel,
       itemName: 'item',
-      itemRef: { current: 'pedido' },
+      itemRef: { current: 'order' },
       indexName: null,
       indexRef: { current: 0 },
     })
