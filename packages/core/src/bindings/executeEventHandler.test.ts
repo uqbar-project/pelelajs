@@ -6,6 +6,7 @@ import {
   HandlerCaseMismatchError,
   InvalidHandlerError,
 } from '../errors/index'
+import { createExtendedViewModel } from './bindForEach'
 import { executeEventHandler } from './executeEventHandler'
 import type { ViewModel } from './types'
 
@@ -66,6 +67,30 @@ describe('executeEventHandler', () => {
     executeHandler(viewModel)
 
     expect(viewModel.count).toBe(1)
+  })
+
+  it('should execute view model instance methods through the extended view model proxy used by for-each', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      count = 0
+
+      handleEvent(): void {
+        this.count++
+      }
+    }
+    const parentViewModel = new TestViewModel()
+    const extendedViewModel = createExtendedViewModel({
+      parentViewModel,
+      itemName: 'item',
+      itemRef: { current: 'pedido' },
+      indexName: null,
+      indexRef: { current: 0 },
+    })
+
+    executeHandler(extendedViewModel)
+
+    expect(parentViewModel.count).toBe(1)
+    expect(errorPage.renderErrorPage).not.toHaveBeenCalled()
   })
 
   it('should render ArrowFunctionAsHandlerError when the handler is an arrow function field of the view model class', () => {
