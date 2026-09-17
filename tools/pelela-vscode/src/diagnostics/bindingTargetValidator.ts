@@ -19,13 +19,9 @@ function prefixOfAttribute(name: string): BindingPrefix | null {
 
 function findCaseInsensitiveMember(members: ViewModelMembers, name: string): string | undefined {
   const nameLowerCase = name.toLowerCase()
-  const allMembers = [
-    ...members.properties,
-    ...members.getters,
-    ...members.methods,
-    ...members.arrows,
-  ]
-  return allMembers.find((member) => member.toLowerCase() === nameLowerCase)
+  return members.properties.find(
+    (member) => member.toLowerCase() === nameLowerCase && isSettableField(members, member)
+  )
 }
 
 export function isSettableField(members: ViewModelMembers, childKey: string): boolean {

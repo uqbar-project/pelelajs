@@ -45,7 +45,7 @@ function createMockDocument(lines: string[]): vscode.TextDocument {
 }
 
 function createMockPosition(line: number, character: number): vscode.Position {
-  return { line, character } as vscode.Position
+  return new vscode.Position(line, character)
 }
 
 describe('completionProvider', () => {
