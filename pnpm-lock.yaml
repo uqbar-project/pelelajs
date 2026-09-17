@@ -235,6 +235,22 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vite-plugin-pelelajs
 
+  examples/bug-196:
+    dependencies:
+      pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 7.2.4
+        version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
+
   examples/components:
     dependencies:
       pelelajs:

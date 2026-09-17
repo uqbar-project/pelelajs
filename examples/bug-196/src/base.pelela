@@ -1,0 +1,12 @@
+<pelela view-model="Base">
+  <div class="card">
+    <h1>Pedidos</h1>
+
+    <div for-each="pedido of pedidos">
+      <div bind-content="pedido.descripcion"
+           class="chip"
+           bind-class="pedido.clasePedido"
+           click="confirmarse"></div>
+    </div>
+  </div>
+</pelela>
