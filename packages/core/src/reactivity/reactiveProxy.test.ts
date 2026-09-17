@@ -411,10 +411,7 @@ describe('reactiveProxy', () => {
       service.register(formViewModel.order)
 
       const onChangeOrders = vi.fn()
-      const ordersViewModel = createReactiveViewModel(
-        { orders: service.all() },
-        onChangeOrders,
-      )
+      const ordersViewModel = createReactiveViewModel({ orders: service.all() }, onChangeOrders)
       onChangeForm.mockClear()
 
       ordersViewModel.orders[0].cancel()

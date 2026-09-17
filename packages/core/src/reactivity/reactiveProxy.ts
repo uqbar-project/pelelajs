@@ -16,6 +16,10 @@ const ARRAY_MUTATION_METHODS = [
  */
 const rawObjectCache = new WeakMap<object, object>()
 type ReactiveProxyCache = WeakMap<object, object>
+type ReactiveContext = {
+  onChange: (changedPath: string) => void
+  proxyCache: ReactiveProxyCache
+}
 
 function getRawObject(value: object): object {
   const rawObject = rawObjectCache.get(value)
@@ -33,8 +37,7 @@ function getRawValue<T>(value: T): T {
  */
 class ReactiveHandler<T extends object> implements ProxyHandler<T> {
   constructor(
-    private readonly onChange: (changedPath: string) => void,
-    private readonly proxyCache: ReactiveProxyCache,
+    private readonly context: ReactiveContext,
     private readonly parentPath = '',
   ) {}
 
@@ -60,13 +63,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
     // Deep reactivity: if the value is an object, wrap it in a proxy.
     if (isObject(value)) {
       const childPath = this.buildPath(String(propertyKey))
-      return makeReactive(
-        value,
-        this.onChange,
-        this.proxyCache,
-        new WeakSet([targetObject]),
-        childPath,
-      )
+      return makeReactive(value, this.context, new WeakSet([targetObject]), childPath)
     }
 
     return value
@@ -122,7 +119,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
 
   private notifyChange(propertyKey: PropertyKey): void {
     const fullPath = this.buildPath(String(propertyKey))
-    this.onChange(fullPath)
+    this.context.onChange(fullPath)
   }
 
   private handleSetHelper(): (target: object, key: PropertyKey, value: unknown) => void {
@@ -165,7 +162,7 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
     return (...args: unknown[]) => {
       const method = Array.prototype[methodName] as (...methodArgs: unknown[]) => unknown
       const result = method.apply(targetArray, args.map(getRawValue))
-      this.onChange(this.parentPath || 'root')
+      this.context.onChange(this.parentPath || 'root')
       return result
     }
   }
@@ -188,8 +185,7 @@ export function isProxy(value: unknown): boolean {
  */
 function makeReactive<T>(
   target: T,
-  onChange: (changedPath: string) => void,
-  proxyCache: ReactiveProxyCache,
+  context: ReactiveContext,
   visited = new WeakSet<object>(),
   parentPath = '',
 ): T {
@@ -199,7 +195,7 @@ function makeReactive<T>(
 
   const rawTarget = getRawValue(target)
 
-  const existingProxy = proxyCache.get(rawTarget as object) as T | undefined
+  const existingProxy = context.proxyCache.get(rawTarget as object) as T | undefined
   if (existingProxy) {
     return existingProxy
   }
@@ -210,10 +206,10 @@ function makeReactive<T>(
 
   visited.add(rawTarget as object)
 
-  const handler = new ReactiveHandler<object>(onChange, proxyCache, parentPath)
+  const handler = new ReactiveHandler<object>(context, parentPath)
   const proxy = new Proxy(rawTarget, handler) as T & object
 
-  proxyCache.set(rawTarget as object, proxy)
+  context.proxyCache.set(rawTarget as object, proxy)
   rawObjectCache.set(proxy, rawTarget as object)
 
   return proxy as T
@@ -230,5 +226,5 @@ export function createReactiveViewModel<T extends object>(
   onChange: (changedPath: string) => void,
 ): ReactiveViewModel<T> {
   const proxyCache: ReactiveProxyCache = new WeakMap<object, object>()
-  return makeReactive(target, onChange, proxyCache) as ReactiveViewModel<T>
+  return makeReactive(target, { onChange, proxyCache }) as ReactiveViewModel<T>
 }
