@@ -22,6 +22,7 @@ import type {
   EnabledBinding,
   ForEachBinding,
   IfBinding,
+  NotifyParent,
   SrcBinding,
   StyleBinding,
   ValueBinding,
@@ -169,7 +170,7 @@ function executeRenderPipeline<T extends object>(
 export function setupBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
-  { skipRootIf = false }: { skipRootIf?: boolean } = {},
+  { skipRootIf = false, notifyParent }: { skipRootIf?: boolean; notifyParent?: NotifyParent } = {},
 ): (changedPath?: string) => void {
   const allElements = findAllElements(root, '*', true)
   for (const element of allElements) {
@@ -178,9 +179,12 @@ export function setupBindings<T extends object>(
     }
   }
 
+  const renderRef: { current?: (changedPath?: string) => void } = {}
+  const forwardToRender = notifyParent ?? ((path: string) => renderRef.current?.(path))
+
   const bindings: BindingsCollection = {
-    forEachBindings: setupForEachBindings(root, viewModel),
-    componentBindings: setupComponentBindings(root, viewModel),
+    forEachBindings: setupForEachBindings(root, viewModel, forwardToRender),
+    componentBindings: setupComponentBindings(root, viewModel, forwardToRender),
     valueBindings: setupValueBindings(root, viewModel),
     contentBindings: setupContentBindings(root, viewModel),
     srcBindings: setupSrcBindings(root, viewModel),
@@ -204,6 +208,8 @@ export function setupBindings<T extends object>(
 
     executeRenderPipeline(targetBindings, viewModel, changedPath)
   }
+
+  renderRef.current = render
 
   render()
   return render
