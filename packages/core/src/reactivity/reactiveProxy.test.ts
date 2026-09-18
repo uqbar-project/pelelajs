@@ -383,5 +383,48 @@ describe('reactiveProxy', () => {
       proxy.data.city = 'Chicago'
       expect(onChange).toHaveBeenCalledWith('data.city')
     })
+
+    it('should notify the current view model for objects proxied by another view model', () => {
+      class Order {
+        status = 'pending'
+
+        cancel(): void {
+          this.status = 'cancelled'
+        }
+      }
+
+      class OrdersService {
+        private orders: Order[] = []
+
+        register(order: Order): void {
+          this.orders = [...this.orders, order]
+        }
+
+        all(): Order[] {
+          return [...this.orders]
+        }
+      }
+
+      const service = new OrdersService()
+      const onChangeForm = vi.fn()
+      const formViewModel = createReactiveViewModel({ order: new Order() }, onChangeForm)
+      service.register(formViewModel.order)
+
+      const onChangeOrders = vi.fn()
+      const ordersViewModel = createReactiveViewModel({ orders: service.all() }, onChangeOrders)
+      onChangeForm.mockClear()
+
+      ordersViewModel.orders[0].cancel()
+
+      expect(onChangeForm).not.toHaveBeenCalled()
+      expect(onChangeOrders).toHaveBeenCalledWith('orders.0.status')
+    })
+
+    it('should reuse nested proxies within the same view model', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel({ user: { name: 'John' } }, onChange)
+
+      expect(proxy.user).toBe(proxy.user)
+    })
   })
 })
