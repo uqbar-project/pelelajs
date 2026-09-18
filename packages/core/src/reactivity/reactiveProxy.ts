@@ -62,17 +62,11 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
   }
 
   set(targetObject: T, propertyKey: string | symbol, value: unknown, receiver: unknown): boolean {
-    const oldValue = Reflect.get(targetObject, propertyKey, receiver)
     const rawValue = getRawValue(value)
 
-    // Always notify for array property assignments (like .length) to catch in-place mutations
-    const isArrayMutation =
-      Array.isArray(targetObject) &&
-      (propertyKey === 'length' || (typeof propertyKey === 'string' && /^\d+$/.test(propertyKey)))
-    if (!isArrayMutation && getRawValue(oldValue) === rawValue) {
-      return true
-    }
-
+    // Always notify, even when the value is the same: the raw object may have been
+    // mutated through another reactive context (e.g. a child component sharing it by
+    // reference), so the owner of this proxy must reconcile its rendered output.
     const result = Reflect.set(targetObject, propertyKey, rawValue, receiver)
 
     if (result) {

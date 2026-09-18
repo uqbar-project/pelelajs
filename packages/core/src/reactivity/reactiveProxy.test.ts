@@ -170,14 +170,28 @@ describe('reactiveProxy', () => {
       expect(proxy.user.tags[0]).toBe('newTag')
     })
 
-    it('should not call onChange if value is the same', () => {
+    it('should call onChange even when value is the same', () => {
       const target = { count: 5 }
       const onChange = vi.fn()
       const proxy = createReactiveViewModel(target, onChange)
 
       proxy.count = 5
 
-      expect(onChange).not.toHaveBeenCalled()
+      expect(onChange).toHaveBeenCalled()
+    })
+
+    it('should notify when setting the same value that was mutated through another reactive context', () => {
+      const target = { status: 'PENDING' as string }
+      const onChangeContextB = vi.fn()
+      const proxyA = createReactiveViewModel(target, vi.fn())
+      const proxyB = createReactiveViewModel(target, onChangeContextB)
+
+      proxyA.status = 'DONE'
+      expect(onChangeContextB).not.toHaveBeenCalled()
+
+      proxyB.status = 'DONE'
+
+      expect(onChangeContextB).toHaveBeenCalled()
     })
 
     it('should handle array splice correctly', () => {

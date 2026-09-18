@@ -28,7 +28,7 @@ import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import { getNestedProperty } from './nestedProperties'
 import { setOptionValue } from './optionValues'
-import type { ForEachBinding, ViewModel } from './types'
+import type { ForEachBinding, NotifyParent, ViewModel } from './types'
 
 function parseForEachExpression(
   expression: string,
@@ -92,11 +92,12 @@ export function createExtendedViewModel<T extends object>({
 function setupBindingsForElement<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
+  notifyParent?: NotifyParent,
 ): () => void {
   for (const attr of element.attributes) {
     assertValidBindingAttribute(attr.name, element)
   }
-  const componentBindings = setupComponentBindings(element, viewModel)
+  const componentBindings = setupComponentBindings(element, viewModel, notifyParent)
   const bindings = {
     valueBindings: setupValueBindings(element, viewModel),
     contentBindings: setupContentBindings(element, viewModel),
@@ -126,6 +127,7 @@ function setupBindingsForElement<T extends object>(
 export function setupSingleForEachBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
+  notifyParent?: NotifyParent,
 ): ForEachBinding | null {
   const expression = element.getAttribute('for-each')
   if (!expression?.trim()) return null
@@ -166,6 +168,7 @@ export function setupSingleForEachBinding<T extends object>(
     collectionName,
     itemName,
     indexName,
+    notifyParent,
     template,
     placeholder,
     renderedElements: [],
@@ -230,17 +233,30 @@ function extractExtraDependencies(
 export function setupForEachBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
+  notifyParent?: NotifyParent,
 ): ForEachBinding[] {
   const elements = findAllElements(root, '[for-each]')
   const ownElements = filterOwnElements(elements, root)
   return ownElements
-    .map((element) => setupSingleForEachBinding(element, viewModel))
+    .map((element) => setupSingleForEachBinding(element, viewModel, notifyParent))
     .filter((binding): binding is ForEachBinding => binding !== null)
 }
 
 function setOptionElementValue(element: HTMLOptionElement, item: unknown, index: number): void {
   element.value = typeof item === 'object' && item !== null ? String(index) : String(item)
   setOptionValue(element, item)
+}
+
+function remapPathToParentNamespace(
+  path: string,
+  collectionName: string,
+  index: number,
+  itemName: string,
+): string {
+  if (path === itemName) return `${collectionName}.${index}`
+  if (path.startsWith(`${itemName}.`))
+    return `${collectionName}.${index}${path.substring(itemName.length)}`
+  return path
 }
 
 function createNewElement<T extends object>(
@@ -259,7 +275,20 @@ function createNewElement<T extends object>(
     indexName: binding.indexName,
     indexRef,
   })
-  const render = setupBindingsForElement(element, extendedViewModel)
+  const notifyParentWithIndex =
+    binding.notifyParent === undefined
+      ? undefined
+      : (path: string): void => {
+          binding.notifyParent?.(
+            remapPathToParentNamespace(
+              path,
+              binding.collectionName,
+              indexRef.current,
+              binding.itemName,
+            ),
+          )
+        }
+  const render = setupBindingsForElement(element, extendedViewModel, notifyParentWithIndex)
 
   if (element.tagName === 'OPTION') {
     setOptionElementValue(element as HTMLOptionElement, item, index)
