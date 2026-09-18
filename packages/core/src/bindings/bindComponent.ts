@@ -22,12 +22,13 @@ import {
   UnknownComponentError,
   UnknownComponentPropertyError,
 } from '../errors'
+import { getRawObject } from '../reactivity/proxyIdentity'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
 import type { ConstKind, PelelaElement } from '../types'
 import { getNestedProperty, isPathAffected, setNestedProperty } from './nestedProperties'
 import { setupBindings } from './setupBindings'
-import type { ComponentBinding, ViewModel } from './types'
+import type { ComponentBinding, NotifyParent, ViewModel } from './types'
 
 function isLink(attr: Attr): boolean {
   return attr.name.startsWith(LINK_PREFIX)
@@ -237,9 +238,26 @@ function handleLinkPropagation(
   }
 }
 
+function findLinkForChangedPath(
+  linkBindings: Array<{ parentKey: string; childKey: string }>,
+  changedPath: string,
+): { parentKey: string; childKey: string } | undefined {
+  return linkBindings.find(
+    ({ childKey }) => changedPath === childKey || changedPath.startsWith(`${childKey}.`),
+  )
+}
+
+function isInPlaceArrayMutation<T extends object>(
+  reactiveInstance: ViewModel<T>,
+  childKey: string,
+): boolean {
+  return Array.isArray((reactiveInstance as Record<string, unknown>)[childKey])
+}
+
 export function setupComponentBindings<T extends object>(
   root: HTMLElement,
   parentViewModel: ViewModel<T>,
+  notifyParent?: NotifyParent,
 ): ComponentBinding[] {
   const registeredTags = getRegisteredTags()
   validateTags(root, registeredTags)
@@ -332,10 +350,31 @@ export function setupComponentBindings<T extends object>(
     const bufferedPaths: string[] = []
     const isSetupComplete = { value: false }
     let renderChild: (changedPath?: string) => void = () => {}
+
+    // Two-way (link-) bindings must propagate nested mutations of shared values
+    // back to the parent, matching the documented contract in COMPONENTS_AND_ROUTING.md.
+    // One-way (prop-) bindings stay local to the child and never propagate.
+    const forwardLinkChange = (changedPath: string): void => {
+      if (!notifyParent) return
+
+      const link = findLinkForChangedPath(linkBindings, changedPath)
+      if (!link) return
+
+      const isNestedChange = changedPath.startsWith(`${link.childKey}.`)
+      if (!isNestedChange && !isInPlaceArrayMutation(reactiveInstance, link.childKey)) {
+        // Top-level reassignments are propagated by handleLinkPropagation.
+        // Only in-place array mutations (e.g. push) need forwarding here.
+        return
+      }
+
+      notifyParent(link.parentKey + changedPath.substring(link.childKey.length))
+    }
+
     const reactiveInstance = createReactiveViewModel(instance, (changedPath: string) => {
       if (isUnsafeKey(changedPath)) return
 
       handleLinkPropagation(linkBindings, parentViewModel, reactiveInstance, changedPath)
+      forwardLinkChange(changedPath)
 
       // Buffer changes during setup, render directly after setup
       if (isSetupComplete.value) {
@@ -351,7 +390,10 @@ export function setupComponentBindings<T extends object>(
 
     // The component tag's own 'if' belongs to the parent's view model.
     // Pass skipRootIf so the child binding setup doesn't try to validate it.
-    renderChild = setupBindings(element, reactiveInstance, { skipRootIf: true })
+    renderChild = setupBindings(element, reactiveInstance, {
+      skipRootIf: true,
+      notifyParent: forwardLinkChange,
+    })
     isSetupComplete.value = true
 
     // Flush buffered changes after setupBindings assigns renderChild
@@ -373,6 +415,23 @@ export function setupComponentBindings<T extends object>(
   return bindings
 }
 
+function resolveBoundValue<T extends object>(
+  parentViewModel: ViewModel<T>,
+  parentKey: string,
+): unknown {
+  return parentKey.includes('.')
+    ? getNestedProperty(parentViewModel, parentKey)
+    : (parentViewModel as Record<string, unknown>)[parentKey]
+}
+
+function haveSameRawValue(parentValue: unknown, childValue: unknown): boolean {
+  return (
+    isObject(parentValue) &&
+    isObject(childValue) &&
+    getRawObject(parentValue) === getRawObject(childValue)
+  )
+}
+
 export function renderComponentBindings<T extends object>(
   bindings: ComponentBinding[],
   parentViewModel: ViewModel<T>,
@@ -384,12 +443,13 @@ export function renderComponentBindings<T extends object>(
         return
       }
 
-      const parentValue = parentKey.includes('.')
-        ? getNestedProperty(parentViewModel, parentKey)
-        : (parentViewModel as Record<string, unknown>)[parentKey]
+      const parentValue = resolveBoundValue(parentViewModel, parentKey)
       const childValue = (binding.childViewModel as Record<string, unknown>)[childKey]
 
-      if (parentValue !== childValue) {
+      // Skip the assignment when parent and child only differ by proxy identity but
+      // wrap the same raw object: the child already observes every mutation, and
+      // re-assigning would trigger an onChange round-trip that never converges.
+      if (parentValue !== childValue && !haveSameRawValue(parentValue, childValue)) {
         ;(binding.childViewModel as Record<string, unknown>)[childKey] = parentValue
         binding.renderChild?.(childKey)
       } else if (
