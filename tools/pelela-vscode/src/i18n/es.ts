@@ -41,6 +41,8 @@ const diagnostics = {
     'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" no está definida en el ViewModel hijo.',
   childPropertyCaseMismatch:
     'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" no está definida en el ViewModel hijo. ¿Quisiste decir "{{suggestedName}}"?',
+  childPropertyReadOnly:
+    'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" es de solo lectura. Definí un atributo escribible en el ViewModel hijo para recibir el valor.',
   bindingTypeMismatch:
     'Componente <{{tag}}>: el atributo "{{attr}}" recibe {{parentKind}} (propiedad padre "{{parentKey}}") pero la propiedad hijo "{{childKey}}" es {{childKind}}.',
   bindingKindNumber: 'un número',

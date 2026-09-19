@@ -77,6 +77,7 @@ type ErrorTranslations = {
     directiveOutsideRoot: string
     unknownComponent: string
     unknownComponentProperty: string
+    readOnlyProperty: string
     invalidConstValue: string
     constExpectedNumber: string
     constExpectedBoolean: string

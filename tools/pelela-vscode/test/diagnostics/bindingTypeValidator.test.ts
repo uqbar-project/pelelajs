@@ -33,6 +33,12 @@ const PARENT_VIEW_MODEL_CONTENT = `export class HomeViewModel {
   }
 }`
 
+const RESERVED_PELELA_CONTENT = `<component view-model="ReservedViewModel"></component>`
+
+const RESERVED_VIEW_MODEL_CONTENT = `export class ReservedViewModel {
+  __proto__ = 0
+}`
+
 const PARENT_TEMPLATE = (componentUsage: string): string =>
   `<pelela view-model="HomeViewModel">
   ${componentUsage}
@@ -58,6 +64,8 @@ describe('validateBindingTypes', () => {
     fs.writeFileSync(path.join(testDir, 'counter.pelela'), COUNTER_PELELA_CONTENT)
     fs.writeFileSync(path.join(testDir, 'counter.ts'), COUNTER_VIEW_MODEL_CONTENT)
     fs.writeFileSync(path.join(testDir, 'parent.ts'), PARENT_VIEW_MODEL_CONTENT)
+    fs.writeFileSync(path.join(testDir, 'reserved.pelela'), RESERVED_PELELA_CONTENT)
+    fs.writeFileSync(path.join(testDir, 'reserved.ts'), RESERVED_VIEW_MODEL_CONTENT)
     parentDocumentPath = path.join(testDir, 'parent.pelela')
   })
 
@@ -76,7 +84,7 @@ describe('validateBindingTypes', () => {
     assert.strictEqual(diagnostics.length, 0)
   })
 
-  it('accepts a prop whose parent and child values share the same type', () => {
+  it('accepts a link whose parent and child values share the same type', () => {
     const diagnostics = validate(PARENT_TEMPLATE('<counter link-label="selectedLabel"></counter>'))
 
     assert.strictEqual(diagnostics.length, 0)
@@ -143,6 +151,26 @@ describe('validateBindingTypes', () => {
   it('reports no diagnostic when the parent value is a nested path', () => {
     const diagnostics = validate(
       PARENT_TEMPLATE('<counter prop-total="selectedLabel.length"></counter>')
+    )
+
+    assert.strictEqual(diagnostics.length, 0)
+  })
+
+  it('reports no diagnostic when the parent value is a reserved prototype key', () => {
+    const reservedKeys = ['__proto__', 'constructor', 'prototype']
+
+    reservedKeys.forEach((reservedKey) => {
+      const diagnostics = validate(
+        PARENT_TEMPLATE(`<counter prop-total="${reservedKey}"></counter>`)
+      )
+
+      assert.strictEqual(diagnostics.length, 0)
+    })
+  })
+
+  it('reports no diagnostic when the child target is a reserved prototype key', () => {
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<reserved prop-__proto__="selectedIndex"></reserved>')
     )
 
     assert.strictEqual(diagnostics.length, 0)

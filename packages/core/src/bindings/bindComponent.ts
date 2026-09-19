@@ -18,6 +18,7 @@ import { hasProperty, isUnsafeKey, sanitizeHTML } from '../commons/sanitization'
 import { isNumberLiteral, parseBooleanLiteral, parseScalarLiteral } from '../commons/typeCasting'
 import {
   InvalidConstValueError,
+  ReadOnlyPropertyError,
   UnknownComponentError,
   UnknownComponentPropertyError,
 } from '../errors'
@@ -166,7 +167,16 @@ function throwUnknownChildViewModelProperty(
   )
 }
 
-function assertChildViewModelProperty(
+function throwReadOnlyProperty(
+  childKey: string,
+  tagName: string,
+  viewModelName: string,
+  element: HTMLElement,
+): never {
+  throw new ReadOnlyPropertyError(childKey, tagName, viewModelName, extractElementSnippet(element))
+}
+
+function assertAssignableChildViewModelProperty(
   instance: object,
   childKey: string,
   tagName: string,
@@ -175,6 +185,21 @@ function assertChildViewModelProperty(
   if (!hasProperty(instance, childKey)) {
     throwUnknownChildViewModelProperty(childKey, tagName, instance.constructor.name, element)
   }
+  if (!hasWritableDescriptor(instance, childKey)) {
+    throwReadOnlyProperty(childKey, tagName, instance.constructor.name, element)
+  }
+}
+
+function hasWritableDescriptor(instance: object, childKey: string): boolean {
+  let current: object | null = instance
+  while (current !== null) {
+    const descriptor = Object.getOwnPropertyDescriptor(current, childKey)
+    if (descriptor !== undefined) {
+      return descriptor.writable === true || typeof descriptor.set === 'function'
+    }
+    current = Object.getPrototypeOf(current)
+  }
+  return false
 }
 
 function isPotentialComponent(element: HTMLElement): boolean {
@@ -251,14 +276,17 @@ export function setupComponentBindings<T extends object>(
         )
       }
 
-      const isDeclaredProperty =
-        hasProperty(instance, childKey) ||
-        (typeMap !== undefined && Object.hasOwn(typeMap, childKey))
-      if (!isDeclaredProperty) {
+      const isOwnedByInstance = hasProperty(instance, childKey)
+      const isTypeMapDeclared = typeMap !== undefined && Object.hasOwn(typeMap, childKey)
+
+      if (isOwnedByInstance && !hasWritableDescriptor(instance, childKey)) {
+        throwReadOnlyProperty(childKey, tagName, instance.constructor.name, element)
+      }
+      if (!isOwnedByInstance && !isTypeMapDeclared) {
         throwUnknownChildViewModelProperty(childKey, tagName, instance.constructor.name, element)
       }
-      const declaredKind =
-        typeMap !== undefined && Object.hasOwn(typeMap, childKey) ? typeMap[childKey] : undefined
+
+      const declaredKind = isTypeMapDeclared ? typeMap[childKey] : undefined
       instance[childKey] = resolveConstantValue({
         rawValue,
         target: instance[childKey],
@@ -279,7 +307,7 @@ export function setupComponentBindings<T extends object>(
         )
       }
 
-      assertChildViewModelProperty(instance, childKey, tagName, element)
+      assertAssignableChildViewModelProperty(instance, childKey, tagName, element)
 
       const pathSegments = parentKey.split('.')
       const isNested = pathSegments.length > 1

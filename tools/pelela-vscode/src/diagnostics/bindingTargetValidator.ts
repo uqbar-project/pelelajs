@@ -25,9 +25,16 @@ function findCaseInsensitiveMember(members: ViewModelMembers, name: string): str
 }
 
 export function isSettableField(members: ViewModelMembers, childKey: string): boolean {
-  const isField = members.properties.includes(childKey)
+  const hasSetter = members.setters.includes(childKey)
+  const isWritableField =
+    members.properties.includes(childKey) && !members.getters.includes(childKey)
+  return hasSetter || isWritableField
+}
+
+function isReadOnlyProperty(members: ViewModelMembers, childKey: string): boolean {
   const isGetter = members.getters.includes(childKey)
-  return isField && !isGetter
+  const hasSetter = members.setters.includes(childKey)
+  return isGetter && !hasSetter
 }
 
 function buildChildPropertyDiagnostic(params: {
@@ -75,6 +82,17 @@ function validateChildProperty(params: {
 
   if (isSettableField(members, childKey)) return []
 
+  if (isReadOnlyProperty(members, childKey)) {
+    return [
+      makeDiagnostic(
+        attribute.nameRange,
+        'diagnostics.childPropertyReadOnly',
+        { name: childKey, tag: tag.tagName, viewModel: viewModelName },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+
   const suggestedName = findCaseInsensitiveMember(members, childKey)
   return [
     buildChildPropertyDiagnostic({
@@ -121,6 +139,12 @@ export function validateBindingTargets(
 const TYPE_BINDING_PREFIXES = ['prop-', 'link-'] as const
 
 type TypeBindingPrefix = (typeof TYPE_BINDING_PREFIXES)[number]
+
+const RESERVED_PROPERTY_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+function isReservedPropertyKey(key: string): boolean {
+  return RESERVED_PROPERTY_KEYS.has(key)
+}
 
 const KIND_LABELS: Record<string, string> = {
   number: 'diagnostics.bindingKindNumber',
@@ -172,6 +196,7 @@ function validateBindingType(params: {
 
   const parentKey = attribute.value
   if (parentKey.includes('.')) return []
+  if (isReservedPropertyKey(childKey) || isReservedPropertyKey(parentKey)) return []
 
   const childKind = childKindMap[childKey]
   const parentKind = parentKindMap[parentKey]

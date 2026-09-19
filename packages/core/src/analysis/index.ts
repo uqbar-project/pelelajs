@@ -14,6 +14,11 @@ const UNAUTHORIZED_PROPERTY_NAMES = new Set(['__proto__', 'constructor', 'protot
 
 const NULLABLE_KEYWORDS = new Set([ts.SyntaxKind.NullKeyword, ts.SyntaxKind.UndefinedKeyword])
 
+function isNullishTypeNode(typeNode: ts.TypeNode): boolean {
+  if (NULLABLE_KEYWORDS.has(typeNode.kind)) return true
+  return ts.isLiteralTypeNode(typeNode) && NULLABLE_KEYWORDS.has(typeNode.literal.kind)
+}
+
 export type DeclaredAs = 'Function' | 'Object'
 
 export type ViewModelIssue =
@@ -82,7 +87,7 @@ function getStatementExport(statement: ts.Statement): StatementExport {
   return { hasReExport: false, names: [] }
 }
 
-function unique(values: string[]): string[] {
+function unique<T>(values: T[]): T[] {
   return Array.from(new Set(values))
 }
 
@@ -201,11 +206,12 @@ function unwrapConstExpression(expression: ts.Expression): ts.Expression {
 function getConstKindFromTypeNode(typeNode: ts.TypeNode): ConstKind {
   if (typeNode.kind === ts.SyntaxKind.UnionType) {
     const unionNode = typeNode as ts.UnionTypeNode
-    const nonNullMembers = unionNode.types.filter(
-      (unionMember) => !NULLABLE_KEYWORDS.has(unionMember.kind),
-    )
-    if (nonNullMembers.length === 0) return 'unknown'
-    return getConstKindFromTypeNode(nonNullMembers[0])
+    const nonNullMemberKinds = unionNode.types
+      .filter((unionMember) => !isNullishTypeNode(unionMember))
+      .map(getConstKindFromTypeNode)
+    const distinctKinds = unique(nonNullMemberKinds)
+    if (distinctKinds.length === 0) return 'unknown'
+    return distinctKinds.length === 1 ? distinctKinds[0] : 'other'
   }
 
   switch (typeNode.kind) {

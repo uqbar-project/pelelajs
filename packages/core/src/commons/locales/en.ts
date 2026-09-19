@@ -120,6 +120,8 @@ const errors = {
       'Unknown component: <{{tagName}}>. Did you forget to register it?\nFound at: {{snippet}}',
     unknownComponentProperty:
       'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{propertyName}}" is not defined in the child ViewModel.\nFound at: {{snippet}}',
+    readOnlyProperty:
+      'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{propertyName}}" is read-only. Define a writable attribute in the child ViewModel to receive the value.\nFound at: {{snippet}}',
     invalidConstValue:
       'Component <{{tag}}> (ViewModel: {{viewModel}}): const "{{name}}" receives "{{value}}" but {{expected}}. Found at: {{snippet}}',
     constExpectedNumber: 'it must be a number',

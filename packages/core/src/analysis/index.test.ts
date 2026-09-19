@@ -283,6 +283,30 @@ describe('extractViewModelPropertyTypes', () => {
     expect(types).toEqual({ fromNumber: 'number' })
   })
 
+  it('classifies a homogeneous nullable union as its const kind regardless of member order', () => {
+    const numberFirst = extractCounter(
+      'export class Counter {\n  fromNumber: number | null | undefined\n}',
+    )
+    const nullFirst = extractCounter('export class Counter {\n  fromNumber: null | number\n}')
+
+    expect(numberFirst).toEqual({ fromNumber: 'number' })
+    expect(nullFirst).toEqual({ fromNumber: 'number' })
+  })
+
+  it('marks a heterogeneous union as other regardless of member order', () => {
+    const stringFirst = extractCounter('export class Counter {\n  mixed: string | number\n}')
+    const numberFirst = extractCounter('export class Counter {\n  mixed: number | string\n}')
+
+    expect(stringFirst).toEqual({ mixed: 'other' })
+    expect(numberFirst).toEqual({ mixed: 'other' })
+  })
+
+  it('drops nullable members before classifying a heterogeneous union as other', () => {
+    const types = extractCounter('export class Counter {\n  mixed: number | string | undefined\n}')
+
+    expect(types).toEqual({ mixed: 'other' })
+  })
+
   it('classifies getters from their return type annotation', () => {
     const types = extractCounter(`export class Counter {
   private _count = 1

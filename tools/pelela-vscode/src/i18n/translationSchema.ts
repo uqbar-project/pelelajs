@@ -22,6 +22,7 @@ type DiagnosticsMessages = {
   constValueUnsupported: string
   childPropertyNotFound: string
   childPropertyCaseMismatch: string
+  childPropertyReadOnly: string
   bindingTypeMismatch: string
   bindingKindNumber: string
   bindingKindString: string
