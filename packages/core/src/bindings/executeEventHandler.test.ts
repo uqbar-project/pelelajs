@@ -159,6 +159,29 @@ describe('executeEventHandler', () => {
     },
   )
 
+  it.each(['toString', 'valueOf', 'hasOwnProperty'])(
+    'should reject an unoverridden Object.prototype method %s',
+    (objectPrototypeMember) => {
+      executeHandler({}, objectPrototypeMember)
+
+      const expectedError = new InvalidHandlerError(objectPrototypeMember, 'Object', EVENT_TYPE)
+      expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+    },
+  )
+
+  it('should execute an Object.prototype method overridden by the view model', () => {
+    let handlerContext: unknown
+    const handler = vi.fn(function (this: unknown) {
+      handlerContext = this
+    })
+    const viewModel = { toString: handler }
+
+    executeHandler(viewModel, 'toString')
+
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handlerContext).toBe(viewModel)
+  })
+
   it('should render the error page when the handler throws', () => {
     const handlerError = new Error(HANDLER_ERROR_MESSAGE)
     const viewModel = {
