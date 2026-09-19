@@ -914,6 +914,54 @@ describe('bindForEach', () => {
       expect(span.innerHTML).toBe('DONE')
     })
 
+    it('should forward non-item-scoped link changes unchanged through for-each', () => {
+      class CounterVM {
+        total: { subtotal: number } = { subtotal: 0 }
+
+        compute(): void {
+          this.total.subtotal = 500
+        }
+      }
+      defineComponent(
+        'counter-chip',
+        CounterVM,
+        '<component view-model="CounterVM"><button click="compute" bind-content="total.subtotal"></button></component>',
+      )
+
+      container.innerHTML = `
+        <span bind-content="globalTotal.subtotal" class="total-chip"></span>
+        <div for-each="order of orders">
+          <counter-chip link-total="globalTotal"></counter-chip>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{
+        orders: object[]
+        globalTotal: { subtotal: number }
+      }>(
+        {
+          orders: [{}],
+          globalTotal: { subtotal: 0 },
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const chip = container.querySelector('.total-chip')!
+      const button = container.querySelector('counter-chip button') as HTMLButtonElement
+      expect(chip.textContent).toBe('0')
+      expect(button.textContent).toBe('0')
+
+      button.click()
+
+      expect(chip.textContent).toBe('500')
+      expect(button.textContent).toBe('500')
+    })
+
     it('should re-render the child component when an internal button click confirms the item inside for-each', () => {
       class OrderItemVM {
         order!: { status: string }
