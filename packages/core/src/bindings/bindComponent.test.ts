@@ -1142,4 +1142,195 @@ describe('bindComponent', () => {
       expect(renderChild).toHaveBeenCalled()
     })
   })
+
+  describe('link-* child-to-parent propagation through for-each lists', () => {
+    it('should update a sibling list sharing the same collection when a linked component mutates an item', () => {
+      class OrderItemVM {
+        order: { status: string } = { status: 'PENDING' }
+
+        confirm(): void {
+          this.order.status = 'DONE'
+        }
+      }
+      defineComponent(
+        'order-click-item',
+        OrderItemVM,
+        '<component view-model="OrderItemVM"><button click="confirm" bind-content="order.status"></button></component>',
+      )
+
+      container.innerHTML = `
+        <h1>First list</h1>
+        <div for-each="order of orders"><div bind-content="order.status" class="chip"></div></div>
+        <h1>Second list</h1>
+        <div for-each="order of orders"><order-click-item link-order="order"></order-click-item></div>
+      `
+
+      const parentVM = createReactiveViewModel(
+        {
+          orders: [{ status: 'PENDING' }],
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const chip = container.querySelector('.chip')
+      const buttonInSecondList = container.querySelectorAll(
+        'order-click-item button',
+      )[0] as HTMLButtonElement
+
+      expect(chip?.textContent).toBe('PENDING')
+      expect(buttonInSecondList.textContent).toBe('PENDING')
+
+      buttonInSecondList.click()
+
+      expect(buttonInSecondList.textContent).toBe('DONE')
+      expect(chip?.textContent).toBe('DONE')
+    })
+
+    it('should bubble a nested mutation through two linked component levels up to a sibling list', () => {
+      class LeafVM {
+        order: { status: string } = { status: 'PENDING' }
+
+        confirm(): void {
+          this.order.status = 'DONE'
+        }
+      }
+      defineComponent(
+        'order-leaf',
+        LeafVM,
+        '<component view-model="LeafVM"><button click="confirm" bind-content="order.status"></button></component>',
+      )
+      class MidVM {
+        order: { status: string } = { status: 'PENDING' }
+      }
+      defineComponent(
+        'order-mid',
+        MidVM,
+        '<component view-model="MidVM"><order-leaf link-order="order"></order-leaf></component>',
+      )
+
+      container.innerHTML = `
+        <h1>First list</h1>
+        <div for-each="order of orders"><div bind-content="order.status" class="chip"></div></div>
+        <h1>Second list (nested components)</h1>
+        <div for-each="order of orders"><order-mid link-order="order"></order-mid></div>
+      `
+
+      const parentVM = createReactiveViewModel(
+        {
+          orders: [{ status: 'PENDING' }],
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const chip = container.querySelector('.chip')
+      const leafButton = container.querySelector(
+        'order-mid order-leaf button',
+      ) as HTMLButtonElement | null
+
+      leafButton!.click()
+
+      expect((leafButton as HTMLButtonElement)?.textContent).toBe('DONE')
+      expect(chip?.textContent).toBe('DONE')
+    })
+  })
+
+  describe('prop-* one-way contract', () => {
+    it('should NOT propagate a nested mutation of a prop-* child back to the parent', () => {
+      class OrderItemVM {
+        order: { status: string } = { status: 'PENDING' }
+
+        confirm(): void {
+          this.order.status = 'DONE'
+        }
+      }
+      defineComponent(
+        'order-click-item',
+        OrderItemVM,
+        '<component view-model="OrderItemVM"><button click="confirm" bind-content="order.status"></button></component>',
+      )
+
+      container.innerHTML = `
+        <div bind-content="order.status" class="parent-status"></div>
+        <order-click-item prop-order="order"></order-click-item>
+      `
+
+      const parentVM = createReactiveViewModel(
+        {
+          order: { status: 'PENDING' as string },
+        },
+        (path) => {
+          render(path)
+        },
+      )
+
+      const render = setupBindings(container, parentVM)
+
+      const parentStatus = container.querySelector('.parent-status')
+      const button = container.querySelector('button')
+
+      button!.click()
+
+      expect(button?.textContent).toBe('DONE')
+      expect(parentStatus?.textContent).toBe('PENDING')
+    })
+  })
+
+  describe('regression: shared state mutated through a child must still re-render the parent', () => {
+    it('should re-render the parent chip when a same-value set reconciles state mutated through a prop-* child', () => {
+      class OrderItemVM {
+        order: { status: string } = { status: 'PENDING' }
+
+        confirm(): void {
+          this.order.status = 'DONE'
+        }
+      }
+      defineComponent(
+        'order-click-item',
+        OrderItemVM,
+        '<component view-model="OrderItemVM"><button click="confirm" bind-content="order.status"></button></component>',
+      )
+      class ParentVM {
+        [key: string]: unknown
+        order: { status: string } = { status: 'PENDING' }
+
+        confirmParent(): void {
+          this.order.status = 'DONE'
+        }
+      }
+
+      container.innerHTML = `
+        <button click="confirmParent" class="parent-confirm" bind-content="order.status"></button>
+        <order-click-item prop-order="order"></order-click-item>
+      `
+
+      const parentVM = createReactiveViewModel(new ParentVM(), (path) => {
+        render(path)
+      })
+
+      const render = setupBindings(container, parentVM)
+
+      const parentConfirm = container.querySelector('.parent-confirm') as HTMLButtonElement
+      const childButton = container.querySelector('order-click-item button') as HTMLButtonElement
+
+      expect(parentConfirm.textContent).toBe('PENDING')
+      expect(childButton.textContent).toBe('PENDING')
+
+      childButton.click()
+
+      expect(childButton.textContent).toBe('DONE')
+      expect(parentConfirm.textContent).toBe('PENDING')
+
+      parentConfirm.click()
+
+      expect(parentConfirm.textContent).toBe('DONE')
+    })
+  })
 })

@@ -60,10 +60,13 @@ export type StyleBinding = {
   propertyName: string
 }
 
+export type NotifyParent = (parentPath: string) => void
+
 export type ForEachBinding = {
   collectionName: string
   itemName: string
   indexName: string | null
+  notifyParent?: NotifyParent
   template: HTMLElement
   placeholder: Comment
   renderedElements: {
@@ -71,7 +74,7 @@ export type ForEachBinding = {
     viewModel: ViewModel
     itemRef: { current: unknown }
     indexRef: { current: number }
-    render: () => void
+    render: (changedPath?: string) => void
   }[]
   previousLength: number
   extraDependencies: string[]

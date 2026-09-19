@@ -40,9 +40,10 @@ function findPropertyOwner(target: object | null, propertyName: string): object 
 
 function getHandler<T extends object>(viewModel: ViewModel<T>, handlerName: string): unknown {
   if (isUnsafeKey(handlerName)) return undefined
-  const propertyOwner = findPropertyOwner(viewModel, handlerName)
-  if (!propertyOwner) return undefined
-  return viewModel[handlerName]
+  if (!(handlerName in viewModel)) return undefined
+  const handler = viewModel[handlerName]
+  if (handler === (Object.prototype as Record<string, unknown>)[handlerName]) return undefined
+  return handler
 }
 
 /**

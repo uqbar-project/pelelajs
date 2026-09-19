@@ -309,6 +309,33 @@ describe('bindForEach', () => {
       expect(spans[1].innerHTML).toBe('Bob')
     })
 
+    it('should skip rendering elements whose index is not affected by the changed path', () => {
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <span bind-content="order.status"></span>
+        </div>
+      `
+
+      const viewModel = {
+        orders: [{ status: 'PENDING' }, { status: 'PENDING' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const renderSpies = bindings[0].renderedElements.map((rendered) => {
+        const originalRender = rendered.render
+        const spy = vi.fn(() => originalRender())
+        rendered.render = spy
+        return spy
+      })
+
+      renderForEachBindings(bindings, viewModel, 'orders.1.status')
+
+      expect(renderSpies[0]).not.toHaveBeenCalled()
+      expect(renderSpies[1]).toHaveBeenCalledTimes(1)
+    })
+
     it('should add new elements when array grows', () => {
       container.innerHTML = `
         <div for-each="item of items">
@@ -357,6 +384,28 @@ describe('bindForEach', () => {
       expect(spans).toHaveLength(2)
       expect(spans[0].innerHTML).toBe('First')
       expect(spans[1].innerHTML).toBe('Second')
+    })
+
+    it('should not throw or change the DOM when the collection stops being an array', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span bind-content="item.text"></span>
+        </div>
+      `
+
+      const viewModel: Record<string, unknown> = {
+        items: [{ text: 'First' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      expect(container.querySelectorAll('span')).toHaveLength(1)
+
+      viewModel.items = 'not an array'
+
+      expect(() => renderForEachBindings(bindings, viewModel)).not.toThrow()
+      expect(container.querySelectorAll('span')).toHaveLength(1)
     })
 
     it('should handle empty arrays', () => {
@@ -652,6 +701,36 @@ describe('bindForEach', () => {
       expect(handleItemClick).toHaveBeenCalledTimes(2)
     })
 
+    it('should invoke view model instance methods when buttons inside for-each loop are clicked', () => {
+      class ListViewModel {
+        [key: string]: unknown
+        items: { name: string }[] = [{ name: 'Item 1' }, { name: 'Item 2' }]
+        clickedNames: string[] = []
+
+        handleItemClick({ item }: { item: { name: string } }): void {
+          this.clickedNames.push(item.name)
+        }
+      }
+      const viewModel = new ListViewModel()
+
+      container.innerHTML = `
+        <ul>
+          <li for-each="item of items">
+            <button click="handleItemClick" bind-content="item.name"></button>
+          </li>
+        </ul>
+      `
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const buttons = container.querySelectorAll('button')
+      buttons[0].click()
+      buttons[1].click()
+
+      expect(viewModel.clickedNames).toEqual(['Item 1', 'Item 2'])
+    })
+
     it('should initialize components inside for-each loop', () => {
       class ItemVM {
         name = ''
@@ -729,6 +808,200 @@ describe('bindForEach', () => {
 
       expect(spans[0].classList.contains('active')).toBe(false)
       expect(spans[1].classList.contains('active')).toBe(true)
+    })
+
+    it('should re-render the child component when a nested property of an item inside for-each changes', () => {
+      class OrderItemVM {
+        order: { status: string } = { status: 'PENDING' }
+      }
+      defineComponent(
+        'order-item',
+        OrderItemVM,
+        `<component view-model="OrderItemVM">
+          <span bind-content="order.status"></span>
+        </component>`,
+      )
+
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <order-item prop-order="order"></order-item>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{ orders: { status: string }[] }>(
+        {
+          orders: [{ status: 'PENDING' }, { status: 'PENDING' }],
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const spans = container.querySelectorAll('span')
+      expect(spans).toHaveLength(2)
+      expect(spans[0].innerHTML).toBe('PENDING')
+
+      parentVM.orders[0].status = 'DONE'
+
+      expect(container.querySelectorAll('span')[0].innerHTML).toBe('DONE')
+    })
+
+    it('should re-render only the item whose index matches the changed path', () => {
+      class OrderItemVM {
+        order: { status: string } = { status: 'PENDING' }
+      }
+      defineComponent(
+        'order-item',
+        OrderItemVM,
+        `<component view-model="OrderItemVM">
+          <span bind-content="order.status"></span>
+        </component>`,
+      )
+
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <order-item prop-order="order"></order-item>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{ orders: { status: string }[] }>(
+        {
+          orders: [{ status: 'PENDING' }, { status: 'PENDING' }],
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const spans = container.querySelectorAll('span')
+
+      parentVM.orders[1].status = 'DONE'
+
+      expect(spans[0].innerHTML).toBe('PENDING')
+      expect(spans[1].innerHTML).toBe('DONE')
+    })
+
+    it('should re-render the element when the parent replaces an entire array item', () => {
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <span bind-content="order.status"></span>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{ orders: { status: string }[] }>(
+        {
+          orders: [{ status: 'PENDING' }],
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const span = container.querySelector('span')!
+      expect(span.innerHTML).toBe('PENDING')
+
+      parentVM.orders[0] = { status: 'DONE' }
+
+      expect(span.innerHTML).toBe('DONE')
+    })
+
+    it('should forward non-item-scoped link changes unchanged through for-each', () => {
+      class CounterVM {
+        total: { subtotal: number } = { subtotal: 0 }
+
+        compute(): void {
+          this.total.subtotal = 500
+        }
+      }
+      defineComponent(
+        'counter-chip',
+        CounterVM,
+        '<component view-model="CounterVM"><button click="compute" bind-content="total.subtotal"></button></component>',
+      )
+
+      container.innerHTML = `
+        <span bind-content="globalTotal.subtotal" class="total-chip"></span>
+        <div for-each="order of orders">
+          <counter-chip link-total="globalTotal"></counter-chip>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{
+        orders: object[]
+        globalTotal: { subtotal: number }
+      }>(
+        {
+          orders: [{}],
+          globalTotal: { subtotal: 0 },
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const chip = container.querySelector('.total-chip')!
+      const button = container.querySelector('counter-chip button') as HTMLButtonElement
+      expect(chip.textContent).toBe('0')
+      expect(button.textContent).toBe('0')
+
+      button.click()
+
+      expect(chip.textContent).toBe('500')
+      expect(button.textContent).toBe('500')
+    })
+
+    it('should re-render the child component when an internal button click confirms the item inside for-each', () => {
+      class OrderItemVM {
+        order!: { status: string }
+
+        confirm(): void {
+          this.order.status = 'DONE'
+        }
+      }
+      defineComponent(
+        'order-click-item',
+        OrderItemVM,
+        `<component view-model="OrderItemVM">
+          <button click="confirm" bind-content="order.status"></button>
+        </component>`,
+      )
+
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <order-click-item prop-order="order"></order-click-item>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{ orders: { status: string }[] }>(
+        {
+          orders: [{ status: 'PENDING' }],
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const button = container.querySelector('button')!
+      expect(button.innerHTML).toBe('PENDING')
+
+      button.click()
+
+      expect(container.querySelector('button')!.innerHTML).toBe('DONE')
     })
   })
 
@@ -1096,6 +1369,31 @@ describe('bindForEach', () => {
       expect(options[0].value).toBe('1')
       expect(options[1].value).toBe('2')
       expect(options[2].value).toBe('3')
+    })
+
+    it('should refresh option values when the array is updated in place', () => {
+      container.innerHTML = `
+        <select>
+          <option for-each="item of values" bind-content="item"></option>
+        </select>
+      `
+      const viewModel: { values: Array<number | string> } = { values: [1, 2, 3] }
+
+      const render = setupBindings(container, viewModel)
+
+      let options = container.querySelectorAll('option')
+      expect(options).toHaveLength(3)
+      expect(options[0].value).toBe('1')
+      expect(options[2].value).toBe('3')
+
+      viewModel.values = ['a', 'b', 'c']
+      render()
+
+      options = container.querySelectorAll('option')
+      expect(options[0].value).toBe('a')
+      expect(options[1].value).toBe('b')
+      expect(options[2].value).toBe('c')
+      expect(options[2].textContent).toBe('c')
     })
 
     it('should update selectedType with the same class instance when an option is selected', () => {

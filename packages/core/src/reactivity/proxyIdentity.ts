@@ -12,6 +12,15 @@ export function registerReactiveProxy(proxy: object, rawTarget: object): void {
 }
 
 /**
+ * Retrieves the raw object behind a reactive proxy, walking the chain
+ * of nested proxies until the original object is found.
+ */
+export function getRawObject(value: object): object {
+  const rawObject = rawObjectCache.get(value)
+  return rawObject ? getRawObject(rawObject) : value
+}
+
+/**
  * Checks if a value is a reactive proxy.
  */
 export function isProxy(value: unknown): boolean {

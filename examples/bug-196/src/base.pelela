@@ -1,0 +1,24 @@
+<pelela view-model="Base">
+  <div class="card">
+    <h1>Orders</h1>
+
+    <div for-each="order of orders">
+      <div bind-content="order.description"
+           class="chip"
+           bind-class="order.statusClass"
+           click="confirm"></div>
+    </div>
+
+    <h2>Orders with link-order (two-way)</h2>
+
+    <div for-each="order of orders">
+      <order-component link-order="order"></order-component>
+    </div>
+
+    <h2>Orders with prop-order (one-way)</h2>
+
+    <div for-each="order of orders">
+      <order-component prop-order="order"></order-component>
+    </div>
+  </div>
+</pelela>

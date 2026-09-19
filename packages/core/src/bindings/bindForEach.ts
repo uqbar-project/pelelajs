@@ -28,7 +28,7 @@ import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import { getNestedProperty } from './nestedProperties'
 import { setOptionValue } from './optionValues'
-import type { ForEachBinding, ViewModel } from './types'
+import type { ForEachBinding, NotifyParent, ViewModel } from './types'
 
 function parseForEachExpression(
   expression: string,
@@ -92,11 +92,12 @@ export function createExtendedViewModel<T extends object>({
 function setupBindingsForElement<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
+  notifyParent?: NotifyParent,
 ): () => void {
   for (const attr of element.attributes) {
     assertValidBindingAttribute(attr.name, element)
   }
-  const componentBindings = setupComponentBindings(element, viewModel)
+  const componentBindings = setupComponentBindings(element, viewModel, notifyParent)
   const bindings = {
     valueBindings: setupValueBindings(element, viewModel),
     contentBindings: setupContentBindings(element, viewModel),
@@ -110,7 +111,7 @@ function setupBindingsForElement<T extends object>(
   setupClickBindings(element, viewModel)
   setupEnterBindings(element, viewModel)
 
-  return () => {
+  return (changedPath?: string) => {
     renderValueBindings(bindings.valueBindings, viewModel)
     renderContentBindings(bindings.contentBindings, viewModel)
     renderSrcBindings(bindings.srcBindings, viewModel)
@@ -119,13 +120,14 @@ function setupBindingsForElement<T extends object>(
     renderIfBindings(bindings.ifBindings, viewModel)
     renderClassBindings(bindings.classBindings, viewModel)
     renderStyleBindings(bindings.styleBindings, viewModel)
-    renderComponentBindings(componentBindings, viewModel)
+    renderComponentBindings(componentBindings, viewModel, changedPath)
   }
 }
 
 export function setupSingleForEachBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
+  notifyParent?: NotifyParent,
 ): ForEachBinding | null {
   const expression = element.getAttribute('for-each')
   if (!expression?.trim()) return null
@@ -166,6 +168,7 @@ export function setupSingleForEachBinding<T extends object>(
     collectionName,
     itemName,
     indexName,
+    notifyParent,
     template,
     placeholder,
     renderedElements: [],
@@ -230,17 +233,30 @@ function extractExtraDependencies(
 export function setupForEachBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
+  notifyParent?: NotifyParent,
 ): ForEachBinding[] {
   const elements = findAllElements(root, '[for-each]')
   const ownElements = filterOwnElements(elements, root)
   return ownElements
-    .map((element) => setupSingleForEachBinding(element, viewModel))
+    .map((element) => setupSingleForEachBinding(element, viewModel, notifyParent))
     .filter((binding): binding is ForEachBinding => binding !== null)
 }
 
 function setOptionElementValue(element: HTMLOptionElement, item: unknown, index: number): void {
   element.value = typeof item === 'object' && item !== null ? String(index) : String(item)
   setOptionValue(element, item)
+}
+
+function remapPathToParentNamespace(
+  path: string,
+  collectionName: string,
+  index: number,
+  itemName: string,
+): string {
+  if (path === itemName) return `${collectionName}.${index}`
+  if (path.startsWith(`${itemName}.`))
+    return `${collectionName}.${index}${path.substring(itemName.length)}`
+  return path
 }
 
 function createNewElement<T extends object>(
@@ -259,7 +275,20 @@ function createNewElement<T extends object>(
     indexName: binding.indexName,
     indexRef,
   })
-  const render = setupBindingsForElement(element, extendedViewModel)
+  const notifyParentWithIndex =
+    binding.notifyParent === undefined
+      ? undefined
+      : (path: string): void => {
+          binding.notifyParent?.(
+            remapPathToParentNamespace(
+              path,
+              binding.collectionName,
+              indexRef.current,
+              binding.itemName,
+            ),
+          )
+        }
+  const render = setupBindingsForElement(element, extendedViewModel, notifyParentWithIndex)
 
   if (element.tagName === 'OPTION') {
     setOptionElementValue(element as HTMLOptionElement, item, index)
@@ -297,7 +326,37 @@ function removeExtraElements(binding: ForEachBinding, currentLength: number): vo
   })
 }
 
-function updateExistingElements(binding: ForEachBinding, collection: unknown[]): void {
+function isIndexScopedChangedPath(changedPath: string, collectionName: string): boolean {
+  const collectionPrefix = `${collectionName}.`
+  if (!changedPath.startsWith(collectionPrefix)) return false
+  const firstSegment = changedPath.substring(collectionPrefix.length).split('.')[0]
+  return /^\d+$/.test(firstSegment)
+}
+
+function isScopedToIndex(changedPath: string, collectionName: string, index: number): boolean {
+  const itemSegment = `${collectionName}.${index}`
+  return changedPath === itemSegment || changedPath.startsWith(`${itemSegment}.`)
+}
+
+function remapChangedPathForElement(
+  changedPath: string | undefined,
+  collectionName: string,
+  index: number,
+  itemName: string,
+): string | undefined {
+  if (changedPath === undefined || !isScopedToIndex(changedPath, collectionName, index)) {
+    return changedPath
+  }
+  const itemSegment = `${collectionName}.${index}`
+  if (changedPath === itemSegment) return itemName
+  return `${itemName}${changedPath.substring(itemSegment.length)}`
+}
+
+function updateExistingElements(
+  binding: ForEachBinding,
+  collection: unknown[],
+  changedPath?: string,
+): void {
   binding.renderedElements.forEach((rendered, index) => {
     rendered.itemRef.current = collection[index]
     rendered.indexRef.current = index
@@ -306,13 +365,26 @@ function updateExistingElements(binding: ForEachBinding, collection: unknown[]):
       setOptionElementValue(rendered.element as HTMLOptionElement, collection[index], index)
     }
 
-    rendered.render()
+    const isUnrelatedIndexScopedChange =
+      changedPath !== undefined &&
+      isIndexScopedChangedPath(changedPath, binding.collectionName) &&
+      !isScopedToIndex(changedPath, binding.collectionName, index)
+    if (isUnrelatedIndexScopedChange) return
+
+    const scopedPath = remapChangedPathForElement(
+      changedPath,
+      binding.collectionName,
+      index,
+      binding.itemName,
+    )
+    rendered.render(scopedPath)
   })
 }
 
 function renderSingleForEachBinding<T extends object>(
   binding: ForEachBinding,
   viewModel: ViewModel<T>,
+  changedPath?: string,
 ): void {
   const collection = binding.collectionName.includes('.')
     ? getNestedProperty(viewModel, binding.collectionName)
@@ -322,15 +394,16 @@ function renderSingleForEachBinding<T extends object>(
   const previousLength = binding.previousLength
   if (currentLength > previousLength) addNewElements(binding, viewModel, collection, previousLength)
   else if (currentLength < previousLength) removeExtraElements(binding, currentLength)
-  updateExistingElements(binding, collection)
+  updateExistingElements(binding, collection, changedPath)
   binding.previousLength = currentLength
 }
 
 export function renderForEachBindings<T extends object>(
   bindings: ForEachBinding[],
   viewModel: ViewModel<T>,
+  changedPath?: string,
 ): void {
   bindings.forEach((binding) => {
-    renderSingleForEachBinding(binding, viewModel)
+    renderSingleForEachBinding(binding, viewModel, changedPath)
   })
 }
