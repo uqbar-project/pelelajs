@@ -9,13 +9,13 @@
            click="confirm"></div>
     </div>
 
-    <h2>Orders with component reactive</h2>
+    <h2>Orders with link-order (two-way)</h2>
 
     <div for-each="order of orders">
       <order-component link-order="order"></order-component>
     </div>
 
-    <h2>Orders with component non-reactive</h2>
+    <h2>Orders with prop-order (one-way)</h2>
 
     <div for-each="order of orders">
       <order-component prop-order="order"></order-component>
