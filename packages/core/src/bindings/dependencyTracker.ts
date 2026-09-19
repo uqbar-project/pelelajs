@@ -1,9 +1,6 @@
 import { isObject } from '../commons/helpers'
+import { unwrapReactive } from '../reactivity/proxyIdentity'
 import type { BindingsCollection } from './types'
-
-interface ViewModelWithRaw {
-  $raw?: unknown
-}
 
 function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
   const hasGetter = (target: unknown, part: string): boolean => {
@@ -25,8 +22,7 @@ function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
 
   return propertyPath.split('.').some((part) => {
     if (!isObject(currentObj)) return false
-    const viewModel = currentObj as ViewModelWithRaw
-    const rawObj = viewModel.$raw ?? currentObj
+    const rawObj = unwrapReactive(currentObj)
     if (!isObject(rawObj)) return false
     if (hasGetter(rawObj, part)) return true
 

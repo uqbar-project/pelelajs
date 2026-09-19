@@ -41,7 +41,7 @@ const errors = {
     isFunction:
       '[pelela] "{{name}}" is a function value that cannot be bound as a property of view model "{{viewModel}}". A bindable property must resolve to a plain value, not a function.',
     caseMismatch:
-      '[pelela] Property "{{name}}" does not exist in view model "{{viewModel}}", but "{{suggestedName}}" does. TypeScript names are case-sensitive.',
+      '[pelela] Property "{{name}}" used in {{kind}} does not exist in view model "{{viewModel}}", but "{{suggestedName}}" does. TypeScript names are case-sensitive.\nElement: {{snippet}}',
   },
   viewmodel: {
     registration: {

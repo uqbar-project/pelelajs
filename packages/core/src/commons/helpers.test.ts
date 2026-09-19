@@ -83,6 +83,15 @@ describe('helpers', () => {
       expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(false)
     })
 
+    it('should return true for an async arrow function field (async arrows bind this lexically)', () => {
+      class ViewModel {
+        increment = async () => {}
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(true)
+    })
+
     it('should return false for an async function field', () => {
       class ViewModel {
         increment = async function increment() {}

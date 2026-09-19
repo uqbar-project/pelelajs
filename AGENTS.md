@@ -59,6 +59,7 @@
   - **i18n:** Todos los mensajes de cara al usuario DEBEN usar la función `t()` de internacionalización. Nada de strings hardcodeados en español.
   - **Testing:** Cobertura > 90%. Primero caso feliz, luego casos borde. Los tests son documentación. Ante un bug: primero escribir el test que lo reproduce.
 - **Prohibido tests triviales:** No sirven tests que validan cosas en el vacío, como que una instancia pertenece a una clase (instanceof) o que un mensaje de error existe sin contexto. Todo test de un error debe construir un ejemplo válido que haga fallar a Pelela (ej: un view model concreto con un binding inválido) y verificar que el error lanzado refleje exactamente ese caso.
+  - **Errores vía `t()` (regla de CodeRabbit):** Para verificar mensajes de error internacionalizados, usar la función `t('clave', { params })` como fuente de verdad. Prohibido hardcodear el texto literal del mensaje o usar chequeos parciales (`toContain`, `endsWith`) sobre él: si la traducción cambia, el test debe reflejarlo y detectar la rotura. Para mensajes que NO pasan por i18n (ej. errores internos de helpers de test), verificar el contrato observable estable (tipo de error, propiedades públicas), nunca el texto literal.
   - **Protocolo de ejecución:** NO corras tests ni linter por tu cuenta. Pedí al humano que lo haga: `pnpm run biome:check` y `pnpm run test --run`.
 </workflow_constraints>
 

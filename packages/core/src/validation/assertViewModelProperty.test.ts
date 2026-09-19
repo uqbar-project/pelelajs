@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ELEMENT_SNIPPET_MAX_LENGTH, extractElementSnippet } from '../commons/helpers'
+import { t } from '../commons/i18n'
 import {
   ArrowFunctionAsPropertyError,
   FunctionAsPropertyError,
@@ -316,6 +317,24 @@ describe('assertViewModelProperty', () => {
     expect(error.viewModelName).toBe('ViewModelWithNestedFunction')
   })
 
+  it('should throw ArrowFunctionAsPropertyError when the referenced member is an async arrow function field', () => {
+    class ViewModelWithAsyncArrowField {
+      loadData = async () => {}
+    }
+    const viewModel = new ViewModelWithAsyncArrowField()
+    const element = document.createElement('div')
+    element.setAttribute('bind-content', 'loadData')
+
+    const error = catchError<ArrowFunctionAsPropertyError>(() =>
+      assertViewModelProperty(viewModel, 'loadData', 'bind-content', element),
+    )
+
+    expect(error).toBeInstanceOf(ArrowFunctionAsPropertyError)
+    expect(error.propertyName).toBe('loadData')
+    expect(error.bindingKind).toBe('bind-content')
+    expect(error.viewModelName).toBe('ViewModelWithAsyncArrowField')
+  })
+
   it('should throw FunctionAsPropertyError when the referenced member is an async function field', () => {
     class ViewModelWithAsyncFunctionField {
       loadData = async function loadData() {}
@@ -354,6 +373,7 @@ describe('assertViewModelProperty', () => {
     const viewModel = new TestViewModel()
     const element = document.createElement('div')
     element.setAttribute('bind-content', 'ExistingProperty')
+    element.innerHTML = '<span>Content</span>'
 
     const error = catchError<PropertyCaseMismatchError>(() =>
       assertViewModelProperty(viewModel, 'ExistingProperty', 'bind-content', element),
@@ -361,5 +381,16 @@ describe('assertViewModelProperty', () => {
 
     expect(error).toBeInstanceOf(PropertyCaseMismatchError)
     expect(error.suggestedName).toBe('existingProperty')
+    expect(error.bindingKind).toBe('bind-content')
+    expect(error.elementSnippet).toContain('<div bind-content="ExistingProperty">')
+    expect(error.message).toBe(
+      t('errors.properties.caseMismatch', {
+        name: 'ExistingProperty',
+        kind: 'bind-content',
+        snippet: error.elementSnippet,
+        viewModel: 'TestViewModel',
+        suggestedName: 'existingProperty',
+      }),
+    )
   })
 })

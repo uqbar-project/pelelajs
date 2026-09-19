@@ -90,6 +90,19 @@ describe('executeEventHandler', () => {
     expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 
+  it('should render ArrowFunctionAsHandlerError when the handler is an async arrow function field of the view model class', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      handleEvent = async () => {}
+    }
+    const viewModel = new TestViewModel()
+
+    executeHandler(viewModel)
+
+    const expectedError = new ArrowFunctionAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
   it('should render InvalidHandlerError when the handler is missing', () => {
     const missingHandlerName = 'missingHandler'
 

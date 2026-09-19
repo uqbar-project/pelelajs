@@ -1,4 +1,4 @@
-import { isProxy } from '../reactivity/proxyIdentity'
+import { unwrapReactive } from '../reactivity/proxyIdentity'
 import { getRegisteredTags } from '../registry/componentRegistry'
 import { t } from './i18n'
 import { isUnsafeKey } from './sanitization'
@@ -100,10 +100,6 @@ export function isValidIdentifier(value: string): boolean {
   return IDENTIFIER_PATTERN.test(value) && !isUnsafeKey(value)
 }
 
-interface ViewModelWithRaw {
-  $raw?: unknown
-}
-
 /**
  * Looks up a member of the view model (or its prototype chain) whose name matches
  * the given name ignoring case. Used to suggest the real member when a binding or
@@ -112,7 +108,7 @@ interface ViewModelWithRaw {
 export function findCaseInsensitiveMember(target: object, name: string): string | null {
   if (isUnsafeKey(name)) return null
 
-  const viewModel: unknown = (target as ViewModelWithRaw).$raw ?? target
+  const viewModel: unknown = unwrapReactive(target)
   if (!isObject(viewModel)) return null
 
   let proto: object | null = viewModel
@@ -143,9 +139,7 @@ export function isArrowFunctionMember(
   value: unknown,
 ): boolean {
   if (isUnsafeKey(memberName)) return false
-  const rawViewModel: unknown = isProxy(viewModel)
-    ? ((viewModel as ViewModelWithRaw).$raw ?? viewModel)
-    : viewModel
+  const rawViewModel: unknown = unwrapReactive(viewModel)
   return isObject(rawViewModel) && Object.hasOwn(rawViewModel, memberName) && isArrowFunction(value)
 }
 
@@ -154,13 +148,32 @@ function isArrowFunction(value: unknown): boolean {
     return false
   }
 
-  return !isAsyncFunction(value) && !isConstructableFunction(value)
+  if (isAsyncFunction(value)) {
+    return isAsyncArrowFunction(value)
+  }
+
+  return !isConstructableFunction(value)
 }
 
 /**
- * Async functions share the prototype-less shape of arrows (both have an
- * undefined .prototype), but they are not arrow functions, so they are
- * classified as generic functions instead.
+ * Async arrows and async function expressions are indistinguishable by shape
+ * (both have an undefined .prototype and are not constructable), and both
+ * report "AsyncFunction" as their constructor name. What separates them is the
+ * body text: after the `async` prefix, an async function expression always
+ * starts with the `function` keyword, while an async arrow never does.
+ */
+function isAsyncArrowFunction(value: unknown): boolean {
+  const source = Function.prototype.toString.call(value).trimStart()
+  if (!source.startsWith('async')) {
+    return false
+  }
+  return !source.slice('async'.length).trimStart().startsWith('function')
+}
+
+/**
+ * Async functions keep the prototype-less shape of arrows, so `isArrowFunction`
+ * must split them into async arrows (rejected, `this` is lexically bound) and
+ * async function expressions (classified as generic functions instead).
  */
 function isAsyncFunction(value: unknown): boolean {
   return typeof value === 'function' && value.constructor.name === 'AsyncFunction'

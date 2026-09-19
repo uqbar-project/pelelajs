@@ -41,7 +41,7 @@ const errors = {
     isFunction:
       '[pelela] "{{name}}" es un valor de función que no puede bindearse como propiedad del view model "{{viewModel}}". Una propiedad bindeable debe resolver a un valor plano, no a una función.',
     caseMismatch:
-      '[pelela] La propiedad "{{name}}" no existe en el view model "{{viewModel}}", pero sí "{{suggestedName}}". En TypeScript los nombres distinguen mayúsculas.',
+      '[pelela] La propiedad "{{name}}" usada en {{kind}} no existe en el view model "{{viewModel}}", pero sí "{{suggestedName}}". En TypeScript los nombres distinguen mayúsculas.\nElemento: {{snippet}}',
   },
   viewmodel: {
     registration: {

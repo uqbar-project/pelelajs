@@ -8,6 +8,7 @@ import {
   HandlerCaseMismatchError,
   InvalidHandlerError,
 } from '../errors/index'
+import { unwrapReactive } from '../reactivity/proxyIdentity'
 import type { EventHandler, ViewModel } from './types'
 
 interface ExecuteEventHandlerOptions<T extends object, E extends Event> {
@@ -15,10 +16,6 @@ interface ExecuteEventHandlerOptions<T extends object, E extends Event> {
   viewModel: ViewModel<T>
   event: E
   eventType: EventType
-}
-
-interface ViewModelWithRaw {
-  $raw?: unknown
 }
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
@@ -50,7 +47,7 @@ function getHandler<T extends object>(viewModel: ViewModel<T>, handlerName: stri
  * view model or any prototype, unwrapping `$raw` first. Mirrors `dependencyTracker.isPropertyGetter`.
  */
 function isGetterProperty(viewModel: object, propertyName: string): boolean {
-  const rawViewModel: unknown = (viewModel as ViewModelWithRaw).$raw ?? viewModel
+  const rawViewModel: unknown = unwrapReactive(viewModel)
   if (!isObject(rawViewModel)) return false
 
   let proto: object | null = rawViewModel

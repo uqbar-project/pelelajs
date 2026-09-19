@@ -22,6 +22,8 @@ export class PropertyCaseMismatchError extends PelelaError {
     super(
       t('errors.properties.caseMismatch', {
         name: params.propertyName,
+        kind: params.bindingKind,
+        snippet: params.elementSnippet,
         viewModel: params.viewModelName,
         suggestedName: params.suggestedName,
       }),
