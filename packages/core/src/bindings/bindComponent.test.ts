@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initializeI18n, t } from '../commons/i18n'
-import { InvalidConstValueError } from '../errors'
+import { InvalidConstValueError, ReadOnlyPropertyError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
+import { testHelpers } from '../test/helpers'
 import type { PelelaElement } from '../types'
 import { renderComponentBindings, setupComponentBindings } from './bindComponent'
 import { setupBindings } from './setupBindings'
@@ -585,18 +586,22 @@ describe('bindComponent', () => {
       container.innerHTML = '<test-comp const-active="yes"></test-comp>'
       const parentVM = createReactiveViewModel({}, () => {})
 
-      expect(() => setupComponentBindings(container, parentVM)).toThrow(
-        /it must be 'true' or 'false'/,
+      const error = testHelpers.catchError<InvalidConstValueError>(() =>
+        setupComponentBindings(container, parentVM),
       )
+
+      expect(error).toBeInstanceOf(InvalidConstValueError)
+      expect(error.propertyName).toBe('active')
+      expect(error.value).toBe('yes')
     })
 
-    it('should throw InvalidConstValueError when a number property receives a non-numeric literal (const-desde="a")', () => {
+    it('should throw InvalidConstValueError when a number property receives a non-numeric literal (const-quantity="a")', () => {
       class ChildVM {
-        desde = 1
+        quantity = 1
       }
       defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
 
-      container.innerHTML = '<test-comp const-desde="a"></test-comp>'
+      container.innerHTML = '<test-comp const-quantity="a"></test-comp>'
       const parentVM = createReactiveViewModel({}, () => {})
 
       expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
@@ -716,6 +721,92 @@ describe('bindComponent', () => {
       const parentVM = createReactiveViewModel({}, () => {})
 
       expect(() => setupComponentBindings(container, parentVM)).toThrow(InvalidConstValueError)
+    })
+
+    it('should throw ReadOnlyPropertyError when a const attribute targets a getter-only property', () => {
+      class ChildVM {
+        private _count = 1
+
+        get count(): number {
+          return this._count
+        }
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-count="5"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      const error = testHelpers.catchError<ReadOnlyPropertyError>(() =>
+        setupComponentBindings(container, parentVM),
+      )
+
+      expect(error).toBeInstanceOf(ReadOnlyPropertyError)
+      expect(error.propertyName).toBe('count')
+    })
+
+    it('should throw ReadOnlyPropertyError when a prop attribute targets a getter-only property', () => {
+      class ChildVM {
+        private _count = 1
+
+        get count(): number {
+          return this._count
+        }
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp prop-count="parentValue"></test-comp>'
+      const parentVM = createReactiveViewModel({ parentValue: 2 }, () => {})
+
+      const error = testHelpers.catchError<ReadOnlyPropertyError>(() =>
+        setupComponentBindings(container, parentVM),
+      )
+
+      expect(error).toBeInstanceOf(ReadOnlyPropertyError)
+      expect(error.propertyName).toBe('count')
+    })
+
+    it('should throw ReadOnlyPropertyError when a link attribute targets a getter-only property', () => {
+      class ChildVM {
+        private _count = 1
+
+        get count(): number {
+          return this._count
+        }
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp link-count="parentValue"></test-comp>'
+      const parentVM = createReactiveViewModel({ parentValue: 2 }, () => {})
+
+      const error = testHelpers.catchError<ReadOnlyPropertyError>(() =>
+        setupComponentBindings(container, parentVM),
+      )
+
+      expect(error).toBeInstanceOf(ReadOnlyPropertyError)
+      expect(error.propertyName).toBe('count')
+    })
+
+    it('should assign a prop attribute to a property that has a getter and a setter', () => {
+      class ChildVM {
+        private _count = 0
+
+        get count(): number {
+          return this._count
+        }
+
+        set count(value: number) {
+          this._count = value
+        }
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp prop-count="parentValue"></test-comp>'
+      const parentVM = createReactiveViewModel({ parentValue: 7 }, () => {})
+      const bindings = setupComponentBindings(container, parentVM)
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+
+      expect(childVM.count).toBe(7)
     })
 
     it('should use the declared property type from typeMap to reject non-numeric const literals', () => {

@@ -361,18 +361,18 @@ describe('pelelajsPlugin', () => {
 
     it('generates typeMap from the view model property types', () => {
       const result = loadAutoRegisterWithComponent(
-        `export class Conversor {
-  millas = 0
-  kilometros = 0
-  activo = false
+        `export class Converter {
+  miles = 0
+  kilometers = 0
+  active = false
   quantity!: number
-  descripcion = ""
+  description = ""
 }`,
-        '<pelela view-model="Conversor"><h1>Hola</h1></pelela>',
+        '<pelela view-model="Converter"><h1>Hola</h1></pelela>',
       )
 
       expect(result).toContain(
-        'defineComponent("Conversor", Conversor, conversorTemplate, { typeMap: {"millas":"number","kilometros":"number","activo":"boolean","quantity":"number","descripcion":"string"} })',
+        'defineComponent("Converter", Converter, conversorTemplate, { typeMap: {"miles":"number","kilometers":"number","active":"boolean","quantity":"number","description":"string"} })',
       )
     })
 

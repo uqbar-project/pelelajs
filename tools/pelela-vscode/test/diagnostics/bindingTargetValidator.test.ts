@@ -19,9 +19,18 @@ const COUNTER_VIEW_MODEL_CONTENT = `export class CounterViewModel {
   lastNumber = 0
   active = true
   total = 0
+  private _limit = 0
 
   get isLucky() {
     return this.count === 7
+  }
+
+  get limit() {
+    return this._limit
+  }
+
+  set limit(value: number) {
+    this._limit = value
   }
 
   increment() {}
@@ -53,6 +62,14 @@ function childPropertyCaseMismatch(
   viewModel = 'CounterViewModel'
 ): string {
   return t('diagnostics.childPropertyCaseMismatch', { name, suggestedName, tag, viewModel })
+}
+
+function childPropertyReadOnly(
+  name: string,
+  tag = 'counter',
+  viewModel = 'CounterViewModel'
+): string {
+  return t('diagnostics.childPropertyReadOnly', { name, tag, viewModel })
 }
 
 describe('validateBindingTargets', () => {
@@ -129,34 +146,46 @@ describe('validateBindingTargets', () => {
     )
   })
 
-  it('rejects a getter as a prop target (it cannot be set)', () => {
+  it('reports a read-only diagnostic when a getter is used as a prop target', () => {
     const diagnostics = validate(PARENT_TEMPLATE('<counter prop-is-lucky="count"></counter>'))
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      childPropertyNotFound('isLucky'),
+      childPropertyReadOnly('isLucky'),
       vscode.DiagnosticSeverity.Error
     )
   })
 
-  it('rejects a getter as a link target (it cannot be set)', () => {
+  it('reports a read-only diagnostic when a getter is used as a link target', () => {
     const diagnostics = validate(PARENT_TEMPLATE('<counter link-is-lucky="count"></counter>'))
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      childPropertyNotFound('isLucky'),
+      childPropertyReadOnly('isLucky'),
       vscode.DiagnosticSeverity.Error
     )
   })
 
-  it('rejects a getter as a const target (it cannot be set)', () => {
+  it('reports a read-only diagnostic when a getter is used as a const target', () => {
     const diagnostics = validate(PARENT_TEMPLATE('<counter const-is-lucky="true"></counter>'))
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      childPropertyNotFound('isLucky'),
+      childPropertyReadOnly('isLucky'),
       vscode.DiagnosticSeverity.Error
     )
+  })
+
+  it('accepts a prop attribute whose target has a getter and a setter', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-limit="count"></counter>'))
+
+    assert.strictEqual(diagnostics.length, 0)
+  })
+
+  it('accepts a const attribute whose target has a getter and a setter', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter const-limit="5"></counter>'))
+
+    assert.strictEqual(diagnostics.length, 0)
   })
 
   it('rejects a method as a prop target (it cannot be set)', () => {

@@ -38,6 +38,8 @@ const diagnostics = {
     'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{name}}" is not defined in the child ViewModel.',
   childPropertyCaseMismatch:
     'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{name}}" is not defined in the child ViewModel. Did you mean "{{suggestedName}}"?',
+  childPropertyReadOnly:
+    'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{name}}" is read-only. Define a writable attribute in the child ViewModel to receive the value.',
   bindingTypeMismatch:
     'Component <{{tag}}>: attribute "{{attr}}" receives {{parentKind}} (parent property "{{parentKey}}") but the child property "{{childKey}}" is {{childKind}}.',
   bindingKindNumber: 'a number',

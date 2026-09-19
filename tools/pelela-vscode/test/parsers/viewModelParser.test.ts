@@ -114,6 +114,28 @@ export interface Product {
       assert.deepStrictEqual([...getters].sort(), ['delivery', 'isSelected', 'price'])
     })
 
+    it('should return setters separately and distinguish getter-only from getter/setter', () => {
+      const fPath = path.join(testFilesDir, 'AccessorViewModel.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class AccessorViewModel {
+  private _limit = 0
+  private _readOnly = 0
+
+  get limit() { return this._limit }
+  set limit(value: number) { this._limit = value }
+
+  get readOnly() { return this._readOnly }
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'AccessorViewModel')
+      assert.deepStrictEqual(members.setters, ['limit'])
+      assert.ok(members.getters.includes('limit'), 'getter/setter shares the name')
+      assert.ok(members.getters.includes('readOnly'), 'getter-only is classified as getter')
+      assert.ok(!members.setters.includes('readOnly'), 'getter-only is not a setter')
+    })
+
     it('should classify arrow function fields as arrows, not properties, methods, or getters', () => {
       const fPath = path.join(testFilesDir, 'ArrowFieldVM.ts')
       fs.writeFileSync(
