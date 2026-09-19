@@ -124,6 +124,44 @@ describe('reactiveProxy', () => {
       expect(proxy.items[3]).toBe(4)
     })
 
+    it('should handle array pop correctly', () => {
+      const target = { items: [1, 2, 3] }
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target, onChange)
+
+      const removed = proxy.items.pop()
+
+      expect(removed).toBe(3)
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(proxy.items).toEqual([1, 2])
+    })
+
+    it('should handle array shift correctly', () => {
+      const target = { items: [1, 2, 3] }
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target, onChange)
+
+      const removed = proxy.items.shift()
+
+      expect(removed).toBe(1)
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(proxy.items).toEqual([2, 3])
+    })
+
+    it('should handle array unshift correctly and make new elements reactive', () => {
+      const target = { items: [] as Array<{ value: number }> }
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target, onChange)
+
+      proxy.items.unshift({ value: 1 })
+      onChange.mockClear()
+
+      proxy.items[0].value = 2
+
+      expect(onChange).toHaveBeenCalled()
+      expect(proxy.items[0].value).toBe(2)
+    })
+
     it('should detect changes in objects inside arrays', () => {
       const target = {
         users: [
@@ -239,6 +277,39 @@ describe('reactiveProxy', () => {
       expect('b' in (proxy as object)).toBe(false)
     })
 
+    it('should not notify when deleting a non-existent property', () => {
+      const target: Record<string, unknown> = { a: 1 }
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target, onChange)
+
+      delete proxy.missing
+
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('should not notify when delete fails on a non-configurable property', () => {
+      const target = {}
+      Object.defineProperty(target, 'a', { value: 1, configurable: false })
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target as Record<string, unknown>, onChange)
+
+      const result = Reflect.deleteProperty(proxy as object, 'a')
+
+      expect(result).toBe(false)
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('should not notify when set fails on a non-extensible target', () => {
+      const target = Object.preventExtensions({ a: 1 })
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target as Record<string, unknown>, onChange)
+
+      const result = Reflect.set(proxy as object, 'newProp', 2)
+
+      expect(result).toBe(false)
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
     it('should handle circular references without stack overflow', () => {
       const target: Record<string, unknown> = { name: 'root' }
       target.self = target
@@ -278,6 +349,17 @@ describe('reactiveProxy', () => {
       expect(proxy.items[1]).toBe('x')
     })
 
+    it('should notify when $set receives a raw non-proxy target', () => {
+      const target: Record<string, unknown> = { a: 1 }
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target, onChange)
+
+      proxy.$set(proxy.$raw, 'b', 2)
+
+      expect(onChange).toHaveBeenCalledWith('b')
+      expect(proxy.b).toBe(2)
+    })
+
     it('should handle $delete helper method', () => {
       const target: Record<string, unknown> = { a: 1, b: 2 }
       const onChange = vi.fn()
@@ -288,6 +370,28 @@ describe('reactiveProxy', () => {
       expect(onChange).toHaveBeenCalled()
       expect(proxy.b).toBeUndefined()
       expect('b' in proxy).toBe(false)
+    })
+
+    it('should notify when $delete receives a raw non-proxy target', () => {
+      const target: Record<string, unknown> = { a: 1, b: 2 }
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target, onChange)
+
+      proxy.$delete(proxy.$raw, 'b')
+
+      expect(onChange).toHaveBeenCalledWith('b')
+      expect(proxy.b).toBeUndefined()
+      expect('b' in proxy).toBe(false)
+    })
+
+    it('should notify with root path when the view model target is an array', () => {
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel([1, 2, 3], onChange)
+
+      proxy.push(4)
+
+      expect(onChange).toHaveBeenCalledWith('root')
+      expect(Array.from(proxy as unknown as number[])).toEqual([1, 2, 3, 4])
     })
 
     it('should handle $raw to access original object', () => {
