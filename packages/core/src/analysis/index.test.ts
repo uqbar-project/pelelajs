@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { analyzeViewModelModule, classifyViewModelIssue, pascalCaseFromFileName } from './index'
+import {
+  analyzeViewModelModule,
+  classifyViewModelIssue,
+  extractViewModelPropertyTypes,
+  pascalCaseFromFileName,
+} from './index'
 
 const CONVERTER_SOURCE = 'export class Converter {}'
 const CONVERTER_VIEW_MODEL = 'converter'
@@ -100,6 +105,28 @@ describe('analyzeViewModelModule', () => {
     const analysis = analyzeViewModelModule(`export type * from './models'`)
 
     expect(analysis.exportedNames).toEqual([])
+  })
+
+  it('collects no exported names from a namespace re-export', () => {
+    const analysis = analyzeViewModelModule(`export * as models from './models'`)
+
+    expect(analysis).toEqual({
+      exportedNames: [],
+      declaredNames: [],
+      classNames: [],
+      functionNames: [],
+    })
+  })
+
+  it('collects no function name from an anonymous default function export', () => {
+    const analysis = analyzeViewModelModule('export default function () {}')
+
+    expect(analysis).toEqual({
+      exportedNames: [],
+      declaredNames: [],
+      classNames: [],
+      functionNames: [],
+    })
   })
 })
 
@@ -237,5 +264,296 @@ describe('pascalCaseFromFileName', () => {
 
   it('handles dots as separators', () => {
     expect(pascalCaseFromFileName('foo.tsfile')).toBe('FooTsfile')
+  })
+
+  it('returns an empty name for an empty file name', () => {
+    expect(pascalCaseFromFileName('')).toBe('')
+  })
+})
+
+describe('extractViewModelPropertyTypes', () => {
+  const extractCounter = (tsSource: string) => extractViewModelPropertyTypes(tsSource, 'Counter')
+
+  it('classifies typed properties, initializer-inferred properties and definite-assignment properties', () => {
+    const types = extractViewModelPropertyTypes(
+      `export class Counter {
+  value = 0
+  total = 0
+  quantity!: number
+  active = false
+  label = ''
+  config = {}
+  when: Date = new Date()
+  items: string[] = []
+  dynamic
+}`,
+      'Counter',
+    )
+
+    expect(types).toEqual({
+      value: 'number',
+      total: 'number',
+      quantity: 'number',
+      active: 'boolean',
+      label: 'string',
+      config: 'other',
+      when: 'other',
+      items: 'other',
+      dynamic: 'unknown',
+    })
+  })
+
+  it('drops nullable union members to classify number | undefined as number', () => {
+    const types = extractCounter('export class Counter {\n  fromNumber: number | undefined\n}')
+
+    expect(types).toEqual({ fromNumber: 'number' })
+  })
+
+  it('classifies a homogeneous nullable union as its const kind regardless of member order', () => {
+    const numberFirst = extractCounter(
+      'export class Counter {\n  fromNumber: number | null | undefined\n}',
+    )
+    const nullFirst = extractCounter('export class Counter {\n  fromNumber: null | number\n}')
+
+    expect(numberFirst).toEqual({ fromNumber: 'number' })
+    expect(nullFirst).toEqual({ fromNumber: 'number' })
+  })
+
+  it('marks a heterogeneous union as other regardless of member order', () => {
+    const stringFirst = extractCounter('export class Counter {\n  mixed: string | number\n}')
+    const numberFirst = extractCounter('export class Counter {\n  mixed: number | string\n}')
+
+    expect(stringFirst).toEqual({ mixed: 'other' })
+    expect(numberFirst).toEqual({ mixed: 'other' })
+  })
+
+  it('drops nullable members before classifying a heterogeneous union as other', () => {
+    const types = extractCounter('export class Counter {\n  mixed: number | string | undefined\n}')
+
+    expect(types).toEqual({ mixed: 'other' })
+  })
+
+  it('classifies getters from their return type annotation', () => {
+    const types = extractCounter(`export class Counter {
+  private _count = 1
+
+  get count(): number {
+    return this._count
+  }
+}`)
+
+    expect(types).toEqual({ count: 'number' })
+  })
+
+  it('classifies getters from their returned literal when there is no annotation', () => {
+    const types = extractCounter(`export class Counter {
+  get toggled() {
+    return true
+  }
+}`)
+
+    expect(types).toEqual({ toggled: 'boolean' })
+  })
+
+  it('classifies constructor parameter properties from their parameter type', () => {
+    const types = extractCounter(
+      'export class Counter {\n  constructor(public title: string) {}\n}',
+    )
+
+    expect(types).toEqual({ title: 'string' })
+  })
+
+  it('ignores static members', () => {
+    const types = extractCounter('export class Counter {\n  static total = 0\n  value = 0\n}')
+
+    expect(types).toEqual({ value: 'number' })
+  })
+
+  it('ignores private and protected members', () => {
+    const types = extractCounter(
+      'export class Counter {\n  private _count = 1\n  protected hidden = 0\n  value = 0\n}',
+    )
+
+    expect(types).toEqual({ value: 'number' })
+  })
+
+  it('ignores private and protected parameter properties', () => {
+    const types = extractCounter(
+      'export class Counter {\n  constructor(private hidden: string, protected reserved: number) {}\n}',
+    )
+
+    expect(types).toEqual({})
+  })
+
+  it('collects base class types for same-file inheritance and prefers own members', () => {
+    const types = extractViewModelPropertyTypes(
+      `export class BaseCounter {
+  base = 0
+  shared = 'from-base'
+}
+
+export class Counter extends BaseCounter {
+  shared = 2
+  own = 1
+}`,
+      'Counter',
+    )
+
+    expect(types).toEqual({ base: 'number', shared: 'number', own: 'number' })
+  })
+
+  it('returns an empty map when the class does not exist', () => {
+    const types = extractViewModelPropertyTypes('export class BaseCounter {}', 'MissingClass')
+
+    expect(types).toEqual({})
+  })
+
+  it('classifies a typed boolean property from its type annotation', () => {
+    const types = extractCounter('export class Counter {\n  enabled: boolean\n}')
+
+    expect(types).toEqual({ enabled: 'boolean' })
+  })
+
+  it('classifies a union of only nullish members as unknown', () => {
+    const types = extractCounter('export class Counter {\n  bridge: null | undefined\n}')
+
+    expect(types).toEqual({ bridge: 'unknown' })
+  })
+
+  it('classifies a negative numeric literal initializer as number', () => {
+    const types = extractCounter('export class Counter {\n  undone = -5\n}')
+
+    expect(types).toEqual({ undone: 'number' })
+  })
+
+  it('unwraps parenthesized, asserted and casted initializer expressions', () => {
+    const types = extractCounter(
+      `export class Counter {
+  parenthesized = (1)
+  asserted = 0 as number
+  casted = <number>2
+}`,
+    )
+
+    expect(types).toEqual({ parenthesized: 'number', asserted: 'number', casted: 'number' })
+  })
+
+  it('classifies untyped array and construction initializers as other', () => {
+    const types = extractCounter(
+      `export class Counter {
+  tags = []
+  createdAt = new Date()
+}`,
+    )
+
+    expect(types).toEqual({ tags: 'other', createdAt: 'other' })
+  })
+
+  it('classifies an identifier initializer without a type annotation as unknown', () => {
+    const types = extractCounter('export class Counter {\n  alias = label\n}')
+
+    expect(types).toEqual({ alias: 'unknown' })
+  })
+
+  it('classifies a getter with no annotation or returned value as unknown', () => {
+    const types = extractCounter(`export class Counter {
+  private _touched = true
+
+  get touched() {
+    this._touched = true
+  }
+}`)
+
+    expect(types).toEqual({ touched: 'unknown' })
+  })
+
+  it('ignores plain constructor parameters that are not parameter properties', () => {
+    const types = extractCounter(
+      'export class Counter {\n  value = 1\n  constructor(todo: string) {}\n}',
+    )
+
+    expect(types).toEqual({ value: 'number' })
+  })
+
+  it('classifies typeless parameter properties from their name only', () => {
+    const types = extractCounter('export class Counter {\n  constructor(public title) {}\n}')
+
+    expect(types).toEqual({ title: 'unknown' })
+  })
+
+  it('ignores private and protected getters', () => {
+    const types = extractCounter('export class Counter {\n  private get secret() { return 1 }\n}')
+
+    expect(types).toEqual({})
+  })
+
+  it('resolves a base class referred through a namespace property access', () => {
+    const types = extractCounter(`export class BaseCounter {
+  base = 0
+}
+
+export namespace ns {
+  export class BaseCounter { other = 1 }
+}
+
+export class Counter extends ns.BaseCounter {
+  value = 1
+}`)
+
+    expect(types).toEqual({ base: 'number', value: 'number' })
+  })
+
+  it('skips base types when the extends expression is not a simple class reference', () => {
+    const types = extractCounter(`export class BaseCounter {
+  base = 0
+}
+
+function factory(Base: any) {
+  return Base
+}
+
+export class Counter extends factory(BaseCounter) {
+  value = 1
+}`)
+
+    expect(types).toEqual({ value: 'number' })
+  })
+
+  it('falls back to the getter body when the type annotation is unknown', () => {
+    const types = extractCounter(`export class Counter {
+  get count(): null | undefined {
+    return undefined
+  }
+}`)
+
+    expect(types).toEqual({ count: 'unknown' })
+  })
+
+  it('classifies readonly parameter properties from their parameter type', () => {
+    const types = extractCounter(
+      'export class Counter {\n  constructor(readonly title: string) {}\n}',
+    )
+
+    expect(types).toEqual({ title: 'string' })
+  })
+
+  it('ignores parameter properties whose name is unauthorized', () => {
+    const types = extractCounter(
+      'export class Counter {\n  constructor(public prototype: string) {}\n}',
+    )
+
+    expect(types).toEqual({})
+  })
+
+  it('ignores members whose name is unauthorized', () => {
+    const types = extractCounter('export class Counter {\n  prototype = 1\n}')
+
+    expect(types).toEqual({})
+  })
+
+  it('ignores methods that are neither properties nor getters', () => {
+    const types = extractCounter('export class Counter {\n  value = 1\n  reset() {}\n}')
+
+    expect(types).toEqual({ value: 'number' })
   })
 })

@@ -60,6 +60,7 @@
   - **Testing:** Cobertura > 90%. Primero caso feliz, luego casos borde. Los tests son documentación. Ante un bug: primero escribir el test que lo reproduce.
 - **Prohibido tests triviales:** No sirven tests que validan cosas en el vacío, como que una instancia pertenece a una clase (instanceof) o que un mensaje de error existe sin contexto. Todo test de un error debe construir un ejemplo válido que haga fallar a Pelela (ej: un view model concreto con un binding inválido) y verificar que el error lanzado refleje exactamente ese caso.
   - **Protocolo de ejecución:** NO corras tests ni linter por tu cuenta. Pedí al humano que lo haga: `pnpm run biome:check` y `pnpm run test --run`.
+  - **Cobertura de `test --run`:** corre **todos** los tests: vitest de `packages/*` y `tools/pelela-cli` + la suite mocha de la extensión `tools/pelela-vscode` (misma definición que `test:all`). Para watch interactivo de vitest: `pnpm run test:watch`.
 </workflow_constraints>
 
 <graphify_issue_context>

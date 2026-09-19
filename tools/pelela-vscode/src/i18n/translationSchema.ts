@@ -15,6 +15,18 @@ type DiagnosticsMessages = {
   unknownAttribute: string
   attributeNotAllowed: string
   invalidComponentAttribute: string
+  constValueInvalid: string
+  constValueExpectedNumber: string
+  constValueExpectedBoolean: string
+  constValueUnsupported: string
+  childPropertyNotFound: string
+  childPropertyCaseMismatch: string
+  childPropertyReadOnly: string
+  bindingTypeMismatch: string
+  bindingKindNumber: string
+  bindingKindString: string
+  bindingKindBoolean: string
+  bindingKindOther: string
 }
 
 type CompletionMessages = {
@@ -33,6 +45,7 @@ type CompletionMessages = {
   getterDetail: string
   iterationPropertyDetail: string
   nestedPropertyDetail: string
+  childPropertyDetail: string
 }
 
 type HoverMessages = {

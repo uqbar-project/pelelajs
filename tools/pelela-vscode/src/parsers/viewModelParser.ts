@@ -6,8 +6,11 @@ export interface ViewModelMembers {
   properties: string[]
   methods: string[]
   getters: string[]
+  setters: string[]
   arrows: string[]
 }
+
+type MemberKind = 'property' | 'method' | 'getter' | 'setter' | 'arrow'
 
 interface SourceFileCacheEntry {
   sourceFile: ts.SourceFile
@@ -47,6 +50,7 @@ function isRelevantMember(classMember: ts.ClassElement): boolean {
   return (
     ts.isPropertyDeclaration(classMember) ||
     ts.isGetAccessor(classMember) ||
+    ts.isSetAccessorDeclaration(classMember) ||
     ts.isMethodDeclaration(classMember)
   )
 }
@@ -77,14 +81,13 @@ function isArrowProperty(classMember: ts.ClassElement): boolean {
   )
 }
 
-function getMemberInfo(
-  classMember: ts.ClassElement
-): { name: string; kind: 'property' | 'method' | 'getter' | 'arrow' } | null {
+function getMemberInfo(classMember: ts.ClassElement): { name: string; kind: MemberKind } | null {
   const name = getDeclarationName(classMember)
   if (!name) return null
   if (name === 'constructor' || name === 'if') return null
   if (ts.isMethodDeclaration(classMember)) return { name, kind: 'method' }
   if (ts.isGetAccessorDeclaration(classMember)) return { name, kind: 'getter' }
+  if (ts.isSetAccessorDeclaration(classMember)) return { name, kind: 'setter' }
   if (isArrowProperty(classMember)) return { name, kind: 'arrow' }
   return { name, kind: 'property' }
 }
@@ -99,7 +102,7 @@ function collectViewModelMembers(
 ): ViewModelMembers {
   const className = getClassName(classDeclaration)
   if (visited.has(className)) {
-    return { properties: [], methods: [], getters: [], arrows: [] }
+    return { properties: [], methods: [], getters: [], setters: [], arrows: [] }
   }
   visited.add(className)
 
@@ -108,18 +111,15 @@ function collectViewModelMembers(
     .filter(isRelevantMember)
     .filter((classMember) => !isStaticMember(classMember))
     .map(getMemberInfo)
-    .filter(
-      (
-        memberInfo
-      ): memberInfo is { name: string; kind: 'property' | 'method' | 'getter' | 'arrow' } =>
-        memberInfo !== null
-    )
+    .filter((memberInfo): memberInfo is { name: string; kind: MemberKind } => memberInfo !== null)
     .reduce(
       (accumulator, { name, kind }) => {
         if (kind === 'method') {
           accumulator.methods.push(name)
         } else if (kind === 'arrow') {
           accumulator.arrows.push(name)
+        } else if (kind === 'setter') {
+          accumulator.setters.push(name)
         } else {
           accumulator.properties.push(name)
           if (kind === 'getter') {
@@ -132,6 +132,7 @@ function collectViewModelMembers(
         properties: [...paramProperties],
         methods: [] as string[],
         getters: [] as string[],
+        setters: [] as string[],
         arrows: [] as string[],
       }
     )
@@ -152,6 +153,7 @@ function collectViewModelMembers(
           properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
           methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
           getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
+          setters: [...new Set([...directMembers.setters, ...baseMembers.setters])],
           arrows: [...new Set([...directMembers.arrows, ...baseMembers.arrows])],
         }
       }
@@ -169,7 +171,7 @@ export function extractViewModelMembers(
 
   const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath, true)
   if (!classDeclaration) {
-    return { properties: [], methods: [], getters: [], arrows: [] }
+    return { properties: [], methods: [], getters: [], setters: [], arrows: [] }
   }
 
   return collectViewModelMembers(classDeclaration, new Set<string>())
