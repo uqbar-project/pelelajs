@@ -386,6 +386,28 @@ describe('bindForEach', () => {
       expect(spans[1].innerHTML).toBe('Second')
     })
 
+    it('should not throw or change the DOM when the collection stops being an array', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <span bind-content="item.text"></span>
+        </div>
+      `
+
+      const viewModel: Record<string, unknown> = {
+        items: [{ text: 'First' }],
+      }
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      expect(container.querySelectorAll('span')).toHaveLength(1)
+
+      viewModel.items = 'not an array'
+
+      expect(() => renderForEachBindings(bindings, viewModel)).not.toThrow()
+      expect(container.querySelectorAll('span')).toHaveLength(1)
+    })
+
     it('should handle empty arrays', () => {
       container.innerHTML = `
         <div for-each="item of items">
@@ -865,6 +887,33 @@ describe('bindForEach', () => {
       expect(spans[1].innerHTML).toBe('DONE')
     })
 
+    it('should re-render the element when the parent replaces an entire array item', () => {
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <span bind-content="order.status"></span>
+        </div>
+      `
+
+      let render: (path?: string) => void = () => {}
+      const parentVM = createReactiveViewModel<{ orders: { status: string }[] }>(
+        {
+          orders: [{ status: 'PENDING' }],
+        },
+        (path: string) => {
+          render(path)
+        },
+      )
+
+      render = setupBindings(container, parentVM)
+
+      const span = container.querySelector('span')!
+      expect(span.innerHTML).toBe('PENDING')
+
+      parentVM.orders[0] = { status: 'DONE' }
+
+      expect(span.innerHTML).toBe('DONE')
+    })
+
     it('should re-render the child component when an internal button click confirms the item inside for-each', () => {
       class OrderItemVM {
         order!: { status: string }
@@ -1272,6 +1321,31 @@ describe('bindForEach', () => {
       expect(options[0].value).toBe('1')
       expect(options[1].value).toBe('2')
       expect(options[2].value).toBe('3')
+    })
+
+    it('should refresh option values when the array is updated in place', () => {
+      container.innerHTML = `
+        <select>
+          <option for-each="item of values" bind-content="item"></option>
+        </select>
+      `
+      const viewModel: { values: Array<number | string> } = { values: [1, 2, 3] }
+
+      const render = setupBindings(container, viewModel)
+
+      let options = container.querySelectorAll('option')
+      expect(options).toHaveLength(3)
+      expect(options[0].value).toBe('1')
+      expect(options[2].value).toBe('3')
+
+      viewModel.values = ['a', 'b', 'c']
+      render()
+
+      options = container.querySelectorAll('option')
+      expect(options[0].value).toBe('a')
+      expect(options[1].value).toBe('b')
+      expect(options[2].value).toBe('c')
+      expect(options[2].textContent).toBe('c')
     })
 
     it('should update selectedType with the same class instance when an option is selected', () => {
