@@ -277,6 +277,17 @@ export function validateEventMethods(
           ]
         }
 
+        if (members.properties.includes(attribute.value)) {
+          return [
+            makeDiagnostic(
+              attribute.valueRange ?? attribute.nameRange,
+              'diagnostics.propertyAsMethod',
+              { name: attribute.value },
+              vscode.DiagnosticSeverity.Error
+            ),
+          ]
+        }
+
         const suggestedName =
           findCaseInsensitiveMember(members.methods, attribute.value) ??
           findCaseInsensitiveMember(members.getters, attribute.value) ??

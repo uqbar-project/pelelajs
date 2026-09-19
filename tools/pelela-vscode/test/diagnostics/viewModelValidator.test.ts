@@ -19,6 +19,7 @@ const VIEW_MODEL_FIXTURE = `
 export class TestViewModel {
   name: string = "test"
   count: number = 0
+  total: number = 0
   obj = { value: "hello" }
   items: { name: string }[] = []
   selectedBetClass: { bets: { name: string }[] } = { bets: [] }
@@ -709,6 +710,17 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.getterAsMethod', { name: 'totalCount' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an event referencing a ViewModel property with propertyAsMethod', () => {
+      const { tags } = prepareValidation(['<button click="total">'], context)
+      const diagnostics = validateEventMethods(tags, context.members)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyAsMethod', { name: 'total' }),
         vscode.DiagnosticSeverity.Error
       )
     })

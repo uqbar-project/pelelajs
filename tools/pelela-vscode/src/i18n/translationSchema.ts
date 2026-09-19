@@ -8,6 +8,7 @@ type DiagnosticsMessages = {
   methodNotFound: string
   methodNeedsGetter: string
   getterAsMethod: string
+  propertyAsMethod: string
   arrowFunctionAsMethod: string
   arrowFunctionNotAllowed: string
   propertyCaseMismatch: string

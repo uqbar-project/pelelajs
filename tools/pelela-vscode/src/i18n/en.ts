@@ -16,14 +16,16 @@ const diagnostics = {
   methodNeedsGetter:
     'Method \'{{name}}\' exists but is not bindable. Convert it into a getter by adding "get": get {{name}}() { ... }',
   getterAsMethod:
-    '\'{{name}}\' is a getter, but click/enter events must invoke a method. Remove the "get" keyword: {{name}}() { ... }',
+    '\'{{name}}\' is a getter, but events must invoke a method. Remove the "get" keyword: {{name}}() { ... }',
   arrowFunctionAsMethod:
-    "'{{name}}' is an arrow function, but click/enter events must invoke a method. Arrow functions are not allowed in a view model. Convert it into a method: {{name}}() { ... }",
+    "'{{name}}' is an arrow function, but events must invoke a method. Arrow functions are not allowed in a view model. Convert it into a method: {{name}}() { ... }",
   arrowFunctionNotAllowed:
     "'{{name}}' is an arrow function, but bindings must read a property. Arrow functions are not allowed in a view model. Convert it into a getter: get {{name}}() { ... }",
   propertyCaseMismatch:
     "Property '{{name}}' does not match by case. Did you mean '{{suggestedName}}'?",
   methodCaseMismatch: "Method '{{name}}' does not match by case. Did you mean '{{suggestedName}}'?",
+  propertyAsMethod:
+    "Events must invoke a method; they cannot reference a ViewModel property like '{{name}}'.",
   unknownAttribute: "Unknown attribute: '{{name}}'",
   attributeNotAllowed: "Attribute '{{name}}' is not allowed on element '{{tag}}'",
   invalidComponentAttribute:
