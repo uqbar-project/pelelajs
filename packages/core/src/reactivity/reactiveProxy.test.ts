@@ -544,5 +544,15 @@ describe('reactiveProxy', () => {
 
       expect(proxy.user).toBe(proxy.user)
     })
+
+    it('should return non-object targets unchanged', () => {
+      const onChange = vi.fn()
+      const target = 'plain text'
+
+      const returned = createReactiveViewModel(target as unknown as object, onChange)
+
+      expect(returned).toBe(target)
+      expect(onChange).not.toHaveBeenCalled()
+    })
   })
 })
