@@ -26,6 +26,8 @@ const errors = {
       '[pelela] "{{name}}" es un getter del view model "{{viewModel}}", pero {{eventInfo}} debe invocar un método. Quitale la palabra "get" para convertirlo en un método: {{name}}() { ... }',
     isArrow:
       '[pelela] "{{name}}" es una arrow function del view model "{{viewModel}}", pero {{eventInfo}} debe invocar un método. Las arrow functions no están permitidas en un view model. Convertila en un método: {{name}}() { ... }',
+    isProperty:
+      '[pelela] Los eventos deben invocar un método, no pueden referenciar a una propiedad del view model como "{{name}}". Definido en {{eventInfo}} del view model "{{viewModel}}"',
     caseMismatch:
       '[pelela] El handler "{{name}}" definido en {{eventInfo}} no existe, pero sí "{{suggestedName}}". En TypeScript los nombres de método distinguen mayúsculas.',
   },

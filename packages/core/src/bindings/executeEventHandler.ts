@@ -7,6 +7,7 @@ import {
   GetterAsHandlerError,
   HandlerCaseMismatchError,
   InvalidHandlerError,
+  PropertyAsHandlerError,
 } from '../errors/index'
 import { unwrapReactive } from '../reactivity/proxyIdentity'
 import type { EventHandler, ViewModel } from './types'
@@ -89,9 +90,11 @@ export function executeEventHandler<T extends object, E extends Event>({
       return
     }
 
-    const suggestedName = findPropertyOwner(viewModel, handlerName)
-      ? null
-      : findCaseInsensitiveMember(viewModel, handlerName)
+    if (!isUnsafeKey(handlerName) && findPropertyOwner(viewModel, handlerName)) {
+      throw new PropertyAsHandlerError(handlerName, viewModelName, eventType)
+    }
+
+    const suggestedName = findCaseInsensitiveMember(viewModel, handlerName)
     if (suggestedName) {
       throw new HandlerCaseMismatchError(handlerName, viewModelName, eventType, suggestedName)
     }

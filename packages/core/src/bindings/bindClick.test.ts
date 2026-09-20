@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ArrowFunctionAsHandlerError,
   GetterAsHandlerError,
-  InvalidHandlerError,
+  PropertyAsHandlerError,
 } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { setupClickBindings } from './bindClick'
@@ -170,7 +170,7 @@ describe('bindClick', () => {
       expect(handler).toHaveBeenCalledTimes(3)
     })
 
-    it('should render InvalidHandlerError when handler is not a method', () => {
+    it('should render PropertyAsHandlerError when a property is used as a method', () => {
       container.innerHTML = '<button click="notAFunction">Click me</button>'
       const viewModel = { notAFunction: 'this is a string' }
       const button = container.querySelector('button')!
@@ -178,7 +178,7 @@ describe('bindClick', () => {
 
       button.click()
 
-      const expectedError = new InvalidHandlerError('notAFunction', 'Object', 'click')
+      const expectedError = new PropertyAsHandlerError('notAFunction', 'Object', 'click')
       expect(document.querySelector(ERROR_MESSAGE_SELECTOR)?.textContent).toBe(
         expectedError.message,
       )

@@ -5,6 +5,7 @@ import {
   GetterAsHandlerError,
   HandlerCaseMismatchError,
   InvalidHandlerError,
+  PropertyAsHandlerError,
 } from '../errors/index'
 import { executeEventHandler } from './executeEventHandler'
 import type { ViewModel } from './types'
@@ -115,16 +116,19 @@ describe('executeEventHandler', () => {
   it.each([
     { description: 'a string', invalidHandler: INVALID_HANDLER_VALUE },
     { description: 'null', invalidHandler: null },
-  ])('should render InvalidHandlerError when the handler is $description', ({ invalidHandler }) => {
-    const viewModel = { [HANDLER_NAME]: invalidHandler }
+  ])(
+    'should render PropertyAsHandlerError when the handler is $description',
+    ({ invalidHandler }) => {
+      const viewModel = { [HANDLER_NAME]: invalidHandler }
 
-    executeHandler(viewModel)
+      executeHandler(viewModel)
 
-    const expectedError = new InvalidHandlerError(HANDLER_NAME, 'Object', EVENT_TYPE)
-    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
-  })
+      const expectedError = new PropertyAsHandlerError(HANDLER_NAME, 'Object', EVENT_TYPE)
+      expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+    },
+  )
 
-  it('should include the viewModel class name in InvalidHandlerError', () => {
+  it('should include the viewModel class name in PropertyAsHandlerError', () => {
     class TestViewModel {
       [key: string]: unknown
       handleEvent = INVALID_HANDLER_VALUE
@@ -133,7 +137,20 @@ describe('executeEventHandler', () => {
 
     executeHandler(viewModel)
 
-    const expectedError = new InvalidHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    const expectedError = new PropertyAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
+  it('should render PropertyAsHandlerError when a data property is used as a handler', () => {
+    class App {
+      [key: string]: unknown
+      counter = 0
+    }
+    const viewModel = new App()
+
+    executeHandler(viewModel, 'counter')
+
+    const expectedError = new PropertyAsHandlerError('counter', 'App', EVENT_TYPE)
     expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 

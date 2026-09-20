@@ -26,6 +26,8 @@ const errors = {
       '[pelela] "{{name}}" is a getter of view model "{{viewModel}}", but {{eventInfo}} must invoke a method. Remove the "get" keyword to turn it into a method: {{name}}() { ... }',
     isArrow:
       '[pelela] "{{name}}" is an arrow function of view model "{{viewModel}}", but {{eventInfo}} must invoke a method. Arrow functions are not allowed in a view model. Convert it into a method: {{name}}() { ... }',
+    isProperty:
+      '[pelela] Events must invoke a method; they cannot reference a ViewModel property like "{{name}}". Defined in {{eventInfo}} of view model "{{viewModel}}"',
     caseMismatch:
       '[pelela] Handler "{{name}}" defined in {{eventInfo}} does not exist, but "{{suggestedName}}" does. TypeScript method names are case-sensitive.',
   },

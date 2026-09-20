@@ -17,6 +17,7 @@ type ErrorTranslations = {
     unknownEvent: string
     isGetter: string
     isArrow: string
+    isProperty: string
     caseMismatch: string
   }
   properties: {
