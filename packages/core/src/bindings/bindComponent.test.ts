@@ -464,6 +464,22 @@ describe('bindComponent', () => {
       expect(mappingKeys).toContain('twoWay')
     })
 
+    it('should throw a prototype pollution error when a link attribute uses an unsafe child key', () => {
+      class ChildVM {
+        value = ''
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp link-prototype="parentValue"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(
+        t('errors.security.prototypePollution', {
+          keys: 'parentValue or prototype',
+        }),
+      )
+    })
+
     it('should throw error when parent property does not exist', () => {
       class ChildVM {
         message = ''
@@ -784,6 +800,49 @@ describe('bindComponent', () => {
 
       expect(error).toBeInstanceOf(ReadOnlyPropertyError)
       expect(error.propertyName).toBe('count')
+    })
+
+    it('should throw ReadOnlyPropertyError when the child property is visible through a has trap but has no own descriptor', () => {
+      class ChildVM {
+        constructor() {
+          // biome-ignore lint/correctness/noConstructorReturn: a Proxy instance exercises the has-trap fallback in hasWritableDescriptor
+          return new Proxy(
+            {},
+            {
+              has(target, key) {
+                return Reflect.has(target, key) || key === 'count'
+              },
+            },
+          ) as unknown as ChildVM
+        }
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-count="5"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      const error = testHelpers.catchError<ReadOnlyPropertyError>(() =>
+        setupComponentBindings(container, parentVM),
+      )
+
+      expect(error).toBeInstanceOf(ReadOnlyPropertyError)
+      expect(error.propertyName).toBe('count')
+    })
+
+    it('should throw a prototype pollution error when a const attribute targets an unsafe child key', () => {
+      class ChildVM {
+        message = ''
+      }
+      defineComponent('test-comp', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<test-comp const-__proto__="polluted"></test-comp>'
+      const parentVM = createReactiveViewModel({}, () => {})
+
+      expect(() => setupComponentBindings(container, parentVM)).toThrow(
+        t('errors.security.prototypePollution', {
+          keys: '__proto__',
+        }),
+      )
     })
 
     it('should assign a prop attribute to a property that has a getter and a setter', () => {
