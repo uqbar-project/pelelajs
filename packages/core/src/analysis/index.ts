@@ -214,6 +214,10 @@ function getConstKindFromTypeNode(typeNode: ts.TypeNode): ConstKind {
     return distinctKinds.length === 1 ? distinctKinds[0] : 'other'
   }
 
+  if (ts.isLiteralTypeNode(typeNode)) {
+    return getConstKindFromLiteralTypeNode(typeNode)
+  }
+
   switch (typeNode.kind) {
     case ts.SyntaxKind.NumberKeyword:
       return 'number'
@@ -224,6 +228,11 @@ function getConstKindFromTypeNode(typeNode: ts.TypeNode): ConstKind {
     default:
       return 'other'
   }
+}
+
+function getConstKindFromLiteralTypeNode(typeNode: ts.LiteralTypeNode): ConstKind {
+  const literalKind = getConstKindFromExpression(typeNode.literal)
+  return literalKind === 'unknown' ? 'other' : literalKind
 }
 
 function getConstKindFromExpression(expression: ts.Expression): ConstKind {
@@ -352,14 +361,39 @@ function getOwnPropertyTypes(classDeclaration: ts.ClassDeclaration): ViewModelPr
   return { ...result, ...getParameterPropertyTypes(classDeclaration) }
 }
 
+function getQualifiedNamePath(expression: ts.Expression): string[] | null {
+  if (ts.isIdentifier(expression)) return [expression.text]
+  if (ts.isPropertyAccessExpression(expression)) {
+    const containerPath = getQualifiedNamePath(expression.expression)
+    return containerPath === null ? null : [...containerPath, expression.name.text]
+  }
+  return null
+}
+
 function getClassDeclaration(
   sourceFile: ts.SourceFile,
   className: string,
 ): ts.ClassDeclaration | undefined {
-  return sourceFile.statements.find(
-    (statement): statement is ts.ClassDeclaration =>
-      ts.isClassDeclaration(statement) && statement.name?.text === className,
+  return findClassInStatements(sourceFile.statements, className.split('.'))
+}
+
+function findClassInStatements(
+  statements: readonly ts.Statement[],
+  namePath: string[],
+): ts.ClassDeclaration | undefined {
+  const [head, ...tail] = namePath
+  const statement = statements.find(
+    (candidate) =>
+      (ts.isClassDeclaration(candidate) || ts.isModuleDeclaration(candidate)) &&
+      candidate.name?.text === head,
   )
+  if (tail.length === 0) {
+    return statement !== undefined && ts.isClassDeclaration(statement) ? statement : undefined
+  }
+  if (statement === undefined || !ts.isModuleDeclaration(statement)) return undefined
+  const body = statement.body
+  if (body === undefined || !ts.isModuleBlock(body)) return undefined
+  return findClassInStatements(body.statements, tail)
 }
 
 function getExtendsClassName(classDeclaration: ts.ClassDeclaration): string | null {
@@ -368,9 +402,8 @@ function getExtendsClassName(classDeclaration: ts.ClassDeclaration): string | nu
   )
   const baseType = extendsClause?.types[0]
   if (baseType === undefined) return null
-  if (ts.isIdentifier(baseType.expression)) return baseType.expression.text
-  if (ts.isPropertyAccessExpression(baseType.expression)) return baseType.expression.name.text
-  return null
+  const namePath = getQualifiedNamePath(baseType.expression)
+  return namePath === null ? null : namePath.join('.')
 }
 
 function collectViewModelPropertyTypes(

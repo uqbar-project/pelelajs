@@ -20,6 +20,8 @@ const COUNTER_VIEW_MODEL_CONTENT = `export class CounterViewModel {
   active = true
   total = 0
   private _limit = 0
+  protected reserved = 0
+  readonly fixed = 99
 
   get isLucky() {
     return this.count === 7
@@ -178,6 +180,54 @@ describe('validateBindingTargets', () => {
 
   it('accepts a prop attribute whose target has a getter and a setter', () => {
     const diagnostics = validate(PARENT_TEMPLATE('<counter prop-limit="count"></counter>'))
+
+    assert.strictEqual(diagnostics.length, 0)
+  })
+
+  it('rejects a private field as a prop target', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-_limit="count"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('_limit'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects a protected field as a prop target', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-reserved="count"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('reserved'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects a readonly field as a prop target', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-fixed="count"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('fixed'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('ignores __proto__ as a prop target', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-__proto__="count"></counter>'))
+
+    assert.strictEqual(diagnostics.length, 0)
+  })
+
+  it('ignores constructor as a prop target', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-constructor="count"></counter>'))
+
+    assert.strictEqual(diagnostics.length, 0)
+  })
+
+  it('ignores prototype as a prop target', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-prototype="count"></counter>'))
 
     assert.strictEqual(diagnostics.length, 0)
   })

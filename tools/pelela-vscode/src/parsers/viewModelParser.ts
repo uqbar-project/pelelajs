@@ -4,6 +4,7 @@ import * as ts from 'typescript'
 
 export interface ViewModelMembers {
   properties: string[]
+  writableProperties: string[]
   methods: string[]
   getters: string[]
   setters: string[]
@@ -81,15 +82,37 @@ function isArrowProperty(classMember: ts.ClassElement): boolean {
   )
 }
 
-function getMemberInfo(classMember: ts.ClassElement): { name: string; kind: MemberKind } | null {
+function isPublicWritableMember(modifierFlags: ts.ModifierFlags): boolean {
+  return (
+    (modifierFlags & ts.ModifierFlags.Private) === 0 &&
+    (modifierFlags & ts.ModifierFlags.Protected) === 0 &&
+    (modifierFlags & ts.ModifierFlags.Readonly) === 0
+  )
+}
+
+function getMemberInfo(classMember: ts.ClassElement): {
+  name: string
+  kind: MemberKind
+  writable: boolean
+} | null {
   const name = getDeclarationName(classMember)
   if (!name) return null
   if (name === 'constructor' || name === 'if') return null
-  if (ts.isMethodDeclaration(classMember)) return { name, kind: 'method' }
-  if (ts.isGetAccessorDeclaration(classMember)) return { name, kind: 'getter' }
-  if (ts.isSetAccessorDeclaration(classMember)) return { name, kind: 'setter' }
-  if (isArrowProperty(classMember)) return { name, kind: 'arrow' }
-  return { name, kind: 'property' }
+  if (ts.isMethodDeclaration(classMember)) return { name, kind: 'method', writable: false }
+  if (ts.isGetAccessorDeclaration(classMember)) return { name, kind: 'getter', writable: false }
+  if (ts.isSetAccessorDeclaration(classMember)) {
+    return {
+      name,
+      kind: 'setter',
+      writable: isPublicWritableMember(ts.getCombinedModifierFlags(classMember)),
+    }
+  }
+  if (isArrowProperty(classMember)) return { name, kind: 'arrow', writable: false }
+  return {
+    name,
+    kind: 'property',
+    writable: isPublicWritableMember(ts.getCombinedModifierFlags(classMember)),
+  }
 }
 
 function getClassName(declaration: ts.ClassDeclaration): string {
@@ -102,34 +125,52 @@ function collectViewModelMembers(
 ): ViewModelMembers {
   const className = getClassName(classDeclaration)
   if (visited.has(className)) {
-    return { properties: [], methods: [], getters: [], setters: [], arrows: [] }
+    return {
+      properties: [],
+      writableProperties: [],
+      methods: [],
+      getters: [],
+      setters: [],
+      arrows: [],
+    }
   }
   visited.add(className)
 
   const paramProperties = getParameterPropertyNames(classDeclaration)
+  const writableParamProperties = getWritableParameterPropertyNames(classDeclaration)
   const directMembers = classDeclaration.members
     .filter(isRelevantMember)
     .filter((classMember) => !isStaticMember(classMember))
     .map(getMemberInfo)
-    .filter((memberInfo): memberInfo is { name: string; kind: MemberKind } => memberInfo !== null)
+    .filter(
+      (memberInfo): memberInfo is { name: string; kind: MemberKind; writable: boolean } =>
+        memberInfo !== null
+    )
     .reduce(
-      (accumulator, { name, kind }) => {
+      (accumulator, { name, kind, writable }) => {
         if (kind === 'method') {
           accumulator.methods.push(name)
         } else if (kind === 'arrow') {
           accumulator.arrows.push(name)
         } else if (kind === 'setter') {
           accumulator.setters.push(name)
+          if (writable) {
+            accumulator.writableProperties.push(name)
+          }
+        } else if (kind === 'getter') {
+          accumulator.properties.push(name)
+          accumulator.getters.push(name)
         } else {
           accumulator.properties.push(name)
-          if (kind === 'getter') {
-            accumulator.getters.push(name)
+          if (writable) {
+            accumulator.writableProperties.push(name)
           }
         }
         return accumulator
       },
       {
         properties: [...paramProperties],
+        writableProperties: [...writableParamProperties],
         methods: [] as string[],
         getters: [] as string[],
         setters: [] as string[],
@@ -149,11 +190,27 @@ function collectViewModelMembers(
       const baseClass = getClassDeclaration(baseSourceFile, baseClassName, baseSourceFile.fileName)
       if (baseClass) {
         const baseMembers = collectViewModelMembers(baseClass, visited)
+        const directMemberNames = new Set([
+          ...directMembers.properties,
+          ...directMembers.methods,
+          ...directMembers.getters,
+          ...directMembers.setters,
+          ...directMembers.arrows,
+        ])
+        const inheritedSetters = baseMembers.setters.filter(
+          (setter) => !directMemberNames.has(setter)
+        )
+        const inheritedWritableProperties = baseMembers.writableProperties.filter(
+          (property) => !directMemberNames.has(property)
+        )
         return {
           properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
+          writableProperties: [
+            ...new Set([...directMembers.writableProperties, ...inheritedWritableProperties]),
+          ],
           methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
           getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
-          setters: [...new Set([...directMembers.setters, ...baseMembers.setters])],
+          setters: [...new Set([...directMembers.setters, ...inheritedSetters])],
           arrows: [...new Set([...directMembers.arrows, ...baseMembers.arrows])],
         }
       }
@@ -171,7 +228,14 @@ export function extractViewModelMembers(
 
   const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath, true)
   if (!classDeclaration) {
-    return { properties: [], methods: [], getters: [], setters: [], arrows: [] }
+    return {
+      properties: [],
+      writableProperties: [],
+      methods: [],
+      getters: [],
+      setters: [],
+      arrows: [],
+    }
   }
 
   return collectViewModelMembers(classDeclaration, new Set<string>())
@@ -711,6 +775,20 @@ function getParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
   if (!ctor) return []
   return ctor.parameters
     .filter((param) => isParameterProperty(param))
+    .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function getWritableParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
+  const ctor = declaration.members.find((member): member is ts.ConstructorDeclaration =>
+    ts.isConstructorDeclaration(member)
+  )
+  if (!ctor) return []
+  return ctor.parameters
+    .filter(
+      (param) =>
+        isParameterProperty(param) && isPublicWritableMember(ts.getCombinedModifierFlags(param))
+    )
     .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
     .filter((name) => name !== '')
 }

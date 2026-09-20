@@ -25,10 +25,7 @@ function findCaseInsensitiveMember(members: ViewModelMembers, name: string): str
 }
 
 export function isSettableField(members: ViewModelMembers, childKey: string): boolean {
-  const hasSetter = members.setters.includes(childKey)
-  const isWritableField =
-    members.properties.includes(childKey) && !members.getters.includes(childKey)
-  return hasSetter || isWritableField
+  return members.writableProperties.includes(childKey)
 }
 
 function isReadOnlyProperty(members: ViewModelMembers, childKey: string): boolean {
@@ -79,6 +76,8 @@ function validateChildProperty(params: {
   const { attribute, tag, viewModelName, members, prefix } = params
   const childKey = toCamelCase(attribute.name.slice(prefix.length))
   if (childKey === '') return []
+
+  if (isReservedPropertyKey(childKey)) return []
 
   if (isSettableField(members, childKey)) return []
 

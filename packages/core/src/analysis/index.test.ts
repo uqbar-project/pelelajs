@@ -414,6 +414,24 @@ export class Counter extends BaseCounter {
     expect(types).toEqual({ enabled: 'boolean' })
   })
 
+  it('classifies a string literal type annotation as string', () => {
+    const types = extractCounter('export class Counter {\n  label: "counter"\n}')
+
+    expect(types).toEqual({ label: 'string' })
+  })
+
+  it('classifies a number literal type annotation as number', () => {
+    const types = extractCounter('export class Counter {\n  base: 10\n}')
+
+    expect(types).toEqual({ base: 'number' })
+  })
+
+  it('classifies a boolean literal type annotation as boolean', () => {
+    const types = extractCounter('export class Counter {\n  enabled: true\n}')
+
+    expect(types).toEqual({ enabled: 'boolean' })
+  })
+
   it('classifies a union of only nullish members as unknown', () => {
     const types = extractCounter('export class Counter {\n  bridge: null | undefined\n}')
 
@@ -500,7 +518,7 @@ export class Counter extends ns.BaseCounter {
   value = 1
 }`)
 
-    expect(types).toEqual({ base: 'number', value: 'number' })
+    expect(types).toEqual({ other: 'number', value: 'number' })
   })
 
   it('skips base types when the extends expression is not a simple class reference', () => {
