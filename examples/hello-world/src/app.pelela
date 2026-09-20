@@ -6,6 +6,6 @@
   <div class="counter">
     <button click="decrement">-</button>
     <p bind-content="counter"></p>
-    <button click="counter">+</button>
+    <button click="increment">+</button>
   </div>
 </pelela>
