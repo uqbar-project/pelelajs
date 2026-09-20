@@ -6,6 +6,13 @@ type DiagnosticsMessages = {
   viewModelNotAClassObject: string
   propertyNotFound: string
   methodNotFound: string
+  methodNeedsGetter: string
+  getterAsMethod: string
+  propertyAsMethod: string
+  arrowFunctionAsMethod: string
+  arrowFunctionNotAllowed: string
+  propertyCaseMismatch: string
+  methodCaseMismatch: string
   unknownAttribute: string
   attributeNotAllowed: string
   invalidComponentAttribute: string
@@ -24,6 +31,7 @@ type CompletionMessages = {
   constDetail: string
   methodDetail: string
   propertyDetail: string
+  getterDetail: string
   iterationPropertyDetail: string
   nestedPropertyDetail: string
 }

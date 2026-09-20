@@ -14,6 +14,7 @@
     - **Declaratividad:** Usar funciones de orden superior (`map`, `filter`, `reduce`). Nada de loops imperativos (`for`, `break`, `continue`).
     - **Simplicidad:** Soluciones directas antes que complejidad innecesaria. Evitar el "miedo al booleano" (ej: preferir `return x === y` en lugar de `if (x === y) return true else return false`).
     - **Unit tests**: Para evitar el efecto colateral, preferir afterEach antes que repetir un método de cleanup en cada test. Además si hay un error el cleanup no se ejecuta. Prohibido el uso de "magic strings" y chequeos parciales (`includes`, `endsWith`) en los mocks; preferir comparaciones exactas con constantes o variables bien definidas.
+- **Reflection sobre regex:** Al implementar análisis de código fuente (ej: saber si una clase del View Model está exportada o si un método es un getter), usar reflection con el compiler API de TypeScript en lugar de búsquedas textuales con expresiones regulares (ej: "el archivo tiene `export class`" o "no hay `export` antes de `class`"). Referencia de implementación: el paquete `analysis` del core (`packages/core/src/analysis`).
   </logic_and_design>
 
   <performance_and_lifecycle>
@@ -57,8 +58,18 @@
   - **Idioma:** Código y comentarios en **Inglés**. Documentación en **Inglés** si es para desarrolladores, en **Español** si es para alumnos (el template del CLI en tools/pelela-cli/templates/base-template-for-cli/`).
   - **i18n:** Todos los mensajes de cara al usuario DEBEN usar la función `t()` de internacionalización. Nada de strings hardcodeados en español.
   - **Testing:** Cobertura > 90%. Primero caso feliz, luego casos borde. Los tests son documentación. Ante un bug: primero escribir el test que lo reproduce.
+- **Prohibido tests triviales:** No sirven tests que validan cosas en el vacío, como que una instancia pertenece a una clase (instanceof) o que un mensaje de error existe sin contexto. Todo test de un error debe construir un ejemplo válido que haga fallar a Pelela (ej: un view model concreto con un binding inválido) y verificar que el error lanzado refleje exactamente ese caso.
+  - **Errores vía `t()` (regla de CodeRabbit):** Para verificar mensajes de error internacionalizados, usar la función `t('clave', { params })` como fuente de verdad. Prohibido hardcodear el texto literal del mensaje o usar chequeos parciales (`toContain`, `endsWith`) sobre él: si la traducción cambia, el test debe reflejarlo y detectar la rotura. Para mensajes que NO pasan por i18n (ej. errores internos de helpers de test), verificar el contrato observable estable (tipo de error, propiedades públicas), nunca el texto literal.
   - **Protocolo de ejecución:** NO corras tests ni linter por tu cuenta. Pedí al humano que lo haga: `pnpm run biome:check` y `pnpm run test --run`.
 </workflow_constraints>
+
+<graphify_issue_context>
+  - **Consultar el grafo antes de actuar:** Antes de resolver cualquier tarea (issue, refactor o feature), leé el slice relevante del grafo en `graphify-out/graph.json`. El brief por issue incluye: **comunidad(es)** del código afectado, **god-nodes** de esa comunidad y **dependencias directas de 1er grado** (imports/nodos vecinos). No incluir "conexiones sorprendentes" ni hyperedges salvo que el humano las pida.
+  - **Fuente de verdad:** El grafo refleja el estado del último build (ver `graphify-out/GRAPH_REPORT.md` para el commit `built_at_commit` y las fechas). El AST estructural es determinístico y de costo 0; la extracción semántica corre contra un LLM y tiene costo real.
+  - **Cadencia de refresco:** **Refresh condicional al inicio de cada tarea.** Comparo `built_at_commit` del grafo contra el HEAD actual. Si hay PRs nuevos o los archivos del ticket no figuran en el grafo → refresh **estructural únicamente** (AST determinístico, 0 tokens, capta cambios ajenos). La parte semántica se refresca **solo si** el slice que voy a tocar tiene nodos nuevos o desconocidos (diferida y acotada). En el caso común sin PRs nuevos → usar el grafo existente, sin refrescar.
+  - **Comando de refresco:** `graphify` sobre la raíz del repo actualiza `graphify-out/`. Pedí permiso al humano antes de correrlo (no ejecutarlo por tu cuenta).
+  - **Verificación:** Tras el build, verificar salud del grafo en `GRAPH_REPORT.md`: 0 dangling, 0 self-loops, edición limpia, sin ghost duplicates.
+</graphify_issue_context>
 
 <ai_interaction_protocol>
   - **No ejecutar scripts sin preguntar**: no ejecutar comandos de git, ni pnpm. Preguntar ANTES para este tipo de comandos. Sí podés hacer `ls` o `cat` para explorar el código.

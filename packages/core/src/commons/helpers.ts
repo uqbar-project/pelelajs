@@ -1,3 +1,4 @@
+import { unwrapReactive } from '../reactivity/proxyIdentity'
 import { getRegisteredTags } from '../registry/componentRegistry'
 import { t } from './i18n'
 import { isUnsafeKey } from './sanitization'
@@ -97,4 +98,102 @@ export function findAllElements(
 
 export function isValidIdentifier(value: string): boolean {
   return IDENTIFIER_PATTERN.test(value) && !isUnsafeKey(value)
+}
+
+/**
+ * Looks up a member of the view model (or its prototype chain) whose name matches
+ * the given name ignoring case. Used to suggest the real member when a binding or
+ * event references a wrongly-cased name. Returns `null` when there is no match.
+ */
+export function findCaseInsensitiveMember(target: object, name: string): string | null {
+  if (isUnsafeKey(name)) return null
+
+  const viewModel: unknown = unwrapReactive(target)
+  if (!isObject(viewModel)) return null
+
+  let proto: object | null = viewModel
+  while (proto !== null && proto !== Object.prototype) {
+    const match = Object.getOwnPropertyNames(proto).find(
+      (memberName) => !isUnsafeKey(memberName) && memberName.toLowerCase() === name.toLowerCase(),
+    )
+    if (match) return match
+    proto = Reflect.getPrototypeOf(proto)
+  }
+  return null
+}
+
+/**
+ * Detects whether a member of the view model is declared as an arrow function
+ * field (e.g. `increment = () => {}`). Arrow functions are not allowed as view
+ * model members: they bind `this` lexically and cannot use the view model as
+ * context.
+ *
+ * The signal is unambiguous for class instances (the only valid view models):
+ * class methods live on the prototype, so an own property whose value is a
+ * function without a `prototype` (arrows are not constructible) can only be an
+ * arrow function field.
+ */
+export function isArrowFunctionMember(
+  viewModel: object,
+  memberName: string,
+  value: unknown,
+): boolean {
+  if (isUnsafeKey(memberName)) return false
+  const rawViewModel: unknown = unwrapReactive(viewModel)
+  return isObject(rawViewModel) && Object.hasOwn(rawViewModel, memberName) && isArrowFunction(value)
+}
+
+function isArrowFunction(value: unknown): boolean {
+  if (typeof value !== 'function' || value.prototype !== undefined) {
+    return false
+  }
+
+  if (isAsyncFunction(value)) {
+    return isAsyncArrowFunction(value)
+  }
+
+  return !isConstructableFunction(value)
+}
+
+/**
+ * Async arrows and async function expressions are indistinguishable by shape
+ * (both have an undefined .prototype and are not constructable), and both
+ * report "AsyncFunction" as their constructor name. What separates them is the
+ * body text: after the `async` prefix, an async function expression always
+ * starts with the `function` keyword, while an async arrow never does.
+ */
+function isAsyncArrowFunction(value: unknown): boolean {
+  const source = Function.prototype.toString.call(value).trimStart()
+  if (!source.startsWith('async')) {
+    return false
+  }
+  return !source.slice('async'.length).trimStart().startsWith('function')
+}
+
+/**
+ * Async functions keep the prototype-less shape of arrows, so `isArrowFunction`
+ * must split them into async arrows (rejected, `this` is lexically bound) and
+ * async function expressions (classified as generic functions instead).
+ */
+function isAsyncFunction(value: unknown): boolean {
+  return typeof value === 'function' && value.constructor.name === 'AsyncFunction'
+}
+
+/**
+ * Bound functions also lose their .prototype, yet unlike arrows they remain
+ * constructable. Probing constructability is the only side-effect-free way to
+ * tell them apart, so the construction failure here is meaningful, not an
+ * error to swallow silently.
+ */
+function isConstructableFunction(value: unknown): boolean {
+  if (typeof value !== 'function') {
+    return false
+  }
+
+  try {
+    Reflect.construct(Object, [], value)
+    return true
+  } catch {
+    return false
+  }
 }

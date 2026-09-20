@@ -22,3 +22,5 @@ local
 *.tgz
 
 plans
+
+graphify-out

@@ -1,6 +1,15 @@
 import { renderErrorPage } from '../bootstrap/errorPage'
+import { findCaseInsensitiveMember, isArrowFunctionMember, isObject } from '../commons/helpers'
 import { isUnsafeKey } from '../commons/sanitization'
-import { type EventType, InvalidHandlerError } from '../errors/index'
+import {
+  ArrowFunctionAsHandlerError,
+  type EventType,
+  GetterAsHandlerError,
+  HandlerCaseMismatchError,
+  InvalidHandlerError,
+  PropertyAsHandlerError,
+} from '../errors/index'
+import { unwrapReactive } from '../reactivity/proxyIdentity'
 import type { EventHandler, ViewModel } from './types'
 
 interface ExecuteEventHandlerOptions<T extends object, E extends Event> {
@@ -35,6 +44,23 @@ function getHandler<T extends object>(viewModel: ViewModel<T>, handlerName: stri
 }
 
 /**
+ * Detects whether the referenced member is a getter (e.g. `get totalCount()`) in the
+ * view model or any prototype, unwrapping `$raw` first. Mirrors `dependencyTracker.isPropertyGetter`.
+ */
+function isGetterProperty(viewModel: object, propertyName: string): boolean {
+  const rawViewModel: unknown = unwrapReactive(viewModel)
+  if (!isObject(rawViewModel)) return false
+
+  let proto: object | null = rawViewModel
+  while (proto !== null && proto !== Object.prototype) {
+    const descriptor = Object.getOwnPropertyDescriptor(proto, propertyName)
+    if (descriptor?.get) return true
+    proto = Reflect.getPrototypeOf(proto)
+  }
+  return false
+}
+
+/**
  * Keeps both supported handler styles: methods use the ViewModel as `this`, while
  * functions can receive it explicitly as their first argument.
  */
@@ -45,20 +71,35 @@ export function executeEventHandler<T extends object, E extends Event>({
   eventType,
 }: ExecuteEventHandlerOptions<T, E>): void {
   try {
+    const viewModelName = viewModel.constructor?.name ?? 'Unknown'
+
+    if (isGetterProperty(viewModel, handlerName)) {
+      throw new GetterAsHandlerError(handlerName, viewModelName, eventType)
+    }
+
     const handler = getHandler(viewModel, handlerName)
 
-    if (!isEventHandler<T, E>(handler)) {
-      throw new InvalidHandlerError(
-        handlerName,
-        viewModel.constructor?.name ?? 'Unknown',
-        eventType,
-      )
+    if (isEventHandler<T, E>(handler)) {
+      if (isArrowFunctionMember(viewModel, handlerName, handler)) {
+        throw new ArrowFunctionAsHandlerError(handlerName, viewModelName, eventType)
+      }
+      const handlerResult = handler.call(viewModel, viewModel, event)
+      if (isPromiseLike(handlerResult)) {
+        void Promise.resolve(handlerResult).catch(renderErrorPage)
+      }
+      return
     }
 
-    const handlerResult = handler.call(viewModel, viewModel, event)
-    if (isPromiseLike(handlerResult)) {
-      void Promise.resolve(handlerResult).catch(renderErrorPage)
+    if (!isUnsafeKey(handlerName) && findPropertyOwner(viewModel, handlerName)) {
+      throw new PropertyAsHandlerError(handlerName, viewModelName, eventType)
     }
+
+    const suggestedName = findCaseInsensitiveMember(viewModel, handlerName)
+    if (suggestedName) {
+      throw new HandlerCaseMismatchError(handlerName, viewModelName, eventType, suggestedName)
+    }
+
+    throw new InvalidHandlerError(handlerName, viewModelName, eventType)
   } catch (error) {
     renderErrorPage(error)
   }

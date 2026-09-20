@@ -13,6 +13,19 @@ const diagnostics = {
     'A Function cannot be used as a view model: "{{name}}" ({{tsFileName}}). You must declare a class.',
   propertyNotFound: "Property '{{name}}' does not exist in the ViewModel",
   methodNotFound: "Method '{{name}}' does not exist in the ViewModel",
+  methodNeedsGetter:
+    'Method \'{{name}}\' exists but is not bindable. Convert it into a getter by adding "get": get {{name}}() { ... }',
+  getterAsMethod:
+    '\'{{name}}\' is a getter, but events must invoke a method. Remove the "get" keyword: {{name}}() { ... }',
+  arrowFunctionAsMethod:
+    "'{{name}}' is an arrow function, but events must invoke a method. Arrow functions are not allowed in a view model. Convert it into a method: {{name}}() { ... }",
+  arrowFunctionNotAllowed:
+    "'{{name}}' is an arrow function, but bindings must read a property. Arrow functions are not allowed in a view model. Convert it into a getter: get {{name}}() { ... }",
+  propertyCaseMismatch:
+    "Property '{{name}}' does not match by case. Did you mean '{{suggestedName}}'?",
+  methodCaseMismatch: "Method '{{name}}' does not match by case. Did you mean '{{suggestedName}}'?",
+  propertyAsMethod:
+    "Events must invoke a method; they cannot reference a ViewModel property like '{{name}}'.",
   unknownAttribute: "Unknown attribute: '{{name}}'",
   attributeNotAllowed: "Attribute '{{name}}' is not allowed on element '{{tag}}'",
   invalidComponentAttribute:
@@ -32,6 +45,7 @@ const completions = {
   constDetail: 'Pelela: constant value for a child component',
   methodDetail: 'Pelela ViewModel method',
   propertyDetail: 'Pelela ViewModel property',
+  getterDetail: 'Pelela ViewModel getter',
   iterationPropertyDetail: 'Pelela iteration property',
   nestedPropertyDetail: 'Pelela ViewModel nested property',
 } as const satisfies TranslationSchema['completions']

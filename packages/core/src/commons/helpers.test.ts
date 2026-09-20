@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import {
   extractElementSnippet,
   filterOwnElements,
   findAllElements,
   findUniqueCollapsedTag,
+  isArrowFunctionMember,
   isObject,
   isPropertyOrNestedPath,
   isValidIdentifier,
@@ -33,6 +35,113 @@ describe('helpers', () => {
       expect(isObject('string')).toBe(false)
       expect(isObject(true)).toBe(false)
       expect(isObject(undefined)).toBe(false)
+    })
+  })
+
+  describe('isArrowFunctionMember', () => {
+    it('should return true for an arrow function field of a class', () => {
+      class ViewModel {
+        increment = () => {}
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(true)
+    })
+
+    it('should return true for an arrow function of a plain object', () => {
+      const viewModel = { increment: () => {} }
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(true)
+    })
+
+    it('should return false for a class method (lives on the prototype)', () => {
+      class ViewModel {
+        increment(): void {}
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(false)
+    })
+
+    it('should return false for a regular function field', () => {
+      class ViewModel {
+        increment = function increment() {}
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(false)
+    })
+
+    it('should return false for getters', () => {
+      class ViewModel {
+        get increment(): number {
+          return 1
+        }
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(false)
+    })
+
+    it('should return true for an async arrow function field (async arrows bind this lexically)', () => {
+      class ViewModel {
+        increment = async () => {}
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(true)
+    })
+
+    it('should return false for an async function field', () => {
+      class ViewModel {
+        increment = async function increment() {}
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(false)
+    })
+
+    it('should return false for a function created with bind()', () => {
+      class ViewModel {
+        bound = function increment() {}.bind(this)
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'bound', viewModel.bound)).toBe(false)
+    })
+
+    it('should return false for missing members', () => {
+      const viewModel = {}
+
+      expect(isArrowFunctionMember(viewModel, 'missing', undefined)).toBe(false)
+    })
+
+    it('should return false for unsafe keys', () => {
+      const viewModel = {}
+
+      expect(isArrowFunctionMember(viewModel, '__proto__', () => {})).toBe(false)
+    })
+
+    it('should unwrap the $raw reference on reactive view models', () => {
+      class ViewModel {
+        [key: string]: unknown
+        increment = () => {}
+      }
+      const viewModel = new ViewModel()
+      const reactive = createReactiveViewModel(viewModel as Record<string, unknown>, () => {})
+
+      expect(isArrowFunctionMember(reactive, 'increment', reactive.increment)).toBe(true)
+    })
+
+    it('should not confuse an arbitrary $raw property with the reactive unwrap', () => {
+      class ViewModel {
+        [key: string]: unknown
+        $raw = { unrelated: true }
+        increment = () => {}
+      }
+      const viewModel = new ViewModel()
+
+      expect(isArrowFunctionMember(viewModel, 'increment', viewModel.increment)).toBe(true)
     })
   })
 

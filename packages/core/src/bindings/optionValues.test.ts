@@ -45,7 +45,7 @@ describe('optionValues', () => {
 
     const retrieved = getOptionValue(option) as TestClass
     expect(retrieved).toBe(instance)
-    expect(retrieved?.value).toBe('test')
+    expect(retrieved.value).toBe('test')
   })
 
   it('should overwrite existing value', () => {

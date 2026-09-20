@@ -2,7 +2,7 @@ import type { ValidationError } from './validationError'
 
 export class BetModel {
   date: string = ''
-  amount = ''
+  amount: string = ''
   errors: ValidationError[] = []
 
   validate() {

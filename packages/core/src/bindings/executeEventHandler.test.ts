@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as errorPage from '../bootstrap/errorPage'
-import { InvalidHandlerError } from '../errors/index'
+import {
+  ArrowFunctionAsHandlerError,
+  GetterAsHandlerError,
+  HandlerCaseMismatchError,
+  InvalidHandlerError,
+  PropertyAsHandlerError,
+} from '../errors/index'
 import { executeEventHandler } from './executeEventHandler'
 import type { ViewModel } from './types'
 
@@ -63,6 +69,41 @@ describe('executeEventHandler', () => {
     expect(viewModel.count).toBe(1)
   })
 
+  it('should render ArrowFunctionAsHandlerError when the handler is an arrow function field of the view model class', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      handleEvent = () => {}
+    }
+    const viewModel = new TestViewModel()
+
+    executeHandler(viewModel)
+
+    const expectedError = new ArrowFunctionAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
+  it('should render ArrowFunctionAsHandlerError when the handler is an arrow function of a plain object view model', () => {
+    const viewModel = { [HANDLER_NAME]: () => {} }
+
+    executeHandler(viewModel)
+
+    const expectedError = new ArrowFunctionAsHandlerError(HANDLER_NAME, 'Object', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
+  it('should render ArrowFunctionAsHandlerError when the handler is an async arrow function field of the view model class', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      handleEvent = async () => {}
+    }
+    const viewModel = new TestViewModel()
+
+    executeHandler(viewModel)
+
+    const expectedError = new ArrowFunctionAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
   it('should render InvalidHandlerError when the handler is missing', () => {
     const missingHandlerName = 'missingHandler'
 
@@ -75,16 +116,19 @@ describe('executeEventHandler', () => {
   it.each([
     { description: 'a string', invalidHandler: INVALID_HANDLER_VALUE },
     { description: 'null', invalidHandler: null },
-  ])('should render InvalidHandlerError when the handler is $description', ({ invalidHandler }) => {
-    const viewModel = { [HANDLER_NAME]: invalidHandler }
+  ])(
+    'should render PropertyAsHandlerError when the handler is $description',
+    ({ invalidHandler }) => {
+      const viewModel = { [HANDLER_NAME]: invalidHandler }
 
-    executeHandler(viewModel)
+      executeHandler(viewModel)
 
-    const expectedError = new InvalidHandlerError(HANDLER_NAME, 'Object', EVENT_TYPE)
-    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
-  })
+      const expectedError = new PropertyAsHandlerError(HANDLER_NAME, 'Object', EVENT_TYPE)
+      expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+    },
+  )
 
-  it('should include the viewModel class name in InvalidHandlerError', () => {
+  it('should include the viewModel class name in PropertyAsHandlerError', () => {
     class TestViewModel {
       [key: string]: unknown
       handleEvent = INVALID_HANDLER_VALUE
@@ -93,25 +137,37 @@ describe('executeEventHandler', () => {
 
     executeHandler(viewModel)
 
-    const expectedError = new InvalidHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    const expectedError = new PropertyAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
     expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 
-  it.each([
-    '__proto__',
-    'constructor',
-    'prototype',
-  ])('should reject the unsafe handler name %s', (unsafeHandlerName) => {
-    executeHandler({}, unsafeHandlerName)
+  it('should render PropertyAsHandlerError when a data property is used as a handler', () => {
+    class App {
+      [key: string]: unknown
+      counter = 0
+    }
+    const viewModel = new App()
 
-    const expectedError = new InvalidHandlerError(unsafeHandlerName, 'Object', EVENT_TYPE)
+    executeHandler(viewModel, 'counter')
+
+    const expectedError = new PropertyAsHandlerError('counter', 'App', EVENT_TYPE)
     expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
+
+  it.each(['__proto__', 'constructor', 'prototype'])(
+    'should reject the unsafe handler name %s',
+    (unsafeHandlerName) => {
+      executeHandler({}, unsafeHandlerName)
+
+      const expectedError = new InvalidHandlerError(unsafeHandlerName, 'Object', EVENT_TYPE)
+      expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+    },
+  )
 
   it('should render the error page when the handler throws', () => {
     const handlerError = new Error(HANDLER_ERROR_MESSAGE)
     const viewModel = {
-      [HANDLER_NAME]: () => {
+      [HANDLER_NAME]: function handleEvent() {
         throw handlerError
       },
     }
@@ -123,7 +179,9 @@ describe('executeEventHandler', () => {
 
   it('should render rejected non-Error values from async handlers', async () => {
     const viewModel = {
-      [HANDLER_NAME]: () => Promise.reject(HANDLER_ERROR_MESSAGE),
+      [HANDLER_NAME]: function handleEvent() {
+        return Promise.reject(HANDLER_ERROR_MESSAGE)
+      },
     }
 
     executeHandler(viewModel)
@@ -142,5 +200,54 @@ describe('executeEventHandler', () => {
 
     expect(handler).toHaveBeenCalledTimes(1)
     expect(errorPage.renderErrorPage).not.toHaveBeenCalled()
+  })
+
+  it('should render GetterAsHandlerError when the handler is a getter, not a method', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      get handleEvent(): string {
+        return 'this is not callable'
+      }
+    }
+    const viewModel = new TestViewModel()
+
+    executeHandler(viewModel)
+
+    const expectedError = new GetterAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
+  it('should render GetterAsHandlerError when the getter returns a function', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      get handleEvent() {
+        return () => {}
+      }
+    }
+    const viewModel = new TestViewModel()
+
+    executeHandler(viewModel)
+
+    const expectedError = new GetterAsHandlerError(HANDLER_NAME, 'TestViewModel', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
+  it('should render HandlerCaseMismatchError when only the case differs from an existing method', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      handleEvent(): void {}
+    }
+    const viewModel = new TestViewModel()
+    const wrongCaseHandlerName = 'handleevent'
+
+    executeHandler(viewModel, wrongCaseHandlerName)
+
+    const expectedError = new HandlerCaseMismatchError(
+      wrongCaseHandlerName,
+      'TestViewModel',
+      EVENT_TYPE,
+      HANDLER_NAME,
+    )
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 })
