@@ -1,0 +1,23 @@
+<pelela view-model="App">
+  <h1>Herencia de View Models</h1>
+
+  <p class="result-text" bind-content="description"></p>
+
+  <p>Contador: <span class="badge" bind-content="count"></span></p>
+
+  <div class="actions">
+    <button click="increment">Incrementar</button>
+    <button click="reset">Resetear</button>
+  </div>
+
+  <hr/>
+
+  <p>La clase <code>App</code> hereda de <code>BaseViewModel</code>: por eso el template puede usar
+     <code>bind-content="description"</code>, <code>bind-content="count"</code> y
+     <code>click="reset"</code> sin declararlos en <code>App</code>.</p>
+
+  <div class="card">
+    <input placeholder="Escribí un mensaje..." bind-value="message">
+    <p>Mensaje: <span class="result-text" bind-content="message"></span></p>
+  </div>
+</pelela>

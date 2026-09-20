@@ -358,6 +358,45 @@ describe('pelelajsPlugin', () => {
       expect(result).toContain('defineComponent("conversor", conversor, conversorTemplate)')
       expect(result).not.toContain('ViewModelExportError')
     })
+
+    it('generates typeMap from the view model property types', () => {
+      const result = loadAutoRegisterWithComponent(
+        `export class Converter {
+  miles = 0
+  kilometers = 0
+  active = false
+  quantity!: number
+  description = ""
+}`,
+        '<pelela view-model="Converter"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).toContain(
+        'defineComponent("Converter", Converter, conversorTemplate, { typeMap: {"miles":"number","kilometers":"number","active":"boolean","quantity":"number","description":"string"} })',
+      )
+    })
+
+    it('combines typeMap and cssUrls in the component registration options', () => {
+      fs.writeFileSync(path.join(tempDir, 'src', 'conversor.css'), 'h1 { color: red; }')
+      const result = loadAutoRegisterWithComponent(
+        'export class Conversor {\n  millas = 0\n}',
+        '<pelela view-model="Conversor"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).toContain(
+        'defineComponent("Conversor", Conversor, conversorTemplate, { typeMap: {"millas":"number"}, cssUrls: conversorCssUrls })',
+      )
+    })
+
+    it('omits typeMap when no property type can be inferred', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export class Conversor {\n  dynamic\n}',
+        '<pelela view-model="Conversor"><h1>Hola</h1></pelela>',
+      )
+
+      expect(result).toContain('defineComponent("Conversor", Conversor, conversorTemplate)')
+      expect(result).not.toContain('typeMap')
+    })
   })
 
   describe('load - pelela files', () => {

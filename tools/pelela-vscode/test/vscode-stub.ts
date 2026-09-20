@@ -22,9 +22,19 @@ export const vscodeStub = {
   Range: class Range {
     start: unknown
     end: unknown
-    constructor(start: unknown, end: unknown) {
-      this.start = start
-      this.end = end
+    constructor(
+      startOrLine: unknown,
+      endOrCharacter: unknown,
+      endLine?: unknown,
+      endCharacter?: unknown
+    ) {
+      if (typeof endLine === 'number' && typeof endCharacter === 'number') {
+        this.start = new vscodeStub.Position(startOrLine as number, endOrCharacter as number)
+        this.end = new vscodeStub.Position(endLine, endCharacter)
+      } else {
+        this.start = startOrLine
+        this.end = endOrCharacter
+      }
     }
   },
 
