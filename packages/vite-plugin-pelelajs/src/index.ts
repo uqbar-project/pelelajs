@@ -105,7 +105,11 @@ function findComponentFiles(
       const viewModelName = viewModelMatch || componentName
       const tsSource = fs.readFileSync(tsPath, 'utf-8')
       const analysis = analyzeViewModelModule(tsSource)
-      const issue = classifyViewModelIssue(analysis, viewModelName, suggestViewModelClassName(analysis))
+      const issue = classifyViewModelIssue(
+        analysis,
+        viewModelName,
+        suggestViewModelClassName(analysis),
+      )
 
       const toImportPath = (filePath: string): string =>
         `./${path.relative(process.cwd(), filePath).split(path.sep).join('/')}`

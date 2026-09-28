@@ -189,7 +189,9 @@ export function suggestViewModelClassName(analysis: ViewModelModuleAnalysis): st
   if (exportedNames === null) {
     return ''
   }
-  const exportedClasses = analysis.classNames.filter((className) => exportedNames.includes(className))
+  const exportedClasses = analysis.classNames.filter((className) =>
+    exportedNames.includes(className),
+  )
   return exportedClasses.length === 1 ? exportedClasses[0] : ''
 }
 

@@ -276,7 +276,7 @@ describe('pelelajsPlugin', () => {
     it('generates a runtime error stub when the view model class is not exported', () => {
       const result = loadAutoRegisterWithComponent(
         'class Converter {}',
-        '<pelela view-model="Converter"><h1Hello</h1></pelela>',
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
       )
 
       expect(result).not.toContain('import { Converter } from "./src/converter.ts"')
@@ -291,7 +291,7 @@ describe('pelelajsPlugin', () => {
     it('generates a runtime error stub when the view model only differs in case from the exported class', () => {
       const result = loadAutoRegisterWithComponent(
         'export class Converter {}',
-        '<pelela view-model="converter"><h1Hello</h1></pelela>',
+        '<pelela view-model="converter"><h1>Hello</h1></pelela>',
       )
 
       expect(result).not.toContain('import { converter } from "./src/converter.ts"')
@@ -306,7 +306,7 @@ describe('pelelajsPlugin', () => {
     it('generates a runtime error stub with the module-derived suggestion when no class matches', () => {
       const result = loadAutoRegisterWithComponent(
         'export class Converter {}',
-        '<pelela view-model="Bicycle"><h1Hello</h1></pelela>',
+        '<pelela view-model="Bicycle"><h1>Hello</h1></pelela>',
       )
 
       expect(parseViewModelExportParams(result)).toEqual({
@@ -320,7 +320,7 @@ describe('pelelajsPlugin', () => {
     it('suggests the exported class from the module instead of the file name', () => {
       const result = loadAutoRegisterWithComponent(
         'export class MyPrice {}',
-        '<pelela view-model="Bicycle"><h1Hello</h1></pelela>',
+        '<pelela view-model="Bicycle"><h1>Hello</h1></pelela>',
       )
 
       expect(parseViewModelExportParams(result)).toEqual({
@@ -334,7 +334,7 @@ describe('pelelajsPlugin', () => {
     it('generates a runtime error stub when the view model is an object literal, not a class', () => {
       const result = loadAutoRegisterWithComponent(
         'export const converterObj = { millas: 100, kilometros: 2, convertir: () => 0 }',
-        '<pelela view-model="converterObj"><h1Hello</h1></pelela>',
+        '<pelela view-model="converterObj"><h1>Hello</h1></pelela>',
       )
 
       expect(result).not.toContain('import { converterObj } from "./src/converter.ts"')
@@ -350,7 +350,7 @@ describe('pelelajsPlugin', () => {
     it('generates a runtime error stub when the view model is a function, not a class', () => {
       const result = loadAutoRegisterWithComponent(
         'export function App() { return 0 }',
-        '<pelela view-model="App"><h1Hello</h1></pelela>',
+        '<pelela view-model="App"><h1>Hello</h1></pelela>',
       )
 
       expect(result).not.toContain('import { App } from "./src/converter.ts"')
@@ -365,7 +365,7 @@ describe('pelelajsPlugin', () => {
     it('keeps the named import when a lowercase class matches the lowercase view model', () => {
       const result = loadAutoRegisterWithComponent(
         'export class converter {}',
-        '<pelela view-model="converter"><h1Hello</h1></pelela>',
+        '<pelela view-model="converter"><h1>Hello</h1></pelela>',
       )
 
       expect(result).toContain('import { converter } from "./src/converter.ts"')
@@ -382,7 +382,7 @@ describe('pelelajsPlugin', () => {
   quantity!: number
   description = ""
 }`,
-        '<pelela view-model="Converter"><h1Hello</h1></pelela>',
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
       )
 
       expect(result).toContain(
@@ -394,7 +394,7 @@ describe('pelelajsPlugin', () => {
       fs.writeFileSync(path.join(tempDir, 'src', 'converter.css'), 'h1 { color: red; }')
       const result = loadAutoRegisterWithComponent(
         'export class Converter {\n  millas = 0\n}',
-        '<pelela view-model="Converter"><h1Hello</h1></pelela>',
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
       )
 
       expect(result).toContain(
@@ -405,7 +405,7 @@ describe('pelelajsPlugin', () => {
     it('omits typeMap when no property type can be inferred', () => {
       const result = loadAutoRegisterWithComponent(
         'export class Converter {\n  dynamic\n}',
-        '<pelela view-model="Converter"><h1Hello</h1></pelela>',
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
       )
 
       expect(result).toContain('defineComponent("Converter", Converter, converterTemplate)')

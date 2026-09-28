@@ -68,7 +68,7 @@ describe('virtual auto-register module hot reload', () => {
     fs.writeFileSync(path.join(srcDir, 'app.ts'), 'export function App() { return 0 }\n')
     fs.writeFileSync(
       path.join(srcDir, 'app.pelela'),
-      '<pelela view-model="App"><h1Hello</h1></pelela>\n',
+      '<pelela view-model="App"><h1>Hello</h1></pelela>\n',
     )
 
     const originalCwd = process.cwd
