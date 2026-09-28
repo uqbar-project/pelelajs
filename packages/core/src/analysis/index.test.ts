@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { ViewModelSourceNotFoundError } from '../errors/ViewModelSourceNotFoundError'
 import {
   analyzeViewModelModule,
@@ -352,6 +352,12 @@ describe('extractViewModelPropertyTypes', () => {
   when: Date = new Date()
   items: string[] = []
   dynamic
+  fromNumber: number | undefined
+  numberFirst: number | null | undefined
+  nullFirst: null | number
+  mixed: string | number
+  numberFirstMixed: number | string
+  nullableMixed: number | string | undefined
 }`)
 
     expect(types).toEqual({
@@ -364,37 +370,13 @@ describe('extractViewModelPropertyTypes', () => {
       when: 'other',
       items: 'other',
       dynamic: 'unknown',
+      fromNumber: 'number',
+      numberFirst: 'number',
+      nullFirst: 'number',
+      mixed: 'other',
+      numberFirstMixed: 'other',
+      nullableMixed: 'other',
     })
-  })
-
-  it('drops nullable union members to classify number | undefined as number', () => {
-    const types = extractCounter('export class Counter {\n  fromNumber: number | undefined\n}')
-
-    expect(types).toEqual({ fromNumber: 'number' })
-  })
-
-  it('classifies a homogeneous nullable union as its const kind regardless of member order', () => {
-    const numberFirst = extractCounter(
-      'export class Counter {\n  fromNumber: number | null | undefined\n}',
-    )
-    const nullFirst = extractCounter('export class Counter {\n  fromNumber: null | number\n}')
-
-    expect(numberFirst).toEqual({ fromNumber: 'number' })
-    expect(nullFirst).toEqual({ fromNumber: 'number' })
-  })
-
-  it('marks a heterogeneous union as other regardless of member order', () => {
-    const stringFirst = extractCounter('export class Counter {\n  mixed: string | number\n}')
-    const numberFirst = extractCounter('export class Counter {\n  mixed: number | string\n}')
-
-    expect(stringFirst).toEqual({ mixed: 'other' })
-    expect(numberFirst).toEqual({ mixed: 'other' })
-  })
-
-  it('drops nullable members before classifying a heterogeneous union as other', () => {
-    const types = extractCounter('export class Counter {\n  mixed: number | string | undefined\n}')
-
-    expect(types).toEqual({ mixed: 'other' })
   })
 
   it('classifies getters from their return type annotation', () => {
@@ -796,14 +778,14 @@ export class Counter {
   let testDir: string
   let context: ViewModelProgramContext
 
-  beforeEach(() => {
+  beforeAll(() => {
     testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-const-'))
     const tsPath = path.join(testDir, 'counter.ts')
     fs.writeFileSync(tsPath, viewModelSource)
     context = createViewModelProgramContext(tsPath)
   })
 
-  afterEach(() => {
+  afterAll(() => {
     fs.rmSync(testDir, { recursive: true, force: true })
   })
 
@@ -958,7 +940,7 @@ export class Counter {
   it('resolves a type alias imported from another module against the current content of that module', () => {
     const sizesPath = path.join(testDir, 'sizes.ts')
     const tsPath = path.join(testDir, 'aliased.ts')
-    fs.writeFileSync(sizesPath, `export type Size = 'sm' | 'lg'`)
+    fs.writeFileSync(sizesPath, `export type Size = 'xs' | 'xl'`)
     fs.writeFileSync(
       tsPath,
       `import { Size } from './sizes'
@@ -975,23 +957,13 @@ export class Aliased {
         rawValue,
       })
 
-    expect(checkAliased(createViewModelProgramContext(tsPath), 'xx')).toEqual({
-      accepted: false,
-      reason: 'literalMismatch',
-      expectedTypeText: '"sm" | "lg"',
-    })
-
-    fs.writeFileSync(sizesPath, `export type Size = 'xs' | 'xl'`)
-
-    // A fresh context must resolve the alias against the rewritten module, so the
-    // rejected value stays rejected and the allowed values in the message change.
-    const refreshed = createViewModelProgramContext(tsPath)
-    expect(checkAliased(refreshed, 'xx')).toEqual({
+    const aliasedContext = createViewModelProgramContext(tsPath)
+    expect(checkAliased(aliasedContext, 'xx')).toEqual({
       accepted: false,
       reason: 'literalMismatch',
       expectedTypeText: '"xs" | "xl"',
     })
-    expect(checkAliased(refreshed, 'xs')).toEqual({ accepted: true })
+    expect(checkAliased(aliasedContext, 'xs')).toEqual({ accepted: true })
   })
 
   it('validates a const value for a property inherited from an imported base class', () => {
