@@ -1,15 +1,19 @@
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import * as ts from 'typescript'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ViewModelSourceNotFoundError } from '../errors/ViewModelSourceNotFoundError'
 import {
   analyzeViewModelModule,
   checkConstValue,
   classifyViewModelIssue,
   createViewModelProgramContext,
+  createViewModelProgramContextFromProgram,
   extractViewModelPropertyTypes,
+  extractViewModelPropertyTypesWithContext,
   pascalCaseFromFileName,
+  resolveCompilerOptions,
   suggestViewModelClassName,
   type ViewModelProgramContext,
 } from './index'
@@ -321,12 +325,43 @@ describe('suggestViewModelClassName', () => {
 
 describe('extractViewModelPropertyTypes', () => {
   let testDir: string
+  let viewModelPath: string
+  let viewModelSource: string
+  let scriptVersion: number
+  let languageService: ts.LanguageService | null
 
-  beforeEach(() => {
+  beforeAll(() => {
     testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-analysis-'))
+    viewModelPath = path.join(testDir, 'counter.ts')
+    fs.writeFileSync(viewModelPath, '')
+    viewModelSource = ''
+    scriptVersion = 0
+    languageService = ts.createLanguageService(
+      {
+        getCompilationSettings: () => resolveCompilerOptions(testDir),
+        getScriptFileNames: () => [viewModelPath],
+        getScriptVersion: () => String(scriptVersion),
+        getScriptSnapshot: (fileName) => {
+          if (path.resolve(fileName) === viewModelPath) {
+            return ts.ScriptSnapshot.fromString(viewModelSource)
+          }
+          const contents = ts.sys.readFile(fileName)
+          return contents === undefined ? undefined : ts.ScriptSnapshot.fromString(contents)
+        },
+        getCurrentDirectory: () => testDir,
+        getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
+        fileExists: ts.sys.fileExists,
+        readFile: ts.sys.readFile,
+        readDirectory: ts.sys.readDirectory,
+        directoryExists: ts.sys.directoryExists,
+        getDirectories: ts.sys.getDirectories,
+      },
+      ts.createDocumentRegistry(),
+    )
   })
 
-  afterEach(() => {
+  afterAll(() => {
+    languageService?.dispose()
     fs.rmSync(testDir, { recursive: true, force: true })
   })
 
@@ -338,8 +373,16 @@ describe('extractViewModelPropertyTypes', () => {
 
   const writeViewModel = (tsSource: string): string => writeModule(tsSource, 'counter.ts')
 
-  const extractCounter = (tsSource: string) =>
-    extractViewModelPropertyTypes(writeViewModel(tsSource), 'Counter')
+  const extractCounter = (tsSource: string) => {
+    viewModelSource = tsSource
+    scriptVersion += 1
+    const program = languageService?.getProgram()
+    if (program === undefined) {
+      throw new Error('Language service could not create a program for the test ViewModel')
+    }
+    const context = createViewModelProgramContextFromProgram(program, viewModelPath)
+    return extractViewModelPropertyTypesWithContext(context, 'Counter')
+  }
 
   it('classifies typed properties, initializer-inferred properties and definite-assignment properties', () => {
     const types = extractCounter(`export class Counter {
