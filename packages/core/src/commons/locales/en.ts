@@ -56,7 +56,7 @@ const errors = {
       wrongCase:
         '[pelela] Define the view model with the exact class case: the class is named "{{expectedName}}", not "{{viewModelName}}".',
       notFound:
-        '[pelela] There is no class named "{{viewModelName}}" in {{tsFilePath}}. Define the class with the name suggested by the file: "{{suggestedName}}".',
+        '[pelela] There is no class named "{{viewModelName}}" in {{tsFilePath}}. Define the class with the suggested name: "{{suggestedName}}".',
       notAClassObject:
         '[pelela] An Object cannot be used as a view model: "{{viewModelName}}" ({{tsFilePath}}). You must declare a class.',
       notAClassFunction:

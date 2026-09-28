@@ -10,6 +10,7 @@ import {
   createViewModelProgramContext,
   extractViewModelPropertyTypes,
   pascalCaseFromFileName,
+  suggestViewModelClassName,
   type ViewModelProgramContext,
 } from './index'
 
@@ -166,10 +167,10 @@ describe('classifyViewModelIssue', () => {
   })
 
   it('reports notAClass as a Function when the view model is an exported function', () => {
-    const analysis = analyzeViewModelModule('export function conversor() {}')
-    const issue = classifyViewModelIssue(analysis, 'conversor', 'Conversor')
+    const analysis = analyzeViewModelModule('export function converter() {}')
+    const issue = classifyViewModelIssue(analysis, 'converter', 'Converter')
 
-    expect(issue).toEqual({ kind: 'notAClass', viewModelName: 'conversor', declaredAs: 'Function' })
+    expect(issue).toEqual({ kind: 'notAClass', viewModelName: 'converter', declaredAs: 'Function' })
   })
 
   it('reports notAClass as a Function when the view model is an exported arrow function', () => {
@@ -262,11 +263,11 @@ export { type ${CONVERTER_CLASS_NAME} }`)
 
 describe('pascalCaseFromFileName', () => {
   it('capitalizes a single lowercase word', () => {
-    expect(pascalCaseFromFileName('conversor')).toBe('Conversor')
+    expect(pascalCaseFromFileName('converter')).toBe('Converter')
   })
 
   it('converts kebab-case segments to PascalCase', () => {
-    expect(pascalCaseFromFileName('conversor-medidas')).toBe('ConversorMedidas')
+    expect(pascalCaseFromFileName('converter-medidas')).toBe('ConverterMedidas')
   })
 
   it('handles dots as separators', () => {
@@ -275,6 +276,46 @@ describe('pascalCaseFromFileName', () => {
 
   it('returns an empty name for an empty file name', () => {
     expect(pascalCaseFromFileName('')).toBe('')
+  })
+})
+
+describe('suggestViewModelClassName', () => {
+  it('suggests the sole exported class', () => {
+    const analysis = analyzeViewModelModule('export class PriceViewModel {}')
+
+    expect(suggestViewModelClassName(analysis)).toBe('PriceViewModel')
+  })
+
+  it('suggests the exported class even when the module also exports constants', () => {
+    const analysis = analyzeViewModelModule('export const MAX = 10\nexport class PriceViewModel {}')
+
+    expect(suggestViewModelClassName(analysis)).toBe('PriceViewModel')
+  })
+
+  it('returns an empty suggestion when several classes are exported', () => {
+    const analysis = analyzeViewModelModule(
+      'export class PriceViewModel {}\nexport class DetailsViewModel {}',
+    )
+
+    expect(suggestViewModelClassName(analysis)).toBe('')
+  })
+
+  it('returns an empty suggestion when nothing is exported', () => {
+    const analysis = analyzeViewModelModule('class PriceViewModel {}')
+
+    expect(suggestViewModelClassName(analysis)).toBe('')
+  })
+
+  it('returns an empty suggestion when the exports hold no class', () => {
+    const analysis = analyzeViewModelModule('export const MAX = 10')
+
+    expect(suggestViewModelClassName(analysis)).toBe('')
+  })
+
+  it('returns an empty suggestion when exported names cannot be determined', () => {
+    const analysis = analyzeViewModelModule(`export * from './models'`)
+
+    expect(suggestViewModelClassName(analysis)).toBe('')
   })
 })
 

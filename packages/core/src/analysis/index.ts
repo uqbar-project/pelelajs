@@ -180,6 +180,20 @@ export function classifyViewModelIssue(
 }
 
 /**
+ * Suggests a view model class name from the module itself instead of guessing
+ * from the file name. There is a confident suggestion only when the module
+ * exports exactly one class.
+ */
+export function suggestViewModelClassName(analysis: ViewModelModuleAnalysis): string {
+  const exportedNames = analysis.exportedNames
+  if (exportedNames === null) {
+    return ''
+  }
+  const exportedClasses = analysis.classNames.filter((className) => exportedNames.includes(className))
+  return exportedClasses.length === 1 ? exportedClasses[0] : ''
+}
+
+/**
  * A resolved TypeScript program plus the checker and entry source file needed to
  * read view model property types.
  */

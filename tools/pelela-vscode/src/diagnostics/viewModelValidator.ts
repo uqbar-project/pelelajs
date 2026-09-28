@@ -2,7 +2,7 @@ import * as path from 'node:path'
 import {
   analyzeViewModelModule,
   classifyViewModelIssue,
-  pascalCaseFromFileName,
+  suggestViewModelClassName,
   type ViewModelIssue,
 } from 'pelelajs/analysis'
 import * as vscode from 'vscode'
@@ -70,9 +70,9 @@ function buildViewModelIssueDiagnostic(
 }
 
 export function validateViewModelExistence(tags: TagInfo[], tsPath: string): vscode.Diagnostic[] {
-  const suggestedName = pascalCaseFromFileName(path.basename(tsPath).replace(/\.ts$/, ''))
   const analysis = analyzeViewModelModule(readFileContent(tsPath))
   const tsFileName = path.basename(tsPath)
+  const suggestedName = suggestViewModelClassName(analysis)
 
   return tags.flatMap((tag) =>
     tag.attributes

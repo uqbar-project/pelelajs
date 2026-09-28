@@ -6,7 +6,7 @@ import {
   analyzeViewModelModule,
   classifyViewModelIssue,
   extractViewModelPropertyTypes,
-  pascalCaseFromFileName,
+  suggestViewModelClassName,
   type ViewModelIssue,
   type ViewModelPropertyTypes,
 } from 'pelelajs/analysis'
@@ -31,8 +31,12 @@ interface ComponentFileMetadata {
   pelelaPath: string
   viewModelName: string
   cssPaths: string[]
-  typeMap: ViewModelPropertyTypes
+  typeMap: ViewModelPropertyTypes | null
   issue: ViewModelIssue
+}
+
+interface FindComponentFilesOptions {
+  includeTypeMap?: boolean
 }
 
 interface ProcessedComponent {
@@ -77,7 +81,10 @@ function collectTsFiles(dir: string): string[] {
     .filter((filePath) => filePath.endsWith('.ts'))
 }
 
-function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
+function findComponentFiles(
+  srcDir: string,
+  { includeTypeMap = true }: FindComponentFilesOptions = {},
+): ComponentFileMetadata[] {
   if (!fs.existsSync(srcDir)) return []
 
   const tsPaths = collectTsFiles(srcDir)
@@ -98,11 +105,7 @@ function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
       const viewModelName = viewModelMatch || componentName
       const tsSource = fs.readFileSync(tsPath, 'utf-8')
       const analysis = analyzeViewModelModule(tsSource)
-      const issue = classifyViewModelIssue(
-        analysis,
-        viewModelName,
-        pascalCaseFromFileName(componentName),
-      )
+      const issue = classifyViewModelIssue(analysis, viewModelName, suggestViewModelClassName(analysis))
 
       const toImportPath = (filePath: string): string =>
         `./${path.relative(process.cwd(), filePath).split(path.sep).join('/')}`
@@ -113,7 +116,7 @@ function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
         pelelaPath: toImportPath(pelelaPath),
         viewModelName,
         cssPaths,
-        typeMap: extractViewModelPropertyTypes(tsPath, viewModelName),
+        typeMap: includeTypeMap ? extractViewModelPropertyTypes(tsPath, viewModelName) : null,
         issue,
       }
     })
@@ -141,7 +144,7 @@ function generateComponentMetadata(component: ComponentFileMetadata): ProcessedC
   const templateVar = `${baseName}Template`
   const cssUrlsVar = `${baseName}CssUrls`
   const hasCss = cssPaths.length > 0
-  const typeMapEntries = Object.entries(typeMap).filter(([, kind]) => kind !== 'unknown')
+  const typeMapEntries = Object.entries(typeMap ?? {}).filter(([, kind]) => kind !== 'unknown')
   const optionsParts: string[] = []
   if (typeMapEntries.length > 0) {
     optionsParts.push(`typeMap: ${JSON.stringify(Object.fromEntries(typeMapEntries))}`)
@@ -209,8 +212,9 @@ ${registrations}
 `
 }
 
-function getKnownComponentTags(pelelaFilePath: string): string[] {
-  return findComponentFiles(path.dirname(pelelaFilePath)).map((component) =>
+function getKnownComponentTags(): string[] {
+  const srcDir = path.join(process.cwd(), 'src')
+  return findComponentFiles(srcDir, { includeTypeMap: false }).map((component) =>
     componentTagToKebabCase(component.viewModelName),
   )
 }
@@ -252,7 +256,7 @@ export function pelelajsPlugin(): Plugin {
       const viewModelName = validatePelelaSource({
         sourceCode,
         filePath: pelelaFilePath,
-        knownComponentTags: getKnownComponentTags(pelelaFilePath),
+        knownComponentTags: getKnownComponentTags(),
         errorFn: this.error.bind(this),
       })
 

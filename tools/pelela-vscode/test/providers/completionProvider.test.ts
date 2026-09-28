@@ -285,7 +285,11 @@ describe('completionProvider', () => {
 
     it('adds child ViewModel properties for a resolvable component tag', () => {
       const items: vscode.CompletionItem[] = []
-      addPelelaAttributeCompletions(items, 'counter', createDocumentWithUri(['<counter ']))
+      addPelelaAttributeCompletions(
+        items,
+        'counter-view-model',
+        createDocumentWithUri(['<counter-view-model '])
+      )
 
       const labels = items.map((item) => item.label)
       assert.ok(labels.includes('prop-last-number'), 'should offer prop-last-number')
@@ -308,7 +312,7 @@ describe('completionProvider', () => {
     })
 
     it('offers child properties when typing a binding prefix on a component', async () => {
-      const line = '  <counter prop-'
+      const line = '  <counter-view-model prop-'
       const position = createMockPosition(1, line.length)
       const completions = await provideCompletions(['<pelela>', line], position)
 
@@ -321,7 +325,7 @@ describe('completionProvider', () => {
       assert.strictEqual(snippet.value, 'prop-last-number="${1:value}"')
 
       const range = childItem.range as vscode.Range
-      assert.deepStrictEqual(range.start, createMockPosition(1, '  <counter '.length))
+      assert.deepStrictEqual(range.start, createMockPosition(1, '  <counter-view-model '.length))
       assert.deepStrictEqual(range.end, position)
 
       assert.strictEqual(
@@ -336,7 +340,7 @@ describe('completionProvider', () => {
     })
 
     it('does not offer parent properties as const- values', async () => {
-      const line = '  <counter const-count="'
+      const line = '  <counter-view-model const-count="'
       const position = createMockPosition(1, line.length)
       const completions = await provideCompletions(
         ['<pelela view-model="AppViewModel">', line],
@@ -347,7 +351,7 @@ describe('completionProvider', () => {
     })
 
     it('still offers parent properties as prop- values', async () => {
-      const line = '  <counter prop-count="'
+      const line = '  <counter-view-model prop-count="'
       const position = createMockPosition(1, line.length)
       const completions = await provideCompletions(
         ['<pelela view-model="AppViewModel">', line],

@@ -79,25 +79,31 @@ describe('validateBindingTypes', () => {
   }
 
   it('accepts a link whose parent and child values are both numbers', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter link-value="selectedIndex"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model link-value="selectedIndex"></counter>')
+    )
 
     assert.strictEqual(diagnostics.length, 0)
   })
 
   it('accepts a link whose parent and child values share the same type', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter link-label="selectedLabel"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model link-label="selectedLabel"></counter>')
+    )
 
     assert.strictEqual(diagnostics.length, 0)
   })
 
   it('reports a diagnostic when the parent string does not match the child number property', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-total="selectedLabel"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model prop-total="selectedLabel"></counter>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
       bindingTypeMismatch({
         attr: 'prop-total',
-        tag: 'counter',
+        tag: 'counter-view-model',
         parentKey: 'selectedLabel',
         childKey: 'total',
         parentKind: t('diagnostics.bindingKindString'),
@@ -108,13 +114,15 @@ describe('validateBindingTypes', () => {
   })
 
   it('reports a diagnostic when the parent number does not match the child boolean property', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-label="selectedIndex"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model prop-label="selectedIndex"></counter>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
       bindingTypeMismatch({
         attr: 'prop-label',
-        tag: 'counter',
+        tag: 'counter-view-model',
         parentKey: 'selectedIndex',
         childKey: 'label',
         parentKind: t('diagnostics.bindingKindNumber'),
@@ -125,7 +133,9 @@ describe('validateBindingTypes', () => {
   })
 
   it('reports no diagnostic when the parent getter is a computed expression', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-total="totalPeople"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model prop-total="totalPeople"></counter>')
+    )
 
     assert.strictEqual(diagnostics.length, 0)
   })
@@ -133,7 +143,7 @@ describe('validateBindingTypes', () => {
   it('reports no diagnostic when the parent value is a for-each variable', () => {
     const diagnostics = validate(
       PARENT_TEMPLATE(
-        '<div for-each="person of people"><counter prop-total="person"></counter></div>'
+        '<div for-each="person of people"><counter-view-model prop-total="person"></counter></div>'
       )
     )
 
@@ -142,7 +152,7 @@ describe('validateBindingTypes', () => {
 
   it('reports no diagnostic when both sides are non-primitive values', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter prop-config="selectedOptions"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-config="selectedOptions"></counter>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
@@ -150,7 +160,7 @@ describe('validateBindingTypes', () => {
 
   it('reports no diagnostic when the parent value is a nested path', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter prop-total="selectedLabel.length"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-total="selectedLabel.length"></counter>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
@@ -161,7 +171,7 @@ describe('validateBindingTypes', () => {
 
     reservedKeys.forEach((reservedKey) => {
       const diagnostics = validate(
-        PARENT_TEMPLATE(`<counter prop-total="${reservedKey}"></counter>`)
+        PARENT_TEMPLATE(`<counter-view-model prop-total="${reservedKey}"></counter>`)
       )
 
       assert.strictEqual(diagnostics.length, 0)
@@ -178,20 +188,20 @@ describe('validateBindingTypes', () => {
 
   it('reports no diagnostic when the child property has an unknown type', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter prop-dynamic="selectedLabel"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-dynamic="selectedLabel"></counter>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
   })
 
   it('accepts a const attribute (types are validated by the const validator)', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter const-total="1"></counter>'))
+    const diagnostics = validate(PARENT_TEMPLATE('<counter-view-model const-total="1"></counter>'))
 
     assert.strictEqual(diagnostics.length, 0)
   })
 
   it('reports no diagnostic when the document has no view model', () => {
-    const diagnostics = validate('<counter prop-total="selectedLabel"></counter>')
+    const diagnostics = validate('<counter-view-model prop-total="selectedLabel"></counter>')
 
     assert.strictEqual(diagnostics.length, 0)
   })
@@ -199,9 +209,9 @@ describe('validateBindingTypes', () => {
   it('positions the diagnostic over the attribute value', () => {
     const lines = [
       '<pelela view-model="HomeViewModel">',
-      '  <counter',
+      '  <counter-view-model',
       '    prop-total="selectedLabel"',
-      '  ></counter>',
+      '  ></counter-view-model>',
       '</pelela>',
     ]
     const document = createMockDocument(lines, parentDocumentPath)
@@ -224,7 +234,7 @@ describe('validateBindingTypes', () => {
   it('integrates with validatePelelaDocument', () => {
     const collection = vscode.languages.createDiagnosticCollection()
     const document = createMockDocument(
-      PARENT_TEMPLATE('<counter prop-total="selectedLabel"></counter>').split('\n'),
+      PARENT_TEMPLATE('<counter-view-model prop-total="selectedLabel"></counter>').split('\n'),
       parentDocumentPath
     )
     validatePelelaDocument(collection, document)
@@ -236,7 +246,7 @@ describe('validateBindingTypes', () => {
       getSingleDiagnostic(diagnostics),
       bindingTypeMismatch({
         attr: 'prop-total',
-        tag: 'counter',
+        tag: 'counter-view-model',
         parentKey: 'selectedLabel',
         childKey: 'total',
         parentKind: t('diagnostics.bindingKindString'),

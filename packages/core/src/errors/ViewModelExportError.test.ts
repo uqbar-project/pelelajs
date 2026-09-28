@@ -3,25 +3,25 @@ import { initializeI18n, t } from '../commons/i18n'
 import type { ViewModelExportErrorParams } from './ViewModelExportError'
 import { ViewModelExportError } from './ViewModelExportError'
 
-const CONVERSOR_TS_FILE = 'src/conversor.ts'
-const CONVERSOR_CLASS_NAME = 'Conversor'
-const CONVERSOR_VIEW_MODEL = 'conversor'
+const CONVERTER_TS_FILE = 'src/converter.ts'
+const CONVERTER_CLASS_NAME = 'Converter'
+const CONVERTER_VIEW_MODEL = 'converter'
 
 describe('ViewModelExportError', () => {
   it('builds the English message when the class is not exported', () => {
     initializeI18n('en')
     const params: ViewModelExportErrorParams = {
       kind: 'missingExport',
-      viewModelName: CONVERSOR_CLASS_NAME,
-      tsFilePath: CONVERSOR_TS_FILE,
+      viewModelName: CONVERTER_CLASS_NAME,
+      tsFilePath: CONVERTER_TS_FILE,
     }
 
     const error = new ViewModelExportError(params)
 
     expect(error.message).toBe(
       t('errors.viewmodel.export.missingExport', {
-        viewModelName: CONVERSOR_CLASS_NAME,
-        tsFilePath: CONVERSOR_TS_FILE,
+        viewModelName: CONVERTER_CLASS_NAME,
+        tsFilePath: CONVERTER_TS_FILE,
       }),
     )
     expect(error).toBeInstanceOf(Error)
@@ -31,29 +31,29 @@ describe('ViewModelExportError', () => {
     initializeI18n('es')
     const params: ViewModelExportErrorParams = {
       kind: 'wrongCase',
-      viewModelName: CONVERSOR_VIEW_MODEL,
-      expectedName: CONVERSOR_CLASS_NAME,
-      tsFilePath: CONVERSOR_TS_FILE,
+      viewModelName: CONVERTER_VIEW_MODEL,
+      expectedName: CONVERTER_CLASS_NAME,
+      tsFilePath: CONVERTER_TS_FILE,
     }
 
     const error = new ViewModelExportError(params)
 
     expect(error.message).toBe(
       t('errors.viewmodel.export.wrongCase', {
-        viewModelName: CONVERSOR_VIEW_MODEL,
-        expectedName: CONVERSOR_CLASS_NAME,
-        tsFilePath: CONVERSOR_TS_FILE,
+        viewModelName: CONVERTER_VIEW_MODEL,
+        expectedName: CONVERTER_CLASS_NAME,
+        tsFilePath: CONVERTER_TS_FILE,
       }),
     )
   })
 
-  it('builds the Spanish message when no class matches, suggesting the file-derived name', () => {
+  it('builds the Spanish message when no class matches, suggesting the module-derived name', () => {
     initializeI18n('es')
-    const suggestedName = 'Contador'
+    const suggestedName = 'Counter'
     const params: ViewModelExportErrorParams = {
       kind: 'notFound',
-      viewModelName: 'Bicicleta',
-      tsFilePath: CONVERSOR_TS_FILE,
+      viewModelName: 'Bicycle',
+      tsFilePath: CONVERTER_TS_FILE,
       suggestedName,
     }
 
@@ -61,8 +61,8 @@ describe('ViewModelExportError', () => {
 
     expect(error.message).toBe(
       t('errors.viewmodel.export.notFound', {
-        viewModelName: 'Bicicleta',
-        tsFilePath: CONVERSOR_TS_FILE,
+        viewModelName: 'Bicycle',
+        tsFilePath: CONVERTER_TS_FILE,
         suggestedName,
       }),
     )
@@ -72,8 +72,8 @@ describe('ViewModelExportError', () => {
     initializeI18n('es')
     const params: ViewModelExportErrorParams = {
       kind: 'notAClass',
-      viewModelName: 'conversorObj',
-      tsFilePath: CONVERSOR_TS_FILE,
+      viewModelName: 'converterObj',
+      tsFilePath: CONVERTER_TS_FILE,
       declaredAs: 'Object',
     }
 
@@ -81,8 +81,8 @@ describe('ViewModelExportError', () => {
 
     expect(error.message).toBe(
       t('errors.viewmodel.export.notAClassObject', {
-        viewModelName: 'conversorObj',
-        tsFilePath: CONVERSOR_TS_FILE,
+        viewModelName: 'converterObj',
+        tsFilePath: CONVERTER_TS_FILE,
       }),
     )
   })
@@ -91,8 +91,8 @@ describe('ViewModelExportError', () => {
     initializeI18n('es')
     const params: ViewModelExportErrorParams = {
       kind: 'notAClass',
-      viewModelName: 'conversor',
-      tsFilePath: CONVERSOR_TS_FILE,
+      viewModelName: 'converter',
+      tsFilePath: CONVERTER_TS_FILE,
       declaredAs: 'Function',
     }
 
@@ -100,8 +100,8 @@ describe('ViewModelExportError', () => {
 
     expect(error.message).toBe(
       t('errors.viewmodel.export.notAClassFunction', {
-        viewModelName: 'conversor',
-        tsFilePath: CONVERSOR_TS_FILE,
+        viewModelName: 'converter',
+        tsFilePath: CONVERTER_TS_FILE,
       }),
     )
   })

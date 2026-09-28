@@ -148,7 +148,7 @@ describe('viewModelValidator', () => {
         t('diagnostics.viewModelNotFound', {
           name: 'NonExistentViewModel',
           tsFileName: 'viewModelTestViewModel.ts',
-          suggestedName: 'ViewModelTestViewModel',
+          suggestedName: 'TestViewModel',
         }),
         vscode.DiagnosticSeverity.Error
       )
@@ -192,14 +192,14 @@ describe('viewModelValidator', () => {
     })
 
     it('reports notAClass as an Object when the view model is an object literal', () => {
-      fs.writeFileSync(notAClassPath, `export const conversorObj = { millas: 100, kilometros: 2 }`)
-      const { tags } = prepareValidation(['<pelela view-model="conversorObj">'], context)
+      fs.writeFileSync(notAClassPath, `export const converterObj = { millas: 100, kilometros: 2 }`)
+      const { tags } = prepareValidation(['<pelela view-model="converterObj">'], context)
       const diagnostics = validateViewModelExistence(tags, notAClassPath)
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.viewModelNotAClassObject', {
-          name: 'conversorObj',
+          name: 'converterObj',
           tsFileName: 'NotAClassVM.ts',
         }),
         vscode.DiagnosticSeverity.Error
@@ -207,14 +207,14 @@ describe('viewModelValidator', () => {
     })
 
     it('reports notAClass as a Function when the view model is an exported function', () => {
-      fs.writeFileSync(notAClassPath, `export function conversor() { return 0 }`)
-      const { tags } = prepareValidation(['<pelela view-model="conversor">'], context)
+      fs.writeFileSync(notAClassPath, `export function converter() { return 0 }`)
+      const { tags } = prepareValidation(['<pelela view-model="converter">'], context)
       const diagnostics = validateViewModelExistence(tags, notAClassPath)
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.viewModelNotAClassFunction', {
-          name: 'conversor',
+          name: 'converter',
           tsFileName: 'NotAClassVM.ts',
         }),
         vscode.DiagnosticSeverity.Error

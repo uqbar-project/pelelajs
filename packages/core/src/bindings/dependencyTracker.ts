@@ -111,12 +111,12 @@ export class DependencyTracker {
   }
 
   /**
-   * Determina si un binding debe actualizarse cuando cambia una propiedad.
+   * Determines whether a binding must update when a property changes.
    *
-   * Casos considerados:
-   * - Match exacto: "user.name" === "user.name"
-   * - Propiedad anidada del cambio: "prueba.nombre" cuando cambió "prueba"
-   * - Propiedad padre del cambio: "prueba" cuando cambió "prueba.nombre"
+   * Cases considered:
+   * - Exact match: "user.name" === "user.name"
+   * - Nested property of the change: "user.name" when "user" changed
+   * - Parent property of the change: "user" when "user.name" changed
    */
   private pathMatches(bindingPath: string, changedPath: string): boolean {
     return (

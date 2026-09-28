@@ -1,17 +1,25 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { toKebabCase } from 'pelelajs'
 import * as vscode from 'vscode'
+import { getViewModelName, scanFile } from '../diagnostics/scanDocument'
 
 const TEMPLATE_EXTENSION = '.pelela'
 const SOURCE_DIRECTORY_NAME = 'src'
 const IGNORED_DIRECTORIES = new Set(['node_modules', 'dist', 'build', 'coverage', 'out'])
 
+export interface IndexedComponent {
+  templatePath: string
+  viewModelName: string
+  tagName: string
+}
+
 /**
- * Templates reachable from a directory, keyed by template name. Built once per
- * directory and reused, because a diagnostics run resolves the same children
- * for every tag in the document.
+ * Templates reachable from a directory, keyed by registered tag name. Built
+ * once per directory and reused, because a diagnostics run resolves the same
+ * children for every tag in the document.
  */
-const indexByDirectory = new Map<string, Map<string, string[]>>()
+const indexByDirectory = new Map<string, Map<string, IndexedComponent[]>>()
 
 function isIgnoredDirectory(entryName: string): boolean {
   return IGNORED_DIRECTORIES.has(entryName) || entryName.startsWith('.')
@@ -43,11 +51,21 @@ function listTemplatePaths(directory: string): string[] {
   )
 }
 
-function groupByTemplateName(filePaths: string[]): Map<string, string[]> {
-  return filePaths.reduce((grouped, filePath) => {
-    const name = path.basename(filePath, TEMPLATE_EXTENSION)
-    return grouped.set(name, [...(grouped.get(name) ?? []), filePath])
-  }, new Map<string, string[]>())
+/**
+ * The view model the runtime registers for a template: the view-model
+ * attribute, or the file name only when the attribute is missing.
+ */
+function readViewModelName(templatePath: string): string {
+  return getViewModelName(scanFile(templatePath)) ?? path.basename(templatePath, TEMPLATE_EXTENSION)
+}
+
+function indexTemplates(filePaths: string[]): Map<string, IndexedComponent[]> {
+  return filePaths.reduce((grouped, templatePath) => {
+    const viewModelName = readViewModelName(templatePath)
+    const tagName = toKebabCase(viewModelName)
+    const component: IndexedComponent = { templatePath, viewModelName, tagName }
+    return grouped.set(tagName, [...(grouped.get(tagName) ?? []), component])
+  }, new Map<string, IndexedComponent[]>())
 }
 
 function relativeDepth(directory: string, filePath: string): number {
@@ -55,20 +73,23 @@ function relativeDepth(directory: string, filePath: string): number {
 }
 
 function byDepthThenName(directory: string) {
-  return (first: string, second: string): number => {
-    const depthDifference = relativeDepth(directory, first) - relativeDepth(directory, second)
-    return depthDifference !== 0 ? depthDifference : first.localeCompare(second)
+  return (first: IndexedComponent, second: IndexedComponent): number => {
+    const depthDifference =
+      relativeDepth(directory, first.templatePath) - relativeDepth(directory, second.templatePath)
+    return depthDifference !== 0
+      ? depthDifference
+      : first.templatePath.localeCompare(second.templatePath)
   }
 }
 
-function indexOf(directory: string): Map<string, string[]> {
+function indexOf(directory: string): Map<string, IndexedComponent[]> {
   const cached = indexByDirectory.get(directory)
   if (cached !== undefined) return cached
 
   const sorted = new Map(
-    Array.from(groupByTemplateName(listTemplatePaths(directory)), ([name, filePaths]) => [
-      name,
-      [...filePaths].sort(byDepthThenName(directory)),
+    Array.from(indexTemplates(listTemplatePaths(directory)), ([tagName, components]) => [
+      tagName,
+      [...components].sort(byDepthThenName(directory)),
     ])
   )
 
@@ -105,19 +126,19 @@ function searchDirectories(documentDirectory: string, workspaceRoot: string | nu
 }
 
 /**
- * Resolves a child template the way the runtime does: every template under the
- * source tree is registered, so a child may live in any subfolder. The closest
- * directory holding a match wins, which keeps a sibling template taking
- * precedence over a distant one with the same name.
+ * Resolves a child template the way the runtime registers it: every template
+ * under the source tree is registered, so a child may live in any subfolder.
+ * The closest directory holding a match wins, which keeps a sibling template
+ * taking precedence over a distant one with the same tag.
  */
-export function findChildTemplatePath(
+export function findChildTemplate(
   tagName: string,
   document: vscode.TextDocument
-): string | null {
+): IndexedComponent | null {
   const documentDirectory = path.dirname(document.uri.fsPath)
   const match = searchDirectories(documentDirectory, workspaceRootOf(document))
     .map((directory) => indexOf(directory).get(tagName))
-    .find((candidates) => candidates !== undefined && candidates.length > 0)
+    .find((components) => components !== undefined && components.length > 0)
 
   return match?.[0] ?? null
 }
