@@ -1,4 +1,6 @@
 import * as ts from 'typescript'
+import { isNumberLiteral, parseBooleanLiteral } from '../commons/typeCasting'
+import { ViewModelSourceNotFoundError } from '../errors/ViewModelSourceNotFoundError'
 import type { ConstKind } from '../types'
 
 export interface ViewModelModuleAnalysis {
@@ -11,13 +13,6 @@ export interface ViewModelModuleAnalysis {
 export type ViewModelPropertyTypes = Record<string, ConstKind>
 
 const UNAUTHORIZED_PROPERTY_NAMES = new Set(['__proto__', 'constructor', 'prototype'])
-
-const NULLABLE_KEYWORDS = new Set([ts.SyntaxKind.NullKeyword, ts.SyntaxKind.UndefinedKeyword])
-
-function isNullishTypeNode(typeNode: ts.TypeNode): boolean {
-  if (NULLABLE_KEYWORDS.has(typeNode.kind)) return true
-  return ts.isLiteralTypeNode(typeNode) && NULLABLE_KEYWORDS.has(typeNode.literal.kind)
-}
 
 export type DeclaredAs = 'Function' | 'Object'
 
@@ -184,193 +179,139 @@ export function classifyViewModelIssue(
   return { kind: 'notFound', viewModelName, suggestedName }
 }
 
-function getMemberDeclarationName(node: { name?: ts.DeclarationName }): string | null {
-  const name = node.name
-  return name !== undefined && ts.isIdentifier(name) ? name.text : null
+/**
+ * A resolved TypeScript program plus the checker and entry source file needed to
+ * read view model property types.
+ */
+export interface ViewModelProgramContext {
+  program: ts.Program
+  checker: ts.TypeChecker
+  sourceFile: ts.SourceFile
 }
 
-function unwrapConstExpression(expression: ts.Expression): ts.Expression {
-  let currentExpression = expression
-  while (
-    ts.isParenthesizedExpression(currentExpression) ||
-    ts.isAsExpression(currentExpression) ||
-    ts.isTypeAssertionExpression(currentExpression) ||
-    ts.isSatisfiesExpression(currentExpression) ||
-    ts.isNonNullExpression(currentExpression)
-  ) {
-    currentExpression = currentExpression.expression
+const DEFAULT_COMPILER_OPTIONS: ts.CompilerOptions = {
+  target: ts.ScriptTarget.ESNext,
+  module: ts.ModuleKind.ESNext,
+  moduleResolution: ts.ModuleResolutionKind.Bundler,
+}
+
+function readCompilerOptions(tsPath: string): ts.CompilerOptions {
+  const configPath = ts.findConfigFile(tsPath, ts.sys.fileExists)
+  if (configPath === undefined) return DEFAULT_COMPILER_OPTIONS
+
+  const parsedConfig = ts.getParsedCommandLineOfConfigFile(configPath, undefined, {
+    ...ts.sys,
+    onUnRecoverableConfigFileDiagnostic: () => undefined,
+  })
+
+  return parsedConfig?.options ?? DEFAULT_COMPILER_OPTIONS
+}
+
+export function createViewModelProgramContext(tsPath: string): ViewModelProgramContext {
+  const program = ts.createProgram([tsPath], readCompilerOptions(tsPath))
+  const sourceFile = program.getSourceFile(tsPath)
+
+  if (sourceFile === undefined) {
+    throw new ViewModelSourceNotFoundError({ tsPath })
   }
-  return currentExpression
+
+  return { program, checker: program.getTypeChecker(), sourceFile }
 }
 
-function getConstKindFromTypeNode(typeNode: ts.TypeNode): ConstKind {
-  if (typeNode.kind === ts.SyntaxKind.UnionType) {
-    const unionNode = typeNode as ts.UnionTypeNode
-    const nonNullMemberKinds = unionNode.types
-      .filter((unionMember) => !isNullishTypeNode(unionMember))
-      .map(getConstKindFromTypeNode)
-    const distinctKinds = unique(nonNullMemberKinds)
+export function createViewModelProgramContextFromProgram(
+  program: ts.Program,
+  tsPath: string,
+): ViewModelProgramContext {
+  const sourceFile = program.getSourceFile(tsPath)
+  if (sourceFile === undefined) {
+    throw new ViewModelSourceNotFoundError({ tsPath })
+  }
+  return { program, checker: program.getTypeChecker(), sourceFile }
+}
+
+function isNullishType(type: ts.Type): boolean {
+  const nullishFlags = ts.TypeFlags.Null | ts.TypeFlags.Undefined | ts.TypeFlags.Void
+  return (type.flags & nullishFlags) !== 0
+}
+
+/**
+ * Maps a resolved type onto the const kind Pelela can coerce a `const-*`
+ * attribute value into. `any` and `unknown` are deliberately `unknown`: the
+ * runtime falls back to `typeof target` when the declared kind is unknown.
+ */
+export function classifyType(type: ts.Type): ConstKind {
+  if (isNullishType(type)) return 'unknown'
+
+  if (type.isUnion()) {
+    const distinctKinds = unique(
+      type.types.filter((member) => !isNullishType(member)).map(classifyType),
+    )
     if (distinctKinds.length === 0) return 'unknown'
     return distinctKinds.length === 1 ? distinctKinds[0] : 'other'
   }
 
-  if (ts.isLiteralTypeNode(typeNode)) {
-    return getConstKindFromLiteralTypeNode(typeNode)
-  }
+  if (type.flags & ts.TypeFlags.Any) return 'unknown'
+  if (type.flags & ts.TypeFlags.Unknown) return 'unknown'
 
-  switch (typeNode.kind) {
-    case ts.SyntaxKind.NumberKeyword:
-      return 'number'
-    case ts.SyntaxKind.BooleanKeyword:
-      return 'boolean'
-    case ts.SyntaxKind.StringKeyword:
-      return 'string'
-    default:
-      return 'other'
-  }
+  if (type.flags & ts.TypeFlags.StringLike) return 'string'
+  if (type.flags & ts.TypeFlags.NumberLike) return 'number'
+  if (type.flags & ts.TypeFlags.BooleanLike) return 'boolean'
+
+  return 'other'
 }
 
-function getConstKindFromLiteralTypeNode(typeNode: ts.LiteralTypeNode): ConstKind {
-  const literalKind = getConstKindFromExpression(typeNode.literal)
-  return literalKind === 'unknown' ? 'other' : literalKind
+const SCALAR_TYPE_FLAGS =
+  ts.TypeFlags.StringLike |
+  ts.TypeFlags.NumberLike |
+  ts.TypeFlags.BooleanLike |
+  ts.TypeFlags.BigIntLike
+
+/**
+ * True when the type is a scalar or a union made only of scalars. Structural
+ * types, generics and unsupported primitives are not scalars, which is what
+ * tells a literal mismatch apart from a type no const attribute can satisfy.
+ */
+function isScalarType(type: ts.Type): boolean {
+  if (isNullishType(type)) return true
+  if (type.isUnion()) return type.types.every(isScalarType)
+  return Boolean(type.flags & SCALAR_TYPE_FLAGS)
 }
 
-function getConstKindFromExpression(expression: ts.Expression): ConstKind {
-  const unwrapped = unwrapConstExpression(expression)
-  if (unwrapped.kind === ts.SyntaxKind.NumericLiteral) return 'number'
-  if (ts.isStringLiteral(unwrapped)) return 'string'
-  if (
-    unwrapped.kind === ts.SyntaxKind.TrueKeyword ||
-    unwrapped.kind === ts.SyntaxKind.FalseKeyword
-  ) {
-    return 'boolean'
-  }
-  if (
-    ts.isPrefixUnaryExpression(unwrapped) &&
-    unwrapped.operator === ts.SyntaxKind.MinusToken &&
-    unwrapped.operand.kind === ts.SyntaxKind.NumericLiteral
-  ) {
-    return 'number'
-  }
-  if (
-    ts.isObjectLiteralExpression(unwrapped) ||
-    ts.isArrayLiteralExpression(unwrapped) ||
-    ts.isNewExpression(unwrapped)
-  ) {
-    return 'other'
-  }
-  return 'unknown'
-}
+function isRestrictedMemberSymbol(symbol: ts.Symbol): boolean {
+  const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0]
+  if (declaration === undefined) return true
 
-function getConstKindFromDeclaration(
-  typeNode: ts.TypeNode | undefined,
-  initializer: ts.Expression | undefined,
-): ConstKind {
-  if (typeNode !== undefined) {
-    const typeKind = getConstKindFromTypeNode(typeNode)
-    if (typeKind !== 'unknown') return typeKind
-  }
-  if (initializer !== undefined) return getConstKindFromExpression(initializer)
-  return 'unknown'
-}
-
-function getConstKindFromGetter(getter: ts.GetAccessorDeclaration): ConstKind {
-  if (getter.type !== undefined) {
-    const typeKind = getConstKindFromTypeNode(getter.type)
-    if (typeKind !== 'unknown') return typeKind
-  }
-  const returnStatement = getter.body?.statements.find(
-    (statement): statement is ts.ReturnStatement => ts.isReturnStatement(statement),
+  // biome-ignore lint/suspicious/noUnnecessaryConditions: ts.canHaveModifiers is a compiler-API type guard; Biome's type checker models it as always falsy (false positive)
+  const modifiers = ts.canHaveModifiers(declaration) ? ts.getModifiers(declaration) : undefined
+  const isRestrictedAccess = modifiers?.some(
+    (modifier) =>
+      modifier.kind === ts.SyntaxKind.PrivateKeyword ||
+      modifier.kind === ts.SyntaxKind.ProtectedKeyword,
   )
-  if (returnStatement?.expression !== undefined) {
-    return getConstKindFromExpression(returnStatement.expression)
-  }
-  return 'unknown'
+  if (isRestrictedAccess === true) return true
+
+  return (ts.getCombinedModifierFlags(declaration) & ts.ModifierFlags.Static) !== 0
 }
 
-function isStaticMember(classMember: ts.ClassElement): boolean {
-  return (ts.getCombinedModifierFlags(classMember) & ts.ModifierFlags.Static) !== 0
-}
+/**
+ * Only property-like members can be set from a `const-*` attribute. Methods
+ * are symbols on the class type too, so they are excluded explicitly.
+ */
+function isPropertyLikeSymbol(symbol: ts.Symbol): boolean {
+  if ((symbol.flags & ts.SymbolFlags.Method) !== 0) return false
 
-function hasRestrictedAccessModifier(
-  modifiers: ts.NodeArray<ts.ModifierLike> | undefined,
-): boolean {
+  const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0]
+  if (declaration === undefined) return false
+
   return (
-    modifiers?.some(
-      (modifier) =>
-        modifier.kind === ts.SyntaxKind.PrivateKeyword ||
-        modifier.kind === ts.SyntaxKind.ProtectedKeyword,
-    ) ?? false
+    ts.isPropertyDeclaration(declaration) ||
+    ts.isGetAccessorDeclaration(declaration) ||
+    ts.isParameter(declaration) ||
+    ts.isPropertySignature(declaration)
   )
 }
 
-function isParameterProperty(parameter: ts.ParameterDeclaration): boolean {
-  return (
-    parameter.modifiers?.some(
-      (modifier) =>
-        modifier.kind === ts.SyntaxKind.PublicKeyword ||
-        modifier.kind === ts.SyntaxKind.ProtectedKeyword ||
-        modifier.kind === ts.SyntaxKind.PrivateKeyword ||
-        modifier.kind === ts.SyntaxKind.ReadonlyKeyword,
-    ) ?? false
-  )
-}
-
-function getParameterPropertyTypes(classDeclaration: ts.ClassDeclaration): ViewModelPropertyTypes {
-  const constructorDeclaration = classDeclaration.members.find(
-    (member): member is ts.ConstructorDeclaration => ts.isConstructorDeclaration(member),
-  )
-  if (constructorDeclaration === undefined) return {}
-
-  const result: ViewModelPropertyTypes = {}
-  constructorDeclaration.parameters.forEach((parameter) => {
-    const name = getMemberDeclarationName(parameter)
-    if (name === null || !isParameterProperty(parameter)) return
-    if (hasRestrictedAccessModifier(parameter.modifiers)) return
-    if (!UNAUTHORIZED_PROPERTY_NAMES.has(name)) {
-      result[name] =
-        parameter.type === undefined ? 'unknown' : getConstKindFromTypeNode(parameter.type)
-    }
-  })
-  return result
-}
-
-function getOwnPropertyTypes(classDeclaration: ts.ClassDeclaration): ViewModelPropertyTypes {
-  const result: ViewModelPropertyTypes = {}
-
-  const assignType = (name: string, kind: ConstKind): void => {
-    if (!UNAUTHORIZED_PROPERTY_NAMES.has(name)) {
-      result[name] = kind
-    }
-  }
-
-  classDeclaration.members.forEach((classMember) => {
-    if (isStaticMember(classMember)) return
-    const name = getMemberDeclarationName(classMember)
-    if (name === null) return
-
-    if (ts.isPropertyDeclaration(classMember)) {
-      if (hasRestrictedAccessModifier(classMember.modifiers)) return
-      assignType(name, getConstKindFromDeclaration(classMember.type, classMember.initializer))
-    } else if (ts.isGetAccessorDeclaration(classMember)) {
-      if (hasRestrictedAccessModifier(classMember.modifiers)) return
-      assignType(name, getConstKindFromGetter(classMember))
-    }
-  })
-
-  return { ...result, ...getParameterPropertyTypes(classDeclaration) }
-}
-
-function getQualifiedNamePath(expression: ts.Expression): string[] | null {
-  if (ts.isIdentifier(expression)) return [expression.text]
-  if (ts.isPropertyAccessExpression(expression)) {
-    const containerPath = getQualifiedNamePath(expression.expression)
-    return containerPath === null ? null : [...containerPath, expression.name.text]
-  }
-  return null
-}
-
-function getClassDeclaration(
+function getViewModelClassDeclaration(
   sourceFile: ts.SourceFile,
   className: string,
 ): ts.ClassDeclaration | undefined {
@@ -387,45 +328,115 @@ function findClassInStatements(
       (ts.isClassDeclaration(candidate) || ts.isModuleDeclaration(candidate)) &&
       candidate.name?.text === head,
   )
-  if (tail.length === 0) {
-    return statement !== undefined && ts.isClassDeclaration(statement) ? statement : undefined
-  }
-  if (statement === undefined || !ts.isModuleDeclaration(statement)) return undefined
+  if (statement === undefined) return undefined
+  if (tail.length === 0) return ts.isClassDeclaration(statement) ? statement : undefined
+  if (!ts.isModuleDeclaration(statement)) return undefined
+
   const body = statement.body
   if (body === undefined || !ts.isModuleBlock(body)) return undefined
   return findClassInStatements(body.statements, tail)
 }
 
-function getExtendsClassName(classDeclaration: ts.ClassDeclaration): string | null {
-  const extendsClause = classDeclaration.heritageClauses?.find(
-    (clause) => clause.token === ts.SyntaxKind.ExtendsKeyword,
-  )
-  const baseType = extendsClause?.types[0]
-  if (baseType === undefined) return null
-  const namePath = getQualifiedNamePath(baseType.expression)
-  return namePath === null ? null : namePath.join('.')
+function isCollectablePropertySymbol(symbol: ts.Symbol): boolean {
+  if (UNAUTHORIZED_PROPERTY_NAMES.has(symbol.getName())) return false
+  if (isRestrictedMemberSymbol(symbol)) return false
+  return isPropertyLikeSymbol(symbol)
 }
 
-function collectViewModelPropertyTypes(
-  sourceFile: ts.SourceFile,
+/**
+ * Collects the declared type of every settable member of a view model class,
+ * including members inherited from base classes in other modules.
+ */
+export function collectViewModelPropertyTypes(
+  context: ViewModelProgramContext,
   className: string,
-  visited: Set<string>,
+): Map<string, ts.Type> {
+  const classDeclaration = getViewModelClassDeclaration(context.sourceFile, className)
+  if (classDeclaration === undefined) return new Map<string, ts.Type>()
+
+  const classType = context.checker.getTypeAtLocation(classDeclaration)
+
+  return new Map(
+    context.checker
+      .getPropertiesOfType(classType)
+      .filter(isCollectablePropertySymbol)
+      .map((symbol) => [symbol.getName(), context.checker.getTypeOfSymbol(symbol)] as const),
+  )
+}
+
+export function extractViewModelPropertyTypesWithContext(
+  context: ViewModelProgramContext,
+  className: string,
 ): ViewModelPropertyTypes {
-  const classDeclaration = getClassDeclaration(sourceFile, className)
-  if (classDeclaration === undefined || visited.has(className)) return {}
-
-  visited.add(className)
-  const baseClassName = getExtendsClassName(classDeclaration)
-  const baseTypes =
-    baseClassName === null ? {} : collectViewModelPropertyTypes(sourceFile, baseClassName, visited)
-
-  return { ...baseTypes, ...getOwnPropertyTypes(classDeclaration) }
+  const propertyTypes = collectViewModelPropertyTypes(context, className)
+  return Object.fromEntries(Array.from(propertyTypes, ([name, type]) => [name, classifyType(type)]))
 }
 
 export function extractViewModelPropertyTypes(
-  tsSource: string,
+  tsPath: string,
   className: string,
 ): ViewModelPropertyTypes {
-  const sourceFile = ts.createSourceFile('viewModel.ts', tsSource, ts.ScriptTarget.Latest, true)
-  return collectViewModelPropertyTypes(sourceFile, className, new Set<string>())
+  const context = createViewModelProgramContext(tsPath)
+  return extractViewModelPropertyTypesWithContext(context, className)
+}
+
+/**
+ * `unchecked` means the declared type carries no information a const attribute
+ * can be validated against, so no diagnostic should be produced.
+ */
+export type ConstValueVerdict =
+  | { accepted: true }
+  | { accepted: false; reason: 'nonLiteralType' }
+  | { accepted: false; reason: 'literalMismatch'; expectedTypeText: string }
+  | { accepted: 'unchecked' }
+
+export interface ConstValueCheckParams {
+  context: ViewModelProgramContext
+  className: string
+  propertyName: string
+  rawValue: string
+}
+
+/**
+ * Every type the raw attribute text could stand for. Attribute values are always
+ * strings in a template, so `const-count="5"` must be offered to the checker as
+ * the number literal 5 as well as the string "5".
+ */
+function candidateTypes(rawValue: string, checker: ts.TypeChecker): ts.Type[] {
+  const candidates: ts.Type[] = [checker.getStringLiteralType(rawValue)]
+
+  if (isNumberLiteral(rawValue)) {
+    candidates.push(checker.getNumberLiteralType(Number(rawValue)))
+  }
+
+  const booleanLiteral = parseBooleanLiteral(rawValue.trim())
+  if (booleanLiteral !== null) {
+    candidates.push(booleanLiteral ? checker.getTrueType() : checker.getFalseType())
+  }
+
+  return candidates
+}
+
+function toExpectedTypeText(type: ts.Type, checker: ts.TypeChecker): string {
+  return checker.typeToString(type, undefined, ts.TypeFormatFlags.InTypeAlias)
+}
+
+export function checkConstValue(params: ConstValueCheckParams): ConstValueVerdict {
+  const { context, className, propertyName, rawValue } = params
+  const propertyType = collectViewModelPropertyTypes(context, className).get(propertyName)
+
+  if (propertyType === undefined) return { accepted: 'unchecked' }
+  if (classifyType(propertyType) === 'unknown') return { accepted: 'unchecked' }
+  if (!isScalarType(propertyType)) return { accepted: false, reason: 'nonLiteralType' }
+
+  const isAssignable = candidateTypes(rawValue, context.checker).some((candidate) =>
+    context.checker.isTypeAssignableTo(candidate, propertyType),
+  )
+  if (isAssignable) return { accepted: true }
+
+  return {
+    accepted: false,
+    reason: 'literalMismatch',
+    expectedTypeText: toExpectedTypeText(propertyType, context.checker),
+  }
 }

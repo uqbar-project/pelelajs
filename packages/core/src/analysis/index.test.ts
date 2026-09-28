@@ -1,9 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import * as fs from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { ViewModelSourceNotFoundError } from '../errors/ViewModelSourceNotFoundError'
 import {
   analyzeViewModelModule,
+  checkConstValue,
   classifyViewModelIssue,
+  createViewModelProgramContext,
   extractViewModelPropertyTypes,
   pascalCaseFromFileName,
+  type ViewModelProgramContext,
 } from './index'
 
 const CONVERTER_SOURCE = 'export class Converter {}'
@@ -272,11 +279,29 @@ describe('pascalCaseFromFileName', () => {
 })
 
 describe('extractViewModelPropertyTypes', () => {
-  const extractCounter = (tsSource: string) => extractViewModelPropertyTypes(tsSource, 'Counter')
+  let testDir: string
+
+  beforeEach(() => {
+    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-analysis-'))
+  })
+
+  afterEach(() => {
+    fs.rmSync(testDir, { recursive: true, force: true })
+  })
+
+  const writeModule = (tsSource: string, fileName: string): string => {
+    const tsPath = path.join(testDir, fileName)
+    fs.writeFileSync(tsPath, tsSource)
+    return tsPath
+  }
+
+  const writeViewModel = (tsSource: string): string => writeModule(tsSource, 'counter.ts')
+
+  const extractCounter = (tsSource: string) =>
+    extractViewModelPropertyTypes(writeViewModel(tsSource), 'Counter')
 
   it('classifies typed properties, initializer-inferred properties and definite-assignment properties', () => {
-    const types = extractViewModelPropertyTypes(
-      `export class Counter {
+    const types = extractCounter(`export class Counter {
   value = 0
   total = 0
   quantity!: number
@@ -286,9 +311,7 @@ describe('extractViewModelPropertyTypes', () => {
   when: Date = new Date()
   items: string[] = []
   dynamic
-}`,
-      'Counter',
-    )
+}`)
 
     expect(types).toEqual({
       value: 'number',
@@ -387,7 +410,7 @@ describe('extractViewModelPropertyTypes', () => {
 
   it('collects base class types for same-file inheritance and prefers own members', () => {
     const types = extractViewModelPropertyTypes(
-      `export class BaseCounter {
+      writeViewModel(`export class BaseCounter {
   base = 0
   shared = 'from-base'
 }
@@ -395,7 +418,7 @@ describe('extractViewModelPropertyTypes', () => {
 export class Counter extends BaseCounter {
   shared = 2
   own = 1
-}`,
+}`),
       'Counter',
     )
 
@@ -403,7 +426,10 @@ export class Counter extends BaseCounter {
   })
 
   it('returns an empty map when the class does not exist', () => {
-    const types = extractViewModelPropertyTypes('export class BaseCounter {}', 'MissingClass')
+    const types = extractViewModelPropertyTypes(
+      writeViewModel('export class BaseCounter {}'),
+      'MissingClass',
+    )
 
     expect(types).toEqual({})
   })
@@ -521,7 +547,7 @@ export class Counter extends ns.BaseCounter {
     expect(types).toEqual({ other: 'number', value: 'number' })
   })
 
-  it('skips base types when the extends expression is not a simple class reference', () => {
+  it('ignores base members when the extends expression is not a class reference', () => {
     const types = extractCounter(`export class BaseCounter {
   base = 0
 }
@@ -537,7 +563,7 @@ export class Counter extends factory(BaseCounter) {
     expect(types).toEqual({ value: 'number' })
   })
 
-  it('falls back to the getter body when the type annotation is unknown', () => {
+  it('classifies a getter with a nullish return type as unknown', () => {
     const types = extractCounter(`export class Counter {
   get count(): null | undefined {
     return undefined
@@ -573,5 +599,285 @@ export class Counter extends factory(BaseCounter) {
     const types = extractCounter('export class Counter {\n  value = 1\n  reset() {}\n}')
 
     expect(types).toEqual({ value: 'number' })
+  })
+
+  it('resolves a type alias of string literals to string', () => {
+    const types = extractCounter(`type Size = 'sm' | 'lg'
+export class Counter {
+  size: Size = 'sm'
+}`)
+
+    expect(types).toEqual({ size: 'string' })
+  })
+
+  it('resolves a type alias of number literals to number', () => {
+    const types = extractCounter(`type Level = 1 | 2
+export class Counter {
+  level: Level = 1
+}`)
+
+    expect(types).toEqual({ level: 'number' })
+  })
+
+  it('resolves a string enum to string', () => {
+    const types = extractCounter(`enum Color { Red = 'red', Blue = 'blue' }
+export class Counter {
+  color: Color = Color.Red
+}`)
+
+    expect(types).toEqual({ color: 'string' })
+  })
+
+  it('classifies a bigint literal union as other', () => {
+    const types = extractCounter(`type Huge = 1n | 2n
+export class Counter {
+  huge: Huge = 1n
+}`)
+
+    expect(types).toEqual({ huge: 'other' })
+  })
+
+  it('classifies a union of object literals as other', () => {
+    const types = extractCounter(`type Shape = { a: 1 } | { b: 2 }
+export class Counter {
+  shape: Shape = { a: 1 }
+}`)
+
+    expect(types).toEqual({ shape: 'other' })
+  })
+
+  it('marks a heterogeneous literal union as other', () => {
+    const types = extractCounter(`type Mixed = 'a' | 1 | true
+export class Counter {
+  mixed: Mixed = 'a'
+}`)
+
+    expect(types).toEqual({ mixed: 'other' })
+  })
+
+  it('classifies an any property as unknown so the runtime falls back to typeof', () => {
+    const types = extractCounter('export class Counter {\n  anything: any = 1\n}')
+
+    expect(types).toEqual({ anything: 'unknown' })
+  })
+
+  it('classifies an unknown property as unknown', () => {
+    const types = extractCounter('export class Counter {\n  mystery: unknown = 1\n}')
+
+    expect(types).toEqual({ mystery: 'unknown' })
+  })
+
+  it('resolves a type alias imported from another module', () => {
+    writeModule(`export type Size = 'sm' | 'lg'`, 'sizes.ts')
+    const types = extractViewModelPropertyTypes(
+      writeViewModel(`import { Size } from './sizes'
+export class Counter {
+  size: Size = 'sm'
+}`),
+      'Counter',
+    )
+
+    expect(types).toEqual({ size: 'string' })
+  })
+
+  it('collects inherited property types from a base class in another module', () => {
+    writeModule(
+      `export class BaseCounter {
+  inherited = 'from-base'
+}`,
+      'base.ts',
+    )
+    const types = extractViewModelPropertyTypes(
+      writeViewModel(`import { BaseCounter } from './base'
+export class Counter extends BaseCounter {
+  own = 1
+}`),
+      'Counter',
+    )
+
+    expect(types).toEqual({ inherited: 'string', own: 'number' })
+  })
+
+  it('ignores private and static members inherited from a base class', () => {
+    writeModule(
+      `export class BaseCounter {
+  private secret = 1
+  protected reserved = 'x'
+  static shared = 0
+  inherited = 'from-base'
+}`,
+      'base.ts',
+    )
+    const types = extractViewModelPropertyTypes(
+      writeViewModel(`import { BaseCounter } from './base'
+export class Counter extends BaseCounter {
+  own = 1
+}`),
+      'Counter',
+    )
+
+    expect(types).toEqual({ inherited: 'string', own: 'number' })
+  })
+
+  it('fails fast when the view model path cannot be read by the program', () => {
+    const missingPath = path.join(testDir, 'missing-counter.ts')
+
+    expect(() => extractViewModelPropertyTypes(missingPath, 'Counter')).toThrowError(
+      new ViewModelSourceNotFoundError({ tsPath: missingPath }),
+    )
+  })
+})
+
+describe('checkConstValue', () => {
+  const viewModelSource = `export type Size = 'sm' | 'lg'
+export type Mixed = 'a' | 1 | true
+export class Counter {
+  size: Size = 'sm'
+  mixed: Mixed = 'a'
+  count: number = 0
+  active: boolean = false
+  label: string = ''
+  config = { level: 1 }
+  anything: any = 1
+  mystery: unknown = 1
+}`
+
+  let testDir: string
+  let context: ViewModelProgramContext
+
+  beforeEach(() => {
+    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-const-'))
+    const tsPath = path.join(testDir, 'counter.ts')
+    fs.writeFileSync(tsPath, viewModelSource)
+    context = createViewModelProgramContext(tsPath)
+  })
+
+  afterEach(() => {
+    fs.rmSync(testDir, { recursive: true, force: true })
+  })
+
+  const check = (propertyName: string, rawValue: string) =>
+    checkConstValue({ context, className: 'Counter', propertyName, rawValue })
+
+  it('accepts a number literal attribute value for a number property', () => {
+    expect(check('count', '5')).toEqual({ accepted: true })
+    expect(check('count', '5.5')).toEqual({ accepted: true })
+  })
+
+  it('rejects a non numeric attribute value for a number property', () => {
+    expect(check('count', 'abc')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: 'number',
+    })
+  })
+
+  it('accepts the boolean literals true and false for a boolean property', () => {
+    expect(check('active', 'true')).toEqual({ accepted: true })
+    expect(check('active', 'false')).toEqual({ accepted: true })
+  })
+
+  it('rejects a non boolean attribute value for a boolean property', () => {
+    expect(check('active', 'yes')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: 'boolean',
+    })
+  })
+
+  it('accepts any attribute value for a string property, including numbers and booleans', () => {
+    expect(check('label', 'anything')).toEqual({ accepted: true })
+    expect(check('label', '5')).toEqual({ accepted: true })
+    expect(check('label', 'true')).toEqual({ accepted: true })
+  })
+
+  it('accepts an attribute value listed in a type alias of string literals', () => {
+    expect(check('size', 'lg')).toEqual({ accepted: true })
+    expect(check('size', 'sm')).toEqual({ accepted: true })
+  })
+
+  it('rejects an attribute value outside a type alias of string literals and names the allowed ones', () => {
+    expect(check('size', 'xx')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '"sm" | "lg"',
+    })
+  })
+
+  it('rejects a numeric attribute value for a type alias of string literals', () => {
+    expect(check('size', '5')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '"sm" | "lg"',
+    })
+  })
+
+  it('accepts every member of a heterogeneous literal union', () => {
+    expect(check('mixed', 'a')).toEqual({ accepted: true })
+    expect(check('mixed', '1')).toEqual({ accepted: true })
+    expect(check('mixed', 'true')).toEqual({ accepted: true })
+  })
+
+  it('rejects a value outside a heterogeneous literal union and names the allowed ones', () => {
+    const expected = {
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: 'true | "a" | 1',
+    }
+
+    expect(check('mixed', 'zz')).toEqual(expected)
+    expect(check('mixed', 'false')).toEqual(expected)
+  })
+
+  it('reports a non literal type as unsupported rather than as a value mismatch', () => {
+    expect(check('config', 'anything')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+  })
+
+  it('leaves any and unknown properties unchecked', () => {
+    expect(check('anything', 'whatever')).toEqual({ accepted: 'unchecked' })
+    expect(check('mystery', 'whatever')).toEqual({ accepted: 'unchecked' })
+  })
+
+  it('leaves a property the view model does not declare unchecked', () => {
+    expect(check('notDeclared', 'whatever')).toEqual({ accepted: 'unchecked' })
+  })
+
+  it('resolves a type alias imported from another module against the current content of that module', () => {
+    const sizesPath = path.join(testDir, 'sizes.ts')
+    const tsPath = path.join(testDir, 'aliased.ts')
+    fs.writeFileSync(sizesPath, `export type Size = 'sm' | 'lg'`)
+    fs.writeFileSync(
+      tsPath,
+      `import { Size } from './sizes'
+export class Aliased {
+  size: Size = 'sm'
+}`,
+    )
+
+    const checkAliased = (viewModelContext: ViewModelProgramContext, rawValue: string) =>
+      checkConstValue({
+        context: viewModelContext,
+        className: 'Aliased',
+        propertyName: 'size',
+        rawValue,
+      })
+
+    expect(checkAliased(createViewModelProgramContext(tsPath), 'xx')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '"sm" | "lg"',
+    })
+
+    fs.writeFileSync(sizesPath, `export type Size = 'xs' | 'xl'`)
+
+    // A fresh context must resolve the alias against the rewritten module, so the
+    // rejected value stays rejected and the allowed values in the message change.
+    const refreshed = createViewModelProgramContext(tsPath)
+    expect(checkAliased(refreshed, 'xx')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '"xs" | "xl"',
+    })
+    expect(checkAliased(refreshed, 'xs')).toEqual({ accepted: true })
   })
 })

@@ -83,6 +83,9 @@ type ErrorTranslations = {
     constExpectedBoolean: string
     constUnsupportedValue: string
   }
+  analysis: {
+    viewModelSourceNotFound: string
+  }
   ui: {
     errorPage: {
       title: string

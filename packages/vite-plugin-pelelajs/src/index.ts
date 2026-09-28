@@ -113,7 +113,7 @@ function findComponentFiles(srcDir: string): ComponentFileMetadata[] {
         pelelaPath: toImportPath(pelelaPath),
         viewModelName,
         cssPaths,
-        typeMap: extractViewModelPropertyTypes(tsSource, viewModelName),
+        typeMap: extractViewModelPropertyTypes(tsPath, viewModelName),
         issue,
       }
     })

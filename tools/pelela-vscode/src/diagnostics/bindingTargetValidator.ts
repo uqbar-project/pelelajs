@@ -3,7 +3,7 @@ import { extractViewModelPropertyTypes, type ViewModelPropertyTypes } from 'pele
 import * as vscode from 'vscode'
 import { t } from '../i18n/index'
 import { extractViewModelMembers, type ViewModelMembers } from '../parsers/viewModelParser'
-import { findViewModelFile, readFileContent } from '../utils/fileUtils'
+import { findViewModelFile } from '../utils/fileUtils'
 import { isComponentTag, resolveChildComponent } from './childComponentResolver'
 import { makeDiagnostic } from './createDiagnostic'
 import { getViewModelName } from './scanDocument'
@@ -215,10 +215,7 @@ export function validateBindingTypes(
   const parentTsPath = findViewModelFile(document.uri)
   if (parentTsPath === null) return []
 
-  const parentKindMap = extractViewModelPropertyTypes(
-    readFileContent(parentTsPath),
-    parentViewModelName
-  )
+  const parentKindMap = extractViewModelPropertyTypes(parentTsPath, parentViewModelName)
 
   return tags.flatMap((tag) => {
     if (!isComponentTag(tag.tagName)) return []
@@ -233,7 +230,7 @@ export function validateBindingTypes(
     if (childComponent === null) return []
 
     const childKindMap = extractViewModelPropertyTypes(
-      readFileContent(childComponent.tsPath),
+      childComponent.tsPath,
       childComponent.viewModelName
     )
     const childMembers = extractViewModelMembers(

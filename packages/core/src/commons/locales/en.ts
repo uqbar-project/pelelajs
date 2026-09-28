@@ -129,6 +129,9 @@ const errors = {
     constUnsupportedValue:
       'it does not accept objects or other values; only number, boolean or string literals are allowed',
   },
+  analysis: {
+    viewModelSourceNotFound: 'could not read the view model source file at {{path}}',
+  },
   ui: {
     errorPage: {
       title: 'Pelela Error',

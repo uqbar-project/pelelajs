@@ -3,7 +3,6 @@ import { extractViewModelPropertyTypes, type ViewModelPropertyTypes } from 'pele
 import * as vscode from 'vscode'
 import { t } from '../i18n/index'
 import { extractViewModelMembers, type ViewModelMembers } from '../parsers/viewModelParser'
-import { readFileContent } from '../utils/fileUtils'
 import { isSettableField } from './bindingTargetValidator'
 import { isComponentTag, resolveChildComponent } from './childComponentResolver'
 import { makeDiagnostic } from './createDiagnostic'
@@ -23,10 +22,7 @@ function resolveChildPropertyTypes(
   if (childComponent === null) return null
 
   return {
-    typeMap: extractViewModelPropertyTypes(
-      readFileContent(childComponent.tsPath),
-      childComponent.viewModelName
-    ),
+    typeMap: extractViewModelPropertyTypes(childComponent.tsPath, childComponent.viewModelName),
     members: extractViewModelMembers(childComponent.tsPath, childComponent.viewModelName),
     viewModelName: childComponent.viewModelName,
   }
