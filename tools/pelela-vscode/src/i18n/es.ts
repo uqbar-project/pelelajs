@@ -44,6 +44,8 @@ const diagnostics = {
     'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" no está definida en el ViewModel hijo. ¿Quisiste decir "{{suggestedName}}"?',
   childPropertyReadOnly:
     'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" es de solo lectura. Definí un atributo escribible en el ViewModel hijo para recibir el valor.',
+  childPropertyNotPublic:
+    'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" es private o protected y no se puede usar en un binding de componente.',
   bindingTypeMismatch:
     'Componente <{{tag}}>: el atributo "{{attr}}" recibe {{parentKind}} (propiedad padre "{{parentKey}}") pero la propiedad hijo "{{childKey}}" es {{childKind}}.',
   bindingKindNumber: 'un número',

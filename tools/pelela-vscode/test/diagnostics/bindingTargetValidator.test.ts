@@ -74,6 +74,14 @@ function childPropertyReadOnly(
   return t('diagnostics.childPropertyReadOnly', { name, tag, viewModel })
 }
 
+function childPropertyNotPublic(
+  name: string,
+  tag = 'counter-view-model',
+  viewModel = 'CounterViewModel'
+): string {
+  return t('diagnostics.childPropertyNotPublic', { name, tag, viewModel })
+}
+
 describe('validateBindingTargets', () => {
   let testDir: string
   let parentDocumentPath: string
@@ -204,26 +212,26 @@ describe('validateBindingTargets', () => {
     assert.strictEqual(diagnostics.length, 0)
   })
 
-  it('rejects a private field as a prop target', () => {
+  it('reports a non-public diagnostic when a private field is used as a prop target', () => {
     const diagnostics = validate(
       PARENT_TEMPLATE('<counter-view-model prop-_limit="count"></counter>')
     )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      childPropertyNotFound('_limit'),
+      childPropertyNotPublic('_limit'),
       vscode.DiagnosticSeverity.Error
     )
   })
 
-  it('rejects a protected field as a prop target', () => {
+  it('reports a non-public diagnostic when a protected field is used as a prop target', () => {
     const diagnostics = validate(
       PARENT_TEMPLATE('<counter-view-model prop-reserved="count"></counter>')
     )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      childPropertyNotFound('reserved'),
+      childPropertyNotPublic('reserved'),
       vscode.DiagnosticSeverity.Error
     )
   })

@@ -80,6 +80,17 @@ function validateChildProperty(params: {
 
   if (isReservedPropertyKey(childKey)) return []
 
+  if (members.nonPublicProperties.includes(childKey)) {
+    return [
+      makeDiagnostic(
+        attribute.nameRange,
+        'diagnostics.childPropertyNotPublic',
+        { name: childKey, tag: tag.tagName, viewModel: viewModelName },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+
   if (isSettableField(members, childKey)) return []
 
   if (isReadOnlyProperty(members, childKey)) {

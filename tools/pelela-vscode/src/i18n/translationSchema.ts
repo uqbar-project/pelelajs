@@ -24,6 +24,7 @@ type DiagnosticsMessages = {
   childPropertyNotFound: string
   childPropertyCaseMismatch: string
   childPropertyReadOnly: string
+  childPropertyNotPublic: string
   bindingTypeMismatch: string
   bindingKindNumber: string
   bindingKindString: string

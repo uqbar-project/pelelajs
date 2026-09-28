@@ -6,6 +6,7 @@ export interface ViewModelMembers {
   properties: string[]
   writableProperties: string[]
   readonlyProperties: string[]
+  nonPublicProperties: string[]
   methods: string[]
   getters: string[]
   setters: string[]
@@ -98,31 +99,55 @@ function isPublicReadonlyMember(modifierFlags: ts.ModifierFlags): boolean {
   return isPublicMember(modifierFlags) && (modifierFlags & ts.ModifierFlags.Readonly) !== 0
 }
 
+function isNonPublicMember(modifierFlags: ts.ModifierFlags): boolean {
+  return (
+    (modifierFlags & ts.ModifierFlags.Private) !== 0 ||
+    (modifierFlags & ts.ModifierFlags.Protected) !== 0
+  )
+}
+
 function getMemberInfo(classMember: ts.ClassElement): {
   name: string
   kind: MemberKind
   writable: boolean
   readonly: boolean
+  nonPublic: boolean
 } | null {
   const name = getDeclarationName(classMember)
   if (!name) return null
   if (name === 'constructor' || name === 'if') return null
   if (ts.isMethodDeclaration(classMember)) {
-    return { name, kind: 'method', writable: false, readonly: false }
+    return { name, kind: 'method', writable: false, readonly: false, private: false }
   }
   if (ts.isGetAccessorDeclaration(classMember)) {
-    return { name, kind: 'getter', writable: false, readonly: false }
+    const modifierFlags = ts.getCombinedModifierFlags(classMember)
+    return {
+      name,
+      kind: 'getter',
+      writable: false,
+      readonly: false,
+      nonPublic: isNonPublicMember(modifierFlags),
+    }
   }
   if (ts.isSetAccessorDeclaration(classMember)) {
+    const modifierFlags = ts.getCombinedModifierFlags(classMember)
     return {
       name,
       kind: 'setter',
-      writable: isPublicWritableMember(ts.getCombinedModifierFlags(classMember)),
+      writable: isPublicWritableMember(modifierFlags),
       readonly: false,
+      nonPublic: isNonPublicMember(modifierFlags),
     }
   }
   if (isArrowProperty(classMember)) {
-    return { name, kind: 'arrow', writable: false, readonly: false }
+    const modifierFlags = ts.getCombinedModifierFlags(classMember)
+    return {
+      name,
+      kind: 'arrow',
+      writable: false,
+      readonly: false,
+      nonPublic: isNonPublicMember(modifierFlags),
+    }
   }
   const modifierFlags = ts.getCombinedModifierFlags(classMember)
   return {
@@ -130,6 +155,7 @@ function getMemberInfo(classMember: ts.ClassElement): {
     kind: 'property',
     writable: isPublicWritableMember(modifierFlags),
     readonly: isPublicReadonlyMember(modifierFlags),
+    nonPublic: isNonPublicMember(modifierFlags),
   }
 }
 
@@ -147,6 +173,7 @@ function collectViewModelMembers(
       properties: [],
       writableProperties: [],
       readonlyProperties: [],
+      nonPublicProperties: [],
       methods: [],
       getters: [],
       setters: [],
@@ -169,24 +196,37 @@ function collectViewModelMembers(
         kind: MemberKind
         writable: boolean
         readonly: boolean
+        nonPublic: boolean
       } => memberInfo !== null
     )
     .reduce(
-      (accumulator, { name, kind, writable, readonly }) => {
+      (accumulator, { name, kind, writable, readonly, nonPublic }) => {
         if (kind === 'method') {
           accumulator.methods.push(name)
         } else if (kind === 'arrow') {
           accumulator.arrows.push(name)
+          if (nonPublic) {
+            accumulator.nonPublicProperties.push(name)
+          }
         } else if (kind === 'setter') {
           accumulator.setters.push(name)
+          if (nonPublic && !accumulator.nonPublicProperties.includes(name)) {
+            accumulator.nonPublicProperties.push(name)
+          }
           if (writable) {
             accumulator.writableProperties.push(name)
           }
         } else if (kind === 'getter') {
           accumulator.properties.push(name)
           accumulator.getters.push(name)
+          if (nonPublic && !accumulator.nonPublicProperties.includes(name)) {
+            accumulator.nonPublicProperties.push(name)
+          }
         } else {
           accumulator.properties.push(name)
+          if (nonPublic) {
+            accumulator.nonPublicProperties.push(name)
+          }
           if (writable) {
             accumulator.writableProperties.push(name)
           }
@@ -200,6 +240,7 @@ function collectViewModelMembers(
         properties: [...paramProperties],
         writableProperties: [...writableParamProperties],
         readonlyProperties: [...getReadonlyParameterPropertyNames(classDeclaration)],
+        nonPublicProperties: [...getNonPublicParameterPropertyNames(classDeclaration)],
         methods: [] as string[],
         getters: [] as string[],
         setters: [] as string[],
@@ -235,6 +276,9 @@ function collectViewModelMembers(
         const inheritedReadonlyProperties = baseMembers.readonlyProperties.filter(
           (property) => !directMemberNames.has(property)
         )
+        const inheritedNonPublicProperties = baseMembers.nonPublicProperties.filter(
+          (property) => !directMemberNames.has(property)
+        )
         return {
           properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
           writableProperties: [
@@ -242,6 +286,9 @@ function collectViewModelMembers(
           ],
           readonlyProperties: [
             ...new Set([...directMembers.readonlyProperties, ...inheritedReadonlyProperties]),
+          ],
+          nonPublicProperties: [
+            ...new Set([...directMembers.nonPublicProperties, ...inheritedNonPublicProperties]),
           ],
           methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
           getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
@@ -267,6 +314,7 @@ export function extractViewModelMembers(
       properties: [],
       writableProperties: [],
       readonlyProperties: [],
+      nonPublicProperties: [],
       methods: [],
       getters: [],
       setters: [],
@@ -839,6 +887,20 @@ function getReadonlyParameterPropertyNames(declaration: ts.ClassDeclaration): st
       (param) =>
         isParameterProperty(param) &&
         isPublicReadonlyMember(ts.getCombinedModifierFlags(param))
+    )
+    .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function getNonPublicParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
+  const ctor = declaration.members.find((member): member is ts.ConstructorDeclaration =>
+    ts.isConstructorDeclaration(member)
+  )
+  if (!ctor) return []
+  return ctor.parameters
+    .filter(
+      (param) =>
+        isParameterProperty(param) && isNonPublicMember(ts.getCombinedModifierFlags(param))
     )
     .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
     .filter((name) => name !== '')
