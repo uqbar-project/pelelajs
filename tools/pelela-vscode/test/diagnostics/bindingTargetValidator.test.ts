@@ -228,14 +228,14 @@ describe('validateBindingTargets', () => {
     )
   })
 
-  it('rejects a readonly field as a prop target', () => {
+  it('reports a read-only diagnostic when a readonly field is used as a prop target', () => {
     const diagnostics = validate(
       PARENT_TEMPLATE('<counter-view-model prop-fixed="count"></counter>')
     )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      childPropertyNotFound('fixed'),
+      childPropertyReadOnly('fixed'),
       vscode.DiagnosticSeverity.Error
     )
   })

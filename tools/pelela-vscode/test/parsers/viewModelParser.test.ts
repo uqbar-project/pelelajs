@@ -161,6 +161,7 @@ export interface Product {
       assert.ok(!members.writableProperties.includes('shared'), 'static field is not writable')
       assert.ok(members.writableProperties.includes('total'), 'getter/setter is writable')
       assert.ok(!members.writableProperties.includes('isLucky'), 'getter-only is not writable')
+      assert.deepStrictEqual(members.readonlyProperties, ['fixed'])
     })
 
     it('should expose only public non-readonly parameter properties as writableProperties', () => {
@@ -185,6 +186,7 @@ export interface Product {
         !members.writableProperties.includes('hidden'),
         'protected parameter is not writable'
       )
+      assert.deepStrictEqual(members.readonlyProperties, ['id'])
     })
 
     it('should classify arrow function fields as arrows, not properties, methods, or getters', () => {

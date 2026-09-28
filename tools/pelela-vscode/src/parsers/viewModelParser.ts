@@ -5,6 +5,7 @@ import * as ts from 'typescript'
 export interface ViewModelMembers {
   properties: string[]
   writableProperties: string[]
+  readonlyProperties: string[]
   methods: string[]
   getters: string[]
   setters: string[]
@@ -82,36 +83,53 @@ function isArrowProperty(classMember: ts.ClassElement): boolean {
   )
 }
 
-function isPublicWritableMember(modifierFlags: ts.ModifierFlags): boolean {
+function isPublicMember(modifierFlags: ts.ModifierFlags): boolean {
   return (
     (modifierFlags & ts.ModifierFlags.Private) === 0 &&
-    (modifierFlags & ts.ModifierFlags.Protected) === 0 &&
-    (modifierFlags & ts.ModifierFlags.Readonly) === 0
+    (modifierFlags & ts.ModifierFlags.Protected) === 0
   )
+}
+
+function isPublicWritableMember(modifierFlags: ts.ModifierFlags): boolean {
+  return isPublicMember(modifierFlags) && (modifierFlags & ts.ModifierFlags.Readonly) === 0
+}
+
+function isPublicReadonlyMember(modifierFlags: ts.ModifierFlags): boolean {
+  return isPublicMember(modifierFlags) && (modifierFlags & ts.ModifierFlags.Readonly) !== 0
 }
 
 function getMemberInfo(classMember: ts.ClassElement): {
   name: string
   kind: MemberKind
   writable: boolean
+  readonly: boolean
 } | null {
   const name = getDeclarationName(classMember)
   if (!name) return null
   if (name === 'constructor' || name === 'if') return null
-  if (ts.isMethodDeclaration(classMember)) return { name, kind: 'method', writable: false }
-  if (ts.isGetAccessorDeclaration(classMember)) return { name, kind: 'getter', writable: false }
+  if (ts.isMethodDeclaration(classMember)) {
+    return { name, kind: 'method', writable: false, readonly: false }
+  }
+  if (ts.isGetAccessorDeclaration(classMember)) {
+    return { name, kind: 'getter', writable: false, readonly: false }
+  }
   if (ts.isSetAccessorDeclaration(classMember)) {
     return {
       name,
       kind: 'setter',
       writable: isPublicWritableMember(ts.getCombinedModifierFlags(classMember)),
+      readonly: false,
     }
   }
-  if (isArrowProperty(classMember)) return { name, kind: 'arrow', writable: false }
+  if (isArrowProperty(classMember)) {
+    return { name, kind: 'arrow', writable: false, readonly: false }
+  }
+  const modifierFlags = ts.getCombinedModifierFlags(classMember)
   return {
     name,
     kind: 'property',
-    writable: isPublicWritableMember(ts.getCombinedModifierFlags(classMember)),
+    writable: isPublicWritableMember(modifierFlags),
+    readonly: isPublicReadonlyMember(modifierFlags),
   }
 }
 
@@ -128,6 +146,7 @@ function collectViewModelMembers(
     return {
       properties: [],
       writableProperties: [],
+      readonlyProperties: [],
       methods: [],
       getters: [],
       setters: [],
@@ -143,11 +162,17 @@ function collectViewModelMembers(
     .filter((classMember) => !isStaticMember(classMember))
     .map(getMemberInfo)
     .filter(
-      (memberInfo): memberInfo is { name: string; kind: MemberKind; writable: boolean } =>
-        memberInfo !== null
+      (
+        memberInfo
+      ): memberInfo is {
+        name: string
+        kind: MemberKind
+        writable: boolean
+        readonly: boolean
+      } => memberInfo !== null
     )
     .reduce(
-      (accumulator, { name, kind, writable }) => {
+      (accumulator, { name, kind, writable, readonly }) => {
         if (kind === 'method') {
           accumulator.methods.push(name)
         } else if (kind === 'arrow') {
@@ -165,12 +190,16 @@ function collectViewModelMembers(
           if (writable) {
             accumulator.writableProperties.push(name)
           }
+          if (readonly) {
+            accumulator.readonlyProperties.push(name)
+          }
         }
         return accumulator
       },
       {
         properties: [...paramProperties],
         writableProperties: [...writableParamProperties],
+        readonlyProperties: [...getReadonlyParameterPropertyNames(classDeclaration)],
         methods: [] as string[],
         getters: [] as string[],
         setters: [] as string[],
@@ -203,10 +232,16 @@ function collectViewModelMembers(
         const inheritedWritableProperties = baseMembers.writableProperties.filter(
           (property) => !directMemberNames.has(property)
         )
+        const inheritedReadonlyProperties = baseMembers.readonlyProperties.filter(
+          (property) => !directMemberNames.has(property)
+        )
         return {
           properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
           writableProperties: [
             ...new Set([...directMembers.writableProperties, ...inheritedWritableProperties]),
+          ],
+          readonlyProperties: [
+            ...new Set([...directMembers.readonlyProperties, ...inheritedReadonlyProperties]),
           ],
           methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
           getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
@@ -231,6 +266,7 @@ export function extractViewModelMembers(
     return {
       properties: [],
       writableProperties: [],
+      readonlyProperties: [],
       methods: [],
       getters: [],
       setters: [],
@@ -788,6 +824,21 @@ function getWritableParameterPropertyNames(declaration: ts.ClassDeclaration): st
     .filter(
       (param) =>
         isParameterProperty(param) && isPublicWritableMember(ts.getCombinedModifierFlags(param))
+    )
+    .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function getReadonlyParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
+  const ctor = declaration.members.find((member): member is ts.ConstructorDeclaration =>
+    ts.isConstructorDeclaration(member)
+  )
+  if (!ctor) return []
+  return ctor.parameters
+    .filter(
+      (param) =>
+        isParameterProperty(param) &&
+        isPublicReadonlyMember(ts.getCombinedModifierFlags(param))
     )
     .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
     .filter((name) => name !== '')

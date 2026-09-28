@@ -32,7 +32,7 @@ export function isSettableField(members: ViewModelMembers, childKey: string): bo
 function isReadOnlyProperty(members: ViewModelMembers, childKey: string): boolean {
   const isGetter = members.getters.includes(childKey)
   const hasSetter = members.setters.includes(childKey)
-  return isGetter && !hasSetter
+  return members.readonlyProperties.includes(childKey) || (isGetter && !hasSetter)
 }
 
 function buildChildPropertyDiagnostic(params: {
