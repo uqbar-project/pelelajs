@@ -21,6 +21,7 @@ export class CounterViewModel extends BaseCounterViewModel {
   count = 0
   lastNumber = 0
   active = true
+  set amount(value: number) {}
   label = ''
   config = { level: 1 }
   items: string[] = []
@@ -111,6 +112,24 @@ describe('validateConstValues', () => {
 
     assert.strictEqual(numericValue.length, 0)
     assert.strictEqual(trimmedValue.length, 0)
+  })
+
+  it('validates const values for a property defined only by a setter', () => {
+    const invalidValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-amount="invalid"></counter>')
+    )
+    const validValue = validate(PARENT_TEMPLATE('<counter-view-model const-amount="42"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(invalidValue),
+      constError({
+        name: 'amount',
+        value: 'invalid',
+        expected: t('diagnostics.constValueExpectedNumber'),
+      }),
+      vscode.DiagnosticSeverity.Error
+    )
+    assert.strictEqual(validValue.length, 0)
   })
 
   it('validates const values for properties inherited from a base class in another file', () => {

@@ -770,7 +770,8 @@ export class Counter extends BaseCounter {
 })
 
 describe('checkConstValue', () => {
-  const viewModelSource = `export type Size = 'sm' | 'lg'
+  const viewModelSource = `class CustomModel {}
+export type Size = 'sm' | 'lg'
 export type Mixed = 'a' | 1 | true
 export enum Level { Low = 'low', High = 'high' }
 export class Counter {
@@ -779,6 +780,11 @@ export class Counter {
   mode: 'grid' | 'list' = 'grid'
   mixed: Mixed = 'a'
   count: number = 0
+  set quantity(value: number) {}
+  set enabled(value: boolean) {}
+  set scheduledAt(value: Date) {}
+  set model(value: CustomModel) {}
+  set optionalCount(value: number | null) {}
   active: boolean = false
   label: string = ''
   config = { level: 1 }
@@ -811,6 +817,42 @@ export class Counter {
 
   it('rejects a non numeric attribute value for a number property', () => {
     expect(check('count', 'abc')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: 'number',
+    })
+  })
+
+  it('validates const values using the parameter type of a setter-only property', () => {
+    expect(check('quantity', 'invalid')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: 'number',
+    })
+    expect(check('quantity', '42')).toEqual({ accepted: true })
+  })
+
+  it('validates boolean const values using the parameter type of a setter-only property', () => {
+    expect(check('enabled', 'true')).toEqual({ accepted: true })
+    expect(check('enabled', 'false')).toEqual({ accepted: true })
+    expect(check('enabled', 'yes')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: 'boolean',
+    })
+  })
+
+  it('rejects setter-only Date and custom class types as unsupported', () => {
+    expect(check('scheduledAt', '2026-09-28')).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+    })
+    expect(check('model', 'custom')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+  })
+
+  it('validates a nullable setter-only property using the compiler-resolved scalar type', () => {
+    expect(check('optionalCount', '42')).toEqual({ accepted: true })
+    expect(check('optionalCount', 'invalid')).toEqual({
       accepted: false,
       reason: 'literalMismatch',
       expectedTypeText: 'number',

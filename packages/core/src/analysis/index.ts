@@ -319,9 +319,18 @@ function isPropertyLikeSymbol(symbol: ts.Symbol): boolean {
   return (
     ts.isPropertyDeclaration(declaration) ||
     ts.isGetAccessorDeclaration(declaration) ||
+    ts.isSetAccessorDeclaration(declaration) ||
     ts.isParameter(declaration) ||
     ts.isPropertySignature(declaration)
   )
+}
+
+function getTypeOfPropertySymbol(symbol: ts.Symbol, checker: ts.TypeChecker): ts.Type {
+  const setterDeclaration = symbol.declarations?.find(ts.isSetAccessorDeclaration)
+  const setterParameter = setterDeclaration?.parameters[0]
+  return setterParameter === undefined
+    ? checker.getTypeOfSymbol(symbol)
+    : checker.getTypeAtLocation(setterParameter)
 }
 
 function getViewModelClassDeclaration(
@@ -373,7 +382,9 @@ export function collectViewModelPropertyTypes(
     context.checker
       .getPropertiesOfType(classType)
       .filter(isCollectablePropertySymbol)
-      .map((symbol) => [symbol.getName(), context.checker.getTypeOfSymbol(symbol)] as const),
+      .map(
+        (symbol) => [symbol.getName(), getTypeOfPropertySymbol(symbol, context.checker)] as const,
+      ),
   )
 }
 
