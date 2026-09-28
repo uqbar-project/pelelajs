@@ -1,7 +1,6 @@
-import * as fs from 'node:fs'
-import * as path from 'node:path'
 import { isPelelaRootTag, isStandardHtmlTag } from 'pelelajs/dom'
 import * as vscode from 'vscode'
+import { findChildTemplatePath } from '../utils/componentIndex'
 import { findViewModelFile } from '../utils/fileUtils'
 import { getViewModelName, scanFile } from './scanDocument'
 
@@ -18,9 +17,8 @@ export function resolveChildComponent(
   tagName: string,
   document: vscode.TextDocument
 ): ResolvedChildComponent | null {
-  const tagDirectory = path.dirname(document.uri.fsPath)
-  const childPelelaPath = path.join(tagDirectory, `${tagName}.pelela`)
-  if (!fs.existsSync(childPelelaPath)) return null
+  const childPelelaPath = findChildTemplatePath(tagName, document)
+  if (childPelelaPath === null) return null
 
   const viewModelName = getViewModelName(scanFile(childPelelaPath))
   if (viewModelName === undefined) return null

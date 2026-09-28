@@ -8,6 +8,7 @@ import { createCompletionProvider } from './providers/completionProvider'
 import { createDefinitionProvider } from './providers/definitionProvider'
 import { createHoverProvider } from './providers/hoverProvider'
 import { createTypeScriptDefinitionProvider } from './providers/tsDefinitionProvider'
+import { invalidateComponentIndex } from './utils/componentIndex'
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('[Pelela Extension] Activated')
@@ -36,10 +37,11 @@ export function activate(context: vscode.ExtensionContext) {
  * affected templates revalidated.
  */
 function registerViewModelWatcher(): vscode.Disposable {
-  const watcher = vscode.workspace.createFileSystemWatcher('**/*.{ts,tsx}')
+  const watcher = vscode.workspace.createFileSystemWatcher('**/*.{ts,tsx,pelela}')
 
   const onChange = (uri: vscode.Uri) => {
     invalidateViewModelLanguageService(uri.fsPath)
+    invalidateComponentIndex()
     refreshPelelaDiagnostics()
   }
 
@@ -51,11 +53,11 @@ function registerViewModelWatcher(): vscode.Disposable {
 }
 
 function refreshPelelaDiagnostics(): void {
-  for (const document of vscode.workspace.textDocuments) {
-    if (document.languageId === 'pelela') {
+  vscode.workspace.textDocuments
+    .filter((document) => document.languageId === 'pelela')
+    .forEach((document) => {
       vscode.commands.executeCommand('editor.action.validate', document.uri)
-    }
-  }
+    })
 }
 
 function enablePelelaContext() {

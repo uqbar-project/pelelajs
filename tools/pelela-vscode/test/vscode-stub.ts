@@ -1,3 +1,19 @@
+import * as path from 'node:path'
+
+interface StubWorkspaceFolder {
+  name: string
+  uri: { fsPath: string }
+}
+
+let workspaceFolders: StubWorkspaceFolder[] = []
+
+export function setWorkspaceFolders(folders: string[] | null): void {
+  workspaceFolders =
+    folders === null
+      ? []
+      : folders.map((fsPath) => ({ name: path.basename(fsPath), uri: { fsPath } }))
+}
+
 export const vscodeStub = {
   Uri: class Uri {
     fsPath: string
@@ -176,6 +192,10 @@ export const vscodeStub = {
     onDidCloseTextDocument: () => ({ dispose: () => {} }),
     onDidSaveTextDocument: () => ({ dispose: () => {} }),
     findFiles: (_globPattern: string) => Promise.resolve([]),
+    getWorkspaceFolder: (uri: { fsPath: string }) =>
+      workspaceFolders.find((folder: StubWorkspaceFolder) =>
+        uri.fsPath.startsWith(folder.uri.fsPath)
+      ),
   },
 
   env: {
