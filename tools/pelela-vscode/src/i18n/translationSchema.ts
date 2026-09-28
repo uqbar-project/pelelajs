@@ -17,6 +17,7 @@ type DiagnosticsMessages = {
   attributeNotAllowed: string
   invalidComponentAttribute: string
   constValueInvalid: string
+  constValueExpected: string
   constValueExpectedNumber: string
   constValueExpectedBoolean: string
   constValueUnsupported: string

@@ -33,6 +33,7 @@ const diagnostics = {
     "Componente '<{{tag}}>': el atributo '{{name}}' debe usar prefijo 'prop-', 'link-' o 'const-'",
   constValueInvalid:
     'Componente <{{tag}}> (ViewModel: {{viewModel}}): el const "{{name}}" recibe "{{value}}" pero {{expected}}.',
+  constValueExpected: 'debe ser {{expected}}',
   constValueExpectedNumber: 'debe ser un número',
   constValueExpectedBoolean: "debe ser 'true' o 'false'",
   constValueUnsupported:

@@ -1,5 +1,4 @@
-import { isNumberLiteral, parseBooleanLiteral, toCamelCase } from 'pelelajs'
-import type { ViewModelPropertyTypes } from 'pelelajs/analysis'
+import { toCamelCase } from 'pelelajs'
 import * as vscode from 'vscode'
 import { t } from '../i18n/index'
 import { acquireViewModelLanguageService } from '../parsers/viewModelLanguageServiceRegistry'
@@ -11,24 +10,41 @@ import type { AttrInfo, TagInfo } from './types'
 
 const CONST_PREFIX = 'const-'
 
+/**
+ * Plain scalar types keep their dedicated wording, because a bare type name reads
+ * worse than a sentence. Anything else is a union of allowed literals and is
+ * named as the checker resolved it.
+ */
+const SCALAR_EXPECTED_MESSAGES: Record<string, string> = {
+  number: 'diagnostics.constValueExpectedNumber',
+  boolean: 'diagnostics.constValueExpectedBoolean',
+}
+
 function isConstAttribute(name: string): boolean {
   return name.startsWith(CONST_PREFIX)
 }
 
-function resolveChildPropertyTypes(
-  tag: TagInfo,
-  document: vscode.TextDocument
-): { typeMap: ViewModelPropertyTypes; members: ViewModelMembers; viewModelName: string } | null {
+function expectedMessageFor(expectedTypeText: string): string {
+  const scalarKey = SCALAR_EXPECTED_MESSAGES[expectedTypeText]
+  return scalarKey === undefined
+    ? t('diagnostics.constValueExpected', { expected: expectedTypeText })
+    : t(scalarKey)
+}
+
+interface ResolvedChild {
+  tsPath: string
+  viewModelName: string
+  members: ViewModelMembers
+}
+
+function resolveChild(tag: TagInfo, document: vscode.TextDocument): ResolvedChild | null {
   const childComponent = resolveChildComponent(tag.tagName, document)
   if (childComponent === null) return null
 
   return {
-    typeMap: acquireViewModelLanguageService().propertyTypes(
-      childComponent.tsPath,
-      childComponent.viewModelName
-    ),
-    members: extractViewModelMembers(childComponent.tsPath, childComponent.viewModelName),
+    tsPath: childComponent.tsPath,
     viewModelName: childComponent.viewModelName,
+    members: extractViewModelMembers(childComponent.tsPath, childComponent.viewModelName),
   }
 }
 
@@ -55,50 +71,40 @@ function buildConstValueDiagnostic(
 function validateConstAttribute(params: {
   attribute: AttrInfo
   tag: TagInfo
-  viewModelName: string
-  typeMap: ViewModelPropertyTypes
-  members: ViewModelMembers
+  child: ResolvedChild
 }): vscode.Diagnostic[] {
-  const { attribute, tag, viewModelName, typeMap, members } = params
-  const childKey = toCamelCase(attribute.name.slice(CONST_PREFIX.length))
-  if (!isSettableField(members, childKey)) return []
-  const kind = typeMap[childKey]
-  if (kind === undefined || kind === 'unknown') return []
+  const { attribute, tag, child } = params
+  const propertyName = toCamelCase(attribute.name.slice(CONST_PREFIX.length))
+  if (!isSettableField(child.members, propertyName)) return []
 
-  if (kind === 'number' && !isNumberLiteral(attribute.value)) {
+  const verdict = acquireViewModelLanguageService().constValue({
+    tsPath: child.tsPath,
+    className: child.viewModelName,
+    propertyName,
+    rawValue: attribute.value,
+  })
+
+  if (verdict.accepted !== false) return []
+
+  if (verdict.reason === 'nonLiteralType') {
     return [
       buildConstValueDiagnostic(
         attribute,
         tag,
-        viewModelName,
-        t('diagnostics.constValueExpectedNumber')
-      ),
-    ]
-  }
-
-  if (kind === 'boolean' && parseBooleanLiteral(attribute.value.trim()) === null) {
-    return [
-      buildConstValueDiagnostic(
-        attribute,
-        tag,
-        viewModelName,
-        t('diagnostics.constValueExpectedBoolean')
-      ),
-    ]
-  }
-
-  if (kind === 'other') {
-    return [
-      buildConstValueDiagnostic(
-        attribute,
-        tag,
-        viewModelName,
+        child.viewModelName,
         t('diagnostics.constValueUnsupported')
       ),
     ]
   }
 
-  return []
+  return [
+    buildConstValueDiagnostic(
+      attribute,
+      tag,
+      child.viewModelName,
+      expectedMessageFor(verdict.expectedTypeText)
+    ),
+  ]
 }
 
 export function validateConstValues(
@@ -110,17 +116,9 @@ export function validateConstValues(
     const constAttributes = tag.attributes.filter((attribute) => isConstAttribute(attribute.name))
     if (constAttributes.length === 0) return []
 
-    const resolvedChild = resolveChildPropertyTypes(tag, document)
-    if (resolvedChild === null) return []
+    const child = resolveChild(tag, document)
+    if (child === null) return []
 
-    return constAttributes.flatMap((attribute) =>
-      validateConstAttribute({
-        attribute,
-        tag,
-        viewModelName: resolvedChild.viewModelName,
-        typeMap: resolvedChild.typeMap,
-        members: resolvedChild.members,
-      })
-    )
+    return constAttributes.flatMap((attribute) => validateConstAttribute({ attribute, tag, child }))
   })
 }

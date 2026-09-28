@@ -14,7 +14,9 @@ const COUNTER_PELELA_CONTENT = `<component view-model="CounterViewModel">
   <span bind-content="count"></span>
 </component>`
 
-const COUNTER_VIEW_MODEL_CONTENT = `export class CounterViewModel {
+const COUNTER_VIEW_MODEL_CONTENT = `export type Size = 'sm' | 'lg'
+export enum Level { Low = 'low', High = 'high' }
+export class CounterViewModel {
   count = 0
   lastNumber = 0
   active = true
@@ -23,6 +25,9 @@ const COUNTER_VIEW_MODEL_CONTENT = `export class CounterViewModel {
   items: string[] = []
   date = new Date()
   dynamic
+  size: Size = 'sm'
+  level: Level = Level.Low
+  mode: 'grid' | 'list' = 'grid'
 }`
 
 const NO_VIEW_MODEL_PELELA_CONTENT = `<component>
@@ -151,6 +156,72 @@ describe('validateConstValues', () => {
 
     assert.strictEqual(textValue.length, 0)
     assert.strictEqual(numericValue.length, 0)
+  })
+
+  it('accepts a value listed in a type alias of string literals', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter const-size="lg"></counter>'))
+
+    assert.strictEqual(diagnostics.length, 0)
+  })
+
+  it('names the allowed values when a value is outside a type alias of string literals', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter const-size="xx"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      constError({
+        name: 'size',
+        value: 'xx',
+        expected: t('diagnostics.constValueExpected', { expected: '"sm" | "lg"' }),
+      }),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects a numeric value for a type alias of string literals', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<counter const-size="5"></counter>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      constError({
+        name: 'size',
+        value: '5',
+        expected: t('diagnostics.constValueExpected', { expected: '"sm" | "lg"' }),
+      }),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('accepts a value listed in an inline union of string literals', () => {
+    const accepted = validate(PARENT_TEMPLATE('<counter const-mode="grid"></counter>'))
+    const rejected = validate(PARENT_TEMPLATE('<counter const-mode="zz"></counter>'))
+
+    assert.strictEqual(accepted.length, 0)
+    assertDiagnostic(
+      getSingleDiagnostic(rejected),
+      constError({
+        name: 'mode',
+        value: 'zz',
+        expected: t('diagnostics.constValueExpected', { expected: '"grid" | "list"' }),
+      }),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('accepts a string enum member because it holds that string at runtime', () => {
+    const accepted = validate(PARENT_TEMPLATE('<counter const-level="high"></counter>'))
+    const rejected = validate(PARENT_TEMPLATE('<counter const-level="mid"></counter>'))
+
+    assert.strictEqual(accepted.length, 0)
+    assertDiagnostic(
+      getSingleDiagnostic(rejected),
+      constError({
+        name: 'level',
+        value: 'mid',
+        expected: t('diagnostics.constValueExpected', { expected: '"low" | "high"' }),
+      }),
+      vscode.DiagnosticSeverity.Error
+    )
   })
 
   it('reports no diagnostic when the child component template does not exist', () => {

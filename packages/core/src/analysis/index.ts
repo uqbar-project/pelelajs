@@ -398,11 +398,61 @@ export interface ConstValueCheckParams {
 }
 
 /**
+ * String and numeric enum members are nominal types: a string enum member is
+ * not the string literal it holds, so the checker rejects `Level.High` for the
+ * attribute value `"high"`. At runtime a string enum member is that string and
+ * the attribute assigns it directly, so the member types have to be offered as
+ * candidates or every valid enum value becomes a false positive.
+ */
+function findEnumDeclaration(type: ts.Type): ts.EnumDeclaration | null {
+  const candidates = type.isUnion() ? type.types : [type]
+  const declarations = candidates.map(
+    (candidate) => (candidate.aliasSymbol ?? candidate.getSymbol())?.valueDeclaration,
+  )
+
+  const enumRelated = declarations.find(
+    (declaration) =>
+      declaration !== undefined &&
+      (ts.isEnumDeclaration(declaration) || ts.isEnumMember(declaration)),
+  )
+  if (enumRelated === undefined) return null
+
+  return ts.isEnumDeclaration(enumRelated) ? enumRelated : enumRelated.parent
+}
+
+function collectEnumMembers(type: ts.Type): ts.EnumMember[] {
+  const declaration = findEnumDeclaration(type)
+  return declaration === null ? [] : Array.from(declaration.members)
+}
+
+function enumMemberLiteral(member: ts.EnumMember): { text: string; isString: boolean } | null {
+  const initializer = member.initializer as ts.Expression | undefined
+  if (initializer === undefined) return null
+
+  // biome-ignore lint/suspicious/noUnnecessaryConditions: enum members are initialised with literal expressions, and this compiler API type guard is a real runtime check that Biome's type model cannot represent
+  if (ts.isNumericLiteral(initializer)) return { text: initializer.text, isString: false }
+  if (ts.isStringLiteral(initializer) || ts.isNoSubstitutionTemplateLiteral(initializer)) {
+    return { text: initializer.text, isString: true }
+  }
+  return null
+}
+
+function enumMemberTypesMatching(
+  rawValue: string,
+  type: ts.Type,
+  checker: ts.TypeChecker,
+): ts.Type[] {
+  return collectEnumMembers(type)
+    .filter((member) => enumMemberLiteral(member)?.text === rawValue)
+    .map((member) => checker.getTypeAtLocation(member))
+}
+
+/**
  * Every type the raw attribute text could stand for. Attribute values are always
  * strings in a template, so `const-count="5"` must be offered to the checker as
  * the number literal 5 as well as the string "5".
  */
-function candidateTypes(rawValue: string, checker: ts.TypeChecker): ts.Type[] {
+function candidateTypes(rawValue: string, type: ts.Type, checker: ts.TypeChecker): ts.Type[] {
   const candidates: ts.Type[] = [checker.getStringLiteralType(rawValue)]
 
   if (isNumberLiteral(rawValue)) {
@@ -414,10 +464,19 @@ function candidateTypes(rawValue: string, checker: ts.TypeChecker): ts.Type[] {
     candidates.push(booleanLiteral ? checker.getTrueType() : checker.getFalseType())
   }
 
+  candidates.push(...enumMemberTypesMatching(rawValue, type, checker))
+
   return candidates
 }
 
 function toExpectedTypeText(type: ts.Type, checker: ts.TypeChecker): string {
+  const enumValues = collectEnumMembers(type).flatMap((member) => {
+    const literal = enumMemberLiteral(member)
+    if (literal === null) return []
+    return [literal.isString ? `"${literal.text}"` : literal.text]
+  })
+  if (enumValues.length > 0) return unique(enumValues).join(' | ')
+
   return checker.typeToString(type, undefined, ts.TypeFormatFlags.InTypeAlias)
 }
 
@@ -429,7 +488,7 @@ export function checkConstValue(params: ConstValueCheckParams): ConstValueVerdic
   if (classifyType(propertyType) === 'unknown') return { accepted: 'unchecked' }
   if (!isScalarType(propertyType)) return { accepted: false, reason: 'nonLiteralType' }
 
-  const isAssignable = candidateTypes(rawValue, context.checker).some((candidate) =>
+  const isAssignable = candidateTypes(rawValue, propertyType, context.checker).some((candidate) =>
     context.checker.isTypeAssignableTo(candidate, propertyType),
   )
   if (isAssignable) return { accepted: true }

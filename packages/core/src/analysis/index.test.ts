@@ -731,8 +731,11 @@ export class Counter extends BaseCounter {
 describe('checkConstValue', () => {
   const viewModelSource = `export type Size = 'sm' | 'lg'
 export type Mixed = 'a' | 1 | true
+export enum Level { Low = 'low', High = 'high' }
 export class Counter {
   size: Size = 'sm'
+  level: Level = Level.Low
+  mode: 'grid' | 'list' = 'grid'
   mixed: Mixed = 'a'
   count: number = 0
   active: boolean = false
@@ -827,6 +830,28 @@ export class Counter {
 
     expect(check('mixed', 'zz')).toEqual(expected)
     expect(check('mixed', 'false')).toEqual(expected)
+  })
+
+  it('accepts a string enum member because it holds that string at runtime', () => {
+    expect(check('level', 'high')).toEqual({ accepted: true })
+    expect(check('level', 'low')).toEqual({ accepted: true })
+  })
+
+  it('names the allowed members when a value is outside a string enum', () => {
+    expect(check('level', 'mid')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '"low" | "high"',
+    })
+  })
+
+  it('resolves an inline union of string literals to its allowed values', () => {
+    expect(check('mode', 'grid')).toEqual({ accepted: true })
+    expect(check('mode', 'zz')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '"grid" | "list"',
+    })
   })
 
   it('reports a non literal type as unsupported rather than as a value mismatch', () => {
