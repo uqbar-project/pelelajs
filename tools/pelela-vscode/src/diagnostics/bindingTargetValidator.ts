@@ -1,7 +1,8 @@
 import { toCamelCase, toKebabCase } from 'pelelajs'
-import { extractViewModelPropertyTypes, type ViewModelPropertyTypes } from 'pelelajs/analysis'
+import type { ViewModelPropertyTypes } from 'pelelajs/analysis'
 import * as vscode from 'vscode'
 import { t } from '../i18n/index'
+import { acquireViewModelLanguageService } from '../parsers/viewModelLanguageServiceRegistry'
 import { extractViewModelMembers, type ViewModelMembers } from '../parsers/viewModelParser'
 import { findViewModelFile } from '../utils/fileUtils'
 import { isComponentTag, resolveChildComponent } from './childComponentResolver'
@@ -215,7 +216,8 @@ export function validateBindingTypes(
   const parentTsPath = findViewModelFile(document.uri)
   if (parentTsPath === null) return []
 
-  const parentKindMap = extractViewModelPropertyTypes(parentTsPath, parentViewModelName)
+  const languageService = acquireViewModelLanguageService()
+  const parentKindMap = languageService.propertyTypes(parentTsPath, parentViewModelName)
 
   return tags.flatMap((tag) => {
     if (!isComponentTag(tag.tagName)) return []
@@ -229,7 +231,7 @@ export function validateBindingTypes(
     const childComponent = resolveChildComponent(tag.tagName, document)
     if (childComponent === null) return []
 
-    const childKindMap = extractViewModelPropertyTypes(
+    const childKindMap = languageService.propertyTypes(
       childComponent.tsPath,
       childComponent.viewModelName
     )

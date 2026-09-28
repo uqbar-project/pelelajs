@@ -1,7 +1,8 @@
 import { isNumberLiteral, parseBooleanLiteral, toCamelCase } from 'pelelajs'
-import { extractViewModelPropertyTypes, type ViewModelPropertyTypes } from 'pelelajs/analysis'
+import type { ViewModelPropertyTypes } from 'pelelajs/analysis'
 import * as vscode from 'vscode'
 import { t } from '../i18n/index'
+import { acquireViewModelLanguageService } from '../parsers/viewModelLanguageServiceRegistry'
 import { extractViewModelMembers, type ViewModelMembers } from '../parsers/viewModelParser'
 import { isSettableField } from './bindingTargetValidator'
 import { isComponentTag, resolveChildComponent } from './childComponentResolver'
@@ -22,7 +23,10 @@ function resolveChildPropertyTypes(
   if (childComponent === null) return null
 
   return {
-    typeMap: extractViewModelPropertyTypes(childComponent.tsPath, childComponent.viewModelName),
+    typeMap: acquireViewModelLanguageService().propertyTypes(
+      childComponent.tsPath,
+      childComponent.viewModelName
+    ),
     members: extractViewModelMembers(childComponent.tsPath, childComponent.viewModelName),
     viewModelName: childComponent.viewModelName,
   }

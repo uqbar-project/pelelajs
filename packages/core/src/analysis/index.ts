@@ -195,8 +195,8 @@ const DEFAULT_COMPILER_OPTIONS: ts.CompilerOptions = {
   moduleResolution: ts.ModuleResolutionKind.Bundler,
 }
 
-function readCompilerOptions(tsPath: string): ts.CompilerOptions {
-  const configPath = ts.findConfigFile(tsPath, ts.sys.fileExists)
+export function resolveCompilerOptions(searchPath: string): ts.CompilerOptions {
+  const configPath = ts.findConfigFile(searchPath, ts.sys.fileExists)
   if (configPath === undefined) return DEFAULT_COMPILER_OPTIONS
 
   const parsedConfig = ts.getParsedCommandLineOfConfigFile(configPath, undefined, {
@@ -208,7 +208,7 @@ function readCompilerOptions(tsPath: string): ts.CompilerOptions {
 }
 
 export function createViewModelProgramContext(tsPath: string): ViewModelProgramContext {
-  const program = ts.createProgram([tsPath], readCompilerOptions(tsPath))
+  const program = ts.createProgram([tsPath], resolveCompilerOptions(tsPath))
   const sourceFile = program.getSourceFile(tsPath)
 
   if (sourceFile === undefined) {
