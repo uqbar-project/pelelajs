@@ -16,6 +16,7 @@ import {
   parseForEachExpression,
   parsePropertyPath,
 } from '../parsers/documentParser'
+import { acquireViewModelLanguageService } from '../parsers/viewModelLanguageServiceRegistry'
 import { extractNestedProperties, extractViewModelMembers } from '../parsers/viewModelParser'
 import { findViewModelFile } from '../utils/fileUtils'
 import {
@@ -26,7 +27,27 @@ import {
 
 const EVENT_ATTRIBUTES = new Set(['click', 'enter'])
 const PELELA_ATTRIBUTE_NAMES = new Set(['click', 'enter', 'if', 'for-each'])
-const CHILD_BINDING_PREFIXES = ['const-', 'prop-', 'link-'] as const
+const CONST_BINDING_PREFIX = 'const-'
+const PROP_BINDING_PREFIX = 'prop-'
+const LINK_BINDING_PREFIX = 'link-'
+const CHILD_BINDING_PREFIXES = [
+  CONST_BINDING_PREFIX,
+  PROP_BINDING_PREFIX,
+  LINK_BINDING_PREFIX,
+] as const
+type ChildBindingPrefix = (typeof CHILD_BINDING_PREFIXES)[number]
+
+interface ChildSettableProperties {
+  all: string[]
+  constEligible: string[]
+}
+
+function getPropertiesForBindingPrefix(
+  properties: ChildSettableProperties,
+  prefix: ChildBindingPrefix
+): string[] {
+  return prefix === CONST_BINDING_PREFIX ? properties.constEligible : properties.all
+}
 
 export async function provideCompletionItems(
   document: vscode.TextDocument,
@@ -134,19 +155,25 @@ export function addPelelaAttributeCompletions(
       item.detail = attributeSnippets[name].detail
       item.sortText = `!0_${name}`
     } else if (name.startsWith('bind-')) {
-      item.insertText = new vscode.SnippetString(`${name}="\${1:propiedad}"`)
+      item.insertText = new vscode.SnippetString(`${name}="\${1:property}"`)
       item.detail = t('completions.bindDetail')
       item.sortText = `!0_${name}`
-    } else if (name.startsWith('prop-')) {
-      item.insertText = new vscode.SnippetString('prop-${1:field-name}="${2:value}"')
+    } else if (name.startsWith(PROP_BINDING_PREFIX)) {
+      item.insertText = new vscode.SnippetString(
+        `${PROP_BINDING_PREFIX}\${1:field-name}="\${2:value}"`
+      )
       item.detail = t('completions.propDetail')
       item.sortText = `!0_${name}`
-    } else if (name.startsWith('link-')) {
-      item.insertText = new vscode.SnippetString('link-${1:field-name}="${2:value}"')
+    } else if (name.startsWith(LINK_BINDING_PREFIX)) {
+      item.insertText = new vscode.SnippetString(
+        `${LINK_BINDING_PREFIX}\${1:field-name}="\${2:value}"`
+      )
       item.detail = t('completions.linkDetail')
       item.sortText = `!0_${name}`
-    } else if (name.startsWith('const-')) {
-      item.insertText = new vscode.SnippetString('const-${1:field-name}="${2:value}"')
+    } else if (name.startsWith(CONST_BINDING_PREFIX)) {
+      item.insertText = new vscode.SnippetString(
+        `${CONST_BINDING_PREFIX}\${1:field-name}="\${2:value}"`
+      )
       item.detail = t('completions.constDetail')
       item.sortText = `!0_${name}`
     }
@@ -172,8 +199,8 @@ function addChildPropertyAttributeCompletions(
   const childProperties = getChildSettableProperties(document, tagName)
   if (childProperties === null) return
 
-  childProperties.forEach((childProperty) => {
-    CHILD_BINDING_PREFIXES.forEach((prefix) => {
+  CHILD_BINDING_PREFIXES.forEach((prefix) => {
+    getPropertiesForBindingPrefix(childProperties, prefix).forEach((childProperty) => {
       const label = `${prefix}${toKebabCase(childProperty)}`
       const item = new vscode.CompletionItem(label, vscode.CompletionItemKind.Field)
       item.detail = t('completions.childPropertyDetail')
@@ -186,26 +213,39 @@ function addChildPropertyAttributeCompletions(
 function getChildSettableProperties(
   document: vscode.TextDocument,
   tagName: string
-): string[] | null {
+): ChildSettableProperties | null {
   if (!isComponentTag(tagName)) return null
   const childComponent = resolveChildComponent(tagName, document)
   if (childComponent === null) return null
 
   const members = extractViewModelMembers(childComponent.tsPath, childComponent.viewModelName)
-  return members.properties.filter((name) => isSettableField(members, name))
+  const settableProperties = members.properties.filter((name) => isSettableField(members, name))
+  const constEligibleNames = new Set(
+    acquireViewModelLanguageService().constValueCompletionProperties(
+      childComponent.tsPath,
+      childComponent.viewModelName
+    )
+  )
+
+  return {
+    all: settableProperties,
+    constEligible: settableProperties.filter((name) => constEligibleNames.has(name)),
+  }
 }
 
 function addTypedChildPropertyCompletions(params: {
   items: vscode.CompletionItem[]
   document: vscode.TextDocument
   tagName: string
-  prefix: string
+  prefix: ChildBindingPrefix
   textBeforeCursor: string
   position: vscode.Position
 }): void {
   const { items, document, tagName, prefix, textBeforeCursor, position } = params
-  const childProperties = getChildSettableProperties(document, tagName)
-  if (childProperties === null) return
+  const childSettableProperties = getChildSettableProperties(document, tagName)
+  if (childSettableProperties === null) return
+
+  const childProperties = getPropertiesForBindingPrefix(childSettableProperties, prefix)
 
   const prefixStart = textBeforeCursor.length - prefix.length
   const replaceRange = new vscode.Range(
@@ -234,14 +274,14 @@ async function provideAttributeValueCompletions(
 ): Promise<vscode.CompletionItem[]> {
   const isPelelaAttribute =
     attributeName.startsWith('bind-') ||
-    attributeName.startsWith('prop-') ||
-    attributeName.startsWith('link-') ||
-    attributeName.startsWith('const-') ||
+    attributeName.startsWith(PROP_BINDING_PREFIX) ||
+    attributeName.startsWith(LINK_BINDING_PREFIX) ||
+    attributeName.startsWith(CONST_BINDING_PREFIX) ||
     PELELA_ATTRIBUTE_NAMES.has(attributeName)
 
   if (!isPelelaAttribute) return []
 
-  if (attributeName.startsWith('const-')) return []
+  if (attributeName.startsWith(CONST_BINDING_PREFIX)) return []
 
   const typescriptFilePath = findViewModelFile(document.uri)
   if (!typescriptFilePath) return []

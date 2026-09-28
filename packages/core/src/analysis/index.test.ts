@@ -782,6 +782,7 @@ export class Counter {
   active: boolean = false
   label: string = ''
   config = { level: 1 }
+  amount: bigint = 1n
   anything: any = 1
   mystery: unknown = 1
 }`
@@ -897,6 +898,10 @@ export class Counter {
 
   it('reports a non literal type as unsupported rather than as a value mismatch', () => {
     expect(check('config', 'anything')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+  })
+
+  it('reports bigint as unsupported because const attributes cannot represent it', () => {
+    expect(check('amount', '1')).toEqual({ accepted: false, reason: 'nonLiteralType' })
   })
 
   it('leaves any and unknown properties unchecked', () => {

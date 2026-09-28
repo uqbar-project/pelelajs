@@ -3,6 +3,7 @@ import {
   type ConstValueVerdict,
   checkConstValue,
   createViewModelProgramContextFromProgram,
+  extractConstValueCompletionPropertiesWithContext,
   extractViewModelPropertyTypesWithContext,
   resolveCompilerOptions,
   type ViewModelProgramContext,
@@ -105,6 +106,10 @@ export class ViewModelLanguageService {
 
   propertyTypes(tsPath: string, className: string): ViewModelPropertyTypes {
     return extractViewModelPropertyTypesWithContext(this.contextFor(tsPath), className)
+  }
+
+  constValueCompletionProperties(tsPath: string, className: string): string[] {
+    return extractConstValueCompletionPropertiesWithContext(this.contextFor(tsPath), className)
   }
 
   constValue(params: {

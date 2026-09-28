@@ -277,10 +277,7 @@ export function classifyType(type: ts.Type): ConstKind {
 }
 
 const SCALAR_TYPE_FLAGS =
-  ts.TypeFlags.StringLike |
-  ts.TypeFlags.NumberLike |
-  ts.TypeFlags.BooleanLike |
-  ts.TypeFlags.BigIntLike
+  ts.TypeFlags.StringLike | ts.TypeFlags.NumberLike | ts.TypeFlags.BooleanLike
 
 /**
  * True when the type is a scalar or a union made only of scalars. Structural
@@ -378,6 +375,19 @@ export function collectViewModelPropertyTypes(
       .filter(isCollectablePropertySymbol)
       .map((symbol) => [symbol.getName(), context.checker.getTypeOfSymbol(symbol)] as const),
   )
+}
+
+/**
+ * Returns properties that can accept a const attribute. Unknown types are kept
+ * because the checker cannot determine whether a value is valid for them.
+ */
+export function extractConstValueCompletionPropertiesWithContext(
+  context: ViewModelProgramContext,
+  className: string,
+): string[] {
+  return Array.from(collectViewModelPropertyTypes(context, className))
+    .filter(([, type]) => classifyType(type) === 'unknown' || isScalarType(type))
+    .map(([name]) => name)
 }
 
 export function extractViewModelPropertyTypesWithContext(

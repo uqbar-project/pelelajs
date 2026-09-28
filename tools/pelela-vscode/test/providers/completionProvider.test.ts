@@ -234,8 +234,14 @@ describe('completionProvider', () => {
 
   describe('child component property completions', () => {
     const COUNTER_VIEW_MODEL = `export class CounterViewModel {
+  items: string[] = []
+  config = { enabled: true }
   lastNumber = 0
   isLucky = false
+  dynamic: any = ''
+  mystery: unknown = ''
+  mixed: 'text' | 1 | true = 'text'
+  amount: bigint = 1n
 
   get total() {
     return this.lastNumber + 1
@@ -295,6 +301,14 @@ describe('completionProvider', () => {
       assert.ok(labels.includes('prop-last-number'), 'should offer prop-last-number')
       assert.ok(labels.includes('link-last-number'), 'should offer link-last-number')
       assert.ok(labels.includes('const-is-lucky'), 'should offer const-is-lucky')
+      assert.ok(labels.includes('const-dynamic'), 'should offer const-dynamic for any')
+      assert.ok(labels.includes('const-mystery'), 'should offer const-mystery for unknown')
+      assert.ok(labels.includes('const-mixed'), 'should offer scalar literal unions')
+      assert.ok(!labels.includes('const-items'), 'should NOT offer const-items for arrays')
+      assert.ok(!labels.includes('const-config'), 'should NOT offer const-config for objects')
+      assert.ok(!labels.includes('const-amount'), 'should NOT offer const-amount for bigint')
+      assert.ok(labels.includes('prop-items'), 'should keep arrays available for prop-')
+      assert.ok(labels.includes('link-items'), 'should keep arrays available for link-')
       assert.ok(!labels.includes('prop-total'), 'should NOT offer getters')
 
       const childItem = items.find((item) => item.label === 'prop-last-number')
@@ -337,6 +351,22 @@ describe('completionProvider', () => {
         !completions.some((item) => item.label === 'prop-total'),
         'should NOT offer getters'
       )
+    })
+
+    it('filters unsupported types when typing const- on a component', async () => {
+      const line = '  <counter-view-model const-'
+      const position = createMockPosition(1, line.length)
+      const completions = await provideCompletions(['<pelela>', line], position)
+      const labels = completions.map((item) => item.label)
+
+      assert.ok(labels.includes('const-last-number'), 'should offer numeric properties')
+      assert.ok(labels.includes('const-is-lucky'), 'should offer boolean properties')
+      assert.ok(labels.includes('const-dynamic'), 'should retain any properties')
+      assert.ok(labels.includes('const-mystery'), 'should retain unknown properties')
+      assert.ok(labels.includes('const-mixed'), 'should retain scalar literal unions')
+      assert.ok(!labels.includes('const-items'), 'should NOT offer arrays')
+      assert.ok(!labels.includes('const-config'), 'should NOT offer objects')
+      assert.ok(!labels.includes('const-amount'), 'should NOT offer bigint')
     })
 
     it('does not offer parent properties as const- values', async () => {
