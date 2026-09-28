@@ -117,7 +117,7 @@ function getMemberInfo(classMember: ts.ClassElement): {
   if (!name) return null
   if (name === 'constructor' || name === 'if') return null
   if (ts.isMethodDeclaration(classMember)) {
-    return { name, kind: 'method', writable: false, readonly: false, private: false }
+    return { name, kind: 'method', writable: false, readonly: false, nonPublic: false }
   }
   if (ts.isGetAccessorDeclaration(classMember)) {
     const modifierFlags = ts.getCombinedModifierFlags(classMember)
@@ -885,8 +885,7 @@ function getReadonlyParameterPropertyNames(declaration: ts.ClassDeclaration): st
   return ctor.parameters
     .filter(
       (param) =>
-        isParameterProperty(param) &&
-        isPublicReadonlyMember(ts.getCombinedModifierFlags(param))
+        isParameterProperty(param) && isPublicReadonlyMember(ts.getCombinedModifierFlags(param))
     )
     .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
     .filter((name) => name !== '')
@@ -899,8 +898,7 @@ function getNonPublicParameterPropertyNames(declaration: ts.ClassDeclaration): s
   if (!ctor) return []
   return ctor.parameters
     .filter(
-      (param) =>
-        isParameterProperty(param) && isNonPublicMember(ts.getCombinedModifierFlags(param))
+      (param) => isParameterProperty(param) && isNonPublicMember(ts.getCombinedModifierFlags(param))
     )
     .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
     .filter((name) => name !== '')

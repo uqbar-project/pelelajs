@@ -951,4 +951,42 @@ export class Aliased {
     })
     expect(checkAliased(refreshed, 'xs')).toEqual({ accepted: true })
   })
+
+  it('validates a const value for a property inherited from an imported base class', () => {
+    const basePath = path.join(testDir, 'base-counter.ts')
+    const derivedPath = path.join(testDir, 'derived-counter.ts')
+    fs.writeFileSync(
+      basePath,
+      `export class BaseCounter {
+  inheritedCount = 0
+}`,
+    )
+    fs.writeFileSync(
+      derivedPath,
+      `import { BaseCounter } from './base-counter'
+export class DerivedCounter extends BaseCounter {}`,
+    )
+    const derivedContext = createViewModelProgramContext(derivedPath)
+
+    expect(
+      checkConstValue({
+        context: derivedContext,
+        className: 'DerivedCounter',
+        propertyName: 'inheritedCount',
+        rawValue: 'invalid',
+      }),
+    ).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: 'number',
+    })
+    expect(
+      checkConstValue({
+        context: derivedContext,
+        className: 'DerivedCounter',
+        propertyName: 'inheritedCount',
+        rawValue: '42',
+      }),
+    ).toEqual({ accepted: true })
+  })
 })

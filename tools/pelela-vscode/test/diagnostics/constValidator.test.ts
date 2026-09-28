@@ -14,9 +14,10 @@ const COUNTER_PELELA_CONTENT = `<component view-model="CounterViewModel">
   <span bind-content="count"></span>
 </component>`
 
-const COUNTER_VIEW_MODEL_CONTENT = `export type Size = 'sm' | 'lg'
+const COUNTER_VIEW_MODEL_CONTENT = `import { BaseCounterViewModel } from './base-counter-view-model'
+export type Size = 'sm' | 'lg'
 export enum Level { Low = 'low', High = 'high' }
-export class CounterViewModel {
+export class CounterViewModel extends BaseCounterViewModel {
   count = 0
   lastNumber = 0
   active = true
@@ -63,6 +64,12 @@ describe('validateConstValues', () => {
   before(() => {
     testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-const-'))
     fs.writeFileSync(path.join(testDir, 'counter.pelela'), COUNTER_PELELA_CONTENT)
+    fs.writeFileSync(
+      path.join(testDir, 'base-counter-view-model.ts'),
+      `export class BaseCounterViewModel {
+  inheritedCount = 0
+}`
+    )
     fs.writeFileSync(path.join(testDir, 'counter.ts'), COUNTER_VIEW_MODEL_CONTENT)
     fs.writeFileSync(path.join(testDir, 'no-vm.pelela'), NO_VIEW_MODEL_PELELA_CONTENT)
     parentDocumentPath = path.join(testDir, 'parent.pelela')
@@ -104,6 +111,26 @@ describe('validateConstValues', () => {
 
     assert.strictEqual(numericValue.length, 0)
     assert.strictEqual(trimmedValue.length, 0)
+  })
+
+  it('validates const values for properties inherited from a base class in another file', () => {
+    const invalidValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-inherited-count="invalid"></counter>')
+    )
+    const validValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-inherited-count="42"></counter>')
+    )
+
+    assertDiagnostic(
+      getSingleDiagnostic(invalidValue),
+      constError({
+        name: 'inheritedCount',
+        value: 'invalid',
+        expected: t('diagnostics.constValueExpectedNumber'),
+      }),
+      vscode.DiagnosticSeverity.Error
+    )
+    assert.strictEqual(validValue.length, 0)
   })
 
   it('reports a diagnostic when a const boolean receives an invalid literal', () => {
