@@ -2,13 +2,22 @@ import * as fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { t } from 'pelelajs'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { extractViewModelPropertyTypes } from 'pelelajs/analysis'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   escapeTemplateForLiteral,
   extractLinkAttributeMatches,
   kebabToCamelCase,
   pelelajsPlugin,
 } from './index'
+
+vi.mock('pelelajs/analysis', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('pelelajs/analysis')>()
+  return {
+    ...actual,
+    extractViewModelPropertyTypes: vi.fn(() => ({})),
+  }
+})
 
 const VIRTUAL_MODULE_ID = 'virtual:pelela-auto-register'
 const RESOLVED_VIRTUAL_ID = '\0virtual:pelela-auto-register'
@@ -26,6 +35,10 @@ function getHandler<T>(hook: T): T extends { handler: infer H } ? H : T {
 }
 
 describe('pelelajsPlugin', () => {
+  beforeEach(() => {
+    vi.mocked(extractViewModelPropertyTypes).mockReset().mockReturnValue({})
+  })
+
   describe('resolveId', () => {
     it('resolves virtual:pelela-auto-register to internal id', () => {
       const plugin = pelelajsPlugin()
@@ -374,6 +387,13 @@ describe('pelelajsPlugin', () => {
     })
 
     it('generates typeMap from the view model property types', () => {
+      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({
+        miles: 'number',
+        kilometers: 'number',
+        active: 'boolean',
+        quantity: 'number',
+        description: 'string',
+      })
       const result = loadAutoRegisterWithComponent(
         `export class Converter {
   miles = 0
@@ -391,6 +411,7 @@ describe('pelelajsPlugin', () => {
     })
 
     it('combines typeMap and cssUrls in the component registration options', () => {
+      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({ millas: 'number' })
       fs.writeFileSync(path.join(tempDir, 'src', 'converter.css'), 'h1 { color: red; }')
       const result = loadAutoRegisterWithComponent(
         'export class Converter {\n  millas = 0\n}',
@@ -403,6 +424,7 @@ describe('pelelajsPlugin', () => {
     })
 
     it('omits typeMap when no property type can be inferred', () => {
+      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({ dynamic: 'unknown' })
       const result = loadAutoRegisterWithComponent(
         'export class Converter {\n  dynamic\n}',
         '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
