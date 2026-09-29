@@ -36,18 +36,21 @@ const NO_VIEW_MODEL_PELELA_CONTENT = `<component>
   <span bind-content="count"></span>
 </component>`
 
-const OTHER_PELELA_CONTENT = `<pelela view-model="Other">
-  <span bind-content="valor"></span>
+const ROSTER_PELELA_CONTENT = `<pelela view-model="StudentRoster">
+  <span bind-content="total"></span>
 </pelela>`
 
-const OTHER_VIEW_MODEL_CONTENT = `export class Other {
-  alumnos = []
-  valor = 0
-  nombre = ''
-  noEntra!: number[]
-  noEntra2: number | Date = 2
-  siEntra!: number | string
-}`
+const ROSTER_VIEW_MODEL_CONTENT = `export class StudentRoster {
+  students = []
+  total = 0
+  title = ''
+  pendingScores!: number[]
+  dueAt!: number | Date
+  label!: string | number
+  shift!: Shift
+}
+
+type Shift = 'morning' | 'evening'`
 
 const PARENT_TEMPLATE = (componentUsage: string): string =>
   `<pelela view-model="ParentViewModel">
@@ -71,6 +74,13 @@ function constError(params: {
   return t('diagnostics.constValueInvalid', { name, value, expected, tag, viewModel })
 }
 
+const ROSTER_TAG = 'student-roster'
+const ROSTER_VIEW_MODEL = 'StudentRoster'
+
+function rosterConstError(params: { name: string; value: string; expected: string }): string {
+  return constError({ ...params, tag: ROSTER_TAG, viewModel: ROSTER_VIEW_MODEL })
+}
+
 describe('validateConstValues', () => {
   let testDir: string
   let parentDocumentPath: string
@@ -86,8 +96,8 @@ describe('validateConstValues', () => {
     )
     fs.writeFileSync(path.join(testDir, 'counter.ts'), COUNTER_VIEW_MODEL_CONTENT)
     fs.writeFileSync(path.join(testDir, 'no-vm.pelela'), NO_VIEW_MODEL_PELELA_CONTENT)
-    fs.writeFileSync(path.join(testDir, 'other.pelela'), OTHER_PELELA_CONTENT)
-    fs.writeFileSync(path.join(testDir, 'other.ts'), OTHER_VIEW_MODEL_CONTENT)
+    fs.writeFileSync(path.join(testDir, 'student-roster.pelela'), ROSTER_PELELA_CONTENT)
+    fs.writeFileSync(path.join(testDir, 'student-roster.ts'), ROSTER_VIEW_MODEL_CONTENT)
     parentDocumentPath = path.join(testDir, 'parent.pelela')
   })
 
@@ -242,39 +252,65 @@ describe('validateConstValues', () => {
   })
 
   it('reports a diagnostic for an array property declared without an initializer', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<other const-no-entra="C"></other>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<student-roster const-pending-scores="three"></student-roster>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      constError({
-        name: 'noEntra',
-        value: 'C',
+      rosterConstError({
+        name: 'pendingScores',
+        value: 'three',
         expected: t('diagnostics.constValueUnsupported'),
-        tag: 'other',
-        viewModel: 'Other',
       }),
       vscode.DiagnosticSeverity.Error
     )
   })
 
-  it('reports a diagnostic for a union that mixes a scalar type with Date', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<other const-no-entra2="C"></other>'))
+  it('reports a diagnostic for a union that mixes a scalar type with a class type', () => {
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<student-roster const-due-at="2026-09-28"></student-roster>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      constError({
-        name: 'noEntra2',
-        value: 'C',
+      rosterConstError({
+        name: 'dueAt',
+        value: '2026-09-28',
         expected: t('diagnostics.constValueUnsupported'),
-        tag: 'other',
-        viewModel: 'Other',
       }),
       vscode.DiagnosticSeverity.Error
     )
+  })
+
+  it('names the allowed values of a string union reached through a type alias', () => {
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<student-roster const-shift="midday"></student-roster>')
+    )
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      rosterConstError({
+        name: 'shift',
+        value: 'midday',
+        expected: t('diagnostics.constValueExpected', { expected: '"morning" | "evening"' }),
+      }),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('accepts a listed value of a string union reached through a type alias', () => {
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<student-roster const-shift="morning"></student-roster>')
+    )
+
+    assert.strictEqual(diagnostics.length, 0)
   })
 
   it('leaves a union of two scalar types unchecked for runtime resolution', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<other const-si-entra="C"></other>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<student-roster const-label="three"></student-roster>')
+    )
 
     assert.strictEqual(diagnostics.length, 0)
   })

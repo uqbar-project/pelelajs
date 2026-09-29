@@ -1089,3 +1089,89 @@ export class DerivedCounter extends BaseCounter {}`,
     ).toEqual({ accepted: true })
   })
 })
+
+/**
+ * A view model whose members mix inferred and annotated declarations: an
+ * evolving array, definite assignment properties without initializer, a union
+ * mixing a scalar with a class type and a string union reached through a type
+ * alias declared after the class that refers to it.
+ */
+describe('checkConstValue on a view model with definite assignment declarations', () => {
+  const rosterViewModelSource = `export class StudentRoster {
+  students = []
+  total = 0
+  title = ''
+  pendingScores!: number[]
+  dueAt!: number | Date
+  label!: string | number
+  shift!: Shift
+}
+
+type Shift = 'morning' | 'evening'`
+
+  let testDir: string
+  let context: ViewModelProgramContext
+
+  beforeAll(() => {
+    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-roster-const-'))
+    const tsPath = path.join(testDir, 'student-roster.ts')
+    fs.writeFileSync(tsPath, rosterViewModelSource)
+    context = createViewModelProgramContext(tsPath)
+  })
+
+  afterAll(() => {
+    fs.rmSync(testDir, { recursive: true, force: true })
+  })
+
+  const check = (propertyName: string, rawValue: string) =>
+    checkConstValue({ context, className: 'StudentRoster', propertyName, rawValue })
+
+  const checkInContext = (
+    viewModelContext: ViewModelProgramContext,
+    propertyName: string,
+    rawValue: string,
+  ) =>
+    checkConstValue({
+      context: viewModelContext,
+      className: 'StudentRoster',
+      propertyName,
+      rawValue,
+    })
+
+  it('reports an array property declared with a definite assignment assertion', () => {
+    expect(check('pendingScores', 'three')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+  })
+
+  it('reports a union with a class type declared with a definite assignment assertion', () => {
+    expect(check('dueAt', '2026-09-28')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+  })
+
+  it('reports a union with a class type that carries a literal initializer', () => {
+    const initializedTsPath = path.join(testDir, 'student-roster-initialized.ts')
+    fs.writeFileSync(
+      initializedTsPath,
+      rosterViewModelSource.replace('dueAt!: number | Date', 'dueAt: number | Date = 2'),
+    )
+
+    expect(
+      checkInContext(createViewModelProgramContext(initializedTsPath), 'dueAt', '2026-09-28'),
+    ).toEqual({ accepted: false, reason: 'nonLiteralType' })
+  })
+
+  it('names the allowed values of a string union reached through a trailing type alias', () => {
+    expect(check('shift', 'midday')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '"morning" | "evening"',
+    })
+  })
+
+  it('accepts a listed value of a string union reached through a trailing type alias', () => {
+    expect(check('shift', 'morning')).toEqual({ accepted: true })
+    expect(check('shift', 'evening')).toEqual({ accepted: true })
+  })
+
+  it('leaves a union of two scalar types unchecked for runtime resolution', () => {
+    expect(check('label', 'three')).toEqual({ accepted: 'unchecked' })
+  })
+})
