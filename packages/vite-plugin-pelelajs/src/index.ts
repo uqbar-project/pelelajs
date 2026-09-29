@@ -344,18 +344,11 @@ export function pelelajsPlugin(): Plugin {
       programCache = createTypeMapProgramCache(currentDirectory)
       typeMapProgramCaches.set(cacheKey, programCache)
     }
-    const projectTsPaths = componentTsPaths.filter((componentTsPath) => {
-      const componentConfigPath = ts.findConfigFile(
-        path.dirname(componentTsPath),
-        ts.sys.fileExists,
-      )
-      const componentCacheKey =
-        componentConfigPath ??
-        path.resolve(
-          componentConfigPath === undefined ? currentDirectory : path.dirname(componentConfigPath),
-        )
-      return componentCacheKey === cacheKey
-    })
+    const cacheKeyFor = (filePath: string): string =>
+      ts.findConfigFile(path.dirname(filePath), ts.sys.fileExists) ?? path.resolve(process.cwd())
+    const projectTsPaths = componentTsPaths.filter(
+      (componentTsPath) => cacheKeyFor(componentTsPath) === cacheKey,
+    )
     programCache.setRootFiles(projectTsPaths)
     return programCache.extractPropertyTypes(tsPath, className)
   }
