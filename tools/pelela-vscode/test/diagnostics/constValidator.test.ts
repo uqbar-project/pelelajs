@@ -81,6 +81,20 @@ function rosterConstError(params: { name: string; value: string; expected: strin
   return constError({ ...params, tag: ROSTER_TAG, viewModel: ROSTER_VIEW_MODEL })
 }
 
+function unsupportedTypeError(params: {
+  name: string
+  declaredType: string
+  tag?: string
+  viewModel?: string
+}): string {
+  const { name, declaredType, tag = 'counter-view-model', viewModel = 'CounterViewModel' } = params
+  return t('diagnostics.constValueUnsupportedType', { name, declaredType, tag, viewModel })
+}
+
+function rosterUnsupportedTypeError(params: { name: string; declaredType: string }): string {
+  return unsupportedTypeError({ ...params, tag: ROSTER_TAG, viewModel: ROSTER_VIEW_MODEL })
+}
+
 describe('validateConstValues', () => {
   let testDir: string
   let parentDocumentPath: string
@@ -236,17 +250,17 @@ describe('validateConstValues', () => {
 
     assertDiagnostic(
       getSingleDiagnostic(configValue),
-      constError({ name: 'config', value: 'x', expected: t('diagnostics.constValueUnsupported') }),
+      unsupportedTypeError({ name: 'config', declaredType: '{ level: number; }' }),
       vscode.DiagnosticSeverity.Error
     )
     assertDiagnostic(
       getSingleDiagnostic(itemsValue),
-      constError({ name: 'items', value: 'x', expected: t('diagnostics.constValueUnsupported') }),
+      unsupportedTypeError({ name: 'items', declaredType: 'string[]' }),
       vscode.DiagnosticSeverity.Error
     )
     assertDiagnostic(
       getSingleDiagnostic(dateValue),
-      constError({ name: 'date', value: 'x', expected: t('diagnostics.constValueUnsupported') }),
+      unsupportedTypeError({ name: 'date', declaredType: 'Date' }),
       vscode.DiagnosticSeverity.Error
     )
   })
@@ -258,11 +272,7 @@ describe('validateConstValues', () => {
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      rosterConstError({
-        name: 'pendingScores',
-        value: 'three',
-        expected: t('diagnostics.constValueUnsupported'),
-      }),
+      rosterUnsupportedTypeError({ name: 'pendingScores', declaredType: 'number[]' }),
       vscode.DiagnosticSeverity.Error
     )
   })
@@ -274,11 +284,7 @@ describe('validateConstValues', () => {
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
-      rosterConstError({
-        name: 'dueAt',
-        value: '2026-09-28',
-        expected: t('diagnostics.constValueUnsupported'),
-      }),
+      rosterUnsupportedTypeError({ name: 'dueAt', declaredType: 'number | Date' }),
       vscode.DiagnosticSeverity.Error
     )
   })

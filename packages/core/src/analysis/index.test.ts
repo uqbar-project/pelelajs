@@ -894,8 +894,13 @@ export class Counter {
     expect(check('scheduledAt', '2026-09-28')).toEqual({
       accepted: false,
       reason: 'nonLiteralType',
+      declaredTypeText: 'Date',
     })
-    expect(check('model', 'custom')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+    expect(check('model', 'custom')).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+      declaredTypeText: 'CustomModel',
+    })
   })
 
   it('validates a nullable setter-only property using the compiler-resolved scalar type', () => {
@@ -981,25 +986,39 @@ export class Counter {
   })
 
   it('reports a non literal type as unsupported rather than as a value mismatch', () => {
-    expect(check('config', 'anything')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+    expect(check('config', 'anything')).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+      declaredTypeText: '{ level: number; }',
+    })
   })
 
   it('reports bigint as unsupported because const attributes cannot represent it', () => {
-    expect(check('amount', '1')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+    expect(check('amount', '1')).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+      declaredTypeText: 'bigint',
+    })
   })
 
   it('reports an array property declared without an initializer as unsupported', () => {
     expect(check('pendingScores', 'anything')).toEqual({
       accepted: false,
       reason: 'nonLiteralType',
+      declaredTypeText: 'number[]',
     })
   })
 
   it('reports a union that mixes a scalar type with Date as unsupported', () => {
-    expect(check('amountOrDate', '2')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+    expect(check('amountOrDate', '2')).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+      declaredTypeText: 'number | Date',
+    })
     expect(check('amountOrDate', '2026-09-28')).toEqual({
       accepted: false,
       reason: 'nonLiteralType',
+      declaredTypeText: 'number | Date',
     })
   })
 
@@ -1139,11 +1158,19 @@ type Shift = 'morning' | 'evening'`
     })
 
   it('reports an array property declared with a definite assignment assertion', () => {
-    expect(check('pendingScores', 'three')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+    expect(check('pendingScores', 'three')).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+      declaredTypeText: 'number[]',
+    })
   })
 
   it('reports a union with a class type declared with a definite assignment assertion', () => {
-    expect(check('dueAt', '2026-09-28')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+    expect(check('dueAt', '2026-09-28')).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+      declaredTypeText: 'number | Date',
+    })
   })
 
   it('reports a union with a class type that carries a literal initializer', () => {
@@ -1155,7 +1182,11 @@ type Shift = 'morning' | 'evening'`
 
     expect(
       checkInContext(createViewModelProgramContext(initializedTsPath), 'dueAt', '2026-09-28'),
-    ).toEqual({ accepted: false, reason: 'nonLiteralType' })
+    ).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+      declaredTypeText: 'number | Date',
+    })
   })
 
   it('names the allowed values of a string union reached through a trailing type alias', () => {

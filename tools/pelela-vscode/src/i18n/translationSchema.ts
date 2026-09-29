@@ -21,7 +21,7 @@ type DiagnosticsMessages = {
   constValueExpected: string
   constValueExpectedNumber: string
   constValueExpectedBoolean: string
-  constValueUnsupported: string
+  constValueUnsupportedType: string
   childPropertyNotFound: string
   childPropertyCaseMismatch: string
   childPropertyReadOnly: string

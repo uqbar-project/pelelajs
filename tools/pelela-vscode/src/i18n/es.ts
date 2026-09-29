@@ -37,8 +37,8 @@ const diagnostics = {
   constValueExpected: 'debe ser {{expected}}',
   constValueExpectedNumber: 'debe ser un número',
   constValueExpectedBoolean: "debe ser 'true' o 'false'",
-  constValueUnsupported:
-    'no admite objetos ni otros valores; solo se permiten literales number, boolean o string',
+  constValueUnsupportedType:
+    'Componente <{{tag}}> (ViewModel: {{viewModel}}): el const "{{name}}" está declarado como {{declaredType}}, y los const solo aceptan literales number, boolean o string.',
   childPropertyNotFound:
     'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" no está definida en el ViewModel hijo.',
   childPropertyCaseMismatch:

@@ -48,6 +48,18 @@ function resolveChild(tag: TagInfo, document: vscode.TextDocument): ResolvedChil
   }
 }
 
+function constAttributeParams(
+  attribute: AttrInfo,
+  tag: TagInfo,
+  viewModelName: string
+): Record<string, string> {
+  return {
+    name: toCamelCase(attribute.name.slice(CONST_PREFIX.length)),
+    tag: tag.tagName,
+    viewModel: viewModelName,
+  }
+}
+
 function buildConstValueDiagnostic(
   attribute: AttrInfo,
   tag: TagInfo,
@@ -58,12 +70,29 @@ function buildConstValueDiagnostic(
     attribute.valueRange ?? attribute.nameRange,
     'diagnostics.constValueInvalid',
     {
-      name: toCamelCase(attribute.name.slice(CONST_PREFIX.length)),
+      ...constAttributeParams(attribute, tag, viewModelName),
       value: attribute.value,
       expected: expectedMessage,
-      tag: tag.tagName,
-      viewModel: viewModelName,
     },
+    vscode.DiagnosticSeverity.Error
+  )
+}
+
+/**
+ * The declared type is what makes the attribute invalid, not the value that was
+ * passed, so this message stands on its own and highlights the attribute name
+ * instead of reusing the wrapper that always blames the received value.
+ */
+function buildConstUnsupportedTypeDiagnostic(
+  attribute: AttrInfo,
+  tag: TagInfo,
+  viewModelName: string,
+  declaredTypeText: string
+): vscode.Diagnostic {
+  return makeDiagnostic(
+    attribute.nameRange,
+    'diagnostics.constValueUnsupportedType',
+    { ...constAttributeParams(attribute, tag, viewModelName), declaredType: declaredTypeText },
     vscode.DiagnosticSeverity.Error
   )
 }
@@ -88,11 +117,11 @@ function validateConstAttribute(params: {
 
   if (verdict.reason === 'nonLiteralType') {
     return [
-      buildConstValueDiagnostic(
+      buildConstUnsupportedTypeDiagnostic(
         attribute,
         tag,
         child.viewModelName,
-        t('diagnostics.constValueUnsupported')
+        verdict.declaredTypeText
       ),
     ]
   }

@@ -464,7 +464,9 @@ export function extractViewModelPropertyTypes(
  */
 export type ConstValueVerdict =
   | { accepted: true }
-  | { accepted: false; reason: 'nonLiteralType' }
+  // The declared type carries the reason, not the attribute value, so the
+  // diagnostic points at the type instead of blaming the value that was passed.
+  | { accepted: false; reason: 'nonLiteralType'; declaredTypeText: string }
   | { accepted: false; reason: 'literalMismatch'; expectedTypeText: string }
   | { accepted: 'unchecked' }
 
@@ -547,7 +549,7 @@ function candidateTypes(rawValue: string, type: ts.Type, checker: ts.TypeChecker
   return candidates
 }
 
-function toExpectedTypeText(type: ts.Type, checker: ts.TypeChecker): string {
+function toTypeText(type: ts.Type, checker: ts.TypeChecker): string {
   const enumValues = collectEnumMembers(type).flatMap((member) => {
     const literal = enumMemberLiteral(member)
     if (literal === null) return []
@@ -564,7 +566,13 @@ export function checkConstValue(params: ConstValueCheckParams): ConstValueVerdic
 
   if (propertyType === undefined) return { accepted: 'unchecked' }
   if (classifyType(propertyType) === 'unknown') return { accepted: 'unchecked' }
-  if (!isScalarType(propertyType)) return { accepted: false, reason: 'nonLiteralType' }
+  if (!isScalarType(propertyType)) {
+    return {
+      accepted: false,
+      reason: 'nonLiteralType',
+      declaredTypeText: toTypeText(propertyType, context.checker),
+    }
+  }
 
   const isAssignable = candidateTypes(rawValue, propertyType, context.checker).some((candidate) =>
     context.checker.isTypeAssignableTo(candidate, propertyType),
@@ -574,6 +582,6 @@ export function checkConstValue(params: ConstValueCheckParams): ConstValueVerdic
   return {
     accepted: false,
     reason: 'literalMismatch',
-    expectedTypeText: toExpectedTypeText(propertyType, context.checker),
+    expectedTypeText: toTypeText(propertyType, context.checker),
   }
 }
