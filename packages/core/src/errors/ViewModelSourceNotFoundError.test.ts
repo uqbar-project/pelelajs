@@ -28,7 +28,7 @@ describe('ViewModelSourceNotFoundError', () => {
     expect(error.tsPath).toBe(MISSING_TS_PATH)
   })
 
-  it('does not leak the translation key when i18n has not been initialized', () => {
+  it('does not leak the translation key when i18n has been initialized', () => {
     initializeI18n('en')
     const error = new ViewModelSourceNotFoundError({ tsPath: MISSING_TS_PATH })
 
