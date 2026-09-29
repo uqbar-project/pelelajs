@@ -37,6 +37,7 @@ type ErrorTranslations = {
       missingExport: string
       wrongCase: string
       notFound: string
+      notFoundWithoutSuggestion: string
       notAClassFunction: string
       notAClassObject: string
     }

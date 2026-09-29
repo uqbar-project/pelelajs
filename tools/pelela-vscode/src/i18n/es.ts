@@ -7,6 +7,7 @@ const diagnostics = {
     'Definí el view model con la capitalización exacta de la clase: se llama "{{expectedName}}", no "{{name}}".',
   viewModelNotFound:
     'No existe la clase "{{name}}" en {{tsFileName}}. Definí la clase con el nombre sugerido: "{{suggestedName}}".',
+  viewModelNotFoundWithoutSuggestion: 'No existe la clase "{{name}}" en {{tsFileName}}.',
   viewModelNotAClassObject:
     'No se puede definir un Object como view model: "{{name}}" ({{tsFileName}}). Debe declarar una clase.',
   viewModelNotAClassFunction:

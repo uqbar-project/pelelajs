@@ -154,6 +154,22 @@ describe('viewModelValidator', () => {
       )
     })
 
+    it('reports a non-existent ViewModel class without an empty suggestion', () => {
+      fs.writeFileSync(notAClassPath, 'export const MAX = 10')
+      const { tags } = prepareValidation(['<pelela view-model="NonExistentViewModel">'], context)
+      const diagnostics = validateViewModelExistence(tags, notAClassPath)
+
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.viewModelNotFoundWithoutSuggestion', {
+          name: 'NonExistentViewModel',
+          tsFileName: 'NotAClassVM.ts',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
     it('reports missingExport when the class is declared but not exported', () => {
       fs.writeFileSync(
         missingExportPath,

@@ -716,7 +716,7 @@ export class Counter {
     expect(types).toEqual({ shape: 'other' })
   })
 
-  it('marks a heterogeneous literal union as other', () => {
+  it('classifies a heterogeneous scalar literal union as unknown', () => {
     const types = extractCounter(`type Mixed = 'a' | 1 | true
 export class Counter {
   mixed: Mixed = 'a'

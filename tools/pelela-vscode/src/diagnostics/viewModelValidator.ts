@@ -61,6 +61,14 @@ function buildViewModelIssueDiagnostic(
       vscode.DiagnosticSeverity.Error
     )
   }
+  if (issue.suggestedName.length === 0) {
+    return makeDiagnostic(
+      range,
+      'diagnostics.viewModelNotFoundWithoutSuggestion',
+      { name: issue.viewModelName, tsFileName },
+      vscode.DiagnosticSeverity.Error
+    )
+  }
   return makeDiagnostic(
     range,
     'diagnostics.viewModelNotFound',

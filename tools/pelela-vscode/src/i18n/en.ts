@@ -7,6 +7,7 @@ const diagnostics = {
     'Define the view model with the exact class case: the class is named "{{expectedName}}", not "{{name}}".',
   viewModelNotFound:
     'There is no class named "{{name}}" in {{tsFileName}}. Define the class with the suggested name: "{{suggestedName}}".',
+  viewModelNotFoundWithoutSuggestion: 'There is no class named "{{name}}" in {{tsFileName}}.',
   viewModelNotAClassObject:
     'An Object cannot be used as a view model: "{{name}}" ({{tsFileName}}). You must declare a class.',
   viewModelNotAClassFunction:

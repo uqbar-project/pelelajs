@@ -68,6 +68,25 @@ describe('ViewModelExportError', () => {
     )
   })
 
+  it('builds the Spanish message when no class matches and there is no suggestion', () => {
+    initializeI18n('es')
+    const params: ViewModelExportErrorParams = {
+      kind: 'notFound',
+      viewModelName: 'Bicycle',
+      tsFilePath: CONVERTER_TS_FILE,
+      suggestedName: '',
+    }
+
+    const error = new ViewModelExportError(params)
+
+    expect(error.message).toBe(
+      t('errors.viewmodel.export.notFoundWithoutSuggestion', {
+        viewModelName: 'Bicycle',
+        tsFilePath: CONVERTER_TS_FILE,
+      }),
+    )
+  })
+
   it('builds the Spanish message when the view model is an object, not a class', () => {
     initializeI18n('es')
     const params: ViewModelExportErrorParams = {

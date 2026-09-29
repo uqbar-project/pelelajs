@@ -2,6 +2,7 @@ type DiagnosticsMessages = {
   viewModelMissingExport: string
   viewModelWrongCase: string
   viewModelNotFound: string
+  viewModelNotFoundWithoutSuggestion: string
   viewModelNotAClassFunction: string
   viewModelNotAClassObject: string
   propertyNotFound: string

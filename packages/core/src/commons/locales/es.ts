@@ -57,6 +57,8 @@ const errors = {
         '[pelela] Definí el view model con la capitalización exacta de la clase: se llama "{{expectedName}}", no "{{viewModelName}}".',
       notFound:
         '[pelela] No existe la clase "{{viewModelName}}" en {{tsFilePath}}. Definí la clase con el nombre sugerido: "{{suggestedName}}".',
+      notFoundWithoutSuggestion:
+        '[pelela] No existe la clase "{{viewModelName}}" en {{tsFilePath}}.',
       notAClassObject:
         '[pelela] No se puede definir un Object como view model: "{{viewModelName}}" ({{tsFilePath}}). Debe declarar una clase.',
       notAClassFunction:
