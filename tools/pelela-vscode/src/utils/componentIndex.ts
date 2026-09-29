@@ -72,6 +72,16 @@ function relativeDepth(directory: string, filePath: string): number {
   return path.relative(directory, filePath).split(path.sep).length
 }
 
+function isWithinDirectory(directory: string, filePath: string): boolean {
+  const relativePath = path.relative(directory, filePath)
+  return (
+    relativePath !== '' &&
+    relativePath !== '..' &&
+    !relativePath.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relativePath)
+  )
+}
+
 function byDepthThenName(directory: string) {
   return (first: IndexedComponent, second: IndexedComponent): number => {
     const depthDifference =
@@ -136,11 +146,19 @@ export function findChildTemplate(
   document: vscode.TextDocument
 ): IndexedComponent | null {
   const documentDirectory = path.dirname(document.uri.fsPath)
-  const match = searchDirectories(documentDirectory, workspaceRootOf(document))
-    .map((directory) => indexOf(directory).get(tagName))
-    .find((components) => components !== undefined && components.length > 0)
+  const directories = searchDirectories(documentDirectory, workspaceRootOf(document))
+  const outermostDirectory = directories[directories.length - 1]
+  const candidates = indexOf(outermostDirectory).get(tagName) ?? []
+  const match = directories
+    .map(
+      (directory) =>
+        candidates
+          .filter((component) => isWithinDirectory(directory, component.templatePath))
+          .sort(byDepthThenName(directory))[0]
+    )
+    .find((component) => component !== undefined)
 
-  return match?.[0] ?? null
+  return match ?? null
 }
 
 export function invalidateComponentIndex(): void {
