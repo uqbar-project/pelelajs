@@ -810,6 +810,9 @@ export class Counter {
   set scheduledAt(value: Date) {}
   set model(value: CustomModel) {}
   set optionalCount(value: number | null) {}
+  private hidden = 1
+  protected reserved = 1
+  static shared = 1
   active: boolean = false
   label: string = ''
   config = { level: 1 }
@@ -978,6 +981,12 @@ export class Counter {
 
   it('leaves a property the view model does not declare unchecked', () => {
     expect(check('notDeclared', 'whatever')).toEqual({ accepted: 'unchecked' })
+  })
+
+  it('leaves non-public and static properties unchecked', () => {
+    expect(check('hidden', '1')).toEqual({ accepted: 'unchecked' })
+    expect(check('reserved', '1')).toEqual({ accepted: 'unchecked' })
+    expect(check('shared', '1')).toEqual({ accepted: 'unchecked' })
   })
 
   it('resolves a type alias imported from another module against the current content of that module', () => {

@@ -388,6 +388,23 @@ export function collectViewModelPropertyTypes(
   )
 }
 
+function getCollectablePropertyType(
+  context: ViewModelProgramContext,
+  className: string,
+  propertyName: string,
+): ts.Type | undefined {
+  const classDeclaration = getViewModelClassDeclaration(context.sourceFile, className)
+  if (classDeclaration === undefined) return undefined
+
+  const classType = context.checker.getTypeAtLocation(classDeclaration)
+  const propertySymbol = context.checker.getPropertyOfType(classType, propertyName)
+  if (propertySymbol === undefined || !isCollectablePropertySymbol(propertySymbol)) {
+    return undefined
+  }
+
+  return getTypeOfPropertySymbol(propertySymbol, context.checker)
+}
+
 /**
  * Returns properties that can accept a const attribute. Unknown types are kept
  * because the checker cannot determine whether a value is valid for them.
@@ -519,7 +536,7 @@ function toExpectedTypeText(type: ts.Type, checker: ts.TypeChecker): string {
 
 export function checkConstValue(params: ConstValueCheckParams): ConstValueVerdict {
   const { context, className, propertyName, rawValue } = params
-  const propertyType = collectViewModelPropertyTypes(context, className).get(propertyName)
+  const propertyType = getCollectablePropertyType(context, className, propertyName)
 
   if (propertyType === undefined) return { accepted: 'unchecked' }
   if (classifyType(propertyType) === 'unknown') return { accepted: 'unchecked' }
