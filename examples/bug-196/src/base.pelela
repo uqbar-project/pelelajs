@@ -6,7 +6,7 @@
       <div bind-content="order.description"
            class="chip"
            bind-class="order.statusClass"
-           click="confirm"></div>
+           click="order.confirm"></div>
     </div>
 
     <h2>Orders with link-order (two-way)</h2>
