@@ -5,11 +5,15 @@ import { initializeI18n } from 'pelelajs'
 import {
   analyzeViewModelModule,
   classifyViewModelIssue,
+  createViewModelProgramContextFromProgram,
   extractViewModelPropertyTypes,
+  extractViewModelPropertyTypesWithContext,
+  resolveCompilerOptions,
   suggestViewModelClassName,
   type ViewModelIssue,
   type ViewModelPropertyTypes,
 } from 'pelelajs/analysis'
+import * as ts from 'typescript'
 
 import type { Plugin } from 'vite'
 import {
@@ -37,6 +41,18 @@ interface ComponentFileMetadata {
 
 interface FindComponentFilesOptions {
   includeTypeMap?: boolean
+  extractPropertyTypes?: (
+    componentTsPaths: string[],
+    tsPath: string,
+    className: string,
+  ) => ViewModelPropertyTypes
+}
+
+interface TypeMapProgramCache {
+  setRootFiles(tsPaths: string[]): void
+  extractPropertyTypes(tsPath: string, className: string): ViewModelPropertyTypes
+  invalidate(tsPath: string): void
+  dispose(): void
 }
 
 interface ProcessedComponent {
@@ -81,13 +97,95 @@ function collectTsFiles(dir: string): string[] {
     .filter((filePath) => filePath.endsWith('.ts'))
 }
 
+function createTypeMapProgramCache(currentDirectory: string): TypeMapProgramCache {
+  const compilerOptions = resolveCompilerOptions(currentDirectory)
+  const rootFiles = new Set<string>()
+  const fileVersions = new Map<string, { modificationTime: number; version: string }>()
+  let nextVersion = 0
+
+  const scriptVersionOf = (fileName: string): string => {
+    const cached = fileVersions.get(fileName)
+    let modificationTime = 0
+    try {
+      modificationTime = fs.statSync(fileName).mtimeMs
+    } catch {
+      fileVersions.delete(fileName)
+      return '0'
+    }
+
+    if (cached !== undefined && cached.modificationTime === modificationTime) {
+      return cached.version
+    }
+
+    const version = `${modificationTime}-${++nextVersion}`
+    fileVersions.set(fileName, { modificationTime, version })
+    return version
+  }
+
+  const languageService = ts.createLanguageService(
+    {
+      getCompilationSettings: () => compilerOptions,
+      getScriptFileNames: () => Array.from(rootFiles),
+      getScriptVersion: scriptVersionOf,
+      getScriptSnapshot: (fileName) => {
+        const content = ts.sys.readFile(fileName)
+        return content === undefined ? undefined : ts.ScriptSnapshot.fromString(content)
+      },
+      getCurrentDirectory: () => currentDirectory,
+      getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
+      fileExists: ts.sys.fileExists,
+      readFile: ts.sys.readFile,
+      readDirectory: ts.sys.readDirectory,
+      directoryExists: ts.sys.directoryExists,
+      getDirectories: ts.sys.getDirectories,
+    },
+    ts.createDocumentRegistry(),
+  )
+
+  return {
+    setRootFiles(tsPaths) {
+      const resolvedTsPaths = tsPaths.map((tsPath) => path.resolve(tsPath))
+      const hasSameRootFiles =
+        rootFiles.size === resolvedTsPaths.length &&
+        resolvedTsPaths.every((tsPath) => rootFiles.has(tsPath))
+      if (hasSameRootFiles) return
+
+      rootFiles.clear()
+      resolvedTsPaths.forEach((tsPath) => {
+        rootFiles.add(tsPath)
+      })
+    },
+    extractPropertyTypes(tsPath, className) {
+      const resolvedTsPath = path.resolve(tsPath)
+      const program = languageService.getProgram()
+      if (program === undefined) {
+        throw new Error(`Pelela could not build a TypeScript program for ${resolvedTsPath}`)
+      }
+
+      const context = createViewModelProgramContextFromProgram(program, resolvedTsPath)
+      return extractViewModelPropertyTypesWithContext(context, className)
+    },
+    invalidate(tsPath) {
+      fileVersions.delete(path.resolve(tsPath))
+    },
+    dispose() {
+      languageService.dispose()
+      rootFiles.clear()
+      fileVersions.clear()
+    },
+  }
+}
+
 function findComponentFiles(
   srcDir: string,
-  { includeTypeMap = true }: FindComponentFilesOptions = {},
+  { includeTypeMap = true, extractPropertyTypes }: FindComponentFilesOptions = {},
 ): ComponentFileMetadata[] {
   if (!fs.existsSync(srcDir)) return []
 
   const tsPaths = collectTsFiles(srcDir)
+  const componentTsPaths = tsPaths.filter((tsPath) =>
+    fs.existsSync(tsPath.replace(/\.ts$/, '.pelela')),
+  )
 
   return tsPaths
     .map((tsPath) => {
@@ -120,7 +218,11 @@ function findComponentFiles(
         pelelaPath: toImportPath(pelelaPath),
         viewModelName,
         cssPaths,
-        typeMap: includeTypeMap ? extractViewModelPropertyTypes(tsPath, viewModelName) : null,
+        typeMap: includeTypeMap
+          ? extractPropertyTypes === undefined
+            ? extractViewModelPropertyTypes(tsPath, viewModelName)
+            : extractPropertyTypes(componentTsPaths, tsPath, viewModelName)
+          : null,
         issue,
       }
     })
@@ -225,6 +327,36 @@ function getKnownComponentTags(): string[] {
 
 export function pelelajsPlugin(): Plugin {
   initializeI18n()
+  const typeMapProgramCaches = new Map<string, TypeMapProgramCache>()
+
+  const extractPropertyTypes = (
+    componentTsPaths: string[],
+    tsPath: string,
+    className: string,
+  ): ViewModelPropertyTypes => {
+    const configPath = ts.findConfigFile(path.dirname(tsPath), ts.sys.fileExists)
+    const currentDirectory = configPath === undefined ? process.cwd() : path.dirname(configPath)
+    const cacheKey = configPath ?? path.resolve(currentDirectory)
+    let programCache = typeMapProgramCaches.get(cacheKey)
+    if (programCache === undefined) {
+      programCache = createTypeMapProgramCache(currentDirectory)
+      typeMapProgramCaches.set(cacheKey, programCache)
+    }
+    const projectTsPaths = componentTsPaths.filter((componentTsPath) => {
+      const componentConfigPath = ts.findConfigFile(
+        path.dirname(componentTsPath),
+        ts.sys.fileExists,
+      )
+      const componentCacheKey =
+        componentConfigPath ??
+        path.resolve(
+          componentConfigPath === undefined ? currentDirectory : path.dirname(componentConfigPath),
+        )
+      return componentCacheKey === cacheKey
+    })
+    programCache.setRootFiles(projectTsPaths)
+    return programCache.extractPropertyTypes(tsPath, className)
+  }
 
   return {
     name: PLUGIN_NAME,
@@ -240,7 +372,7 @@ export function pelelajsPlugin(): Plugin {
     load(filePath) {
       if (filePath === RESOLVED_VIRTUAL_ID) {
         const srcDir = path.join(process.cwd(), 'src')
-        const components = findComponentFiles(srcDir)
+        const components = findComponentFiles(srcDir, { extractPropertyTypes })
 
         if (components.length === 0) {
           return 'export {}'
@@ -270,6 +402,12 @@ export function pelelajsPlugin(): Plugin {
     },
 
     hotUpdate({ file, modules }) {
+      if (path.extname(file) === '.ts' || path.extname(file) === '.tsx') {
+        typeMapProgramCaches.forEach((programCache) => {
+          programCache.invalidate(file)
+        })
+      }
+
       const srcDir = path.join(process.cwd(), 'src')
       if (!file.startsWith(`${srcDir}${path.sep}`)) {
         return undefined
@@ -285,6 +423,13 @@ export function pelelajsPlugin(): Plugin {
         return modules
       }
       return [...modules, autoRegisterModule]
+    },
+
+    closeBundle() {
+      typeMapProgramCaches.forEach((programCache) => {
+        programCache.dispose()
+      })
+      typeMapProgramCaches.clear()
     },
   }
 }
