@@ -386,13 +386,15 @@ describe('pelelajsPlugin', () => {
       expect(result).not.toContain('ViewModelExportError')
     })
 
-    it('generates typeMap from the view model property types', () => {
+    it('generates typeMap only for runtime-convertible property types', () => {
       vi.mocked(extractViewModelPropertyTypes).mockReturnValue({
         miles: 'number',
         kilometers: 'number',
         active: 'boolean',
         quantity: 'number',
         description: 'string',
+        config: 'other',
+        dynamic: 'unknown',
       })
       const result = loadAutoRegisterWithComponent(
         `export class Converter {
@@ -401,6 +403,8 @@ describe('pelelajsPlugin', () => {
   active = false
   quantity!: number
   description = ""
+  config = {}
+  dynamic
 }`,
         '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
       )

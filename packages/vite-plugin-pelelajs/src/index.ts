@@ -250,7 +250,9 @@ function generateComponentMetadata(component: ComponentFileMetadata): ProcessedC
   const templateVar = `${baseName}Template`
   const cssUrlsVar = `${baseName}CssUrls`
   const hasCss = cssPaths.length > 0
-  const typeMapEntries = Object.entries(typeMap ?? {}).filter(([, kind]) => kind !== 'unknown')
+  const typeMapEntries = Object.entries(typeMap ?? {}).filter(
+    ([, kind]) => kind !== 'unknown' && kind !== 'other',
+  )
   const optionsParts: string[] = []
   if (typeMapEntries.length > 0) {
     optionsParts.push(`typeMap: ${JSON.stringify(Object.fromEntries(typeMapEntries))}`)

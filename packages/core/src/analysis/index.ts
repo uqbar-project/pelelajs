@@ -263,7 +263,8 @@ export function classifyType(type: ts.Type): ConstKind {
       type.types.filter((member) => !isNullishType(member)).map(classifyType),
     )
     if (distinctKinds.length === 0) return 'unknown'
-    return distinctKinds.length === 1 ? distinctKinds[0] : 'other'
+    if (distinctKinds.includes('other')) return 'other'
+    return distinctKinds.length === 1 ? distinctKinds[0] : 'unknown'
   }
 
   if (type.flags & ts.TypeFlags.Any) return 'unknown'

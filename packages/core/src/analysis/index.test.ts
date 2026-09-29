@@ -401,6 +401,8 @@ describe('extractViewModelPropertyTypes', () => {
   mixed: string | number
   numberFirstMixed: number | string
   nullableMixed: number | string | undefined
+  numberOrDate: number | Date
+  stringOrObject: string | Record<string, unknown>
 }`)
 
     expect(types).toEqual({
@@ -416,9 +418,11 @@ describe('extractViewModelPropertyTypes', () => {
       fromNumber: 'number',
       numberFirst: 'number',
       nullFirst: 'number',
-      mixed: 'other',
-      numberFirstMixed: 'other',
-      nullableMixed: 'other',
+      mixed: 'unknown',
+      numberFirstMixed: 'unknown',
+      nullableMixed: 'unknown',
+      numberOrDate: 'other',
+      stringOrObject: 'other',
     })
   })
 
@@ -718,7 +722,7 @@ export class Counter {
   mixed: Mixed = 'a'
 }`)
 
-    expect(types).toEqual({ mixed: 'other' })
+    expect(types).toEqual({ mixed: 'unknown' })
   })
 
   it('classifies an any property as unknown so the runtime falls back to typeof', () => {
@@ -940,21 +944,15 @@ export class Counter {
     })
   })
 
-  it('accepts every member of a heterogeneous literal union', () => {
-    expect(check('mixed', 'a')).toEqual({ accepted: true })
-    expect(check('mixed', '1')).toEqual({ accepted: true })
-    expect(check('mixed', 'true')).toEqual({ accepted: true })
+  it('leaves a heterogeneous scalar union unchecked for runtime resolution', () => {
+    expect(check('mixed', 'a')).toEqual({ accepted: 'unchecked' })
+    expect(check('mixed', '1')).toEqual({ accepted: 'unchecked' })
+    expect(check('mixed', 'true')).toEqual({ accepted: 'unchecked' })
   })
 
-  it('rejects a value outside a heterogeneous literal union and names the allowed ones', () => {
-    const expected = {
-      accepted: false,
-      reason: 'literalMismatch',
-      expectedTypeText: 'true | "a" | 1',
-    }
-
-    expect(check('mixed', 'zz')).toEqual(expected)
-    expect(check('mixed', 'false')).toEqual(expected)
+  it('leaves values outside a heterogeneous scalar union unchecked', () => {
+    expect(check('mixed', 'zz')).toEqual({ accepted: 'unchecked' })
+    expect(check('mixed', 'false')).toEqual({ accepted: 'unchecked' })
   })
 
   it('accepts a string enum member because it holds that string at runtime', () => {

@@ -38,10 +38,7 @@ describe('plugin typeMap const binding integration', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-plugin-const-'))
     fs.mkdirSync(path.join(tempDir, 'src'))
     fs.writeFileSync(path.join(tempDir, 'src', 'counter.ts'), COMPONENT_SOURCE)
-    fs.writeFileSync(
-      path.join(tempDir, 'src', 'scalar.ts'),
-      'export type Scalar = number | boolean',
-    )
+    fs.writeFileSync(path.join(tempDir, 'src', 'scalar.ts'), 'export type Scalar = number | Date')
     fs.writeFileSync(
       path.join(tempDir, 'src', 'counter.pelela'),
       '<pelela view-model="CounterViewModel"></pelela>',
@@ -71,31 +68,40 @@ describe('plugin typeMap const binding integration', () => {
     const createLanguageServiceMock = vi.mocked(createLanguageService)
     const plugin = pelelajsPlugin()
     const load = getHandler(plugin.load!)
-    const readTypeMaps = (): Record<string, ConstKind>[] => {
-      const generatedModule = load.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
-      const typeMapMatches = Array.from(generatedModule.matchAll(/typeMap: (\{[^}]*\})/g))
-      if (typeMapMatches.length === 0) {
-        throw new Error('Generated registration did not include a typeMap')
+    const readGeneratedModule = (): string =>
+      load.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+    const readTypeMap = (
+      generatedModule: string,
+      viewModelName: string,
+    ): Record<string, ConstKind> | undefined => {
+      const registration = generatedModule.match(
+        new RegExp(`defineComponent\\("${viewModelName}"[^\\n]*`),
+      )?.[0]
+      if (registration === undefined) {
+        throw new Error(`Generated registration for ${viewModelName} was not found`)
       }
-      return typeMapMatches.map((match) => JSON.parse(match[1]) as Record<string, ConstKind>)
+      const typeMapMatch = registration.match(/typeMap: (\{[^}]*\})/)
+      return typeMapMatch === null
+        ? undefined
+        : (JSON.parse(typeMapMatch[1]) as Record<string, ConstKind>)
     }
 
     class CounterViewModel {
-      quantity!: number | boolean
+      quantity: number | Date = new Date()
     }
 
     const container = document.createElement('div')
     container.innerHTML = '<counter-view-model const-quantity="42"></counter-view-model>'
 
-    const [unionTypeMap, labelTypeMap] = readTypeMaps()
-    expect(unionTypeMap).toEqual({ quantity: 'other' })
-    expect(labelTypeMap).toEqual({ label: 'string' })
+    const initialGeneratedModule = readGeneratedModule()
+    expect(readTypeMap(initialGeneratedModule, 'CounterViewModel')).toBeUndefined()
+    expect(readTypeMap(initialGeneratedModule, 'LabelViewModel')).toEqual({ label: 'string' })
     expect(createLanguageServiceMock).toHaveBeenCalledTimes(1)
     const languageService = createLanguageServiceMock.mock.results[0].value
     const initialProgram = languageService.getProgram()
     expect(initialProgram).toBeDefined()
 
-    readTypeMaps()
+    readGeneratedModule()
     expect(createLanguageServiceMock).toHaveBeenCalledTimes(1)
     expect(languageService.getProgram()).toBe(initialProgram)
 
@@ -103,7 +109,6 @@ describe('plugin typeMap const binding integration', () => {
       'CounterViewModel',
       CounterViewModel,
       '<component view-model="CounterViewModel"></component>',
-      { typeMap: unionTypeMap },
     )
     expect(() =>
       setupComponentBindings(
@@ -123,9 +128,10 @@ describe('plugin typeMap const binding integration', () => {
       { file: scalarPath, modules: [] } as never,
     )
 
-    const [numericTypeMap, updatedLabelTypeMap] = readTypeMaps()
+    const regeneratedModule = readGeneratedModule()
+    const numericTypeMap = readTypeMap(regeneratedModule, 'CounterViewModel')
     expect(numericTypeMap).toEqual({ quantity: 'number' })
-    expect(updatedLabelTypeMap).toEqual({ label: 'string' })
+    expect(readTypeMap(regeneratedModule, 'LabelViewModel')).toEqual({ label: 'string' })
     expect(languageService.getProgram()).not.toBe(initialProgram)
     defineComponent(
       'CounterViewModel',
