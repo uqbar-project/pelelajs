@@ -26,6 +26,7 @@ import { renderIfBindings, setupIfBindings } from './bindIf'
 import { renderSrcBindings, setupSrcBindings } from './bindSrc'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
+import { registerForEachScope } from './forEachScope'
 import { getNestedProperty } from './nestedProperties'
 import { setOptionValue } from './optionValues'
 import type { ForEachBinding, NotifyParent, ViewModel } from './types'
@@ -56,7 +57,7 @@ export function createExtendedViewModel<T extends object>({
   indexName,
   indexRef,
 }: ExtendedViewModelOptions<T>): ViewModel {
-  return new Proxy(
+  const scope = new Proxy(
     {},
     {
       has(_target, prop) {
@@ -87,6 +88,10 @@ export function createExtendedViewModel<T extends object>({
       },
     },
   ) as ViewModel
+
+  registerForEachScope(scope, { parentViewModel, itemName, indexName, itemRef, indexRef })
+
+  return scope
 }
 
 function setupBindingsForElement<T extends object>(

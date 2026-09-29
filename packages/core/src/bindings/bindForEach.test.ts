@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as errorPage from '../bootstrap/errorPage'
 import {
+  ArrowFunctionAsHandlerError,
+  GetterAsHandlerError,
   InvalidBindingAttributeError,
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
   InvalidPropertyTypeError,
+  PropertyAsHandlerError,
   PropertyValidationError,
 } from '../errors/index'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
@@ -24,6 +28,7 @@ describe('bindForEach', () => {
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)
+    vi.spyOn(errorPage, 'renderErrorPage').mockImplementation(() => {})
   })
 
   afterEach(() => {
@@ -729,6 +734,182 @@ describe('bindForEach', () => {
       buttons[1].click()
 
       expect(viewModel.clickedNames).toEqual(['Item 1', 'Item 2'])
+    })
+
+    it('should notify the parent when an item instance method mutates reactive item state', () => {
+      class Order {
+        status = 'PENDING'
+
+        confirm(): void {
+          this.status = 'DONE'
+        }
+      }
+      class OrdersViewModel {
+        [key: string]: unknown
+        orders = [new Order()]
+      }
+      const notifications = vi.fn()
+      const viewModel = createReactiveViewModel(new OrdersViewModel(), notifications)
+
+      container.innerHTML = `
+        <div for-each="order of orders">
+          <button click="order.confirm"></button>
+        </div>
+      `
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+      container.querySelector('button')?.click()
+
+      expect(viewModel.orders[0].status).toBe('DONE')
+      expect(notifications).toHaveBeenCalledWith('orders.0.status')
+    })
+
+    it('should invoke an instance method of the iterated item with the item as receiver', () => {
+      class Item {
+        constructor(public path: string) {}
+        navigate(): void {
+          this.clicked = true
+        }
+        clicked = false
+      }
+      class NavBarViewModel {
+        [key: string]: unknown
+        items: Item[] = [new Item('/orders'), new Item('/cart')]
+      }
+      const viewModel = new NavBarViewModel()
+
+      container.innerHTML = `
+        <pelela>
+          <div for-each="item of items">
+            <button click="item.navigate"></button>
+          </div>
+        </pelela>
+      `
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const buttons = container.querySelectorAll('button')
+      buttons[0].click()
+      buttons[1].click()
+
+      expect(errorPage.renderErrorPage).not.toHaveBeenCalled()
+      expect(viewModel.items[0].clicked).toBe(true)
+      expect(viewModel.items[1].clicked).toBe(true)
+    })
+
+    it('should pass the for-each scope as the first argument of an item instance method', () => {
+      class Item {
+        path = '/orders'
+        receivedScope: { item?: { path: string } } | null = null
+
+        navigate(scope: { item?: { path: string } }): void {
+          this.receivedScope = scope
+        }
+      }
+      class NavBarViewModel {
+        [key: string]: unknown
+        items: Item[] = [new Item()]
+      }
+      const viewModel = new NavBarViewModel()
+
+      container.innerHTML = `
+        <pelela>
+          <div for-each="item of items">
+            <button click="item.navigate"></button>
+          </div>
+        </pelela>
+      `
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+      ;(container.querySelector('button') as HTMLButtonElement).click()
+
+      expect(errorPage.renderErrorPage).not.toHaveBeenCalled()
+      expect(viewModel.items[0].receivedScope?.item?.path).toBe('/orders')
+    })
+
+    it('should render ArrowFunctionAsHandlerError when the item handler is an arrow function field', () => {
+      class Item {
+        path = '/orders'
+        navigate = (): void => {}
+      }
+      class NavBarViewModel {
+        [key: string]: unknown
+        items: Item[] = [new Item()]
+      }
+      const viewModel = new NavBarViewModel()
+
+      container.innerHTML = `
+        <pelela>
+          <div for-each="item of items">
+            <button click="item.navigate"></button>
+          </div>
+        </pelela>
+      `
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+      ;(container.querySelector('button') as HTMLButtonElement).click()
+
+      const expectedError = new ArrowFunctionAsHandlerError('item.navigate', 'Item', 'click')
+      expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+    })
+
+    it('should render GetterAsHandlerError when the item handler is a getter of the item', () => {
+      class Item {
+        path = '/orders'
+        get navigate(): string {
+          return this.path
+        }
+      }
+      class NavBarViewModel {
+        [key: string]: unknown
+        items: Item[] = [new Item()]
+      }
+      const viewModel = new NavBarViewModel()
+
+      container.innerHTML = `
+        <pelela>
+          <div for-each="item of items">
+            <button click="item.navigate"></button>
+          </div>
+        </pelela>
+      `
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+      ;(container.querySelector('button') as HTMLButtonElement).click()
+
+      const expectedError = new GetterAsHandlerError('item.navigate', 'Item', 'click')
+      expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+    })
+
+    it('should render PropertyAsHandlerError when the item handler is a plain property of the item', () => {
+      class Item {
+        path = '/orders'
+      }
+      class NavBarViewModel {
+        [key: string]: unknown
+        items: Item[] = [new Item()]
+      }
+      const viewModel = new NavBarViewModel()
+
+      container.innerHTML = `
+        <pelela>
+          <div for-each="item of items">
+            <button click="item.path"></button>
+          </div>
+        </pelela>
+      `
+
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+      ;(container.querySelector('button') as HTMLButtonElement).click()
+
+      const expectedError = new PropertyAsHandlerError('item.path', 'Item', 'click')
+      expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
     })
 
     it('should initialize components inside for-each loop', () => {

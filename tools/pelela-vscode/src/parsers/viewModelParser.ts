@@ -363,6 +363,63 @@ export function extractViewModelMembers(
   return collectViewModelMembers(classDeclaration, new Set<string>())
 }
 
+/**
+ * Resolves the members of the type a nested property path points at, so
+ * diagnostics can validate members reached through that path (e.g. the item
+ * type of a collection in a `for-each`). Returns `null` when the path does not
+ * resolve to a class, because there are no members to inspect then.
+ */
+export function extractNestedMembers(
+  typescriptFilePath: string,
+  propertyPath: string,
+  className: string
+): ViewModelMembers | null {
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
+  const startingNode = findPropertyTypeNode(
+    sourceFile,
+    propertyPath.split('.')[0],
+    className,
+    typescriptFilePath
+  )
+  if (!startingNode) return null
+
+  const finalNode = resolveToNode(
+    startingNode,
+    propertyPath.split('.').slice(1),
+    sourceFile,
+    typescriptFilePath
+  )
+  if (!finalNode) return null
+
+  const classDeclaration = resolveClassDeclarationOfType(finalNode, sourceFile, typescriptFilePath)
+  if (!classDeclaration) return null
+
+  return collectViewModelMembers(classDeclaration, new Set<string>())
+}
+
+function resolveClassDeclarationOfType(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  filePath: string
+): ts.ClassDeclaration | undefined {
+  if (ts.isClassDeclaration(node)) return node
+  if (ts.isArrayTypeNode(node)) {
+    return resolveClassDeclarationOfType(node.elementType, sourceFile, filePath)
+  }
+  if (ts.isTypeReferenceNode(node)) {
+    if (
+      ts.isIdentifier(node.typeName) &&
+      (node.typeName.text === 'Array' || node.typeName.text === 'ReadonlyArray') &&
+      node.typeArguments?.length === 1
+    ) {
+      return resolveClassDeclarationOfType(node.typeArguments[0], sourceFile, filePath)
+    }
+    const declaration = resolveTypeReference(node, sourceFile, filePath)
+    if (declaration && ts.isClassDeclaration(declaration)) return declaration
+  }
+  return undefined
+}
+
 function isClassExportedDirectly(classDeclaration: ts.ClassDeclaration): boolean {
   return (
     classDeclaration.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ??

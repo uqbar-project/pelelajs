@@ -66,6 +66,25 @@ export class InheritedViewModel extends BaseViewModel {
 }
 `
 
+const NAV_BAR_VIEW_MODEL_FIXTURE = `
+export class NavLink {
+  path: string = "/orders"
+  goTo = (): void => { console.log("go") }
+  navigate(): void {
+    console.log("navigate")
+  }
+  get title(): string {
+    return this.path
+  }
+}
+
+export class NavBar {
+  get links(): NavLink[] {
+    return []
+  }
+}
+`
+
 interface ViewModelContext {
   tsPath: string
   pelelaPath: string
@@ -93,6 +112,8 @@ describe('viewModelValidator', () => {
   let wrongCasePath: string
   let notAClassPath: string
   let inheritedPath: string
+  let navBarPath: string
+  let navBarMembers: ViewModelMembers
 
   before(() => {
     if (!fs.existsSync(testFilesDir)) {
@@ -112,6 +133,9 @@ describe('viewModelValidator', () => {
     notAClassPath = path.join(testFilesDir, 'NotAClassVM.ts')
     inheritedPath = path.join(testFilesDir, 'InheritedVM.ts')
     fs.writeFileSync(inheritedPath, INHERITED_VIEW_MODEL_FIXTURE)
+    navBarPath = path.join(testFilesDir, 'NavBarViewModel.ts')
+    fs.writeFileSync(navBarPath, NAV_BAR_VIEW_MODEL_FIXTURE)
+    navBarMembers = extractViewModelMembers(navBarPath, 'NavBar')
   })
 
   afterEach(() => {
@@ -473,8 +497,14 @@ describe('viewModelValidator', () => {
     })
 
     it('accepts an existing method in click', () => {
-      const { tags } = prepareValidation(['<div click="goToDetail">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<div click="goToDetail">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 0)
     })
 
@@ -724,23 +754,40 @@ describe('viewModelValidator', () => {
 
   describe('validateEventMethods', () => {
     it('accepts an existing click method', () => {
-      const { tags } = prepareValidation(['<button click="handleClick">'], context)
-      assert.strictEqual(validateEventMethods(tags, context.members).length, 0)
+      const { tags, document } = prepareValidation(['<button click="handleClick">'], context)
+      assert.strictEqual(
+        validateEventMethods(tags, context.members, context.tsPath, document, 'TestViewModel')
+          .length,
+        0
+      )
     })
 
     it('accepts an inherited method inside the derived ViewModel', () => {
       const inheritedMembers = extractViewModelMembers(inheritedPath, 'InheritedViewModel')
-      const { tags } = prepareValidation(['<button click="reset">'], {
+      const { tags, document } = prepareValidation(['<button click="reset">'], {
         tsPath: inheritedPath,
         pelelaPath: testPelelaPath,
         members: inheritedMembers,
       })
-      assert.strictEqual(validateEventMethods(tags, inheritedMembers).length, 0)
+      const diagnostics = validateEventMethods(
+        tags,
+        inheritedMembers,
+        inheritedPath,
+        document,
+        'InheritedViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 0)
     })
 
     it('rejects a non-existent click method', () => {
-      const { tags } = prepareValidation(['<button click="nonExistentMethod">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="nonExistentMethod">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -750,13 +797,23 @@ describe('viewModelValidator', () => {
     })
 
     it('accepts an existing enter method', () => {
-      const { tags } = prepareValidation(['<input enter="handleEnter">'], context)
-      assert.strictEqual(validateEventMethods(tags, context.members).length, 0)
+      const { tags, document } = prepareValidation(['<input enter="handleEnter">'], context)
+      assert.strictEqual(
+        validateEventMethods(tags, context.members, context.tsPath, document, 'TestViewModel')
+          .length,
+        0
+      )
     })
 
     it('rejects a non-existent enter method', () => {
-      const { tags } = prepareValidation(['<input enter="nonExistentEnter">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<input enter="nonExistentEnter">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -766,8 +823,14 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects an event referencing a getter with getterAsMethod', () => {
-      const { tags } = prepareValidation(['<button click="totalCount">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="totalCount">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -777,8 +840,14 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects an event referencing a ViewModel property with propertyAsMethod', () => {
-      const { tags } = prepareValidation(['<button click="total">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="total">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -788,8 +857,14 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects an event referencing an arrow function field with arrowFunctionAsMethod', () => {
-      const { tags } = prepareValidation(['<button click="increment">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="increment">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -799,8 +874,14 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects an event referencing an arrow wrapped in an as expression with arrowFunctionAsMethod', () => {
-      const { tags } = prepareValidation(['<button click="incrementAs">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="incrementAs">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -810,8 +891,14 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects an event referencing an arrow wrapped in a type assertion with arrowFunctionAsMethod', () => {
-      const { tags } = prepareValidation(['<button click="incrementAssert">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="incrementAssert">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -821,8 +908,14 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects an event referencing an arrow wrapped in a satisfies expression with arrowFunctionAsMethod', () => {
-      const { tags } = prepareValidation(['<button click="incrementSatisfies">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="incrementSatisfies">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -832,8 +925,14 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects an event referencing an arrow wrapped in a non-null expression with arrowFunctionAsMethod', () => {
-      const { tags } = prepareValidation(['<button click="incrementNonNull">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="incrementNonNull">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -843,8 +942,14 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects an event with wrong-cased method using methodCaseMismatch', () => {
-      const { tags } = prepareValidation(['<button click="handleclick">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="handleclick">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -854,8 +959,14 @@ describe('viewModelValidator', () => {
     })
 
     it('rejects an event whose handler name differs only by case from a getter member using methodCaseMismatch', () => {
-      const { tags } = prepareValidation(['<button click="decrement">'], context)
-      const diagnostics = validateEventMethods(tags, context.members)
+      const { tags, document } = prepareValidation(['<button click="decrement">'], context)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
@@ -865,12 +976,137 @@ describe('viewModelValidator', () => {
     })
 
     it('reports multiple event method errors', () => {
-      const { tags } = prepareValidation(
+      const { tags, document } = prepareValidation(
         ['<button click="badMethod" enter="anotherBadMethod">'],
         context
       )
-      const diagnostics = validateEventMethods(tags, context.members)
+      const diagnostics = validateEventMethods(
+        tags,
+        context.members,
+        context.tsPath,
+        document,
+        'TestViewModel'
+      )
       assert.strictEqual(diagnostics.length, 2)
+    })
+
+    describe('handlers of the iterated item inside for-each', () => {
+      const navBarContext: ViewModelContext = {
+        tsPath: navBarPath,
+        pelelaPath: testPelelaPath,
+        members: navBarMembers,
+      }
+
+      function validateInForEach(attribute: string): vscode.Diagnostic[] {
+        const { tags, document } = prepareValidation(
+          [
+            '<pelela view-model="NavBar">',
+            `  <div for-each="link of links">`,
+            `    <button ${attribute}></button>`,
+            '  </div>',
+            '</pelela>',
+          ],
+          navBarContext
+        )
+        return validateEventMethods(tags, navBarMembers, navBarPath, document, 'NavBar')
+      }
+
+      it('accepts an instance method of the item', () => {
+        assert.deepStrictEqual(validateInForEach('click="link.navigate"'), [])
+      })
+
+      it('rejects an arrow function field of the item with arrowFunctionAsMethod', () => {
+        const diagnostics = validateInForEach('click="link.goTo"')
+        assert.strictEqual(diagnostics.length, 1)
+        assertDiagnostic(
+          diagnostics[0],
+          t('diagnostics.arrowFunctionAsMethod', { name: 'link.goTo' }),
+          vscode.DiagnosticSeverity.Error
+        )
+      })
+
+      it('rejects a getter of the item with getterAsMethod', () => {
+        const diagnostics = validateInForEach('click="link.title"')
+        assert.strictEqual(diagnostics.length, 1)
+        assertDiagnostic(
+          diagnostics[0],
+          t('diagnostics.getterAsMethod', { name: 'link.title' }),
+          vscode.DiagnosticSeverity.Error
+        )
+      })
+
+      it('rejects a plain property of the item with propertyAsMethod', () => {
+        const diagnostics = validateInForEach('click="link.path"')
+        assert.strictEqual(diagnostics.length, 1)
+        assertDiagnostic(
+          diagnostics[0],
+          t('diagnostics.propertyAsMethod', { name: 'link.path' }),
+          vscode.DiagnosticSeverity.Error
+        )
+      })
+
+      it('rejects a non-existent item method with methodNotFound', () => {
+        const diagnostics = validateInForEach('click="link.missing"')
+        assert.strictEqual(diagnostics.length, 1)
+        assertDiagnostic(
+          diagnostics[0],
+          t('diagnostics.methodNotFound', { name: 'missing' }),
+          vscode.DiagnosticSeverity.Error
+        )
+      })
+
+      it('rejects an item handler name with wrong case with methodCaseMismatch', () => {
+        const diagnostics = validateInForEach('click="link.Navigate"')
+        assert.strictEqual(diagnostics.length, 1)
+        assertDiagnostic(
+          diagnostics[0],
+          t('diagnostics.methodCaseMismatch', { name: 'link.Navigate', suggestedName: 'navigate' }),
+          vscode.DiagnosticSeverity.Error
+        )
+      })
+
+      it('accepts the index variable of the for-each', () => {
+        const { tags, document } = prepareValidation(
+          [
+            '<pelela view-model="NavBar">',
+            '  <div for-each="link of links" index="i">',
+            '    <button click="i"></button>',
+            '  </div>',
+            '</pelela>',
+          ],
+          navBarContext
+        )
+        assert.deepStrictEqual(
+          validateEventMethods(tags, navBarMembers, navBarPath, document, 'NavBar'),
+          []
+        )
+      })
+
+      it('keeps validating view model handlers of a for-each with their own messages', () => {
+        const { tags, document } = prepareValidation(
+          [
+            '<pelela view-model="NavBar">',
+            '  <div for-each="link of links">',
+            '    <button click="link.navigate" enter="nonExistentMethod"></button>',
+            '  </div>',
+            '</pelela>',
+          ],
+          navBarContext
+        )
+        const diagnostics = validateEventMethods(
+          tags,
+          navBarMembers,
+          navBarPath,
+          document,
+          'NavBar'
+        )
+        assert.strictEqual(diagnostics.length, 1)
+        assertDiagnostic(
+          diagnostics[0],
+          t('diagnostics.methodNotFound', { name: 'nonExistentMethod' }),
+          vscode.DiagnosticSeverity.Error
+        )
+      })
     })
   })
 })
