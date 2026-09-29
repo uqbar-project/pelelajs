@@ -10,6 +10,7 @@ import {
   PropertyAsHandlerError,
 } from '../errors/index'
 import { unwrapReactive } from '../reactivity/proxyIdentity'
+import { resolveHandlerOwner } from './forEachScope'
 import type { EventHandler, ViewModel } from './types'
 
 interface ExecuteEventHandlerOptions<T extends object, E extends Event> {
@@ -38,9 +39,10 @@ function findPropertyOwner(target: object | null, propertyName: string): object 
 
 function getHandler<T extends object>(viewModel: ViewModel<T>, handlerName: string): unknown {
   if (isUnsafeKey(handlerName)) return undefined
-  const propertyOwner = findPropertyOwner(viewModel, handlerName)
-  if (!propertyOwner) return undefined
-  return viewModel[handlerName]
+  if (!(handlerName in viewModel)) return undefined
+  const handler = viewModel[handlerName]
+  if (handler === (Object.prototype as Record<string, unknown>)[handlerName]) return undefined
+  return handler
 }
 
 /**
@@ -73,25 +75,30 @@ export function executeEventHandler<T extends object, E extends Event>({
   try {
     const viewModelName = viewModel.constructor?.name ?? 'Unknown'
 
-    if (isGetterProperty(viewModel, handlerName)) {
-      throw new GetterAsHandlerError(handlerName, viewModelName, eventType)
+    const resolvedOwner = resolveHandlerOwner(viewModel, handlerName)
+    const owner = resolvedOwner === null ? viewModel : resolvedOwner.owner
+    const memberName = resolvedOwner === null ? handlerName : resolvedOwner.memberName
+    const ownerName = owner.constructor.name
+
+    if (isGetterProperty(owner, memberName)) {
+      throw new GetterAsHandlerError(handlerName, ownerName, eventType)
     }
 
     const handler = getHandler(viewModel, handlerName)
 
     if (isEventHandler<T, E>(handler)) {
-      if (isArrowFunctionMember(viewModel, handlerName, handler)) {
-        throw new ArrowFunctionAsHandlerError(handlerName, viewModelName, eventType)
+      if (isArrowFunctionMember(owner, memberName, handler)) {
+        throw new ArrowFunctionAsHandlerError(handlerName, ownerName, eventType)
       }
-      const handlerResult = handler.call(viewModel, viewModel, event)
+      const handlerResult = handler.call(owner as ViewModel<T>, viewModel, event)
       if (isPromiseLike(handlerResult)) {
         void Promise.resolve(handlerResult).catch(renderErrorPage)
       }
       return
     }
 
-    if (!isUnsafeKey(handlerName) && findPropertyOwner(viewModel, handlerName)) {
-      throw new PropertyAsHandlerError(handlerName, viewModelName, eventType)
+    if (!isUnsafeKey(handlerName) && findPropertyOwner(owner, memberName)) {
+      throw new PropertyAsHandlerError(handlerName, ownerName, eventType)
     }
 
     const suggestedName = findCaseInsensitiveMember(viewModel, handlerName)

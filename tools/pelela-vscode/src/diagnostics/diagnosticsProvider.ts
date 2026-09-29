@@ -43,7 +43,7 @@ export function validatePelelaDocument(
     if (viewModelName && viewModelDiagnostics.length === 0) {
       const members = extractViewModelMembers(tsPath, viewModelName)
       diagnostics.push(...validateBindingProperties(tags, tsPath, members, document, viewModelName))
-      diagnostics.push(...validateEventMethods(tags, members))
+      diagnostics.push(...validateEventMethods(tags, members, tsPath, document, viewModelName))
     }
   }
 
