@@ -329,7 +329,9 @@ describe('validateBindingTargets', () => {
   })
 
   it('rejects a method as a prop target (it cannot be set)', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-increment="count"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model prop-increment="count"></counter-view-model>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
@@ -339,7 +341,9 @@ describe('validateBindingTargets', () => {
   })
 
   it('rejects a method as a link target (it cannot be set)', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter link-increment="count"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model link-increment="count"></counter-view-model>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
@@ -349,7 +353,9 @@ describe('validateBindingTargets', () => {
   })
 
   it('rejects a method as a const target (it cannot be set)', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter const-increment="1"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model const-increment="1"></counter-view-model>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
@@ -359,7 +365,9 @@ describe('validateBindingTargets', () => {
   })
 
   it('rejects an arrow field as a prop target (it cannot be set)', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter prop-on-update="count"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model prop-on-update="count"></counter-view-model>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
