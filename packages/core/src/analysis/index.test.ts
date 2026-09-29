@@ -764,6 +764,19 @@ export class Counter extends BaseCounter {
     expect(types).toEqual({ inherited: 'string', own: 'number' })
   })
 
+  it('collects property types from a class re-exported under another name', () => {
+    writeModule(
+      `export class Counter {
+  count!: number | undefined
+}`,
+      'model.ts',
+    )
+    const barrelPath = writeViewModel(`export { Counter as CounterViewModel } from './model'`)
+    const types = extractViewModelPropertyTypes(barrelPath, 'CounterViewModel')
+
+    expect(types).toEqual({ count: 'number' })
+  })
+
   it('ignores private and static members inherited from a base class', () => {
     writeModule(
       `export class BaseCounter {

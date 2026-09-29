@@ -340,6 +340,33 @@ function getViewModelClassDeclaration(
   return findClassInStatements(sourceFile.statements, className.split('.'))
 }
 
+function getViewModelClassType(
+  context: ViewModelProgramContext,
+  className: string,
+): ts.Type | undefined {
+  const localDeclaration = getViewModelClassDeclaration(context.sourceFile, className)
+  if (localDeclaration !== undefined) {
+    return context.checker.getTypeAtLocation(localDeclaration)
+  }
+
+  const moduleSymbol = context.checker.getSymbolAtLocation(context.sourceFile)
+  if (moduleSymbol === undefined) return undefined
+
+  const exportSymbol = context.checker
+    .getExportsOfModule(moduleSymbol)
+    .find((symbol) => symbol.getName() === className)
+  if (exportSymbol === undefined) return undefined
+
+  const classSymbol =
+    exportSymbol.flags & ts.SymbolFlags.Alias
+      ? context.checker.getAliasedSymbol(exportSymbol)
+      : exportSymbol
+  const classDeclaration = classSymbol.declarations?.find(ts.isClassDeclaration)
+  return classDeclaration === undefined
+    ? undefined
+    : context.checker.getTypeAtLocation(classDeclaration)
+}
+
 function findClassInStatements(
   statements: readonly ts.Statement[],
   namePath: string[],
@@ -373,10 +400,8 @@ export function collectViewModelPropertyTypes(
   context: ViewModelProgramContext,
   className: string,
 ): Map<string, ts.Type> {
-  const classDeclaration = getViewModelClassDeclaration(context.sourceFile, className)
-  if (classDeclaration === undefined) return new Map<string, ts.Type>()
-
-  const classType = context.checker.getTypeAtLocation(classDeclaration)
+  const classType = getViewModelClassType(context, className)
+  if (classType === undefined) return new Map<string, ts.Type>()
 
   return new Map(
     context.checker
@@ -393,10 +418,8 @@ function getCollectablePropertyType(
   className: string,
   propertyName: string,
 ): ts.Type | undefined {
-  const classDeclaration = getViewModelClassDeclaration(context.sourceFile, className)
-  if (classDeclaration === undefined) return undefined
-
-  const classType = context.checker.getTypeAtLocation(classDeclaration)
+  const classType = getViewModelClassType(context, className)
+  if (classType === undefined) return undefined
   const propertySymbol = context.checker.getPropertyOfType(classType, propertyName)
   if (propertySymbol === undefined || !isCollectablePropertySymbol(propertySymbol)) {
     return undefined
