@@ -41,7 +41,7 @@ function registerViewModelWatcher(): vscode.Disposable {
 
   const onChange = (uri: vscode.Uri) => {
     invalidateViewModelLanguageService(uri.fsPath)
-    invalidateComponentIndex()
+    if (uri.fsPath.endsWith('.pelela')) invalidateComponentIndex()
     refreshPelelaDiagnostics()
   }
 
