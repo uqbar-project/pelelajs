@@ -91,7 +91,9 @@ describe('validateConstValues', () => {
   }
 
   it('reports a diagnostic when a const number receives a non-numeric literal', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter-view-model const-count="a"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model const-count="a"></counter-view-model>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
@@ -105,9 +107,11 @@ describe('validateConstValues', () => {
   })
 
   it('accepts a numeric literal for a number property', () => {
-    const numericValue = validate(PARENT_TEMPLATE('<counter-view-model const-count="2"></counter>'))
+    const numericValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-count="2"></counter-view-model>')
+    )
     const trimmedValue = validate(
-      PARENT_TEMPLATE('<counter-view-model const-count=" 42 "></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-count=" 42 "></counter-view-model>')
     )
 
     assert.strictEqual(numericValue.length, 0)
@@ -116,9 +120,11 @@ describe('validateConstValues', () => {
 
   it('validates const values for a property defined only by a setter', () => {
     const invalidValue = validate(
-      PARENT_TEMPLATE('<counter-view-model const-amount="invalid"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-amount="invalid"></counter-view-model>')
     )
-    const validValue = validate(PARENT_TEMPLATE('<counter-view-model const-amount="42"></counter>'))
+    const validValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-amount="42"></counter-view-model>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(invalidValue),
@@ -134,10 +140,10 @@ describe('validateConstValues', () => {
 
   it('validates const values for properties inherited from a base class in another file', () => {
     const invalidValue = validate(
-      PARENT_TEMPLATE('<counter-view-model const-inherited-count="invalid"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-inherited-count="invalid"></counter-view-model>')
     )
     const validValue = validate(
-      PARENT_TEMPLATE('<counter-view-model const-inherited-count="42"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-inherited-count="42"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -154,7 +160,7 @@ describe('validateConstValues', () => {
 
   it('reports a diagnostic when a const boolean receives an invalid literal', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model const-active="maybe"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-active="maybe"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -170,10 +176,10 @@ describe('validateConstValues', () => {
 
   it('accepts boolean literals for a boolean property', () => {
     const trueValue = validate(
-      PARENT_TEMPLATE('<counter-view-model const-active="true"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-active="true"></counter-view-model>')
     )
     const spacedValue = validate(
-      PARENT_TEMPLATE('<counter-view-model const-active=" false "></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-active=" false "></counter-view-model>')
     )
 
     assert.strictEqual(trueValue.length, 0)
@@ -182,18 +188,26 @@ describe('validateConstValues', () => {
 
   it('accepts any literal for a string property', () => {
     const numericValue = validate(
-      PARENT_TEMPLATE('<counter-view-model const-label="42"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-label="42"></counter-view-model>')
     )
-    const textValue = validate(PARENT_TEMPLATE('<counter-view-model const-label="hi"></counter>'))
+    const textValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-label="hi"></counter-view-model>')
+    )
 
     assert.strictEqual(numericValue.length, 0)
     assert.strictEqual(textValue.length, 0)
   })
 
   it('reports a diagnostic for object, array and Date properties', () => {
-    const configValue = validate(PARENT_TEMPLATE('<counter-view-model const-config="x"></counter>'))
-    const itemsValue = validate(PARENT_TEMPLATE('<counter-view-model const-items="x"></counter>'))
-    const dateValue = validate(PARENT_TEMPLATE('<counter-view-model const-date="x"></counter>'))
+    const configValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-config="x"></counter-view-model>')
+    )
+    const itemsValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-items="x"></counter-view-model>')
+    )
+    const dateValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-date="x"></counter-view-model>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(configValue),
@@ -213,9 +227,11 @@ describe('validateConstValues', () => {
   })
 
   it('accepts values for a property without a known type', () => {
-    const textValue = validate(PARENT_TEMPLATE('<counter-view-model const-dynamic="x"></counter>'))
+    const textValue = validate(
+      PARENT_TEMPLATE('<counter-view-model const-dynamic="x"></counter-view-model>')
+    )
     const numericValue = validate(
-      PARENT_TEMPLATE('<counter-view-model const-dynamic="2"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-dynamic="2"></counter-view-model>')
     )
 
     assert.strictEqual(textValue.length, 0)
@@ -223,13 +239,17 @@ describe('validateConstValues', () => {
   })
 
   it('accepts a value listed in a type alias of string literals', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter-view-model const-size="lg"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model const-size="lg"></counter-view-model>')
+    )
 
     assert.strictEqual(diagnostics.length, 0)
   })
 
   it('names the allowed values when a value is outside a type alias of string literals', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter-view-model const-size="xx"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model const-size="xx"></counter-view-model>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
@@ -243,7 +263,9 @@ describe('validateConstValues', () => {
   })
 
   it('rejects a numeric value for a type alias of string literals', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter-view-model const-size="5"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model const-size="5"></counter-view-model>')
+    )
 
     assertDiagnostic(
       getSingleDiagnostic(diagnostics),
@@ -257,8 +279,12 @@ describe('validateConstValues', () => {
   })
 
   it('accepts a value listed in an inline union of string literals', () => {
-    const accepted = validate(PARENT_TEMPLATE('<counter-view-model const-mode="grid"></counter>'))
-    const rejected = validate(PARENT_TEMPLATE('<counter-view-model const-mode="zz"></counter>'))
+    const accepted = validate(
+      PARENT_TEMPLATE('<counter-view-model const-mode="grid"></counter-view-model>')
+    )
+    const rejected = validate(
+      PARENT_TEMPLATE('<counter-view-model const-mode="zz"></counter-view-model>')
+    )
 
     assert.strictEqual(accepted.length, 0)
     assertDiagnostic(
@@ -273,8 +299,12 @@ describe('validateConstValues', () => {
   })
 
   it('accepts a string enum member because it holds that string at runtime', () => {
-    const accepted = validate(PARENT_TEMPLATE('<counter-view-model const-level="high"></counter>'))
-    const rejected = validate(PARENT_TEMPLATE('<counter-view-model const-level="mid"></counter>'))
+    const accepted = validate(
+      PARENT_TEMPLATE('<counter-view-model const-level="high"></counter-view-model>')
+    )
+    const rejected = validate(
+      PARENT_TEMPLATE('<counter-view-model const-level="mid"></counter-view-model>')
+    )
 
     assert.strictEqual(accepted.length, 0)
     assertDiagnostic(
@@ -302,7 +332,7 @@ describe('validateConstValues', () => {
 
   it('maps kebab-case const attributes to camelCase properties', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model const-last-number="a"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-last-number="a"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -341,7 +371,7 @@ describe('validateConstValues', () => {
   it('integrates with validatePelelaDocument', () => {
     const collection = vscode.languages.createDiagnosticCollection()
     const document = createMockDocument(
-      PARENT_TEMPLATE('<counter-view-model const-count="a"></counter>').split('\n'),
+      PARENT_TEMPLATE('<counter-view-model const-count="a"></counter-view-model>').split('\n'),
       parentDocumentPath
     )
     validatePelelaDocument(collection, document)

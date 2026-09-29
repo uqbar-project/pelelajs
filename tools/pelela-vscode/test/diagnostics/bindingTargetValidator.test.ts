@@ -110,7 +110,7 @@ describe('validateBindingTargets', () => {
 
   it('accepts a link attribute whose target exists as a field', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model link-count="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model link-count="count"></counter-view-model>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
@@ -118,7 +118,7 @@ describe('validateBindingTargets', () => {
 
   it('accepts a prop attribute whose target exists as a field', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-count="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-count="count"></counter-view-model>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
@@ -126,7 +126,7 @@ describe('validateBindingTargets', () => {
 
   it('maps kebab-case attribute suffixes to camelCase field names', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-last-number="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-last-number="count"></counter-view-model>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
@@ -134,7 +134,7 @@ describe('validateBindingTargets', () => {
 
   it('reports a diagnostic when a prop target does not exist in the child ViewModel', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-ivalid="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-ivalid="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -146,7 +146,7 @@ describe('validateBindingTargets', () => {
 
   it('reports a diagnostic when a link target does not exist in the child ViewModel', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model link-missing="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model link-missing="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -158,7 +158,7 @@ describe('validateBindingTargets', () => {
 
   it('reports a diagnostic when a const target does not exist in the child ViewModel', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model const-missing="1"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-missing="1"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -170,7 +170,7 @@ describe('validateBindingTargets', () => {
 
   it('reports a read-only diagnostic when a getter is used as a prop target', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-is-lucky="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-is-lucky="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -182,7 +182,7 @@ describe('validateBindingTargets', () => {
 
   it('reports a read-only diagnostic when a getter is used as a link target', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model link-is-lucky="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model link-is-lucky="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -194,7 +194,7 @@ describe('validateBindingTargets', () => {
 
   it('reports a read-only diagnostic when a getter is used as a const target', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model const-is-lucky="true"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-is-lucky="true"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -206,7 +206,7 @@ describe('validateBindingTargets', () => {
 
   it('accepts a prop attribute whose target has a getter and a setter', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-limit="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-limit="count"></counter-view-model>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
@@ -214,7 +214,7 @@ describe('validateBindingTargets', () => {
 
   it('reports a non-public diagnostic when a private field is used as a prop target', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-_limit="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-_limit="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -226,7 +226,7 @@ describe('validateBindingTargets', () => {
 
   it('reports a non-public diagnostic when a protected field is used as a prop target', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-reserved="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-reserved="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -238,7 +238,7 @@ describe('validateBindingTargets', () => {
 
   it('reports a read-only diagnostic when a readonly field is used as a prop target', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-fixed="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-fixed="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -250,7 +250,7 @@ describe('validateBindingTargets', () => {
 
   it('ignores __proto__ as a prop target', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-__proto__="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-__proto__="count"></counter-view-model>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
@@ -258,7 +258,7 @@ describe('validateBindingTargets', () => {
 
   it('ignores constructor as a prop target', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-constructor="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-constructor="count"></counter-view-model>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
@@ -266,21 +266,23 @@ describe('validateBindingTargets', () => {
 
   it('ignores prototype as a prop target', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-prototype="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-prototype="count"></counter-view-model>')
     )
 
     assert.strictEqual(diagnostics.length, 0)
   })
 
   it('accepts a const attribute whose target has a getter and a setter', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter-view-model const-limit="5"></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model const-limit="5"></counter-view-model>')
+    )
 
     assert.strictEqual(diagnostics.length, 0)
   })
 
   it('rejects a method as a prop target (it cannot be set)', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-increment="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-increment="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -292,7 +294,7 @@ describe('validateBindingTargets', () => {
 
   it('rejects a method as a link target (it cannot be set)', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model link-increment="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model link-increment="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -304,7 +306,7 @@ describe('validateBindingTargets', () => {
 
   it('rejects a method as a const target (it cannot be set)', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model const-increment="1"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-increment="1"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -316,7 +318,7 @@ describe('validateBindingTargets', () => {
 
   it('rejects an arrow field as a prop target (it cannot be set)', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-on-update="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-on-update="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -327,7 +329,9 @@ describe('validateBindingTargets', () => {
   })
 
   it('reports no diagnostic when a getter is the child target of a bind attribute', () => {
-    const diagnostics = validate(PARENT_TEMPLATE('<counter-view-model bind-is-lucky></counter>'))
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model bind-is-lucky></counter-view-model>')
+    )
 
     assert.strictEqual(diagnostics.length, 0)
   })
@@ -352,7 +356,7 @@ describe('validateBindingTargets', () => {
 
   it('suggests the correctly-cased attribute when the child property matches by case only', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model prop-LastNumber="count"></counter>')
+      PARENT_TEMPLATE('<counter-view-model prop-LastNumber="count"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -364,7 +368,7 @@ describe('validateBindingTargets', () => {
 
   it('suggests the kebab-cased attribute for a const prefix', () => {
     const diagnostics = validate(
-      PARENT_TEMPLATE('<counter-view-model const-LastNumber="1"></counter>')
+      PARENT_TEMPLATE('<counter-view-model const-LastNumber="1"></counter-view-model>')
     )
 
     assertDiagnostic(
@@ -402,7 +406,9 @@ describe('validateBindingTargets', () => {
   it('integrates with validatePelelaDocument', () => {
     const collection = vscode.languages.createDiagnosticCollection()
     const document = createMockDocument(
-      PARENT_TEMPLATE('<counter-view-model prop-ivalid="count"></counter>').split('\n'),
+      PARENT_TEMPLATE('<counter-view-model prop-ivalid="count"></counter-view-model>').split(
+        '\n'
+      ),
       parentDocumentPath
     )
     validatePelelaDocument(collection, document)
