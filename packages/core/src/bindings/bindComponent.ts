@@ -15,10 +15,16 @@ import {
 } from '../commons/helpers'
 import { t } from '../commons/i18n'
 import { hasProperty, isUnsafeKey, sanitizeHTML } from '../commons/sanitization'
-import { UnknownComponentError, UnknownComponentPropertyError } from '../errors'
+import { isNumberLiteral, parseBooleanLiteral, parseScalarLiteral } from '../commons/typeCasting'
+import {
+  InvalidConstValueError,
+  ReadOnlyPropertyError,
+  UnknownComponentError,
+  UnknownComponentPropertyError,
+} from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
-import type { PelelaElement } from '../types'
+import type { ConstKind, PelelaElement } from '../types'
 import { getNestedProperty, isPathAffected, setNestedProperty } from './nestedProperties'
 import { setupBindings } from './setupBindings'
 import type { ComponentBinding, ViewModel } from './types'
@@ -35,12 +41,70 @@ function isConst(attr: Attr): boolean {
   return attr.name.startsWith(CONST_PREFIX)
 }
 
-function isNumberConstant(value: string): boolean {
-  return value.trim() !== '' && !Number.isNaN(Number(value))
+interface ConstStrategyContext {
+  propertyName: string
+  componentTag: string
+  viewModelName: string
+  element: HTMLElement
 }
 
-function parseConstant(value: string): string | number {
-  return isNumberConstant(value) ? Number(value) : value
+interface ResolveConstantOptions extends ConstStrategyContext {
+  rawValue: string
+  target: unknown
+  declaredKind?: ConstKind
+}
+
+type ConstStrategy = (rawValue: string, context: ConstStrategyContext) => string | number | boolean
+
+const CONST_KIND_STRATEGIES: Record<string, ConstStrategy | undefined> = {
+  number: (rawValue, context) => {
+    if (!isNumberLiteral(rawValue)) {
+      throw new InvalidConstValueError({
+        propertyName: context.propertyName,
+        value: rawValue,
+        expected: t('errors.compiler.constExpectedNumber'),
+        componentTag: context.componentTag,
+        viewModelName: context.viewModelName,
+        elementSnippet: extractElementSnippet(context.element),
+      })
+    }
+    return Number(rawValue)
+  },
+  boolean: (rawValue, context) => {
+    const booleanLiteral = parseBooleanLiteral(rawValue.trim())
+    if (booleanLiteral === null) {
+      throw new InvalidConstValueError({
+        propertyName: context.propertyName,
+        value: rawValue,
+        expected: t('errors.compiler.constExpectedBoolean'),
+        componentTag: context.componentTag,
+        viewModelName: context.viewModelName,
+        elementSnippet: extractElementSnippet(context.element),
+      })
+    }
+    return booleanLiteral
+  },
+  string: (rawValue) => rawValue,
+  undefined: (rawValue) => parseScalarLiteral(rawValue),
+}
+
+function resolveConstantValue(options: ResolveConstantOptions): string | number | boolean {
+  const targetKind = typeof options.target
+  const kind =
+    options.declaredKind === 'unknown' ? targetKind : (options.declaredKind ?? targetKind)
+  const strategy = CONST_KIND_STRATEGIES[kind]
+  if (strategy === undefined) {
+    throw new InvalidConstValueError({
+      propertyName: options.propertyName,
+      value: options.rawValue,
+      expected: t('errors.compiler.constUnsupportedValue'),
+      componentTag: options.componentTag,
+      viewModelName: options.viewModelName,
+      elementSnippet: extractElementSnippet(options.element),
+    })
+  }
+  const { rawValue, propertyName, componentTag, viewModelName, element } = options
+  return strategy(rawValue, { propertyName, componentTag, viewModelName, element })
 }
 
 function extractLinkBindings(
@@ -67,12 +131,12 @@ function extractOneWayBindings(
 
 function extractConstantBindings(
   attributes: NamedNodeMap,
-): Array<{ childKey: string; value: string | number }> {
+): Array<{ childKey: string; rawValue: string }> {
   return Array.from(attributes)
     .filter(isConst)
     .map((attr) => ({
       childKey: toCamelCase(attr.name.substring(CONST_PREFIX.length)),
-      value: parseConstant(attr.value),
+      rawValue: attr.value,
     }))
 }
 
@@ -89,20 +153,53 @@ function assertOnlyValidComponentAttributes(element: HTMLElement): void {
   })
 }
 
-function assertChildViewModelProperty(
+function throwUnknownChildViewModelProperty(
+  childKey: string,
+  tagName: string,
+  viewModelName: string,
+  element: HTMLElement,
+): never {
+  throw new UnknownComponentPropertyError(
+    childKey,
+    tagName,
+    viewModelName,
+    extractElementSnippet(element),
+  )
+}
+
+function throwReadOnlyProperty(
+  childKey: string,
+  tagName: string,
+  viewModelName: string,
+  element: HTMLElement,
+): never {
+  throw new ReadOnlyPropertyError(childKey, tagName, viewModelName, extractElementSnippet(element))
+}
+
+function assertAssignableChildViewModelProperty(
   instance: object,
   childKey: string,
   tagName: string,
   element: HTMLElement,
 ): void {
   if (!hasProperty(instance, childKey)) {
-    throw new UnknownComponentPropertyError(
-      childKey,
-      tagName,
-      instance.constructor.name,
-      extractElementSnippet(element),
-    )
+    throwUnknownChildViewModelProperty(childKey, tagName, instance.constructor.name, element)
   }
+  if (!hasWritableDescriptor(instance, childKey)) {
+    throwReadOnlyProperty(childKey, tagName, instance.constructor.name, element)
+  }
+}
+
+function hasWritableDescriptor(instance: object, childKey: string): boolean {
+  let current: object | null = instance
+  while (current !== null) {
+    const descriptor = Object.getOwnPropertyDescriptor(current, childKey)
+    if (descriptor !== undefined) {
+      return descriptor.writable === true || typeof descriptor.set === 'function'
+    }
+    current = Object.getPrototypeOf(current)
+  }
+  return false
 }
 
 function isPotentialComponent(element: HTMLElement): boolean {
@@ -164,12 +261,13 @@ export function setupComponentBindings<T extends object>(
     assertOnlyValidComponentAttributes(element)
 
     const instance = new componentDef.creator() as Record<string, unknown>
+    const typeMap = componentDef.entry.typeMap
     const constantBindings = extractConstantBindings(element.attributes)
     const linkBindings = extractLinkBindings(element.attributes)
     const oneWayBindings = extractOneWayBindings(element.attributes)
     const allMappings = [...linkBindings, ...oneWayBindings]
 
-    constantBindings.forEach(({ childKey, value }) => {
+    constantBindings.forEach(({ childKey, rawValue }) => {
       if (isUnsafeKey(childKey)) {
         throw new Error(
           t('errors.security.prototypePollution', {
@@ -178,8 +276,26 @@ export function setupComponentBindings<T extends object>(
         )
       }
 
-      assertChildViewModelProperty(instance, childKey, tagName, element)
-      instance[childKey] = value
+      const isOwnedByInstance = hasProperty(instance, childKey)
+      const isTypeMapDeclared = typeMap !== undefined && Object.hasOwn(typeMap, childKey)
+
+      if (isOwnedByInstance && !hasWritableDescriptor(instance, childKey)) {
+        throwReadOnlyProperty(childKey, tagName, instance.constructor.name, element)
+      }
+      if (!isOwnedByInstance && !isTypeMapDeclared) {
+        throwUnknownChildViewModelProperty(childKey, tagName, instance.constructor.name, element)
+      }
+
+      const declaredKind = isTypeMapDeclared ? typeMap[childKey] : undefined
+      instance[childKey] = resolveConstantValue({
+        rawValue,
+        target: instance[childKey],
+        declaredKind,
+        propertyName: childKey,
+        componentTag: tagName,
+        viewModelName: instance.constructor.name,
+        element,
+      })
     })
 
     allMappings.forEach(({ parentKey, childKey }) => {
@@ -191,7 +307,7 @@ export function setupComponentBindings<T extends object>(
         )
       }
 
-      assertChildViewModelProperty(instance, childKey, tagName, element)
+      assertAssignableChildViewModelProperty(instance, childKey, tagName, element)
 
       const pathSegments = parentKey.split('.')
       const isNested = pathSegments.length > 1

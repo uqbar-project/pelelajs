@@ -25,11 +25,16 @@ function buildViewModelExportMessage(params: ViewModelExportErrorParams): string
         tsFilePath: params.tsFilePath,
       })
     case 'notFound':
-      return t('errors.viewmodel.export.notFound', {
-        viewModelName: params.viewModelName,
-        tsFilePath: params.tsFilePath,
-        suggestedName: params.suggestedName,
-      })
+      return params.suggestedName.length === 0
+        ? t('errors.viewmodel.export.notFoundWithoutSuggestion', {
+            viewModelName: params.viewModelName,
+            tsFilePath: params.tsFilePath,
+          })
+        : t('errors.viewmodel.export.notFound', {
+            viewModelName: params.viewModelName,
+            tsFilePath: params.tsFilePath,
+            suggestedName: params.suggestedName,
+          })
     case 'notAClass':
       return params.declaredAs === 'Function'
         ? t('errors.viewmodel.export.notAClassFunction', {

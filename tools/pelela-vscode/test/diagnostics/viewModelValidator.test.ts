@@ -54,6 +54,18 @@ export class TestViewModel {
 }
 `
 
+const INHERITED_VIEW_MODEL_FIXTURE = `
+export class BaseViewModel {
+  title: string = "test"
+  reset(): void {}
+}
+
+export class InheritedViewModel extends BaseViewModel {
+  items: { name: string }[] = []
+  handleItem(): void {}
+}
+`
+
 interface ViewModelContext {
   tsPath: string
   pelelaPath: string
@@ -80,6 +92,7 @@ describe('viewModelValidator', () => {
   let missingExportPath: string
   let wrongCasePath: string
   let notAClassPath: string
+  let inheritedPath: string
 
   before(() => {
     if (!fs.existsSync(testFilesDir)) {
@@ -97,6 +110,8 @@ describe('viewModelValidator', () => {
     missingExportPath = path.join(testFilesDir, 'MissingExportVM.ts')
     wrongCasePath = path.join(testFilesDir, 'WrongCaseVM.ts')
     notAClassPath = path.join(testFilesDir, 'NotAClassVM.ts')
+    inheritedPath = path.join(testFilesDir, 'InheritedVM.ts')
+    fs.writeFileSync(inheritedPath, INHERITED_VIEW_MODEL_FIXTURE)
   })
 
   afterEach(() => {
@@ -112,6 +127,9 @@ describe('viewModelValidator', () => {
   after(() => {
     if (fs.existsSync(testVMPath)) {
       fs.unlinkSync(testVMPath)
+    }
+    if (inheritedPath && fs.existsSync(inheritedPath)) {
+      fs.unlinkSync(inheritedPath)
     }
   })
 
@@ -130,7 +148,23 @@ describe('viewModelValidator', () => {
         t('diagnostics.viewModelNotFound', {
           name: 'NonExistentViewModel',
           tsFileName: 'viewModelTestViewModel.ts',
-          suggestedName: 'ViewModelTestViewModel',
+          suggestedName: 'TestViewModel',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('reports a non-existent ViewModel class without an empty suggestion', () => {
+      fs.writeFileSync(notAClassPath, 'export const MAX = 10')
+      const { tags } = prepareValidation(['<pelela view-model="NonExistentViewModel">'], context)
+      const diagnostics = validateViewModelExistence(tags, notAClassPath)
+
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.viewModelNotFoundWithoutSuggestion', {
+          name: 'NonExistentViewModel',
+          tsFileName: 'NotAClassVM.ts',
         }),
         vscode.DiagnosticSeverity.Error
       )
@@ -174,14 +208,14 @@ describe('viewModelValidator', () => {
     })
 
     it('reports notAClass as an Object when the view model is an object literal', () => {
-      fs.writeFileSync(notAClassPath, `export const conversorObj = { millas: 100, kilometros: 2 }`)
-      const { tags } = prepareValidation(['<pelela view-model="conversorObj">'], context)
+      fs.writeFileSync(notAClassPath, `export const converterObj = { millas: 100, kilometros: 2 }`)
+      const { tags } = prepareValidation(['<pelela view-model="converterObj">'], context)
       const diagnostics = validateViewModelExistence(tags, notAClassPath)
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.viewModelNotAClassObject', {
-          name: 'conversorObj',
+          name: 'converterObj',
           tsFileName: 'NotAClassVM.ts',
         }),
         vscode.DiagnosticSeverity.Error
@@ -189,14 +223,14 @@ describe('viewModelValidator', () => {
     })
 
     it('reports notAClass as a Function when the view model is an exported function', () => {
-      fs.writeFileSync(notAClassPath, `export function conversor() { return 0 }`)
-      const { tags } = prepareValidation(['<pelela view-model="conversor">'], context)
+      fs.writeFileSync(notAClassPath, `export function converter() { return 0 }`)
+      const { tags } = prepareValidation(['<pelela view-model="converter">'], context)
       const diagnostics = validateViewModelExistence(tags, notAClassPath)
       assert.strictEqual(diagnostics.length, 1)
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.viewModelNotAClassFunction', {
-          name: 'conversor',
+          name: 'converter',
           tsFileName: 'NotAClassVM.ts',
         }),
         vscode.DiagnosticSeverity.Error
@@ -222,6 +256,24 @@ describe('viewModelValidator', () => {
         context.members,
         document,
         'TestViewModel'
+      )
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts an inherited property inside the derived ViewModel', () => {
+      const inheritedMembers = extractViewModelMembers(inheritedPath, 'InheritedViewModel')
+      const inheritedContext = {
+        tsPath: inheritedPath,
+        pelelaPath: testPelelaPath,
+        members: inheritedMembers,
+      }
+      const { tags, document } = prepareValidation(['<div bind-content="title">'], inheritedContext)
+      const diagnostics = validateBindingProperties(
+        tags,
+        inheritedPath,
+        inheritedMembers,
+        document,
+        'InheritedViewModel'
       )
       assert.strictEqual(diagnostics.length, 0)
     })
@@ -674,6 +726,16 @@ describe('viewModelValidator', () => {
     it('accepts an existing click method', () => {
       const { tags } = prepareValidation(['<button click="handleClick">'], context)
       assert.strictEqual(validateEventMethods(tags, context.members).length, 0)
+    })
+
+    it('accepts an inherited method inside the derived ViewModel', () => {
+      const inheritedMembers = extractViewModelMembers(inheritedPath, 'InheritedViewModel')
+      const { tags } = prepareValidation(['<button click="reset">'], {
+        tsPath: inheritedPath,
+        pelelaPath: testPelelaPath,
+        members: inheritedMembers,
+      })
+      assert.strictEqual(validateEventMethods(tags, inheritedMembers).length, 0)
     })
 
     it('rejects a non-existent click method', () => {

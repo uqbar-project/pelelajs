@@ -6,6 +6,8 @@ import {
   validateTagRestrictions,
   validateUnknownAttributes,
 } from './attributeValidator'
+import { validateBindingTargets, validateBindingTypes } from './bindingTargetValidator'
+import { validateConstValues } from './constValidator'
 import { getViewModelName, scanDocument } from './scanDocument'
 import {
   validateBindingProperties,
@@ -27,6 +29,9 @@ export function validatePelelaDocument(
   diagnostics.push(...validateUnknownAttributes(tags))
   diagnostics.push(...validateComponentAttributes(tags))
   diagnostics.push(...validateTagRestrictions(tags))
+  diagnostics.push(...validateConstValues(tags, document))
+  diagnostics.push(...validateBindingTargets(tags, document))
+  diagnostics.push(...validateBindingTypes(tags, document))
 
   const tsPath = findViewModelFile(document.uri)
   if (tsPath !== null) {
@@ -45,9 +50,26 @@ export function validatePelelaDocument(
   collection.set(document.uri, diagnostics)
 }
 
-export function createDiagnosticsProvider(): vscode.Disposable {
+export interface PelelaDiagnosticsProvider extends vscode.Disposable {
+  /**
+   * Revalidates every open Pelela document. A view model edited outside the
+   * editor changes what its templates should accept without being a text change
+   * in them, so no debounced or save driven validation would ever run.
+   */
+  refresh(): void
+}
+
+export function createDiagnosticsProvider(): PelelaDiagnosticsProvider {
   const collection = vscode.languages.createDiagnosticCollection('pelela')
   const debounceTimers = new Map<string, NodeJS.Timeout>()
+
+  function refresh(): void {
+    vscode.workspace.textDocuments
+      .filter((document) => document.languageId === 'pelela')
+      .forEach((document) => {
+        validatePelelaDocument(collection, document)
+      })
+  }
 
   function scheduleValidation(document: vscode.TextDocument): void {
     const existingTimer = debounceTimers.get(document.uri.toString())
@@ -116,6 +138,7 @@ export function createDiagnosticsProvider(): vscode.Disposable {
   )
 
   return {
+    refresh,
     dispose: () => {
       debounceTimers.forEach((timer) => {
         clearTimeout(timer)

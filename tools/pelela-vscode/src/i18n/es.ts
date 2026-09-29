@@ -6,7 +6,8 @@ const diagnostics = {
   viewModelWrongCase:
     'Definí el view model con la capitalización exacta de la clase: se llama "{{expectedName}}", no "{{name}}".',
   viewModelNotFound:
-    'No existe la clase "{{name}}" en {{tsFileName}}. Definí la clase con el nombre sugerido por el archivo: "{{suggestedName}}".',
+    'No existe la clase "{{name}}" en {{tsFileName}}. Definí la clase con el nombre sugerido: "{{suggestedName}}".',
+  viewModelNotFoundWithoutSuggestion: 'No existe la clase "{{name}}" en {{tsFileName}}.',
   viewModelNotAClassObject:
     'No se puede definir un Object como view model: "{{name}}" ({{tsFileName}}). Debe declarar una clase.',
   viewModelNotAClassFunction:
@@ -31,6 +32,27 @@ const diagnostics = {
   attributeNotAllowed: "El atributo '{{name}}' no está permitido en elemento '{{tag}}'",
   invalidComponentAttribute:
     "Componente '<{{tag}}>': el atributo '{{name}}' debe usar prefijo 'prop-', 'link-' o 'const-'",
+  constValueInvalid:
+    'Componente <{{tag}}> (ViewModel: {{viewModel}}): el const "{{name}}" recibe "{{value}}" pero {{expected}}.',
+  constValueExpected: 'debe ser {{expected}}',
+  constValueExpectedNumber: 'debe ser un número',
+  constValueExpectedBoolean: "debe ser 'true' o 'false'",
+  constValueUnsupportedType:
+    'Componente <{{tag}}> (ViewModel: {{viewModel}}): el const "{{name}}" está declarado como {{declaredType}}, y los const solo aceptan literales number, boolean o string.',
+  childPropertyNotFound:
+    'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" no está definida en el ViewModel hijo.',
+  childPropertyCaseMismatch:
+    'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" no está definida en el ViewModel hijo. ¿Quisiste decir "{{suggestedName}}"?',
+  childPropertyReadOnly:
+    'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" es de solo lectura. Definí un atributo escribible en el ViewModel hijo para recibir el valor.',
+  childPropertyNotPublic:
+    'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{name}}" es private o protected y no se puede usar en un binding de componente.',
+  bindingTypeMismatch:
+    'Componente <{{tag}}>: el atributo "{{attr}}" recibe {{parentKind}} (propiedad padre "{{parentKey}}") pero la propiedad hijo "{{childKey}}" es {{childKind}}.',
+  bindingKindNumber: 'un número',
+  bindingKindString: 'un string (texto)',
+  bindingKindBoolean: 'un booleano',
+  bindingKindOther: 'un objeto u otro valor',
 } as const satisfies TranslationSchema['diagnostics']
 
 const completions = {
@@ -49,6 +71,7 @@ const completions = {
   getterDetail: 'Getter del ViewModel de Pelela',
   iterationPropertyDetail: 'Propiedad de iteración de Pelela',
   nestedPropertyDetail: 'Propiedad anidada del ViewModel de Pelela',
+  childPropertyDetail: 'Propiedad del ViewModel hijo',
 } as const satisfies TranslationSchema['completions']
 
 const hover = {

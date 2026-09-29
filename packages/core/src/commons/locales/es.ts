@@ -56,7 +56,9 @@ const errors = {
       wrongCase:
         '[pelela] Definí el view model con la capitalización exacta de la clase: se llama "{{expectedName}}", no "{{viewModelName}}".',
       notFound:
-        '[pelela] No existe la clase "{{viewModelName}}" en {{tsFilePath}}. Definí la clase con el nombre sugerido por el archivo: "{{suggestedName}}".',
+        '[pelela] No existe la clase "{{viewModelName}}" en {{tsFilePath}}. Definí la clase con el nombre sugerido: "{{suggestedName}}".',
+      notFoundWithoutSuggestion:
+        '[pelela] No existe la clase "{{viewModelName}}" en {{tsFilePath}}.',
       notAClassObject:
         '[pelela] No se puede definir un Object como view model: "{{viewModelName}}" ({{tsFilePath}}). Debe declarar una clase.',
       notAClassFunction:
@@ -124,6 +126,17 @@ const errors = {
       'Componente desconocido: <{{tagName}}>. ¿Olvidaste registrarlo?\nEncontrado en: {{snippet}}',
     unknownComponentProperty:
       'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{propertyName}}" no está definida en el ViewModel hijo.\nEncontrado en: {{snippet}}',
+    readOnlyProperty:
+      'Componente <{{tag}}> (ViewModel: {{viewModel}}): la propiedad "{{propertyName}}" es de solo lectura. Definí un atributo escribible en el ViewModel hijo para recibir el valor.\nEncontrado en: {{snippet}}',
+    invalidConstValue:
+      'Componente <{{tag}}> (ViewModel: {{viewModel}}): el const "{{name}}" recibe "{{value}}" pero {{expected}}. Encontrado en: {{snippet}}',
+    constExpectedNumber: 'debe ser un número',
+    constExpectedBoolean: "debe ser 'true' o 'false'",
+    constUnsupportedValue:
+      'no admite objetos ni otros valores; solo se permiten literales number, boolean o string',
+  },
+  analysis: {
+    viewModelSourceNotFound: 'no pudo leer el archivo fuente del view model en {{path}}',
   },
   ui: {
     errorPage: {

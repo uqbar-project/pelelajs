@@ -1,3 +1,5 @@
+export type ConstKind = 'number' | 'boolean' | 'string' | 'other' | 'unknown'
+
 export type ViewModelConstructor<T = unknown> = {
   new (): T
 }

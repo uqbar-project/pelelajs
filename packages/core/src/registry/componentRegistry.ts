@@ -1,16 +1,18 @@
 import { toKebabCase } from '../commons/helpers'
 import { ViewModelExportError } from '../errors/index'
-import type { ViewModelConstructor } from '../types'
+import type { ConstKind, ViewModelConstructor } from '../types'
 import { getViewModel, registerViewModel, replaceViewModel } from './viewModelRegistry'
 
 type ComponentEntry = {
   name: string
   template: string
   cssUrls?: string[]
+  typeMap?: Record<string, ConstKind>
 }
 
 type DefineComponentOptions = {
   cssUrls?: string[]
+  typeMap?: Record<string, ConstKind>
 }
 
 const templatesByConstructor = new Map<ViewModelConstructor, ComponentEntry>()
@@ -42,7 +44,7 @@ export function defineComponent(
       declaredAs,
     })
   }
-  const { cssUrls = [] } = options
+  const { cssUrls = [], typeMap } = options
   const existingCreator = getViewModel(name)
   if (existingCreator && existingCreator !== creator) {
     console.warn(`[pelela] Component "${name}" re-evaluated. Replacing old constructor.`)
@@ -63,6 +65,7 @@ export function defineComponent(
     name,
     template,
     ...(cssUrls.length > 0 && { cssUrls }),
+    ...(typeMap !== undefined && Object.keys(typeMap).length > 0 && { typeMap }),
   }
   templatesByConstructor.set(creator, entry)
   const tag = toKebabCase(name)

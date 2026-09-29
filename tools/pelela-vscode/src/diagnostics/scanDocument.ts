@@ -1,5 +1,6 @@
 import { isPelelaRootTag } from 'pelelajs/dom'
 import * as vscode from 'vscode'
+import { readFileContent } from '../utils/fileUtils'
 import type { AttrInfo, TagInfo } from './types'
 
 const TAG_PATTERN = /<(\w[\w-]*)((?:\s+(?:[^>"']|"[^"]*"|'[^']*')*?)?)\s*\/?>/g
@@ -95,4 +96,14 @@ export function getViewModelName(tags: TagInfo[]): string | undefined {
   if (!rootTag) return undefined
   const viewModelAttribute = rootTag.attributes.find((attribute) => attribute.name === 'view-model')
   return viewModelAttribute?.value
+}
+
+export function scanFile(filePath: string): TagInfo[] {
+  const lines = readFileContent(filePath).split('\n')
+  const document = {
+    lineCount: lines.length,
+    lineAt: (lineIndex: number) => ({ text: lines[lineIndex] }),
+    uri: vscode.Uri.file(filePath),
+  } as unknown as vscode.TextDocument
+  return scanDocument(document)
 }

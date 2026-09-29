@@ -37,6 +37,7 @@ type ErrorTranslations = {
       missingExport: string
       wrongCase: string
       notFound: string
+      notFoundWithoutSuggestion: string
       notAClassFunction: string
       notAClassObject: string
     }
@@ -77,6 +78,14 @@ type ErrorTranslations = {
     directiveOutsideRoot: string
     unknownComponent: string
     unknownComponentProperty: string
+    readOnlyProperty: string
+    invalidConstValue: string
+    constExpectedNumber: string
+    constExpectedBoolean: string
+    constUnsupportedValue: string
+  }
+  analysis: {
+    viewModelSourceNotFound: string
   }
   ui: {
     errorPage: {

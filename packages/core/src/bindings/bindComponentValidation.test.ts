@@ -15,10 +15,10 @@ describe('bindComponent validation', () => {
   })
 
   it('should throw UnknownComponentError for unrecognized non-standard tags', () => {
-    container.innerHTML = '<contado>Hola</contado>'
+    container.innerHTML = '<widget>Hello</widget>'
     const vm = createReactiveViewModel({}, () => {})
 
-    expect(() => setupComponentBindings(container, vm)).toThrow(/Unknown component: <contado>/)
+    expect(() => setupComponentBindings(container, vm)).toThrow(/Unknown component: <widget>/)
   })
 
   it('should throw UnknownComponentError for unrecognized hyphenated tags', () => {
