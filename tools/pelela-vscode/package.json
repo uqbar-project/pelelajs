@@ -24,7 +24,7 @@
     "Programming Languages"
   ],
   "scripts": {
-    "build": "tsup src/extension.ts --format cjs --external vscode --clean",
+    "build": "tsup src/extension.ts --format cjs --external vscode --clean && node scripts/copy-typescript-lib.js",
     "typecheck": "tsc --noEmit",
     "test": "mocha --require tsx --require test/setup.ts test/**/*.test.ts",
     "package": "vsce package --no-dependencies",
