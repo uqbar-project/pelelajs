@@ -836,6 +836,9 @@ export class Counter {
   amount: bigint = 1n
   anything: any = 1
   mystery: unknown = 1
+  pendingScores!: number[]
+  amountOrDate: number | Date = 2
+  amountOrLabel!: number | string
 }`
 
   let testDir: string
@@ -983,6 +986,25 @@ export class Counter {
 
   it('reports bigint as unsupported because const attributes cannot represent it', () => {
     expect(check('amount', '1')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+  })
+
+  it('reports an array property declared without an initializer as unsupported', () => {
+    expect(check('pendingScores', 'anything')).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+    })
+  })
+
+  it('reports a union that mixes a scalar type with Date as unsupported', () => {
+    expect(check('amountOrDate', '2')).toEqual({ accepted: false, reason: 'nonLiteralType' })
+    expect(check('amountOrDate', '2026-09-28')).toEqual({
+      accepted: false,
+      reason: 'nonLiteralType',
+    })
+  })
+
+  it('leaves a union of two scalar types unchecked for runtime resolution', () => {
+    expect(check('amountOrLabel', 'anything')).toEqual({ accepted: 'unchecked' })
   })
 
   it('leaves any and unknown properties unchecked', () => {

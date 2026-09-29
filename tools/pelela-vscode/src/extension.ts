@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(hoverProvider)
   context.subscriptions.push(tsDefinitionProvider)
   context.subscriptions.push(new vscode.Disposable(disposeViewModelLanguageService))
-  context.subscriptions.push(registerViewModelWatcher())
+  context.subscriptions.push(registerViewModelWatcher(() => diagnosticsProvider.refresh()))
 }
 
 /**
@@ -36,13 +36,13 @@ export function activate(context: vscode.ExtensionContext) {
  * attribute should accept, so the cached program has to be dropped and the
  * affected templates revalidated.
  */
-function registerViewModelWatcher(): vscode.Disposable {
+function registerViewModelWatcher(refreshDiagnostics: () => void): vscode.Disposable {
   const watcher = vscode.workspace.createFileSystemWatcher('**/*.{ts,tsx,pelela}')
 
   const onChange = (uri: vscode.Uri) => {
     invalidateViewModelLanguageService(uri.fsPath)
     if (uri.fsPath.endsWith('.pelela')) invalidateComponentIndex()
-    refreshPelelaDiagnostics()
+    refreshDiagnostics()
   }
 
   watcher.onDidChange(onChange)
@@ -50,14 +50,6 @@ function registerViewModelWatcher(): vscode.Disposable {
   watcher.onDidDelete(onChange)
 
   return watcher
-}
-
-function refreshPelelaDiagnostics(): void {
-  vscode.workspace.textDocuments
-    .filter((document) => document.languageId === 'pelela')
-    .forEach((document) => {
-      vscode.commands.executeCommand('editor.action.validate', document.uri)
-    })
 }
 
 function enablePelelaContext() {

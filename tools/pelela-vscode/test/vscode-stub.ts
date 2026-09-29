@@ -6,12 +6,25 @@ interface StubWorkspaceFolder {
 }
 
 let workspaceFolders: StubWorkspaceFolder[] = []
+const openTextDocuments: unknown[] = []
+let lastCreatedCollection: InstanceType<typeof vscodeStub.DiagnosticCollection> | null = null
 
 export function setWorkspaceFolders(folders: string[] | null): void {
   workspaceFolders =
     folders === null
       ? []
       : folders.map((fsPath) => ({ name: path.basename(fsPath), uri: { fsPath } }))
+}
+
+export function setOpenTextDocuments(documents: unknown[]): void {
+  openTextDocuments.length = 0
+  openTextDocuments.push(...documents)
+}
+
+export function lastDiagnosticCollection(): InstanceType<
+  typeof vscodeStub.DiagnosticCollection
+> | null {
+  return lastCreatedCollection
 }
 
 export const vscodeStub = {
@@ -171,7 +184,10 @@ export const vscodeStub = {
     registerDefinitionProvider: () => ({ dispose: () => {} }),
     setTextDocumentLanguage: () => Promise.resolve(),
     setLanguageConfiguration: () => ({ dispose: () => {} }),
-    createDiagnosticCollection: () => new vscodeStub.DiagnosticCollection(),
+    createDiagnosticCollection: () => {
+      lastCreatedCollection = new vscodeStub.DiagnosticCollection()
+      return lastCreatedCollection
+    },
   },
 
   Disposable: {
@@ -187,6 +203,7 @@ export const vscodeStub = {
   },
 
   workspace: {
+    textDocuments: openTextDocuments,
     onDidOpenTextDocument: () => ({ dispose: () => {} }),
     onDidChangeTextDocument: () => ({ dispose: () => {} }),
     onDidCloseTextDocument: () => ({ dispose: () => {} }),

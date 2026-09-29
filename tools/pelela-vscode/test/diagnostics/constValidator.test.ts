@@ -36,6 +36,19 @@ const NO_VIEW_MODEL_PELELA_CONTENT = `<component>
   <span bind-content="count"></span>
 </component>`
 
+const OTHER_PELELA_CONTENT = `<pelela view-model="Other">
+  <span bind-content="valor"></span>
+</pelela>`
+
+const OTHER_VIEW_MODEL_CONTENT = `export class Other {
+  alumnos = []
+  valor = 0
+  nombre = ''
+  noEntra!: number[]
+  noEntra2: number | Date = 2
+  siEntra!: number | string
+}`
+
 const PARENT_TEMPLATE = (componentUsage: string): string =>
   `<pelela view-model="ParentViewModel">
   ${componentUsage}
@@ -73,6 +86,8 @@ describe('validateConstValues', () => {
     )
     fs.writeFileSync(path.join(testDir, 'counter.ts'), COUNTER_VIEW_MODEL_CONTENT)
     fs.writeFileSync(path.join(testDir, 'no-vm.pelela'), NO_VIEW_MODEL_PELELA_CONTENT)
+    fs.writeFileSync(path.join(testDir, 'other.pelela'), OTHER_PELELA_CONTENT)
+    fs.writeFileSync(path.join(testDir, 'other.ts'), OTHER_VIEW_MODEL_CONTENT)
     parentDocumentPath = path.join(testDir, 'parent.pelela')
   })
 
@@ -224,6 +239,44 @@ describe('validateConstValues', () => {
       constError({ name: 'date', value: 'x', expected: t('diagnostics.constValueUnsupported') }),
       vscode.DiagnosticSeverity.Error
     )
+  })
+
+  it('reports a diagnostic for an array property declared without an initializer', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<other const-no-entra="C"></other>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      constError({
+        name: 'noEntra',
+        value: 'C',
+        expected: t('diagnostics.constValueUnsupported'),
+        tag: 'other',
+        viewModel: 'Other',
+      }),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('reports a diagnostic for a union that mixes a scalar type with Date', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<other const-no-entra2="C"></other>'))
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      constError({
+        name: 'noEntra2',
+        value: 'C',
+        expected: t('diagnostics.constValueUnsupported'),
+        tag: 'other',
+        viewModel: 'Other',
+      }),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('leaves a union of two scalar types unchecked for runtime resolution', () => {
+    const diagnostics = validate(PARENT_TEMPLATE('<other const-si-entra="C"></other>'))
+
+    assert.strictEqual(diagnostics.length, 0)
   })
 
   it('accepts values for a property without a known type', () => {
