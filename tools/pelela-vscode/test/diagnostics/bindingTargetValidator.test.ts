@@ -406,9 +406,7 @@ describe('validateBindingTargets', () => {
   it('integrates with validatePelelaDocument', () => {
     const collection = vscode.languages.createDiagnosticCollection()
     const document = createMockDocument(
-      PARENT_TEMPLATE('<counter-view-model prop-ivalid="count"></counter-view-model>').split(
-        '\n'
-      ),
+      PARENT_TEMPLATE('<counter-view-model prop-ivalid="count"></counter-view-model>').split('\n'),
       parentDocumentPath
     )
     validatePelelaDocument(collection, document)
