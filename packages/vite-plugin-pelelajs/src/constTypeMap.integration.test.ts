@@ -181,4 +181,26 @@ describe('plugin typeMap const binding integration', () => {
     )
     expect((bindings[0].childViewModel as unknown as ParentViewModel).value).toBe('hello')
   })
+
+  it('fails fast when the TypeScript program cannot be built', () => {
+    const createLanguageServiceMock = vi.mocked(createLanguageService)
+    createLanguageServiceMock.mockReturnValueOnce({ getProgram: () => undefined } as never)
+    const plugin = pelelajsPlugin()
+    const load = getHandler(plugin.load!)
+
+    expect(() => load.call(null as never, RESOLVED_VIRTUAL_ID, {} as never)).toThrow(Error)
+  })
+
+  it('generates the registration even when an imported file was deleted', () => {
+    const plugin = pelelajsPlugin()
+    const load = getHandler(plugin.load!)
+    const readGeneratedModule = (): string =>
+      load.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+
+    expect(readGeneratedModule()).toContain('LabelViewModel')
+
+    fs.rmSync(path.join(tempDir, 'src', 'scalar.ts'))
+
+    expect(readGeneratedModule()).toContain('LabelViewModel')
+  })
 })

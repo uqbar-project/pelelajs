@@ -12,6 +12,7 @@ import {
   createViewModelProgramContext,
   createViewModelProgramContextFromProgram,
   describeConstType,
+  extractConstValueCompletionPropertiesWithContext,
   extractViewModelPropertyTypes,
   extractViewModelPropertyTypesWithContext,
   pascalCaseFromFileName,
@@ -522,6 +523,45 @@ export class Counter extends BaseCounter {
     expect(types).toEqual({})
   })
 
+  it('returns an empty map when the entry file declares no module', () => {
+    expect(extractViewModelPropertyTypes(writeModule('', 'empty.ts'), 'Counter')).toEqual({})
+  })
+
+  it('resolves a class through a single-level namespace path', () => {
+    const types = extractViewModelPropertyTypes(
+      writeViewModel(`export namespace models {
+  export class Counter {
+    value = 0
+  }
+}`),
+      'models.Counter',
+    )
+
+    expect(types).toEqual({ value: 'number' })
+  })
+
+  it('returns an empty map when a dotted path crosses a class instead of a namespace', () => {
+    const types = extractViewModelPropertyTypes(
+      writeViewModel('export class Counter {\n  value = 0\n}'),
+      'Counter.value',
+    )
+
+    expect(types).toEqual({})
+  })
+
+  it('returns an empty map when a path names a namespace instead of a class', () => {
+    const types = extractViewModelPropertyTypes(
+      writeViewModel(`export namespace models {
+  export class Counter {
+    value = 0
+  }
+}`),
+      'models',
+    )
+
+    expect(types).toEqual({})
+  })
+
   it('classifies a typed boolean property from its type annotation', () => {
     const types = extractCounter('export class Counter {\n  enabled: boolean\n}')
 
@@ -544,6 +584,22 @@ export class Counter extends BaseCounter {
     const types = extractCounter('export class Counter {\n  enabled: true\n}')
 
     expect(types).toEqual({ enabled: { kind: 'boolean', allowedValues: [true] } })
+  })
+
+  it('describes a getter and setter pair from the setter parameter type', () => {
+    const types = extractCounter(`export class Counter {
+  private _count = 1
+
+  get count(): number {
+    return this._count
+  }
+
+  set count(value: number) {
+    this._count = value
+  }
+}`)
+
+    expect(types).toEqual({ count: 'number' })
   })
 
   it('classifies a union of only nullish members as unknown', () => {
@@ -902,6 +958,20 @@ export class Counter {
     expect(types).toEqual({ amountOrDate: 'other' })
   })
 
+  it('fails fast when the program does not contain the view model path', () => {
+    viewModelSource = 'export class Counter {\n  value = 0\n}'
+    scriptVersion += 1
+    const program = languageService?.getProgram()
+    if (program === undefined) {
+      throw new Error('Language service could not create a program for the test ViewModel')
+    }
+    const missingPath = path.join(testDir, 'missing-counter.ts')
+
+    expect(() => createViewModelProgramContextFromProgram(program, missingPath)).toThrowError(
+      new ViewModelSourceNotFoundError({ tsPath: missingPath }),
+    )
+  })
+
   it('fails fast when the view model path cannot be read by the program', () => {
     const missingPath = path.join(testDir, 'missing-counter.ts')
 
@@ -911,11 +981,91 @@ export class Counter {
   })
 })
 
+describe('resolveCompilerOptions', () => {
+  let optionsDir: string
+
+  beforeAll(() => {
+    optionsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-options-'))
+  })
+
+  afterAll(() => {
+    fs.rmSync(optionsDir, { recursive: true, force: true })
+  })
+
+  it('reads the compiler options from the closest tsconfig', () => {
+    fs.writeFileSync(
+      path.join(optionsDir, 'tsconfig.json'),
+      JSON.stringify({ compilerOptions: { strict: true } }),
+    )
+
+    expect(resolveCompilerOptions(optionsDir).strict).toBe(true)
+  })
+
+  it('falls back to the default options when the tsconfig cannot be parsed', () => {
+    fs.writeFileSync(path.join(optionsDir, 'tsconfig.json'), '{ not json')
+
+    expect(resolveCompilerOptions(optionsDir).target).toBe(ts.ScriptTarget.ESNext)
+  })
+})
+
+describe('strict nullish unions', () => {
+  let strictDir: string
+  let strictTsPath: string
+
+  beforeAll(() => {
+    strictDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-strict-'))
+    fs.writeFileSync(
+      path.join(strictDir, 'tsconfig.json'),
+      JSON.stringify({ compilerOptions: { strict: true } }),
+    )
+    strictTsPath = path.join(strictDir, 'counter.ts')
+    fs.writeFileSync(
+      strictTsPath,
+      `export class Counter {
+  active = false
+  nil!: null | undefined
+}`,
+    )
+  })
+
+  afterAll(() => {
+    fs.rmSync(strictDir, { recursive: true, force: true })
+  })
+
+  it('classifies an all-nullish union as unknown', () => {
+    expect(extractViewModelPropertyTypes(strictTsPath, 'Counter')).toEqual({
+      active: 'boolean',
+      nil: 'unknown',
+    })
+  })
+
+  it('leaves an all-nullish union unchecked for const validation', () => {
+    const context = createViewModelProgramContext(strictTsPath)
+
+    expect(
+      checkConstValue({ context, className: 'Counter', propertyName: 'nil', rawValue: 'anything' }),
+    ).toEqual({ accepted: 'unchecked' })
+  })
+
+  it('keeps unknown-typed members in the const value completions', () => {
+    const context = createViewModelProgramContext(strictTsPath)
+
+    expect(extractConstValueCompletionPropertiesWithContext(context, 'Counter')).toEqual([
+      'active',
+      'nil',
+    ])
+  })
+})
+
 describe('checkConstValue', () => {
   const viewModelSource = `class CustomModel {}
 export type Size = 'sm' | 'lg'
 export type Mixed = 'a' | 1 | true
 export enum Level { Low = 'low', High = 'high' }
+export enum Priority { Low = 0, High = 1 }
+export enum Auto { Go, Stop }
+const PREFIX = 'pre'
+export enum Tagged { Alias = PREFIX, Listed = 'listed' }
 export class Counter {
   size: Size = 'sm'
   level: Level = Level.Low
@@ -939,6 +1089,10 @@ export class Counter {
   pendingScores!: number[]
   amountOrDate: number | Date = 2
   amountOrLabel!: number | string
+  priority: Priority = Priority.Low
+  auto: Auto = Auto.Go
+  tagged: Tagged = Tagged.Listed
+  single: Level.High = Level.High
 }`
 
   let testDir: string
@@ -1076,6 +1230,42 @@ export class Counter {
     })
   })
 
+  it('accepts a listed value of a numeric enum', () => {
+    expect(check('priority', '1')).toEqual({ accepted: true })
+  })
+
+  it('names the numeric values when rejecting outside a numeric enum', () => {
+    expect(check('priority', '5')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '0 | 1',
+    })
+  })
+
+  it('accepts a listed value of an auto-incremented enum', () => {
+    expect(check('auto', '0')).toEqual({ accepted: true })
+  })
+
+  it('skips computed members when naming the allowed enum values', () => {
+    expect(check('tagged', 'zzz')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '"listed"',
+    })
+  })
+
+  it('accepts a listed value of a single enum member type', () => {
+    expect(check('single', 'high')).toEqual({ accepted: true })
+  })
+
+  it('names the parent enum values for a single enum member type', () => {
+    expect(check('single', 'low')).toEqual({
+      accepted: false,
+      reason: 'literalMismatch',
+      expectedTypeText: '"low" | "high"',
+    })
+  })
+
   it('resolves an inline union of string literals to its allowed values', () => {
     expect(check('mode', 'grid')).toEqual({ accepted: true })
     expect(check('mode', 'zz')).toEqual({
@@ -1133,6 +1323,12 @@ export class Counter {
 
   it('leaves a property the view model does not declare unchecked', () => {
     expect(check('notDeclared', 'whatever')).toEqual({ accepted: 'unchecked' })
+  })
+
+  it('leaves every property unchecked when the view model class does not exist', () => {
+    expect(
+      checkConstValue({ context, className: 'Missing', propertyName: 'count', rawValue: '5' }),
+    ).toEqual({ accepted: 'unchecked' })
   })
 
   it('leaves non-public and static properties unchecked', () => {

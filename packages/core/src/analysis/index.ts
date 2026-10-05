@@ -222,7 +222,14 @@ export function resolveCompilerOptions(searchPath: string): ts.CompilerOptions {
     onUnRecoverableConfigFileDiagnostic: () => undefined,
   })
 
-  return parsedConfig?.options ?? DEFAULT_COMPILER_OPTIONS
+  // A file that fails to parse yields no usable option besides the file path
+  // itself, so it falls back to the defaults instead of an empty program.
+  const declaredKeys =
+    parsedConfig === undefined
+      ? []
+      : Object.keys(parsedConfig.options).filter((key) => key !== 'configFilePath')
+  if (parsedConfig === undefined || declaredKeys.length === 0) return DEFAULT_COMPILER_OPTIONS
+  return parsedConfig.options
 }
 
 export function createViewModelProgramContext(tsPath: string): ViewModelProgramContext {
@@ -378,11 +385,9 @@ function describeUnionMembers(
   const distinctKinds = unique(members.map(classifyType))
   if (distinctKinds.includes('other')) return 'other'
   if (distinctKinds.length === 1) return distinctKinds[0]
-  const scalarKinds = distinctKinds.filter(isScalarKind)
-  if (scalarKinds.length === distinctKinds.length) {
-    return { kind: 'unknown', allowedKinds: orderScalarKinds(scalarKinds) }
-  }
-  return 'unknown'
+  // TypeScript absorbs `any` and `unknown` in unions and nullish members are
+  // filtered above, so a mixed remainder can only hold scalar kinds.
+  return { kind: 'unknown', allowedKinds: orderScalarKinds(distinctKinds.filter(isScalarKind)) }
 }
 
 /**

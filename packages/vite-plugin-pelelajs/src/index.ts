@@ -248,8 +248,6 @@ function isComponentSourceFile(file: string): boolean {
 
 function isRuntimeConvertible(value: ConstKind | ConstTypeInfo): boolean {
   if (typeof value === 'string') return value !== 'unknown' && value !== 'other'
-  if (value.kind === 'other') return false
-  if (value.kind === 'unknown') return value.allowedKinds !== undefined
   return true
 }
 
