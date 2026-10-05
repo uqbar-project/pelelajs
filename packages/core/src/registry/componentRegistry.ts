@@ -1,18 +1,18 @@
 import { toKebabCase } from '../commons/helpers'
 import { ViewModelExportError } from '../errors/index'
-import type { ConstKind, ViewModelConstructor } from '../types'
+import type { ConstKind, ConstTypeInfo, ViewModelConstructor } from '../types'
 import { getViewModel, registerViewModel, replaceViewModel } from './viewModelRegistry'
 
 type ComponentEntry = {
   name: string
   template: string
   cssUrls?: string[]
-  typeMap?: Record<string, ConstKind>
+  typeMap?: Record<string, ConstKind | ConstTypeInfo>
 }
 
 type DefineComponentOptions = {
   cssUrls?: string[]
-  typeMap?: Record<string, ConstKind>
+  typeMap?: Record<string, ConstKind | ConstTypeInfo>
 }
 
 const templatesByConstructor = new Map<ViewModelConstructor, ComponentEntry>()

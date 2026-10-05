@@ -1,7 +1,9 @@
 import * as ts from 'typescript'
 import { isNumberLiteral, parseBooleanLiteral } from '../commons/typeCasting'
 import { ViewModelSourceNotFoundError } from '../errors/ViewModelSourceNotFoundError'
-import type { ConstKind } from '../types'
+import type { ConstKind, ConstTypeInfo, ScalarKind } from '../types'
+
+export type { ConstKind, ConstTypeInfo, ScalarKind } from '../types'
 
 export interface ViewModelModuleAnalysis {
   exportedNames: string[] | null
@@ -10,7 +12,7 @@ export interface ViewModelModuleAnalysis {
   functionNames: string[]
 }
 
-export type ViewModelPropertyTypes = Record<string, ConstKind>
+export type ViewModelPropertyTypes = Record<string, ConstKind | ConstTypeInfo>
 
 const UNAUTHORIZED_PROPERTY_NAMES = new Set(['__proto__', 'constructor', 'prototype'])
 
@@ -277,6 +279,137 @@ export function classifyType(type: ts.Type): ConstKind {
   return 'other'
 }
 
+/**
+ * Coercion priority for heterogeneous scalar unions. Numbers and booleans only
+ * match their literal shape, so they are tried before strings: `const-value="42"`
+ * on a `number | string` property stays numeric instead of collapsing into text.
+ */
+const SCALAR_KIND_ORDER: ScalarKind[] = ['number', 'boolean', 'string']
+
+function orderScalarKinds(kinds: ScalarKind[]): ScalarKind[] {
+  return [...kinds].sort(
+    (left, right) => SCALAR_KIND_ORDER.indexOf(left) - SCALAR_KIND_ORDER.indexOf(right),
+  )
+}
+
+/**
+ * Canonical value order following the coercion priority. The checker does not
+ * preserve declaration order across different type flags (intrinsics come
+ * first), so sorting here keeps `typeMap` payloads and error messages stable.
+ */
+function orderAllowedValues(
+  values: Array<string | number | boolean>,
+): Array<string | number | boolean> {
+  return unique(values).sort(
+    (left, right) =>
+      SCALAR_KIND_ORDER.indexOf(getScalarKindOfLiteralValue(left)) -
+      SCALAR_KIND_ORDER.indexOf(getScalarKindOfLiteralValue(right)),
+  )
+}
+
+function getScalarKindOfLiteralValue(value: string | number | boolean): ScalarKind {
+  if (typeof value === 'number') return 'number'
+  if (typeof value === 'boolean') return 'boolean'
+  return 'string'
+}
+
+function getLiteralValue(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+): string | number | boolean | undefined {
+  if (isEnumLiteralMember(type)) return undefined
+  if ((type.flags & ts.TypeFlags.StringLiteral) !== 0) {
+    return (type as ts.StringLiteralType).value
+  }
+  if ((type.flags & ts.TypeFlags.NumberLiteral) !== 0) {
+    return (type as ts.NumberLiteralType).value
+  }
+  if ((type.flags & ts.TypeFlags.BooleanLiteral) !== 0) {
+    return checker.typeToString(type) === 'true'
+  }
+  return undefined
+}
+
+/**
+ * Enum members keep their coarse kind on purpose: their literal values stay a
+ * completion and diagnostic concern (`checkConstValue`), not a `typeMap`
+ * payload. Collapsing them here keeps every enum consumer unchanged.
+ */
+function isEnumLiteralMember(type: ts.Type): boolean {
+  return type.symbol !== undefined && (type.symbol.flags & ts.SymbolFlags.EnumMember) !== 0
+}
+
+function isScalarKind(kind: ConstKind): kind is ScalarKind {
+  return kind === 'number' || kind === 'boolean' || kind === 'string'
+}
+
+/**
+ * TypeScript models `boolean` as the union of its two literals, so a plain
+ * boolean property would otherwise look like a literal union. Enumerating both
+ * values adds no information and would serialize every boolean as a descriptor,
+ * so the full pair collapses back to its coarse kind. A lone `true` or `false`
+ * literal keeps its `allowedValues`.
+ */
+function isFullBooleanPair(values: Array<string | number | boolean>): boolean {
+  return values.length === 2 && values.includes(true) && values.includes(false)
+}
+
+function describeUnionMembers(
+  members: readonly ts.Type[],
+  checker: ts.TypeChecker,
+): ConstKind | ConstTypeInfo {
+  const literalValues = members.map((member) => getLiteralValue(member, checker))
+  const definedValues = literalValues.filter(
+    (value): value is string | number | boolean => value !== undefined,
+  )
+  if (definedValues.length === members.length) {
+    const literalKinds = orderScalarKinds(unique(definedValues.map(getScalarKindOfLiteralValue)))
+    if (literalKinds.length === 1) {
+      if (isFullBooleanPair(unique(definedValues))) return 'boolean'
+      return { kind: literalKinds[0], allowedValues: orderAllowedValues(definedValues) }
+    }
+    return {
+      kind: 'unknown',
+      allowedKinds: literalKinds,
+      allowedValues: orderAllowedValues(definedValues),
+    }
+  }
+
+  const distinctKinds = unique(members.map(classifyType))
+  if (distinctKinds.includes('other')) return 'other'
+  if (distinctKinds.length === 1) return distinctKinds[0]
+  const scalarKinds = distinctKinds.filter(isScalarKind)
+  if (scalarKinds.length === distinctKinds.length) {
+    return { kind: 'unknown', allowedKinds: orderScalarKinds(scalarKinds) }
+  }
+  return 'unknown'
+}
+
+/**
+ * Describes a resolved type with the serializable detail the runtime needs to
+ * validate a `const-*` attribute. Plain kinds stay plain `ConstKind` strings so
+ * existing `typeMap` payloads keep working; only unions that `classifyType`
+ * would collapse carry `allowedKinds` or `allowedValues`. Truly unknown types
+ * (`any`, `unknown`) stay bare `unknown` so the runtime keeps falling back to
+ * `typeof target`.
+ */
+export function describeConstType(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+): ConstKind | ConstTypeInfo {
+  if (type.isUnion()) {
+    const members = type.types.filter((member) => !isNullishType(member))
+    if (members.length === 0) return 'unknown'
+    return describeUnionMembers(members, checker)
+  }
+
+  const literalValue = getLiteralValue(type, checker)
+  if (literalValue !== undefined) {
+    return { kind: getScalarKindOfLiteralValue(literalValue), allowedValues: [literalValue] }
+  }
+  return classifyType(type)
+}
+
 const SCALAR_TYPE_FLAGS =
   ts.TypeFlags.StringLike | ts.TypeFlags.NumberLike | ts.TypeFlags.BooleanLike
 
@@ -447,7 +580,11 @@ export function extractViewModelPropertyTypesWithContext(
   className: string,
 ): ViewModelPropertyTypes {
   const propertyTypes = collectViewModelPropertyTypes(context, className)
-  return Object.fromEntries(Array.from(propertyTypes, ([name, type]) => [name, classifyType(type)]))
+  const describedTypes = Array.from(propertyTypes, ([name, type]) => [
+    name,
+    describeConstType(type, context.checker),
+  ])
+  return Object.fromEntries(describedTypes)
 }
 
 export function extractViewModelPropertyTypes(

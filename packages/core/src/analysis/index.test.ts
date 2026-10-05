@@ -8,8 +8,10 @@ import {
   analyzeViewModelModule,
   checkConstValue,
   classifyViewModelIssue,
+  collectViewModelPropertyTypes,
   createViewModelProgramContext,
   createViewModelProgramContextFromProgram,
+  describeConstType,
   extractViewModelPropertyTypes,
   extractViewModelPropertyTypesWithContext,
   pascalCaseFromFileName,
@@ -384,6 +386,22 @@ describe('extractViewModelPropertyTypes', () => {
     return extractViewModelPropertyTypesWithContext(context, 'Counter')
   }
 
+  const describeCounter = (tsSource: string) => {
+    viewModelSource = tsSource
+    scriptVersion += 1
+    const program = languageService?.getProgram()
+    if (program === undefined) {
+      throw new Error('Language service could not create a program for the test ViewModel')
+    }
+    const context = createViewModelProgramContextFromProgram(program, viewModelPath)
+    return Object.fromEntries(
+      Array.from(collectViewModelPropertyTypes(context, 'Counter'), ([name, type]) => [
+        name,
+        describeConstType(type, context.checker),
+      ]),
+    )
+  }
+
   it('classifies typed properties, initializer-inferred properties and definite-assignment properties', () => {
     const types = extractCounter(`export class Counter {
   value = 0
@@ -418,9 +436,9 @@ describe('extractViewModelPropertyTypes', () => {
       fromNumber: 'number',
       numberFirst: 'number',
       nullFirst: 'number',
-      mixed: 'unknown',
-      numberFirstMixed: 'unknown',
-      nullableMixed: 'unknown',
+      mixed: { kind: 'unknown', allowedKinds: ['number', 'string'] },
+      numberFirstMixed: { kind: 'unknown', allowedKinds: ['number', 'string'] },
+      nullableMixed: { kind: 'unknown', allowedKinds: ['number', 'string'] },
       numberOrDate: 'other',
       stringOrObject: 'other',
     })
@@ -510,22 +528,22 @@ export class Counter extends BaseCounter {
     expect(types).toEqual({ enabled: 'boolean' })
   })
 
-  it('classifies a string literal type annotation as string', () => {
+  it('describes a string literal type annotation with its allowed value', () => {
     const types = extractCounter('export class Counter {\n  label: "counter"\n}')
 
-    expect(types).toEqual({ label: 'string' })
+    expect(types).toEqual({ label: { kind: 'string', allowedValues: ['counter'] } })
   })
 
-  it('classifies a number literal type annotation as number', () => {
+  it('describes a number literal type annotation with its allowed value', () => {
     const types = extractCounter('export class Counter {\n  base: 10\n}')
 
-    expect(types).toEqual({ base: 'number' })
+    expect(types).toEqual({ base: { kind: 'number', allowedValues: [10] } })
   })
 
-  it('classifies a boolean literal type annotation as boolean', () => {
+  it('describes a boolean literal type annotation with its allowed value', () => {
     const types = extractCounter('export class Counter {\n  enabled: true\n}')
 
-    expect(types).toEqual({ enabled: 'boolean' })
+    expect(types).toEqual({ enabled: { kind: 'boolean', allowedValues: [true] } })
   })
 
   it('classifies a union of only nullish members as unknown', () => {
@@ -671,22 +689,22 @@ export class Counter extends factory(BaseCounter) {
     expect(types).toEqual({ value: 'number' })
   })
 
-  it('resolves a type alias of string literals to string', () => {
+  it('describes a type alias of string literals with its allowed values', () => {
     const types = extractCounter(`type Size = 'sm' | 'lg'
 export class Counter {
   size: Size = 'sm'
 }`)
 
-    expect(types).toEqual({ size: 'string' })
+    expect(types).toEqual({ size: { kind: 'string', allowedValues: ['sm', 'lg'] } })
   })
 
-  it('resolves a type alias of number literals to number', () => {
+  it('describes a type alias of number literals with its allowed values', () => {
     const types = extractCounter(`type Level = 1 | 2
 export class Counter {
   level: Level = 1
 }`)
 
-    expect(types).toEqual({ level: 'number' })
+    expect(types).toEqual({ level: { kind: 'number', allowedValues: [1, 2] } })
   })
 
   it('resolves a string enum to string', () => {
@@ -716,13 +734,19 @@ export class Counter {
     expect(types).toEqual({ shape: 'other' })
   })
 
-  it('classifies a heterogeneous scalar literal union as unknown', () => {
+  it('describes a heterogeneous scalar literal union with every kind in coercion order', () => {
     const types = extractCounter(`type Mixed = 'a' | 1 | true
 export class Counter {
   mixed: Mixed = 'a'
 }`)
 
-    expect(types).toEqual({ mixed: 'unknown' })
+    expect(types).toEqual({
+      mixed: {
+        kind: 'unknown',
+        allowedKinds: ['number', 'boolean', 'string'],
+        allowedValues: [1, true, 'a'],
+      },
+    })
   })
 
   it('classifies an any property as unknown so the runtime falls back to typeof', () => {
@@ -737,7 +761,7 @@ export class Counter {
     expect(types).toEqual({ mystery: 'unknown' })
   })
 
-  it('resolves a type alias imported from another module', () => {
+  it('resolves a type alias imported from another module with its allowed values', () => {
     writeModule(`export type Size = 'sm' | 'lg'`, 'sizes.ts')
     const types = extractViewModelPropertyTypes(
       writeViewModel(`import { Size } from './sizes'
@@ -747,7 +771,7 @@ export class Counter {
       'Counter',
     )
 
-    expect(types).toEqual({ size: 'string' })
+    expect(types).toEqual({ size: { kind: 'string', allowedValues: ['sm', 'lg'] } })
   })
 
   it('collects inherited property types from a base class in another module', () => {
@@ -800,6 +824,82 @@ export class Counter extends BaseCounter {
     )
 
     expect(types).toEqual({ inherited: 'string', own: 'number' })
+  })
+
+  it('describes a heterogeneous scalar union with its allowed kinds in coercion order', () => {
+    const types = describeCounter(`export class Counter {
+  value: number | string = 0
+  inverted: string | number = 'a'
+}`)
+
+    const expected = { kind: 'unknown', allowedKinds: ['number', 'string'] }
+    expect(types).toEqual({ value: expected, inverted: expected })
+  })
+
+  it('describes a nullable mixed union ignoring its nullish members', () => {
+    const types = describeCounter(`export class Counter {
+  value: number | string | undefined = undefined
+}`)
+
+    expect(types).toEqual({ value: { kind: 'unknown', allowedKinds: ['number', 'string'] } })
+  })
+
+  it('describes a string literal union with its allowed values', () => {
+    const types = describeCounter(`export class Counter {
+  theme: 'light' | 'dark' = 'light'
+}`)
+
+    expect(types).toEqual({ theme: { kind: 'string', allowedValues: ['light', 'dark'] } })
+  })
+
+  it('describes a mixed literal union with every scalar kind in coercion order', () => {
+    const types = describeCounter(`export type Mixed = 'a' | 1 | true
+export class Counter {
+  mixed: Mixed = 'a'
+}`)
+
+    expect(types).toEqual({
+      mixed: {
+        kind: 'unknown',
+        allowedKinds: ['number', 'boolean', 'string'],
+        allowedValues: [1, true, 'a'],
+      },
+    })
+  })
+
+  it('collapses an explicit true and false union back to boolean', () => {
+    const types = describeCounter(`export class Counter {
+  flag: true | false = true
+}`)
+
+    expect(types).toEqual({ flag: 'boolean' })
+  })
+
+  it('keeps any and unknown as bare unknown without detail', () => {
+    const types = describeCounter(`export class Counter {
+  anything: any = 1
+  mystery: unknown = 1
+}`)
+
+    expect(types).toEqual({ anything: 'unknown', mystery: 'unknown' })
+  })
+
+  it('keeps plain scalars as plain kinds', () => {
+    const types = describeCounter(`export class Counter {
+  count = 0
+  label = ''
+  active = false
+}`)
+
+    expect(types).toEqual({ count: 'number', label: 'string', active: 'boolean' })
+  })
+
+  it('keeps a union with object members as other', () => {
+    const types = describeCounter(`export class Counter {
+  amountOrDate: number | Date = 2
+}`)
+
+    expect(types).toEqual({ amountOrDate: 'other' })
   })
 
   it('fails fast when the view model path cannot be read by the program', () => {

@@ -4,6 +4,8 @@ import type { ViewModelExportErrorParams } from 'pelelajs'
 import { initializeI18n } from 'pelelajs'
 import {
   analyzeViewModelModule,
+  type ConstKind,
+  type ConstTypeInfo,
   classifyViewModelIssue,
   createViewModelProgramContextFromProgram,
   extractViewModelPropertyTypes,
@@ -244,14 +246,21 @@ function isComponentSourceFile(file: string): boolean {
   return COMPONENT_SOURCE_EXTENSIONS.has(path.extname(file))
 }
 
+function isRuntimeConvertible(value: ConstKind | ConstTypeInfo): boolean {
+  if (typeof value === 'string') return value !== 'unknown' && value !== 'other'
+  if (value.kind === 'other') return false
+  if (value.kind === 'unknown') return value.allowedKinds !== undefined
+  return true
+}
+
 function generateComponentMetadata(component: ComponentFileMetadata): ProcessedComponent {
   const { name, viewModelName, tsPath, pelelaPath, cssPaths, typeMap, issue } = component
   const baseName = kebabToCamelCase(name)
   const templateVar = `${baseName}Template`
   const cssUrlsVar = `${baseName}CssUrls`
   const hasCss = cssPaths.length > 0
-  const typeMapEntries = Object.entries(typeMap ?? {}).filter(
-    ([, kind]) => kind !== 'unknown' && kind !== 'other',
+  const typeMapEntries = Object.entries(typeMap ?? {}).filter(([, descriptor]) =>
+    isRuntimeConvertible(descriptor),
   )
   const optionsParts: string[] = []
   if (typeMapEntries.length > 0) {

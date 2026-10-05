@@ -346,7 +346,7 @@ describe('pelelajsPlugin', () => {
 
     it('generates a runtime error stub when the view model is an object literal, not a class', () => {
       const result = loadAutoRegisterWithComponent(
-        'export const converterObj = { millas: 100, kilometros: 2, convertir: () => 0 }',
+        'export const converterObj = { miles: 100, kilometers: 2, convert: () => 0 }',
         '<pelela view-model="converterObj"><h1>Hello</h1></pelela>',
       )
 
@@ -414,16 +414,38 @@ describe('pelelajsPlugin', () => {
       )
     })
 
-    it('combines typeMap and cssUrls in the component registration options', () => {
-      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({ millas: 'number' })
-      fs.writeFileSync(path.join(tempDir, 'src', 'converter.css'), 'h1 { color: red; }')
+    it('serializes union descriptors while still omitting bare unknown and other', () => {
+      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({
+        value: { kind: 'unknown', allowedKinds: ['number', 'string'] },
+        theme: { kind: 'string', allowedValues: ['light', 'dark'] },
+        dynamic: 'unknown',
+        config: 'other',
+      })
       const result = loadAutoRegisterWithComponent(
-        'export class Converter {\n  millas = 0\n}',
+        `export class Converter {
+  value: number | string = 0
+  theme: 'light' | 'dark' = 'light'
+  dynamic
+  config = {}
+}`,
         '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
       )
 
       expect(result).toContain(
-        'defineComponent("Converter", Converter, converterTemplate, { typeMap: {"millas":"number"}, cssUrls: converterCssUrls })',
+        'defineComponent("Converter", Converter, converterTemplate, { typeMap: {"value":{"kind":"unknown","allowedKinds":["number","string"]},"theme":{"kind":"string","allowedValues":["light","dark"]}} })',
+      )
+    })
+
+    it('combines typeMap and cssUrls in the component registration options', () => {
+      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({ miles: 'number' })
+      fs.writeFileSync(path.join(tempDir, 'src', 'converter.css'), 'h1 { color: red; }')
+      const result = loadAutoRegisterWithComponent(
+        'export class Converter {\n  miles = 0\n}',
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
+      )
+
+      expect(result).toContain(
+        'defineComponent("Converter", Converter, converterTemplate, { typeMap: {"miles":"number"}, cssUrls: converterCssUrls })',
       )
     })
 

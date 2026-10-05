@@ -1,5 +1,5 @@
 import { toCamelCase, toKebabCase } from 'pelelajs'
-import type { ViewModelPropertyTypes } from 'pelelajs/analysis'
+import type { ConstKind, ConstTypeInfo, ViewModelPropertyTypes } from 'pelelajs/analysis'
 import * as vscode from 'vscode'
 import { t } from '../i18n/index'
 import { acquireViewModelLanguageService } from '../parsers/viewModelLanguageServiceRegistry'
@@ -192,6 +192,14 @@ function buildBindingTypeDiagnostic(params: {
   )
 }
 
+/**
+ * This check compares coarse kinds on purpose: a literal union is still its
+ * scalar for `prop-`/`link-` compatibility, so descriptors collapse back here.
+ */
+function baseKindOf(kind: ConstKind | ConstTypeInfo): string {
+  return typeof kind === 'string' ? kind : kind.kind
+}
+
 function validateBindingType(params: {
   attribute: AttrInfo
   tag: TagInfo
@@ -212,10 +220,21 @@ function validateBindingType(params: {
   const childKind = childKindMap[childKey]
   const parentKind = parentKindMap[parentKey]
   if (childKind === undefined || parentKind === undefined) return []
-  if (childKind === 'unknown' || parentKind === 'unknown') return []
-  return childKind === parentKind
+  const childBaseKind = baseKindOf(childKind)
+  const parentBaseKind = baseKindOf(parentKind)
+  if (childBaseKind === 'unknown' || parentBaseKind === 'unknown') return []
+  return childBaseKind === parentBaseKind
     ? []
-    : [buildBindingTypeDiagnostic({ attribute, tag, parentKey, childKey, parentKind, childKind })]
+    : [
+        buildBindingTypeDiagnostic({
+          attribute,
+          tag,
+          parentKey,
+          childKey,
+          parentKind: parentBaseKind,
+          childKind: childBaseKind,
+        }),
+      ]
 }
 
 export function validateBindingTypes(

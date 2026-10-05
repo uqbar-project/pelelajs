@@ -35,7 +35,9 @@ describe('ViewModelLanguageService', () => {
   })
 
   it('resolves property types for a class in a registered file', () => {
-    assert.deepEqual(service.propertyTypes(tsPath, 'Counter'), { size: 'string' })
+    assert.deepEqual(service.propertyTypes(tsPath, 'Counter'), {
+      size: { kind: 'string', allowedValues: ['sm', 'lg'] },
+    })
   })
 
   it('reuses the same program when no tracked file changed', () => {

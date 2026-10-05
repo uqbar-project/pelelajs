@@ -132,6 +132,8 @@ const errors = {
       'Componente <{{tag}}> (ViewModel: {{viewModel}}): el const "{{name}}" recibe "{{value}}" pero {{expected}}. Encontrado en: {{snippet}}',
     constExpectedNumber: 'debe ser un número',
     constExpectedBoolean: "debe ser 'true' o 'false'",
+    constExpectedUnion: 'debe ser uno de estos tipos: {{kinds}}',
+    constExpectedAllowedValues: 'debe ser uno de: {{values}}',
     constUnsupportedValue:
       'no admite objetos ni otros valores; solo se permiten literales number, boolean o string',
   },

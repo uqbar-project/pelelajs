@@ -82,6 +82,8 @@ type ErrorTranslations = {
     invalidConstValue: string
     constExpectedNumber: string
     constExpectedBoolean: string
+    constExpectedUnion: string
+    constExpectedAllowedValues: string
     constUnsupportedValue: string
   }
   analysis: {

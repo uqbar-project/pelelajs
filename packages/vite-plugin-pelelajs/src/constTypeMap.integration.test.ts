@@ -145,4 +145,40 @@ describe('plugin typeMap const binding integration', () => {
     )
     expect((bindings[0].childViewModel as unknown as CounterViewModel).quantity).toBe(42)
   })
+
+  it('emits a union descriptor and applies it to const bindings end to end', () => {
+    fs.writeFileSync(
+      path.join(tempDir, 'src', 'parent.ts'),
+      'export class ParentViewModel { value: number | string = 0 }',
+    )
+    fs.writeFileSync(
+      path.join(tempDir, 'src', 'parent.pelela'),
+      '<pelela view-model="ParentViewModel"></pelela>',
+    )
+
+    const plugin = pelelajsPlugin()
+    const load = getHandler(plugin.load!)
+    const generatedModule = load.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+    expect(generatedModule).toContain(
+      '{ typeMap: {"value":{"kind":"unknown","allowedKinds":["number","string"]}} }',
+    )
+
+    class ParentViewModel {
+      value: number | string = 0
+    }
+    defineComponent(
+      'ParentViewModel',
+      ParentViewModel,
+      '<component view-model="ParentViewModel"></component>',
+      { typeMap: { value: { kind: 'unknown', allowedKinds: ['number', 'string'] } } },
+    )
+
+    const container = document.createElement('div')
+    container.innerHTML = '<parent-view-model const-value="hello"></parent-view-model>'
+    const bindings = setupComponentBindings(
+      container,
+      createReactiveViewModel({}, () => {}),
+    )
+    expect((bindings[0].childViewModel as unknown as ParentViewModel).value).toBe('hello')
+  })
 })

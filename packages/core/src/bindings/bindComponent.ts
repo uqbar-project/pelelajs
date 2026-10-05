@@ -24,7 +24,7 @@ import {
 } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
-import type { ConstKind, PelelaElement } from '../types'
+import type { ConstKind, ConstTypeInfo, PelelaElement, ScalarKind } from '../types'
 import { getNestedProperty, isPathAffected, setNestedProperty } from './nestedProperties'
 import { setupBindings } from './setupBindings'
 import type { ComponentBinding, ViewModel } from './types'
@@ -51,7 +51,7 @@ interface ConstStrategyContext {
 interface ResolveConstantOptions extends ConstStrategyContext {
   rawValue: string
   target: unknown
-  declaredKind?: ConstKind
+  declaredKind?: ConstKind | ConstTypeInfo
 }
 
 type ConstStrategy = (rawValue: string, context: ConstStrategyContext) => string | number | boolean
@@ -88,10 +88,60 @@ const CONST_KIND_STRATEGIES: Record<string, ConstStrategy | undefined> = {
   undefined: (rawValue) => parseScalarLiteral(rawValue),
 }
 
-function resolveConstantValue(options: ResolveConstantOptions): string | number | boolean {
-  const targetKind = typeof options.target
-  const kind =
-    options.declaredKind === 'unknown' ? targetKind : (options.declaredKind ?? targetKind)
+/**
+ * Coerces without throwing: `undefined` means the raw text has no valid shape
+ * for that kind, so the caller can try the next allowed kind instead.
+ */
+function coerceScalar(kind: ScalarKind, rawValue: string): string | number | boolean | undefined {
+  if (kind === 'number') return isNumberLiteral(rawValue) ? Number(rawValue) : undefined
+  if (kind === 'boolean') return parseBooleanLiteral(rawValue.trim()) ?? undefined
+  return rawValue
+}
+
+function isScalarKind(kind: ConstKind): kind is ScalarKind {
+  return kind === 'number' || kind === 'boolean' || kind === 'string'
+}
+
+function formatAllowedValue(value: string | number | boolean): string {
+  return typeof value === 'string' ? `"${value}"` : `${value}`
+}
+
+function expectedTextFor(descriptor: ConstTypeInfo): string {
+  if (descriptor.allowedValues !== undefined) {
+    const values = descriptor.allowedValues.map(formatAllowedValue).join(', ')
+    return t('errors.compiler.constExpectedAllowedValues', { values })
+  }
+  const kinds = (descriptor.allowedKinds ?? [descriptor.kind]).join(', ')
+  return t('errors.compiler.constExpectedUnion', { kinds })
+}
+
+function resolveDescribedValue(
+  descriptor: ConstTypeInfo,
+  options: ResolveConstantOptions,
+): string | number | boolean {
+  if (descriptor.kind === 'other') return resolveWithKind('other', options)
+  if (descriptor.kind === 'unknown' && descriptor.allowedKinds === undefined) {
+    return resolveWithKind(typeof options.target, options)
+  }
+  const accepted = (descriptor.allowedKinds ?? [descriptor.kind])
+    .filter(isScalarKind)
+    .map((kind) => coerceScalar(kind, options.rawValue))
+    .filter((value): value is string | number | boolean => value !== undefined)
+    .find(
+      (value) => descriptor.allowedValues === undefined || descriptor.allowedValues.includes(value),
+    )
+  if (accepted !== undefined) return accepted
+  throw new InvalidConstValueError({
+    propertyName: options.propertyName,
+    value: options.rawValue,
+    expected: expectedTextFor(descriptor),
+    componentTag: options.componentTag,
+    viewModelName: options.viewModelName,
+    elementSnippet: extractElementSnippet(options.element),
+  })
+}
+
+function resolveWithKind(kind: string, options: ResolveConstantOptions): string | number | boolean {
   const strategy = CONST_KIND_STRATEGIES[kind]
   if (strategy === undefined) {
     throw new InvalidConstValueError({
@@ -105,6 +155,16 @@ function resolveConstantValue(options: ResolveConstantOptions): string | number 
   }
   const { rawValue, propertyName, componentTag, viewModelName, element } = options
   return strategy(rawValue, { propertyName, componentTag, viewModelName, element })
+}
+
+function resolveConstantValue(options: ResolveConstantOptions): string | number | boolean {
+  if (options.declaredKind !== undefined && typeof options.declaredKind !== 'string') {
+    return resolveDescribedValue(options.declaredKind, options)
+  }
+  const targetKind = typeof options.target
+  const kind =
+    options.declaredKind === 'unknown' ? targetKind : (options.declaredKind ?? targetKind)
+  return resolveWithKind(kind, options)
 }
 
 function extractLinkBindings(

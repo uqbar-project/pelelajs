@@ -1,5 +1,13 @@
 export type ConstKind = 'number' | 'boolean' | 'string' | 'other' | 'unknown'
 
+export type ScalarKind = 'number' | 'boolean' | 'string'
+
+export interface ConstTypeInfo {
+  kind: ConstKind
+  allowedKinds?: ScalarKind[]
+  allowedValues?: Array<string | number | boolean>
+}
+
 export type ViewModelConstructor<T = unknown> = {
   new (): T
 }
