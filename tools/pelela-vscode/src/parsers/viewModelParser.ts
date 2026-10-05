@@ -163,6 +163,49 @@ function getClassName(declaration: ts.ClassDeclaration): string {
   return declaration.name?.text ?? ''
 }
 
+function getNamespacedClassDeclaration(
+  sourceFile: ts.SourceFile,
+  namespaceName: string,
+  className: string
+): ts.ClassDeclaration | undefined {
+  const namespaceDeclaration = sourceFile.statements.find(
+    (statement): statement is ts.ModuleDeclaration =>
+      ts.isModuleDeclaration(statement) && statement.name.text === namespaceName
+  )
+  const namespaceBody = namespaceDeclaration?.body
+  if (!namespaceBody || !ts.isModuleBlock(namespaceBody)) return undefined
+  return namespaceBody.statements.find(
+    (statement): statement is ts.ClassDeclaration =>
+      ts.isClassDeclaration(statement) && statement.name?.text === className
+  )
+}
+
+/**
+ * Resolves the class a heritage clause points at. Plain identifiers keep the
+ * existing same-file plus import-following lookup; a single-level `ns.Base`
+ * reference resolves inside a same-file namespace declaration.
+ */
+function resolveBaseClassDeclaration(
+  baseType: ts.ExpressionWithTypeArguments,
+  classDeclaration: ts.ClassDeclaration
+): ts.ClassDeclaration | undefined {
+  const baseSourceFile = classDeclaration.getSourceFile()
+  if (ts.isIdentifier(baseType.expression)) {
+    return getClassDeclaration(baseSourceFile, baseType.expression.text, baseSourceFile.fileName)
+  }
+  if (
+    ts.isPropertyAccessExpression(baseType.expression) &&
+    ts.isIdentifier(baseType.expression.expression)
+  ) {
+    return getNamespacedClassDeclaration(
+      baseSourceFile,
+      baseType.expression.expression.text,
+      baseType.expression.name.text
+    )
+  }
+  return undefined
+}
+
 function collectViewModelMembers(
   classDeclaration: ts.ClassDeclaration,
   visited: Set<string>
@@ -253,48 +296,43 @@ function collectViewModelMembers(
   )
 
   if (extendsClause && extendsClause.types.length > 0) {
-    const baseType = extendsClause.types[0]
-    if (ts.isIdentifier(baseType.expression)) {
-      const baseClassName = baseType.expression.text
-      const baseSourceFile = classDeclaration.getSourceFile()
-      const baseClass = getClassDeclaration(baseSourceFile, baseClassName, baseSourceFile.fileName)
-      if (baseClass) {
-        const baseMembers = collectViewModelMembers(baseClass, visited)
-        const directMemberNames = new Set([
-          ...directMembers.properties,
-          ...directMembers.methods,
-          ...directMembers.getters,
-          ...directMembers.setters,
-          ...directMembers.arrows,
-        ])
-        const inheritedSetters = baseMembers.setters.filter(
-          (setter) => !directMemberNames.has(setter)
-        )
-        const inheritedWritableProperties = baseMembers.writableProperties.filter(
-          (property) => !directMemberNames.has(property)
-        )
-        const inheritedReadonlyProperties = baseMembers.readonlyProperties.filter(
-          (property) => !directMemberNames.has(property)
-        )
-        const inheritedNonPublicProperties = baseMembers.nonPublicProperties.filter(
-          (property) => !directMemberNames.has(property)
-        )
-        return {
-          properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
-          writableProperties: [
-            ...new Set([...directMembers.writableProperties, ...inheritedWritableProperties]),
-          ],
-          readonlyProperties: [
-            ...new Set([...directMembers.readonlyProperties, ...inheritedReadonlyProperties]),
-          ],
-          nonPublicProperties: [
-            ...new Set([...directMembers.nonPublicProperties, ...inheritedNonPublicProperties]),
-          ],
-          methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
-          getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
-          setters: [...new Set([...directMembers.setters, ...inheritedSetters])],
-          arrows: [...new Set([...directMembers.arrows, ...baseMembers.arrows])],
-        }
+    const baseClass = resolveBaseClassDeclaration(extendsClause.types[0], classDeclaration)
+    if (baseClass) {
+      const baseMembers = collectViewModelMembers(baseClass, visited)
+      const directMemberNames = new Set([
+        ...directMembers.properties,
+        ...directMembers.methods,
+        ...directMembers.getters,
+        ...directMembers.setters,
+        ...directMembers.arrows,
+      ])
+      const inheritedSetters = baseMembers.setters.filter(
+        (setter) => !directMemberNames.has(setter)
+      )
+      const inheritedWritableProperties = baseMembers.writableProperties.filter(
+        (property) => !directMemberNames.has(property)
+      )
+      const inheritedReadonlyProperties = baseMembers.readonlyProperties.filter(
+        (property) => !directMemberNames.has(property)
+      )
+      const inheritedNonPublicProperties = baseMembers.nonPublicProperties.filter(
+        (property) => !directMemberNames.has(property)
+      )
+      return {
+        properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
+        writableProperties: [
+          ...new Set([...directMembers.writableProperties, ...inheritedWritableProperties]),
+        ],
+        readonlyProperties: [
+          ...new Set([...directMembers.readonlyProperties, ...inheritedReadonlyProperties]),
+        ],
+        nonPublicProperties: [
+          ...new Set([...directMembers.nonPublicProperties, ...inheritedNonPublicProperties]),
+        ],
+        methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
+        getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
+        setters: [...new Set([...directMembers.setters, ...inheritedSetters])],
+        arrows: [...new Set([...directMembers.arrows, ...baseMembers.arrows])],
       }
     }
   }
@@ -429,11 +467,15 @@ function findPropertyTypeNode(
     (clause) => clause.token === ts.SyntaxKind.ExtendsKeyword
   )
   if (extendsClause && extendsClause.types.length > 0) {
-    const baseType = extendsClause.types[0]
-    if (ts.isIdentifier(baseType.expression)) {
-      const baseClassName = baseType.expression.text
-      const baseSourceFile = classDeclaration.getSourceFile()
-      return findPropertyTypeNode(baseSourceFile, propertyName, baseClassName, filePath, visited)
+    const baseClass = resolveBaseClassDeclaration(extendsClause.types[0], classDeclaration)
+    if (baseClass?.name) {
+      return findPropertyTypeNode(
+        baseClass.getSourceFile(),
+        propertyName,
+        baseClass.name.text,
+        filePath,
+        visited
+      )
     }
   }
 

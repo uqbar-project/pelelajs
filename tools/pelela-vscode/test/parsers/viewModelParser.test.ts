@@ -531,6 +531,71 @@ export class C extends B {
       )
     })
 
+    it('should include inherited members from a base class imported from another file', () => {
+      const basePath = path.join(testFilesDir, 'ImportedBaseVM.ts')
+      fs.writeFileSync(
+        basePath,
+        `export class ImportedBaseViewModel {
+  title: string = 'default'
+  count: number = 0
+  reset(): void {}
+}`
+      )
+      createdFiles.push(basePath)
+
+      const derivedPath = path.join(testFilesDir, 'DerivedFromImportVM.ts')
+      fs.writeFileSync(
+        derivedPath,
+        `import { ImportedBaseViewModel } from './ImportedBaseVM'
+
+export class DerivedFromImportViewModel extends ImportedBaseViewModel {
+  items: string[] = []
+}`
+      )
+      createdFiles.push(derivedPath)
+      const members = extractViewModelMembers(derivedPath, 'DerivedFromImportViewModel')
+      assert.ok(members.properties.includes('items'), 'should include direct property items')
+      assert.ok(
+        members.properties.includes('title'),
+        'should include inherited property title from the imported base class'
+      )
+      assert.ok(
+        members.properties.includes('count'),
+        'should include inherited property count from the imported base class'
+      )
+      assert.ok(
+        members.writableProperties.includes('title'),
+        'inherited property title should be writable for bindings'
+      )
+      assert.ok(
+        members.methods.includes('reset'),
+        'should include inherited method reset from the imported base class'
+      )
+    })
+
+    it('should include inherited members from a namespaced base class reference', () => {
+      const fPath = path.join(testFilesDir, 'NamespacedBaseVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export namespace models {
+  export class BaseViewModel {
+    title: string = 'default'
+  }
+}
+
+export class DerivedViewModel extends models.BaseViewModel {
+  items: string[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'DerivedViewModel')
+      assert.ok(members.properties.includes('items'), 'should include direct property items')
+      assert.ok(
+        members.properties.includes('title'),
+        'should include inherited property title from the namespaced base class'
+      )
+    })
+
     it('should return empty members for a non-exported class', () => {
       const fPath = path.join(testFilesDir, 'NonExportedVM.ts')
       fs.writeFileSync(
