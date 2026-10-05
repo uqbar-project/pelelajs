@@ -73,7 +73,8 @@ reviews:
         Extensión de VS Code para PelelaJS. Revisá: - Correctitud de la
         integración con el Language Server / API de VS Code - Que los comandos y
         configuraciones estén bien definidos - Manejo de errores en
-        activación/desactivación de la extensión
+        activación/desactivación de la extensión - La extensión asume un único
+        workspace folder (multi-root está fuera de alcance, no señalarlo)
     - path: docs/**
       instructions: >
         Documentación del framework. Revisá solo exactitud técnica, consistencia

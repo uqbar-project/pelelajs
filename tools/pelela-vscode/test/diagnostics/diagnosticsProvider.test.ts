@@ -9,6 +9,7 @@ import {
   validatePelelaDocument,
 } from '../../src/diagnostics/diagnosticsProvider'
 import { t } from '../../src/i18n/index'
+import { invalidateComponentIndex } from '../../src/utils/componentIndex'
 import { lastDiagnosticCollection, setOpenTextDocuments } from '../vscode-stub'
 
 const PELELA_CONTENT = `<pelela view-model="TestViewModel">
@@ -108,6 +109,40 @@ describe('diagnosticsProvider', () => {
       assert.strictEqual(diagnostic.range.start.character, 22)
       assert.strictEqual(diagnostic.range.end.line, 1)
       assert.strictEqual(diagnostic.range.end.character, 41)
+    })
+
+    it('still updates diagnostics when a child view model cannot be read', () => {
+      const childPelelaPath = path.join(testFilesDir, 'child-view-model.pelela')
+      fs.writeFileSync(childPelelaPath, '<component view-model="ChildViewModel"></component>')
+      fs.mkdirSync(childPelelaPath.replace(/\.pelela$/, '.ts'))
+      invalidateComponentIndex()
+
+      const collection = vscode.languages.createDiagnosticCollection()
+      const document = createMockDocument(
+        `<pelela view-model="TestViewModel">
+  <span bind-content="nonExistentProperty"></span>
+  <child-view-model prop-title="title" bogus-attr="1"></child-view-model>
+</pelela>`,
+        'pelela',
+        pelelaPath
+      )
+      assert.doesNotThrow(() => validatePelelaDocument(collection, document))
+      const messages = (getEntries(collection).get(pelelaPath) ?? []).map(
+        (diagnostic) => diagnostic.message
+      )
+      assert.ok(
+        messages.includes(EXPECTED_PROPERTY_NOT_FOUND),
+        'should keep the diagnostics computed after the unreadable child'
+      )
+      assert.ok(
+        messages.includes(
+          t('diagnostics.invalidComponentAttribute', {
+            name: 'bogus-attr',
+            tag: 'child-view-model',
+          })
+        ),
+        'should keep the diagnostics computed before the unreadable child'
+      )
     })
 
     it('reports missingExport when the class is not exported', () => {

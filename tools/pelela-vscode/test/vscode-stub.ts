@@ -210,8 +210,9 @@ export const vscodeStub = {
     onDidSaveTextDocument: () => ({ dispose: () => {} }),
     findFiles: (_globPattern: string) => Promise.resolve([]),
     getWorkspaceFolder: (uri: { fsPath: string }) =>
-      workspaceFolders.find((folder: StubWorkspaceFolder) =>
-        uri.fsPath.startsWith(folder.uri.fsPath)
+      workspaceFolders.find(
+        (folder: StubWorkspaceFolder) =>
+          uri.fsPath === folder.uri.fsPath || uri.fsPath.startsWith(folder.uri.fsPath + path.sep)
       ),
   },
 
