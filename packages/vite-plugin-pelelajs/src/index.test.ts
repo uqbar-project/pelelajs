@@ -2,13 +2,22 @@ import * as fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { t } from 'pelelajs'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { extractViewModelPropertyTypes } from 'pelelajs/analysis'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   escapeTemplateForLiteral,
   extractLinkAttributeMatches,
   kebabToCamelCase,
   pelelajsPlugin,
 } from './index'
+
+vi.mock('pelelajs/analysis', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('pelelajs/analysis')>()
+  return {
+    ...actual,
+    extractViewModelPropertyTypes: vi.fn(() => ({})),
+  }
+})
 
 const VIRTUAL_MODULE_ID = 'virtual:pelela-auto-register'
 const RESOLVED_VIRTUAL_ID = '\0virtual:pelela-auto-register'
@@ -26,6 +35,10 @@ function getHandler<T>(hook: T): T extends { handler: infer H } ? H : T {
 }
 
 describe('pelelajsPlugin', () => {
+  beforeEach(() => {
+    vi.mocked(extractViewModelPropertyTypes).mockReset().mockReturnValue({})
+  })
+
   describe('resolveId', () => {
     it('resolves virtual:pelela-auto-register to internal id', () => {
       const plugin = pelelajsPlugin()
@@ -251,8 +264,8 @@ describe('pelelajsPlugin', () => {
 
     function loadAutoRegisterWithComponent(tsSource: string, pelelaTemplate: string): string {
       const srcDir = path.join(tempDir, 'src')
-      fs.writeFileSync(path.join(srcDir, 'conversor.ts'), tsSource)
-      fs.writeFileSync(path.join(srcDir, 'conversor.pelela'), pelelaTemplate)
+      fs.writeFileSync(path.join(srcDir, 'converter.ts'), tsSource)
+      fs.writeFileSync(path.join(srcDir, 'converter.pelela'), pelelaTemplate)
 
       const plugin = pelelajsPlugin()
       const handler = getHandler(plugin.load!)
@@ -275,88 +288,202 @@ describe('pelelajsPlugin', () => {
 
     it('generates a runtime error stub when the view model class is not exported', () => {
       const result = loadAutoRegisterWithComponent(
-        'class Conversor {}',
-        '<pelela view-model="Conversor"><h1>Hola</h1></pelela>',
+        'class Converter {}',
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
       )
 
-      expect(result).not.toContain('import { Conversor } from "./src/conversor.ts"')
+      expect(result).not.toContain('import { Converter } from "./src/converter.ts"')
       expect(result).toContain('import { defineComponent, ViewModelExportError } from "pelelajs"')
       expect(parseViewModelExportParams(result)).toEqual({
         kind: 'missingExport',
-        viewModelName: 'Conversor',
-        tsFilePath: 'src/conversor.ts',
+        viewModelName: 'Converter',
+        tsFilePath: 'src/converter.ts',
       })
     })
 
     it('generates a runtime error stub when the view model only differs in case from the exported class', () => {
       const result = loadAutoRegisterWithComponent(
-        'export class Conversor {}',
-        '<pelela view-model="conversor"><h1>Hola</h1></pelela>',
+        'export class Converter {}',
+        '<pelela view-model="converter"><h1>Hello</h1></pelela>',
       )
 
-      expect(result).not.toContain('import { conversor } from "./src/conversor.ts"')
+      expect(result).not.toContain('import { converter } from "./src/converter.ts"')
       expect(parseViewModelExportParams(result)).toEqual({
         kind: 'wrongCase',
-        viewModelName: 'conversor',
-        expectedName: 'Conversor',
-        tsFilePath: 'src/conversor.ts',
+        viewModelName: 'converter',
+        expectedName: 'Converter',
+        tsFilePath: 'src/converter.ts',
       })
     })
 
-    it('generates a runtime error stub with the file-derived suggestion when no class matches', () => {
+    it('falls back to the file name when the template has no view-model attribute', () => {
       const result = loadAutoRegisterWithComponent(
-        'export class Conversor {}',
-        '<pelela view-model="Bicicleta"><h1>Hola</h1></pelela>',
+        'export class Converter {}',
+        '<pelela><h1>Hello</h1></pelela>',
+      )
+
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'wrongCase',
+        viewModelName: 'converter',
+        expectedName: 'Converter',
+        tsFilePath: 'src/converter.ts',
+      })
+    })
+
+    it('resolves property types when the project has a tsconfig', () => {
+      fs.writeFileSync(path.join(tempDir, 'tsconfig.json'), JSON.stringify({ compilerOptions: {} }))
+      const result = loadAutoRegisterWithComponent(
+        'export class Converter {\n  miles = 0\n}',
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
+      )
+
+      expect(result).toContain(
+        'defineComponent("Converter", Converter, converterTemplate, { typeMap: {"miles":"number"} })',
+      )
+    })
+
+    it('generates a runtime error stub with the module-derived suggestion when no class matches', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export class Converter {}',
+        '<pelela view-model="Bicycle"><h1>Hello</h1></pelela>',
       )
 
       expect(parseViewModelExportParams(result)).toEqual({
         kind: 'notFound',
-        viewModelName: 'Bicicleta',
-        suggestedName: 'Conversor',
-        tsFilePath: 'src/conversor.ts',
+        viewModelName: 'Bicycle',
+        suggestedName: 'Converter',
+        tsFilePath: 'src/converter.ts',
+      })
+    })
+
+    it('suggests the exported class from the module instead of the file name', () => {
+      const result = loadAutoRegisterWithComponent(
+        'export class MyPrice {}',
+        '<pelela view-model="Bicycle"><h1>Hello</h1></pelela>',
+      )
+
+      expect(parseViewModelExportParams(result)).toEqual({
+        kind: 'notFound',
+        viewModelName: 'Bicycle',
+        suggestedName: 'MyPrice',
+        tsFilePath: 'src/converter.ts',
       })
     })
 
     it('generates a runtime error stub when the view model is an object literal, not a class', () => {
       const result = loadAutoRegisterWithComponent(
-        'export const conversorObj = { millas: 100, kilometros: 2, convertir: () => 0 }',
-        '<pelela view-model="conversorObj"><h1>Hola</h1></pelela>',
+        'export const converterObj = { miles: 100, kilometers: 2, convert: () => 0 }',
+        '<pelela view-model="converterObj"><h1>Hello</h1></pelela>',
       )
 
-      expect(result).not.toContain('import { conversorObj } from "./src/conversor.ts"')
+      expect(result).not.toContain('import { converterObj } from "./src/converter.ts"')
       expect(result).toContain('import { defineComponent, ViewModelExportError } from "pelelajs"')
       expect(parseViewModelExportParams(result)).toEqual({
         kind: 'notAClass',
-        viewModelName: 'conversorObj',
+        viewModelName: 'converterObj',
         declaredAs: 'Object',
-        tsFilePath: 'src/conversor.ts',
+        tsFilePath: 'src/converter.ts',
       })
     })
 
     it('generates a runtime error stub when the view model is a function, not a class', () => {
       const result = loadAutoRegisterWithComponent(
         'export function App() { return 0 }',
-        '<pelela view-model="App"><h1>Hola</h1></pelela>',
+        '<pelela view-model="App"><h1>Hello</h1></pelela>',
       )
 
-      expect(result).not.toContain('import { App } from "./src/conversor.ts"')
+      expect(result).not.toContain('import { App } from "./src/converter.ts"')
       expect(parseViewModelExportParams(result)).toEqual({
         kind: 'notAClass',
         viewModelName: 'App',
         declaredAs: 'Function',
-        tsFilePath: 'src/conversor.ts',
+        tsFilePath: 'src/converter.ts',
       })
     })
 
     it('keeps the named import when a lowercase class matches the lowercase view model', () => {
       const result = loadAutoRegisterWithComponent(
-        'export class conversor {}',
-        '<pelela view-model="conversor"><h1>Hola</h1></pelela>',
+        'export class converter {}',
+        '<pelela view-model="converter"><h1>Hello</h1></pelela>',
       )
 
-      expect(result).toContain('import { conversor } from "./src/conversor.ts"')
-      expect(result).toContain('defineComponent("conversor", conversor, conversorTemplate)')
+      expect(result).toContain('import { converter } from "./src/converter.ts"')
+      expect(result).toContain('defineComponent("converter", converter, converterTemplate)')
       expect(result).not.toContain('ViewModelExportError')
+    })
+
+    it('generates typeMap only for runtime-convertible property types', () => {
+      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({
+        miles: 'number',
+        kilometers: 'number',
+        active: 'boolean',
+        quantity: 'number',
+        description: 'string',
+        config: 'other',
+        dynamic: 'unknown',
+      })
+      const result = loadAutoRegisterWithComponent(
+        `export class Converter {
+  miles = 0
+  kilometers = 0
+  active = false
+  quantity!: number
+  description = ""
+  config = {}
+  dynamic
+}`,
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
+      )
+
+      expect(result).toContain(
+        'defineComponent("Converter", Converter, converterTemplate, { typeMap: {"miles":"number","kilometers":"number","active":"boolean","quantity":"number","description":"string"} })',
+      )
+    })
+
+    it('serializes union descriptors while still omitting bare unknown and other', () => {
+      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({
+        value: { kind: 'unknown', allowedKinds: ['number', 'string'] },
+        theme: { kind: 'string', allowedValues: ['light', 'dark'] },
+        dynamic: 'unknown',
+        config: 'other',
+      })
+      const result = loadAutoRegisterWithComponent(
+        `export class Converter {
+  value: number | string = 0
+  theme: 'light' | 'dark' = 'light'
+  dynamic
+  config = {}
+}`,
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
+      )
+
+      expect(result).toContain(
+        'defineComponent("Converter", Converter, converterTemplate, { typeMap: {"value":{"kind":"unknown","allowedKinds":["number","string"]},"theme":{"kind":"string","allowedValues":["light","dark"]}} })',
+      )
+    })
+
+    it('combines typeMap and cssUrls in the component registration options', () => {
+      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({ miles: 'number' })
+      fs.writeFileSync(path.join(tempDir, 'src', 'converter.css'), 'h1 { color: red; }')
+      const result = loadAutoRegisterWithComponent(
+        'export class Converter {\n  miles = 0\n}',
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
+      )
+
+      expect(result).toContain(
+        'defineComponent("Converter", Converter, converterTemplate, { typeMap: {"miles":"number"}, cssUrls: converterCssUrls })',
+      )
+    })
+
+    it('omits typeMap when no property type can be inferred', () => {
+      vi.mocked(extractViewModelPropertyTypes).mockReturnValue({ dynamic: 'unknown' })
+      const result = loadAutoRegisterWithComponent(
+        'export class Converter {\n  dynamic\n}',
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
+      )
+
+      expect(result).toContain('defineComponent("Converter", Converter, converterTemplate)')
+      expect(result).not.toContain('typeMap')
     })
   })
 
@@ -392,6 +519,26 @@ describe('pelelajsPlugin', () => {
 
       expect(result).toContain('export const viewModelName = "Home"')
       expect(result).toContain('export default template')
+    })
+
+    it('lists known components when transforming inside a project with sources', () => {
+      const srcDir = path.join(tempDir, 'src')
+      fs.mkdirSync(srcDir)
+      fs.writeFileSync(path.join(srcDir, 'converter.ts'), 'export class Converter {}')
+      fs.writeFileSync(
+        path.join(srcDir, 'converter.pelela'),
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
+      )
+      const pelelaPath = path.join(tempDir, 'other.pelela')
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Other"><h1>Hello</h1></pelela>')
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+
+      const mockContext = { error: () => {} }
+      const result = handler.call(mockContext as never, pelelaPath, {} as never) as string
+
+      expect(result).toContain('export const viewModelName = "Other"')
     })
 
     it('reports error when pelela tag is missing', () => {
@@ -645,9 +792,11 @@ describe('pelelajsPlugin', () => {
     })
 
     it('reports error when component tag collapsed a registered kebab-case component', () => {
-      fs.writeFileSync(path.join(tempDir, 'person-row.ts'), 'export class PersonRow {}')
+      const srcDir = path.join(tempDir, 'src')
+      fs.mkdirSync(srcDir, { recursive: true })
+      fs.writeFileSync(path.join(srcDir, 'person-row.ts'), 'export class PersonRow {}')
       fs.writeFileSync(
-        path.join(tempDir, 'person-row.pelela'),
+        path.join(srcDir, 'person-row.pelela'),
         '<pelela view-model="PersonRow"></pelela>',
       )
       const pelelaPath = path.join(tempDir, 'collapsed-component.pelela')
@@ -661,8 +810,13 @@ describe('pelelajsPlugin', () => {
 
       const plugin = pelelajsPlugin()
       const handler = getHandler(plugin.load!)
-
-      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(errors).toContain(
         t('errors.compiler.invalidComponentTagCase', {
@@ -673,9 +827,11 @@ describe('pelelajsPlugin', () => {
     })
 
     it('accepts registered single-word component tags', () => {
-      fs.writeFileSync(path.join(tempDir, 'counter.ts'), 'export class Counter {}')
+      const srcDir = path.join(tempDir, 'src')
+      fs.mkdirSync(srcDir, { recursive: true })
+      fs.writeFileSync(path.join(srcDir, 'counter.ts'), 'export class Counter {}')
       fs.writeFileSync(
-        path.join(tempDir, 'counter.pelela'),
+        path.join(srcDir, 'counter.pelela'),
         '<pelela view-model="Counter"></pelela>',
       )
       const pelelaPath = path.join(tempDir, 'single-word-component.pelela')
@@ -689,8 +845,45 @@ describe('pelelajsPlugin', () => {
 
       const plugin = pelelajsPlugin()
       const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+      } finally {
+        process.cwd = originalCwd
+      }
 
-      handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+      expect(errors).toEqual([])
+    })
+
+    it('accepts a component tag registered in another nested src subfolder', () => {
+      const componentDir = path.join(tempDir, 'src', 'components')
+      const pagesDir = path.join(tempDir, 'src', 'pages')
+      fs.mkdirSync(componentDir, { recursive: true })
+      fs.mkdirSync(pagesDir, { recursive: true })
+      fs.writeFileSync(path.join(componentDir, 'stats-card.ts'), 'export class StatsCard {}')
+      fs.writeFileSync(
+        path.join(componentDir, 'stats-card.pelela'),
+        '<pelela view-model="StatsCard"></pelela>',
+      )
+      const pelelaPath = path.join(pagesDir, 'home.pelela')
+      fs.writeFileSync(
+        pelelaPath,
+        '<pelela view-model="Home"><stats-card prop-value="x"></stats-card></pelela>',
+      )
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+        handler.call({ error: errorFn } as never, pelelaPath, {} as never)
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(errors).toEqual([])
     })
@@ -1340,6 +1533,46 @@ describe('pelelajsPlugin', () => {
       const result = callHotUpdate(path.join(tempDir, 'src', 'app.ts'), [], null)
 
       expect(result).toBeUndefined()
+    })
+  })
+
+  describe('closeBundle', () => {
+    let tempDir: string
+
+    beforeEach(() => {
+      tempDir = createTempDir()
+      fs.mkdirSync(path.join(tempDir, 'src'))
+    })
+
+    afterEach(() => {
+      removeTempDir(tempDir)
+    })
+
+    it('disposes typeMap caches without breaking subsequent loads', () => {
+      const srcDir = path.join(tempDir, 'src')
+      fs.writeFileSync(
+        path.join(srcDir, 'converter.ts'),
+        'export class Converter {\n  miles = 0\n}',
+      )
+      fs.writeFileSync(
+        path.join(srcDir, 'converter.pelela'),
+        '<pelela view-model="Converter"><h1>Hello</h1></pelela>',
+      )
+
+      const plugin = pelelajsPlugin()
+      const load = getHandler(plugin.load!)
+      const closeBundle = getHandler(plugin.closeBundle!)
+      const originalCwd = process.cwd
+      try {
+        process.cwd = () => tempDir
+        const before = load.call(null as never, RESOLVED_VIRTUAL_ID, {} as never)
+        closeBundle.call(null as never)
+        const after = load.call(null as never, RESOLVED_VIRTUAL_ID, {} as never)
+
+        expect(after).toBe(before)
+      } finally {
+        process.cwd = originalCwd
+      }
     })
   })
 })

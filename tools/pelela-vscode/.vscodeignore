@@ -1,6 +1,7 @@
 # Development files — not needed at runtime
 src/
 test/
+scripts/
 biome.json
 tsconfig.json
 pnpm-lock.yaml

@@ -177,22 +177,22 @@ importers:
         version: 7.7.0
       '@vitest/coverage-v8':
         specifier: 4.0.14
-        version: 4.0.14(vitest@4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0))
+        version: 4.0.14(supports-color@8.1.1)(vitest@4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(supports-color@8.1.1))(tsx@4.21.0))
       chalk:
         specifier: 5.6.2
         version: 5.6.2
       jsdom:
         specifier: 27.2.0
-        version: 27.2.0
+        version: 27.2.0(supports-color@8.1.1)
       release-it:
         specifier: 20.0.1
-        version: 20.0.1(@types/node@24.10.1)(magicast@0.5.1)
+        version: 20.0.1(@types/node@24.10.1)(magicast@0.5.1)(supports-color@8.1.1)
       semver:
         specifier: 7.7.0
         version: 7.7.0
       tsup:
         specifier: 8.5.1
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(supports-color@8.1.1)(tsx@4.21.0)(typescript@5.9.3)
       tsx:
         specifier: 4.21.0
         version: 4.21.0
@@ -201,7 +201,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 4.0.14
-        version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0)
+        version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(supports-color@8.1.1))(tsx@4.21.0)
 
   examples/advanced-routing:
     dependencies:
@@ -347,6 +347,22 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vite-plugin-pelelajs
 
+  examples/view-model-inheritance:
+    dependencies:
+      pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 7.2.4
+        version: 7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0)
+      vite-plugin-pelelajs:
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin-pelelajs
+
   packages/core:
     dependencies:
       chalk:
@@ -373,22 +389,22 @@ importers:
         version: 7.7.0
       '@vitest/coverage-v8':
         specifier: 4.0.14
-        version: 4.0.14(vitest@4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0))
+        version: 4.0.14(supports-color@8.1.1)(vitest@4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(supports-color@8.1.1))(tsx@4.21.0))
       jsdom:
         specifier: 27.2.0
-        version: 27.2.0
+        version: 27.2.0(supports-color@8.1.1)
       semver:
         specifier: 7.7.0
         version: 7.7.0
       tsup:
         specifier: 8.5.1
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(supports-color@8.1.1)(tsx@4.21.0)(typescript@5.9.3)
       typescript:
         specifier: 5.9.3
         version: 5.9.3
       vitest:
         specifier: 4.0.14
-        version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0)
+        version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(supports-color@8.1.1))(tsx@4.21.0)
 
   packages/vite-plugin-pelelajs:
     dependencies:
@@ -404,7 +420,7 @@ importers:
         version: 24.10.1
       tsup:
         specifier: 8.5.1
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(supports-color@8.1.1)(tsx@4.21.0)(typescript@5.9.3)
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -438,7 +454,7 @@ importers:
         version: 7.7.0
       tsup:
         specifier: 8.5.1
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(supports-color@8.1.1)(tsx@4.21.0)(typescript@5.9.3)
       tsx:
         specifier: 4.21.0
         version: 4.21.0
@@ -447,7 +463,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 4.0.14
-        version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0)
+        version: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(supports-color@8.1.1))(tsx@4.21.0)
 
   tools/pelela-vscode:
     devDependencies:
@@ -462,7 +478,7 @@ importers:
         version: 1.105.0
       '@vscode/vsce':
         specifier: 3.9.1
-        version: 3.9.1
+        version: 3.9.1(supports-color@8.1.1)
       glob:
         specifier: 13.0.0
         version: 13.0.0
@@ -471,16 +487,16 @@ importers:
         version: 10.2.0
       ovsx:
         specifier: 0.10.12
-        version: 0.10.12
+        version: 0.10.12(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
       pelelajs:
         specifier: workspace:*
         version: link:../../packages/core
       release-it:
         specifier: 17.10.0
-        version: 17.10.0(typescript@5.9.3)
+        version: 17.10.0(supports-color@8.1.1)(typescript@5.9.3)
       tsup:
         specifier: 8.5.1
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(supports-color@8.1.1)(tsx@4.21.0)(typescript@5.9.3)
       tsx:
         specifier: 4.21.0
         version: 4.21.0
@@ -4253,34 +4269,34 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@azure/core-auth@1.10.1':
+  '@azure/core-auth@1.10.1(supports-color@8.1.1)':
     dependencies:
       '@azure/abort-controller': 2.1.2
-      '@azure/core-util': 1.13.1
+      '@azure/core-util': 1.13.1(supports-color@8.1.1)
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@azure/core-client@1.10.1':
+  '@azure/core-client@1.10.1(supports-color@8.1.1)':
     dependencies:
       '@azure/abort-controller': 2.1.2
-      '@azure/core-auth': 1.10.1
-      '@azure/core-rest-pipeline': 1.23.0
+      '@azure/core-auth': 1.10.1(supports-color@8.1.1)
+      '@azure/core-rest-pipeline': 1.23.0(supports-color@8.1.1)
       '@azure/core-tracing': 1.3.1
-      '@azure/core-util': 1.13.1
-      '@azure/logger': 1.3.0
+      '@azure/core-util': 1.13.1(supports-color@8.1.1)
+      '@azure/logger': 1.3.0(supports-color@8.1.1)
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@azure/core-rest-pipeline@1.23.0':
+  '@azure/core-rest-pipeline@1.23.0(supports-color@8.1.1)':
     dependencies:
       '@azure/abort-controller': 2.1.2
-      '@azure/core-auth': 1.10.1
+      '@azure/core-auth': 1.10.1(supports-color@8.1.1)
       '@azure/core-tracing': 1.3.1
-      '@azure/core-util': 1.13.1
-      '@azure/logger': 1.3.0
-      '@typespec/ts-http-runtime': 0.3.4
+      '@azure/core-util': 1.13.1(supports-color@8.1.1)
+      '@azure/logger': 1.3.0(supports-color@8.1.1)
+      '@typespec/ts-http-runtime': 0.3.4(supports-color@8.1.1)
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
@@ -4289,23 +4305,23 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@azure/core-util@1.13.1':
+  '@azure/core-util@1.13.1(supports-color@8.1.1)':
     dependencies:
       '@azure/abort-controller': 2.1.2
-      '@typespec/ts-http-runtime': 0.3.4
+      '@typespec/ts-http-runtime': 0.3.4(supports-color@8.1.1)
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@azure/identity@4.13.1':
+  '@azure/identity@4.13.1(supports-color@8.1.1)':
     dependencies:
       '@azure/abort-controller': 2.1.2
-      '@azure/core-auth': 1.10.1
-      '@azure/core-client': 1.10.1
-      '@azure/core-rest-pipeline': 1.23.0
+      '@azure/core-auth': 1.10.1(supports-color@8.1.1)
+      '@azure/core-client': 1.10.1(supports-color@8.1.1)
+      '@azure/core-rest-pipeline': 1.23.0(supports-color@8.1.1)
       '@azure/core-tracing': 1.3.1
-      '@azure/core-util': 1.13.1
-      '@azure/logger': 1.3.0
+      '@azure/core-util': 1.13.1(supports-color@8.1.1)
+      '@azure/logger': 1.3.0(supports-color@8.1.1)
       '@azure/msal-browser': 5.6.2
       '@azure/msal-node': 5.1.1
       open: 10.2.0
@@ -4313,9 +4329,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@azure/logger@1.3.0':
+  '@azure/logger@1.3.0(supports-color@8.1.1)':
     dependencies:
-      '@typespec/ts-http-runtime': 0.3.4
+      '@typespec/ts-http-runtime': 0.3.4(supports-color@8.1.1)
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
@@ -5014,35 +5030,35 @@ snapshots:
     dependencies:
       '@secretlint/types': 10.2.2
 
-  '@secretlint/config-loader@10.2.2':
+  '@secretlint/config-loader@10.2.2(supports-color@8.1.1)':
     dependencies:
       '@secretlint/profiler': 10.2.2
       '@secretlint/resolver': 10.2.2
       '@secretlint/types': 10.2.2
       ajv: 8.18.0
-      debug: 4.4.3
-      rc-config-loader: 4.1.4
+      debug: 4.4.3(supports-color@8.1.1)
+      rc-config-loader: 4.1.4(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
-  '@secretlint/core@10.2.2':
+  '@secretlint/core@10.2.2(supports-color@8.1.1)':
     dependencies:
       '@secretlint/profiler': 10.2.2
       '@secretlint/types': 10.2.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       structured-source: 4.0.0
     transitivePeerDependencies:
       - supports-color
 
-  '@secretlint/formatter@10.2.2':
+  '@secretlint/formatter@10.2.2(supports-color@8.1.1)':
     dependencies:
       '@secretlint/resolver': 10.2.2
       '@secretlint/types': 10.2.2
-      '@textlint/linter-formatter': 15.5.2
+      '@textlint/linter-formatter': 15.5.2(supports-color@8.1.1)
       '@textlint/module-interop': 15.5.2
       '@textlint/types': 15.5.2
       chalk: 5.6.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       pluralize: 8.0.0
       strip-ansi: 7.2.0
       table: 6.9.0
@@ -5050,15 +5066,15 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@secretlint/node@10.2.2':
+  '@secretlint/node@10.2.2(supports-color@8.1.1)':
     dependencies:
-      '@secretlint/config-loader': 10.2.2
-      '@secretlint/core': 10.2.2
-      '@secretlint/formatter': 10.2.2
+      '@secretlint/config-loader': 10.2.2(supports-color@8.1.1)
+      '@secretlint/core': 10.2.2(supports-color@8.1.1)
+      '@secretlint/formatter': 10.2.2(supports-color@8.1.1)
       '@secretlint/profiler': 10.2.2
       '@secretlint/source-creator': 10.2.2
       '@secretlint/types': 10.2.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       p-map: 7.0.4
     transitivePeerDependencies:
       - supports-color
@@ -5090,7 +5106,7 @@ snapshots:
 
   '@textlint/ast-node-types@15.5.2': {}
 
-  '@textlint/linter-formatter@15.5.2':
+  '@textlint/linter-formatter@15.5.2(supports-color@8.1.1)':
     dependencies:
       '@azu/format-text': 1.0.2
       '@azu/style-format': 1.0.1
@@ -5098,7 +5114,7 @@ snapshots:
       '@textlint/resolver': 15.5.2
       '@textlint/types': 15.5.2
       chalk: 4.1.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       js-yaml: 4.1.1
       lodash: 4.17.23
       pluralize: 2.0.0
@@ -5153,28 +5169,28 @@ snapshots:
 
   '@types/vscode@1.105.0': {}
 
-  '@typespec/ts-http-runtime@0.3.4':
+  '@typespec/ts-http-runtime@0.3.4(supports-color@8.1.1)':
     dependencies:
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
+      http-proxy-agent: 7.0.2(supports-color@8.1.1)
+      https-proxy-agent: 7.0.6(supports-color@8.1.1)
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@4.0.14(vitest@4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0))':
+  '@vitest/coverage-v8@4.0.14(supports-color@8.1.1)(vitest@4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(supports-color@8.1.1))(tsx@4.21.0))':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
       '@vitest/utils': 4.0.14
       ast-v8-to-istanbul: 0.3.8
       istanbul-lib-coverage: 3.2.2
       istanbul-lib-report: 3.0.1
-      istanbul-lib-source-maps: 5.0.6
+      istanbul-lib-source-maps: 5.0.6(supports-color@8.1.1)
       istanbul-reports: 3.2.0
       magicast: 0.5.1
       obug: 2.1.1
       std-env: 3.10.0
       tinyrainbow: 3.0.3
-      vitest: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0)
+      vitest: 4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(supports-color@8.1.1))(tsx@4.21.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -5256,10 +5272,10 @@ snapshots:
       '@vscode/vsce-sign-win32-arm64': 2.0.6
       '@vscode/vsce-sign-win32-x64': 2.0.6
 
-  '@vscode/vsce@3.9.1':
+  '@vscode/vsce@3.9.1(supports-color@8.1.1)':
     dependencies:
-      '@azure/identity': 4.13.1
-      '@secretlint/node': 10.2.2
+      '@azure/identity': 4.13.1(supports-color@8.1.1)
+      '@secretlint/node': 10.2.2(supports-color@8.1.1)
       '@secretlint/secretlint-formatter-sarif': 10.2.2
       '@secretlint/secretlint-rule-no-dotenv': 10.2.2
       '@secretlint/secretlint-rule-preset-recommend': 10.2.2
@@ -5279,7 +5295,7 @@ snapshots:
       minimatch: 3.1.5
       parse-semver: 1.1.1
       read: 1.0.7
-      secretlint: 10.2.2
+      secretlint: 10.2.2(supports-color@8.1.1)
       semver: 7.7.0
       tmp: 0.2.5
       typed-rest-client: 1.8.11
@@ -5679,9 +5695,11 @@ snapshots:
     optionalDependencies:
       supports-color: 8.1.1
 
-  debug@4.4.3:
+  debug@4.4.3(supports-color@8.1.1):
     dependencies:
       ms: 2.1.3
+    optionalDependencies:
+      supports-color: 8.1.1
 
   decamelize@4.0.0: {}
 
@@ -6004,7 +6022,9 @@ snapshots:
 
   flat@5.0.2: {}
 
-  follow-redirects@1.16.0: {}
+  follow-redirects@1.16.0(debug@4.4.3(supports-color@8.1.1)):
+    optionalDependencies:
+      debug: 4.4.3(supports-color@8.1.1)
 
   foreground-child@3.3.1:
     dependencies:
@@ -6069,19 +6089,19 @@ snapshots:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
-  get-uri@6.0.5:
+  get-uri@6.0.5(supports-color@8.1.1):
     dependencies:
       basic-ftp: 5.3.1
       data-uri-to-buffer: 6.0.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
-  get-uri@7.0.0:
+  get-uri@7.0.0(supports-color@8.1.1):
     dependencies:
       basic-ftp: 5.3.1
       data-uri-to-buffer: 7.0.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -6219,31 +6239,31 @@ snapshots:
       domutils: 3.2.2
       entities: 7.0.1
 
-  http-proxy-agent@7.0.2:
+  http-proxy-agent@7.0.2(supports-color@8.1.1):
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
-  http-proxy-agent@8.0.0:
+  http-proxy-agent@8.0.0(supports-color@8.1.1):
     dependencies:
       agent-base: 8.0.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
-  https-proxy-agent@7.0.6:
+  https-proxy-agent@7.0.6(supports-color@8.1.1):
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
-  https-proxy-agent@8.0.0:
+  https-proxy-agent@8.0.0(supports-color@8.1.1):
     dependencies:
       agent-base: 8.0.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -6409,10 +6429,10 @@ snapshots:
       make-dir: 4.0.0
       supports-color: 7.2.0
 
-  istanbul-lib-source-maps@5.0.6:
+  istanbul-lib-source-maps@5.0.6(supports-color@8.1.1):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       istanbul-lib-coverage: 3.2.2
     transitivePeerDependencies:
       - supports-color
@@ -6448,7 +6468,7 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@27.2.0:
+  jsdom@27.2.0(supports-color@8.1.1):
     dependencies:
       '@acemir/cssom': 0.9.24
       '@asamuzakjp/dom-selector': 6.7.4
@@ -6456,8 +6476,8 @@ snapshots:
       data-urls: 6.0.0
       decimal.js: 10.6.0
       html-encoding-sniffer: 4.0.0
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
+      http-proxy-agent: 7.0.2(supports-color@8.1.1)
+      https-proxy-agent: 7.0.6(supports-color@8.1.1)
       is-potential-custom-element-name: 1.0.1
       parse5: 8.0.0
       saxes: 6.0.0
@@ -6877,11 +6897,11 @@ snapshots:
 
   os-tmpdir@1.0.2: {}
 
-  ovsx@0.10.12:
+  ovsx@0.10.12(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1):
     dependencies:
-      '@vscode/vsce': 3.9.1
+      '@vscode/vsce': 3.9.1(supports-color@8.1.1)
       commander: 6.2.1
-      follow-redirects: 1.16.0
+      follow-redirects: 1.16.0(debug@4.4.3(supports-color@8.1.1))
       is-ci: 2.0.0
       leven: 3.1.0
       semver: 7.7.0
@@ -6901,29 +6921,29 @@ snapshots:
 
   p-map@7.0.4: {}
 
-  pac-proxy-agent@7.2.0:
+  pac-proxy-agent@7.2.0(supports-color@8.1.1):
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.4
-      debug: 4.4.3
-      get-uri: 6.0.5
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
+      debug: 4.4.3(supports-color@8.1.1)
+      get-uri: 6.0.5(supports-color@8.1.1)
+      http-proxy-agent: 7.0.2(supports-color@8.1.1)
+      https-proxy-agent: 7.0.6(supports-color@8.1.1)
       pac-resolver: 7.0.1
-      socks-proxy-agent: 8.0.5
+      socks-proxy-agent: 8.0.5(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
-  pac-proxy-agent@8.0.0:
+  pac-proxy-agent@8.0.0(supports-color@8.1.1):
     dependencies:
       agent-base: 8.0.0
-      debug: 4.4.3
-      get-uri: 7.0.0
-      http-proxy-agent: 8.0.0
-      https-proxy-agent: 8.0.0
+      debug: 4.4.3(supports-color@8.1.1)
+      get-uri: 7.0.0(supports-color@8.1.1)
+      http-proxy-agent: 8.0.0(supports-color@8.1.1)
+      https-proxy-agent: 8.0.0(supports-color@8.1.1)
       pac-resolver: 8.0.0(quickjs-wasi@0.0.1)
       quickjs-wasi: 0.0.1
-      socks-proxy-agent: 9.0.0
+      socks-proxy-agent: 9.0.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -7085,29 +7105,29 @@ snapshots:
 
   protocols@2.0.2: {}
 
-  proxy-agent@6.4.0:
+  proxy-agent@6.4.0(supports-color@8.1.1):
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.3
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
+      debug: 4.4.3(supports-color@8.1.1)
+      http-proxy-agent: 7.0.2(supports-color@8.1.1)
+      https-proxy-agent: 7.0.6(supports-color@8.1.1)
       lru-cache: 7.18.3
-      pac-proxy-agent: 7.2.0
+      pac-proxy-agent: 7.2.0(supports-color@8.1.1)
       proxy-from-env: 1.1.0
-      socks-proxy-agent: 8.0.5
+      socks-proxy-agent: 8.0.5(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
-  proxy-agent@7.0.0:
+  proxy-agent@7.0.0(supports-color@8.1.1):
     dependencies:
       agent-base: 8.0.0
-      debug: 4.4.3
-      http-proxy-agent: 8.0.0
-      https-proxy-agent: 8.0.0
+      debug: 4.4.3(supports-color@8.1.1)
+      http-proxy-agent: 8.0.0(supports-color@8.1.1)
+      https-proxy-agent: 8.0.0(supports-color@8.1.1)
       lru-cache: 7.18.3
-      pac-proxy-agent: 8.0.0
+      pac-proxy-agent: 8.0.0(supports-color@8.1.1)
       proxy-from-env: 1.1.0
-      socks-proxy-agent: 9.0.0
+      socks-proxy-agent: 9.0.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -7139,9 +7159,9 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  rc-config-loader@4.1.4:
+  rc-config-loader@4.1.4(supports-color@8.1.1):
     dependencies:
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       js-yaml: 4.1.1
       json5: 2.2.3
       require-from-string: 2.0.2
@@ -7198,7 +7218,7 @@ snapshots:
     dependencies:
       rc: 1.2.8
 
-  release-it@17.10.0(typescript@5.9.3):
+  release-it@17.10.0(supports-color@8.1.1)(typescript@5.9.3):
     dependencies:
       '@iarna/toml': 2.2.5
       '@octokit/rest': 20.1.1
@@ -7217,7 +7237,7 @@ snapshots:
       open: 10.1.0
       ora: 8.1.0
       os-name: 5.1.0
-      proxy-agent: 6.4.0
+      proxy-agent: 6.4.0(supports-color@8.1.1)
       semver: 7.6.3
       shelljs: 0.8.5
       update-notifier: 7.3.1
@@ -7228,7 +7248,7 @@ snapshots:
       - supports-color
       - typescript
 
-  release-it@20.0.1(@types/node@24.10.1)(magicast@0.5.1):
+  release-it@20.0.1(@types/node@24.10.1)(magicast@0.5.1)(supports-color@8.1.1):
     dependencies:
       '@inquirer/prompts': 8.4.2(@types/node@24.10.1)
       '@octokit/rest': 22.0.1
@@ -7246,7 +7266,7 @@ snapshots:
       open: 11.0.0
       ora: 9.3.0
       os-name: 7.0.0
-      proxy-agent: 7.0.0
+      proxy-agent: 7.0.0(supports-color@8.1.1)
       semver: 7.7.4
       tinyglobby: 0.2.15
       undici: 7.24.5
@@ -7339,13 +7359,13 @@ snapshots:
     dependencies:
       xmlchars: 2.2.0
 
-  secretlint@10.2.2:
+  secretlint@10.2.2(supports-color@8.1.1):
     dependencies:
       '@secretlint/config-creator': 10.2.2
-      '@secretlint/formatter': 10.2.2
-      '@secretlint/node': 10.2.2
+      '@secretlint/formatter': 10.2.2(supports-color@8.1.1)
+      '@secretlint/node': 10.2.2(supports-color@8.1.1)
       '@secretlint/profiler': 10.2.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       globby: 14.1.0
       read-pkg: 9.0.1
     transitivePeerDependencies:
@@ -7431,18 +7451,18 @@ snapshots:
 
   smart-buffer@4.2.0: {}
 
-  socks-proxy-agent@8.0.5:
+  socks-proxy-agent@8.0.5(supports-color@8.1.1):
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       socks: 2.8.9
     transitivePeerDependencies:
       - supports-color
 
-  socks-proxy-agent@9.0.0:
+  socks-proxy-agent@9.0.0(supports-color@8.1.1):
     dependencies:
       agent-base: 8.0.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       socks: 2.8.9
     transitivePeerDependencies:
       - supports-color
@@ -7642,13 +7662,13 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.5.1(jiti@2.7.0)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3):
+  tsup@8.5.1(jiti@2.7.0)(postcss@8.5.6)(supports-color@8.1.1)(tsx@4.21.0)(typescript@5.9.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.27.0)
       cac: 6.7.14
       chokidar: 4.0.3
       consola: 3.4.2
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       esbuild: 0.27.0
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
@@ -7771,7 +7791,7 @@ snapshots:
       jiti: 2.7.0
       tsx: 4.21.0
 
-  vitest@4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0)(tsx@4.21.0):
+  vitest@4.0.14(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(supports-color@8.1.1))(tsx@4.21.0):
     dependencies:
       '@vitest/expect': 4.0.14
       '@vitest/mocker': 4.0.14(vite@7.2.4(@types/node@24.10.1)(jiti@2.7.0)(tsx@4.21.0))
@@ -7795,7 +7815,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.10.1
-      jsdom: 27.2.0
+      jsdom: 27.2.0(supports-color@8.1.1)
     transitivePeerDependencies:
       - jiti
       - less

@@ -56,7 +56,9 @@ const errors = {
       wrongCase:
         '[pelela] Define the view model with the exact class case: the class is named "{{expectedName}}", not "{{viewModelName}}".',
       notFound:
-        '[pelela] There is no class named "{{viewModelName}}" in {{tsFilePath}}. Define the class with the name suggested by the file: "{{suggestedName}}".',
+        '[pelela] There is no class named "{{viewModelName}}" in {{tsFilePath}}. Define the class with the suggested name: "{{suggestedName}}".',
+      notFoundWithoutSuggestion:
+        '[pelela] There is no class named "{{viewModelName}}" in {{tsFilePath}}.',
       notAClassObject:
         '[pelela] An Object cannot be used as a view model: "{{viewModelName}}" ({{tsFilePath}}). You must declare a class.',
       notAClassFunction:
@@ -120,6 +122,19 @@ const errors = {
       'Unknown component: <{{tagName}}>. Did you forget to register it?\nFound at: {{snippet}}',
     unknownComponentProperty:
       'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{propertyName}}" is not defined in the child ViewModel.\nFound at: {{snippet}}',
+    readOnlyProperty:
+      'Component <{{tag}}> (ViewModel: {{viewModel}}): property "{{propertyName}}" is read-only. Define a writable attribute in the child ViewModel to receive the value.\nFound at: {{snippet}}',
+    invalidConstValue:
+      'Component <{{tag}}> (ViewModel: {{viewModel}}): const "{{name}}" receives "{{value}}" but {{expected}}. Found at: {{snippet}}',
+    constExpectedNumber: 'it must be a number',
+    constExpectedBoolean: "it must be 'true' or 'false'",
+    constExpectedUnion: 'it must be one of these types: {{kinds}}',
+    constExpectedAllowedValues: 'it must be one of: {{values}}',
+    constUnsupportedValue:
+      'it does not accept objects or other values; only number, boolean or string literals are allowed',
+  },
+  analysis: {
+    viewModelSourceNotFound: 'could not read the view model source file at {{path}}',
   },
   ui: {
     errorPage: {

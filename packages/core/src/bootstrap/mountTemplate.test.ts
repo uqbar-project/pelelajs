@@ -165,24 +165,24 @@ describe('mountTemplate', () => {
 
   describe('validation', () => {
     it('should render the error page when a component throws a ViewModelExportError', () => {
-      class FailingConversor {
+      class FailingConverter {
         constructor() {
           throw new ViewModelExportError({
             kind: 'wrongCase',
-            viewModelName: 'conversor',
-            expectedName: 'Conversor',
-            tsFilePath: 'src/conversor.ts',
+            viewModelName: 'converter',
+            expectedName: 'Converter',
+            tsFilePath: 'src/converter.ts',
           })
         }
       }
       defineComponent(
-        'conversor',
-        FailingConversor,
-        '<component view-model="Conversor"></component>',
+        'converter',
+        FailingConverter,
+        '<component view-model="Converter"></component>',
       )
 
       const renderErrorPageSpy = vi.spyOn(errorPage, 'renderErrorPage')
-      const template = '<pelela view-model="TestVM"><conversor prop-value="x"></conversor></pelela>'
+      const template = '<pelela view-model="TestVM"><converter prop-value="x"></converter></pelela>'
 
       registerViewModel('TestVM', TestViewModel)
       mountTemplate(container, template)

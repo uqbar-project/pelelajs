@@ -114,6 +114,83 @@ export interface Product {
       assert.deepStrictEqual([...getters].sort(), ['delivery', 'isSelected', 'price'])
     })
 
+    it('should return setters separately and distinguish getter-only from getter/setter', () => {
+      const fPath = path.join(testFilesDir, 'AccessorViewModel.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class AccessorViewModel {
+  private _limit = 0
+  private _readOnly = 0
+
+  get limit() { return this._limit }
+  set limit(value: number) { this._limit = value }
+
+  get readOnly() { return this._readOnly }
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'AccessorViewModel')
+      assert.deepStrictEqual(members.setters, ['limit'])
+      assert.ok(members.getters.includes('limit'), 'getter/setter shares the name')
+      assert.ok(members.getters.includes('readOnly'), 'getter-only is classified as getter')
+      assert.ok(!members.setters.includes('readOnly'), 'getter-only is not a setter')
+    })
+
+    it('should expose only public writable members as writableProperties', () => {
+      const fPath = path.join(testFilesDir, 'WritableFieldsVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class WritableFieldsViewModel {
+  count = 0
+  private _limit = 0
+  protected reserved = 0
+  readonly fixed = 99
+  static shared = 1
+  get total() { return this.count }
+  set total(value: number) { this._limit = value }
+  set visible(value: boolean) { this._limit = value ? 1 : 0 }
+  get isLucky() { return this.count === 7 }
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'WritableFieldsViewModel')
+      assert.deepStrictEqual([...members.writableProperties].sort(), ['count', 'total', 'visible'])
+      assert.ok(!members.writableProperties.includes('_limit'), 'private field is not writable')
+      assert.ok(!members.writableProperties.includes('reserved'), 'protected field is not writable')
+      assert.ok(!members.writableProperties.includes('fixed'), 'readonly field is not writable')
+      assert.ok(!members.writableProperties.includes('shared'), 'static field is not writable')
+      assert.ok(members.writableProperties.includes('total'), 'getter/setter is writable')
+      assert.ok(!members.writableProperties.includes('isLucky'), 'getter-only is not writable')
+      assert.deepStrictEqual(members.readonlyProperties, ['fixed'])
+      assert.deepStrictEqual([...members.nonPublicProperties].sort(), ['_limit', 'reserved'])
+    })
+
+    it('should expose only public non-readonly parameter properties as writableProperties', () => {
+      const fPath = path.join(testFilesDir, 'WritableParamPropsVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class WritableParamPropsViewModel {
+  constructor(
+    public title: string,
+    public readonly id: number,
+    private secret: string,
+    protected hidden: number
+  ) {}
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'WritableParamPropsViewModel')
+      assert.deepStrictEqual([...members.writableProperties].sort(), ['title'])
+      assert.ok(!members.writableProperties.includes('id'), 'readonly parameter is not writable')
+      assert.ok(!members.writableProperties.includes('secret'), 'private parameter is not writable')
+      assert.ok(
+        !members.writableProperties.includes('hidden'),
+        'protected parameter is not writable'
+      )
+      assert.deepStrictEqual(members.readonlyProperties, ['id'])
+      assert.deepStrictEqual([...members.nonPublicProperties].sort(), ['hidden', 'secret'])
+    })
+
     it('should classify arrow function fields as arrows, not properties, methods, or getters', () => {
       const fPath = path.join(testFilesDir, 'ArrowFieldVM.ts')
       fs.writeFileSync(
@@ -275,6 +352,31 @@ export class DerivedViewModel extends BaseViewModel {
       )
     })
 
+    it('should drop an inherited setter when the subclass redefines the accessor with a getter only', () => {
+      const fPath = path.join(testFilesDir, 'GetterOverrideVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class BaseViewModel {
+  private _limit = 0
+
+  get limit() { return this._limit }
+  set limit(value: number) { this._limit = value }
+}
+
+export class DerivedViewModel extends BaseViewModel {
+  get limit() { return 0 }
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'DerivedViewModel')
+      assert.ok(members.getters.includes('limit'), 'subclass getter stays available')
+      assert.ok(!members.setters.includes('limit'), 'inherited setter is replaced by the getter')
+      assert.ok(
+        !members.writableProperties.includes('limit'),
+        'redefined accessor is no longer writable'
+      )
+    })
+
     it('should exclude constructor, static methods, and if', () => {
       const { methods } = extractViewModelMembers(testVMPath, 'ProductRow')
       assert.ok(!methods.includes('constructor'))
@@ -379,6 +481,29 @@ export class DerivedViewModel extends BaseViewModel {
       )
     })
 
+    it('should include inherited methods from a base class', () => {
+      const fPath = path.join(testFilesDir, 'MethodBaseClassVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class BaseViewModel {
+  title: string = 'default'
+  reset(): void {}
+  notify(): void {}
+}
+
+export class DerivedViewModel extends BaseViewModel {
+  items: string[] = []
+  refresh(): void {}
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'DerivedViewModel')
+      assert.ok(members.methods.includes('refresh'), 'should include direct method refresh')
+      assert.ok(members.methods.includes('reset'), 'should include inherited method reset')
+      assert.ok(members.methods.includes('notify'), 'should include inherited method notify')
+      assert.ok(members.properties.includes('title'), 'should include inherited property title')
+    })
+
     it('should include members through three-level inheritance chain (C extends B extends A)', () => {
       const fPath = path.join(testFilesDir, 'ThreeLevelVM.ts')
       fs.writeFileSync(
@@ -403,6 +528,71 @@ export class C extends B {
       assert.ok(
         members.properties.includes('aProp'),
         'should include inherited property aProp from A'
+      )
+    })
+
+    it('should include inherited members from a base class imported from another file', () => {
+      const basePath = path.join(testFilesDir, 'ImportedBaseVM.ts')
+      fs.writeFileSync(
+        basePath,
+        `export class ImportedBaseViewModel {
+  title: string = 'default'
+  count: number = 0
+  reset(): void {}
+}`
+      )
+      createdFiles.push(basePath)
+
+      const derivedPath = path.join(testFilesDir, 'DerivedFromImportVM.ts')
+      fs.writeFileSync(
+        derivedPath,
+        `import { ImportedBaseViewModel } from './ImportedBaseVM'
+
+export class DerivedFromImportViewModel extends ImportedBaseViewModel {
+  items: string[] = []
+}`
+      )
+      createdFiles.push(derivedPath)
+      const members = extractViewModelMembers(derivedPath, 'DerivedFromImportViewModel')
+      assert.ok(members.properties.includes('items'), 'should include direct property items')
+      assert.ok(
+        members.properties.includes('title'),
+        'should include inherited property title from the imported base class'
+      )
+      assert.ok(
+        members.properties.includes('count'),
+        'should include inherited property count from the imported base class'
+      )
+      assert.ok(
+        members.writableProperties.includes('title'),
+        'inherited property title should be writable for bindings'
+      )
+      assert.ok(
+        members.methods.includes('reset'),
+        'should include inherited method reset from the imported base class'
+      )
+    })
+
+    it('should include inherited members from a namespaced base class reference', () => {
+      const fPath = path.join(testFilesDir, 'NamespacedBaseVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export namespace models {
+  export class BaseViewModel {
+    title: string = 'default'
+  }
+}
+
+export class DerivedViewModel extends models.BaseViewModel {
+  items: string[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      const members = extractViewModelMembers(fPath, 'DerivedViewModel')
+      assert.ok(members.properties.includes('items'), 'should include direct property items')
+      assert.ok(
+        members.properties.includes('title'),
+        'should include inherited property title from the namespaced base class'
       )
     })
 

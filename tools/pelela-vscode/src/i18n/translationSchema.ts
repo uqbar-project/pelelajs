@@ -2,6 +2,7 @@ type DiagnosticsMessages = {
   viewModelMissingExport: string
   viewModelWrongCase: string
   viewModelNotFound: string
+  viewModelNotFoundWithoutSuggestion: string
   viewModelNotAClassFunction: string
   viewModelNotAClassObject: string
   propertyNotFound: string
@@ -16,6 +17,20 @@ type DiagnosticsMessages = {
   unknownAttribute: string
   attributeNotAllowed: string
   invalidComponentAttribute: string
+  constValueInvalid: string
+  constValueExpected: string
+  constValueExpectedNumber: string
+  constValueExpectedBoolean: string
+  constValueUnsupportedType: string
+  childPropertyNotFound: string
+  childPropertyCaseMismatch: string
+  childPropertyReadOnly: string
+  childPropertyNotPublic: string
+  bindingTypeMismatch: string
+  bindingKindNumber: string
+  bindingKindString: string
+  bindingKindBoolean: string
+  bindingKindOther: string
 }
 
 type CompletionMessages = {
@@ -34,6 +49,7 @@ type CompletionMessages = {
   getterDetail: string
   iterationPropertyDetail: string
   nestedPropertyDetail: string
+  childPropertyDetail: string
 }
 
 type HoverMessages = {

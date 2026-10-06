@@ -44,13 +44,13 @@ describe('componentRegistry', () => {
     it('should throw a notAClass error when the creator is an object, not a class', () => {
       initializeI18n('es')
       const objectViewModel = { millas: 100 } as unknown as ViewModelConstructor
-      const template = '<pelela view-model="conversorObj"></pelela>'
+      const template = '<pelela view-model="converterObj"></pelela>'
 
       expect(() => {
-        defineComponent('conversorObj', objectViewModel, template)
+        defineComponent('converterObj', objectViewModel, template)
       }).toThrow(ViewModelExportError)
       expect(() => {
-        defineComponent('conversorObj', objectViewModel, template)
+        defineComponent('converterObj', objectViewModel, template)
       }).toThrow(/No se puede definir un Object como view model/)
     })
 
@@ -59,13 +59,13 @@ describe('componentRegistry', () => {
       const objectViewModel = {
         m() {},
       } as unknown as ViewModelConstructor
-      const template = '<pelela view-model="conversorObj"></pelela>'
+      const template = '<pelela view-model="converterObj"></pelela>'
 
       expect(() => {
-        defineComponent('conversorObj', objectViewModel, template)
+        defineComponent('converterObj', objectViewModel, template)
       }).toThrow(ViewModelExportError)
       expect(() => {
-        defineComponent('conversorObj', objectViewModel, template)
+        defineComponent('converterObj', objectViewModel, template)
       }).toThrow(/No se puede definir un Object como view model/)
     })
 

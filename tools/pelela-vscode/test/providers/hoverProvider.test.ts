@@ -105,7 +105,7 @@ describe('hoverProvider', () => {
   })
 
   it('should show help for link- attributes', () => {
-    const result = provideHover(mockDocument('link-valor'), new vscode.Position(0, 0), mockToken)
+    const result = provideHover(mockDocument('link-value'), new vscode.Position(0, 0), mockToken)
     assert.ok(result instanceof vscode.Hover)
     assert.strictEqual(result.contents, t('hover.linkHelp'))
   })

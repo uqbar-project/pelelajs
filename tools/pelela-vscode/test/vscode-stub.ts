@@ -1,3 +1,32 @@
+import * as path from 'node:path'
+
+interface StubWorkspaceFolder {
+  name: string
+  uri: { fsPath: string }
+}
+
+let workspaceFolders: StubWorkspaceFolder[] = []
+const openTextDocuments: unknown[] = []
+let lastCreatedCollection: InstanceType<typeof vscodeStub.DiagnosticCollection> | null = null
+
+export function setWorkspaceFolders(folders: string[] | null): void {
+  workspaceFolders =
+    folders === null
+      ? []
+      : folders.map((fsPath) => ({ name: path.basename(fsPath), uri: { fsPath } }))
+}
+
+export function setOpenTextDocuments(documents: unknown[]): void {
+  openTextDocuments.length = 0
+  openTextDocuments.push(...documents)
+}
+
+export function lastDiagnosticCollection(): InstanceType<
+  typeof vscodeStub.DiagnosticCollection
+> | null {
+  return lastCreatedCollection
+}
+
 export const vscodeStub = {
   Uri: class Uri {
     fsPath: string
@@ -22,9 +51,19 @@ export const vscodeStub = {
   Range: class Range {
     start: unknown
     end: unknown
-    constructor(start: unknown, end: unknown) {
-      this.start = start
-      this.end = end
+    constructor(
+      startOrLine: unknown,
+      endOrCharacter: unknown,
+      endLine?: unknown,
+      endCharacter?: unknown
+    ) {
+      if (typeof endLine === 'number' && typeof endCharacter === 'number') {
+        this.start = new vscodeStub.Position(startOrLine as number, endOrCharacter as number)
+        this.end = new vscodeStub.Position(endLine, endCharacter)
+      } else {
+        this.start = startOrLine
+        this.end = endOrCharacter
+      }
     }
   },
 
@@ -145,7 +184,10 @@ export const vscodeStub = {
     registerDefinitionProvider: () => ({ dispose: () => {} }),
     setTextDocumentLanguage: () => Promise.resolve(),
     setLanguageConfiguration: () => ({ dispose: () => {} }),
-    createDiagnosticCollection: () => new vscodeStub.DiagnosticCollection(),
+    createDiagnosticCollection: () => {
+      lastCreatedCollection = new vscodeStub.DiagnosticCollection()
+      return lastCreatedCollection
+    },
   },
 
   Disposable: {
@@ -161,11 +203,17 @@ export const vscodeStub = {
   },
 
   workspace: {
+    textDocuments: openTextDocuments,
     onDidOpenTextDocument: () => ({ dispose: () => {} }),
     onDidChangeTextDocument: () => ({ dispose: () => {} }),
     onDidCloseTextDocument: () => ({ dispose: () => {} }),
     onDidSaveTextDocument: () => ({ dispose: () => {} }),
     findFiles: (_globPattern: string) => Promise.resolve([]),
+    getWorkspaceFolder: (uri: { fsPath: string }) =>
+      workspaceFolders.find(
+        (folder: StubWorkspaceFolder) =>
+          uri.fsPath === folder.uri.fsPath || uri.fsPath.startsWith(folder.uri.fsPath + path.sep)
+      ),
   },
 
   env: {

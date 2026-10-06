@@ -9,6 +9,8 @@ import {
   validatePelelaDocument,
 } from '../../src/diagnostics/diagnosticsProvider'
 import { t } from '../../src/i18n/index'
+import { invalidateComponentIndex } from '../../src/utils/componentIndex'
+import { lastDiagnosticCollection, setOpenTextDocuments } from '../vscode-stub'
 
 const PELELA_CONTENT = `<pelela view-model="TestViewModel">
   <div>
@@ -47,6 +49,16 @@ function createMockDocument(
 
 function getEntries(collection: vscode.DiagnosticCollection): Map<string, vscode.Diagnostic[]> {
   return (collection as unknown as { _entries: Map<string, vscode.Diagnostic[]> })._entries
+}
+
+/**
+ * The provider owns its collection, so the stub is what exposes the entries the
+ * refresh under test produced.
+ */
+function lastProviderEntries(): Map<string, vscode.Diagnostic[]> {
+  const collection = lastDiagnosticCollection()
+  assert.ok(collection !== null, 'createDiagnosticsProvider should create a diagnostic collection')
+  return getEntries(collection as unknown as vscode.DiagnosticCollection)
 }
 
 describe('diagnosticsProvider', () => {
@@ -97,6 +109,40 @@ describe('diagnosticsProvider', () => {
       assert.strictEqual(diagnostic.range.start.character, 22)
       assert.strictEqual(diagnostic.range.end.line, 1)
       assert.strictEqual(diagnostic.range.end.character, 41)
+    })
+
+    it('still updates diagnostics when a child view model cannot be read', () => {
+      const childPelelaPath = path.join(testFilesDir, 'child-view-model.pelela')
+      fs.writeFileSync(childPelelaPath, '<component view-model="ChildViewModel"></component>')
+      fs.mkdirSync(childPelelaPath.replace(/\.pelela$/, '.ts'))
+      invalidateComponentIndex()
+
+      const collection = vscode.languages.createDiagnosticCollection()
+      const document = createMockDocument(
+        `<pelela view-model="TestViewModel">
+  <span bind-content="nonExistentProperty"></span>
+  <child-view-model prop-title="title" bogus-attr="1"></child-view-model>
+</pelela>`,
+        'pelela',
+        pelelaPath
+      )
+      assert.doesNotThrow(() => validatePelelaDocument(collection, document))
+      const messages = (getEntries(collection).get(pelelaPath) ?? []).map(
+        (diagnostic) => diagnostic.message
+      )
+      assert.ok(
+        messages.includes(EXPECTED_PROPERTY_NOT_FOUND),
+        'should keep the diagnostics computed after the unreadable child'
+      )
+      assert.ok(
+        messages.includes(
+          t('diagnostics.invalidComponentAttribute', {
+            name: 'bogus-attr',
+            tag: 'child-view-model',
+          })
+        ),
+        'should keep the diagnostics computed before the unreadable child'
+      )
     })
 
     it('reports missingExport when the class is not exported', () => {
@@ -190,6 +236,10 @@ describe('diagnosticsProvider', () => {
   })
 
   describe('createDiagnosticsProvider wiring', () => {
+    after(() => {
+      setOpenTextDocuments([])
+    })
+
     it('returns a disposable with dispose method', () => {
       const provider = createDiagnosticsProvider()
       assert.ok(typeof provider.dispose === 'function')
@@ -199,6 +249,36 @@ describe('diagnosticsProvider', () => {
     it('dispose runs without error on double call', () => {
       const provider = createDiagnosticsProvider()
       provider.dispose()
+      provider.dispose()
+    })
+
+    it('refresh revalidates open pelela documents without any text event', () => {
+      setOpenTextDocuments([
+        createMockDocument(
+          `<pelela view-model="TestViewModel">
+  <span bind-content="nonExistentProperty"></span>
+</pelela>`,
+          'pelela',
+          pelelaPath
+        ),
+      ])
+
+      const provider = createDiagnosticsProvider()
+      provider.refresh()
+
+      const diagnostics = lastProviderEntries().get(pelelaPath) ?? []
+      assert.strictEqual(diagnostics.length, 1)
+      assert.strictEqual(diagnostics[0].message, EXPECTED_PROPERTY_NOT_FOUND)
+      provider.dispose()
+    })
+
+    it('refresh leaves documents of other languages untouched', () => {
+      setOpenTextDocuments([createMockDocument(PELELA_CONTENT, 'typescript', pelelaPath)])
+
+      const provider = createDiagnosticsProvider()
+      provider.refresh()
+
+      assert.strictEqual(lastProviderEntries().size, 0)
       provider.dispose()
     })
   })

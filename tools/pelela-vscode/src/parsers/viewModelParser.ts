@@ -4,10 +4,16 @@ import * as ts from 'typescript'
 
 export interface ViewModelMembers {
   properties: string[]
+  writableProperties: string[]
+  readonlyProperties: string[]
+  nonPublicProperties: string[]
   methods: string[]
   getters: string[]
+  setters: string[]
   arrows: string[]
 }
+
+type MemberKind = 'property' | 'method' | 'getter' | 'setter' | 'arrow'
 
 interface SourceFileCacheEntry {
   sourceFile: ts.SourceFile
@@ -47,6 +53,7 @@ function isRelevantMember(classMember: ts.ClassElement): boolean {
   return (
     ts.isPropertyDeclaration(classMember) ||
     ts.isGetAccessor(classMember) ||
+    ts.isSetAccessorDeclaration(classMember) ||
     ts.isMethodDeclaration(classMember)
   )
 }
@@ -77,20 +84,126 @@ function isArrowProperty(classMember: ts.ClassElement): boolean {
   )
 }
 
-function getMemberInfo(
-  classMember: ts.ClassElement
-): { name: string; kind: 'property' | 'method' | 'getter' | 'arrow' } | null {
+function isPublicMember(modifierFlags: ts.ModifierFlags): boolean {
+  return (
+    (modifierFlags & ts.ModifierFlags.Private) === 0 &&
+    (modifierFlags & ts.ModifierFlags.Protected) === 0
+  )
+}
+
+function isPublicWritableMember(modifierFlags: ts.ModifierFlags): boolean {
+  return isPublicMember(modifierFlags) && (modifierFlags & ts.ModifierFlags.Readonly) === 0
+}
+
+function isPublicReadonlyMember(modifierFlags: ts.ModifierFlags): boolean {
+  return isPublicMember(modifierFlags) && (modifierFlags & ts.ModifierFlags.Readonly) !== 0
+}
+
+function isNonPublicMember(modifierFlags: ts.ModifierFlags): boolean {
+  return (
+    (modifierFlags & ts.ModifierFlags.Private) !== 0 ||
+    (modifierFlags & ts.ModifierFlags.Protected) !== 0
+  )
+}
+
+function getMemberInfo(classMember: ts.ClassElement): {
+  name: string
+  kind: MemberKind
+  writable: boolean
+  readonly: boolean
+  nonPublic: boolean
+} | null {
   const name = getDeclarationName(classMember)
   if (!name) return null
   if (name === 'constructor' || name === 'if') return null
-  if (ts.isMethodDeclaration(classMember)) return { name, kind: 'method' }
-  if (ts.isGetAccessorDeclaration(classMember)) return { name, kind: 'getter' }
-  if (isArrowProperty(classMember)) return { name, kind: 'arrow' }
-  return { name, kind: 'property' }
+  if (ts.isMethodDeclaration(classMember)) {
+    return { name, kind: 'method', writable: false, readonly: false, nonPublic: false }
+  }
+  if (ts.isGetAccessorDeclaration(classMember)) {
+    const modifierFlags = ts.getCombinedModifierFlags(classMember)
+    return {
+      name,
+      kind: 'getter',
+      writable: false,
+      readonly: false,
+      nonPublic: isNonPublicMember(modifierFlags),
+    }
+  }
+  if (ts.isSetAccessorDeclaration(classMember)) {
+    const modifierFlags = ts.getCombinedModifierFlags(classMember)
+    return {
+      name,
+      kind: 'setter',
+      writable: isPublicWritableMember(modifierFlags),
+      readonly: false,
+      nonPublic: isNonPublicMember(modifierFlags),
+    }
+  }
+  if (isArrowProperty(classMember)) {
+    const modifierFlags = ts.getCombinedModifierFlags(classMember)
+    return {
+      name,
+      kind: 'arrow',
+      writable: false,
+      readonly: false,
+      nonPublic: isNonPublicMember(modifierFlags),
+    }
+  }
+  const modifierFlags = ts.getCombinedModifierFlags(classMember)
+  return {
+    name,
+    kind: 'property',
+    writable: isPublicWritableMember(modifierFlags),
+    readonly: isPublicReadonlyMember(modifierFlags),
+    nonPublic: isNonPublicMember(modifierFlags),
+  }
 }
 
 function getClassName(declaration: ts.ClassDeclaration): string {
   return declaration.name?.text ?? ''
+}
+
+function getNamespacedClassDeclaration(
+  sourceFile: ts.SourceFile,
+  namespaceName: string,
+  className: string
+): ts.ClassDeclaration | undefined {
+  const namespaceDeclaration = sourceFile.statements.find(
+    (statement): statement is ts.ModuleDeclaration =>
+      ts.isModuleDeclaration(statement) && statement.name.text === namespaceName
+  )
+  const namespaceBody = namespaceDeclaration?.body
+  if (!namespaceBody || !ts.isModuleBlock(namespaceBody)) return undefined
+  return namespaceBody.statements.find(
+    (statement): statement is ts.ClassDeclaration =>
+      ts.isClassDeclaration(statement) && statement.name?.text === className
+  )
+}
+
+/**
+ * Resolves the class a heritage clause points at. Plain identifiers keep the
+ * existing same-file plus import-following lookup; a single-level `ns.Base`
+ * reference resolves inside a same-file namespace declaration.
+ */
+function resolveBaseClassDeclaration(
+  baseType: ts.ExpressionWithTypeArguments,
+  classDeclaration: ts.ClassDeclaration
+): ts.ClassDeclaration | undefined {
+  const baseSourceFile = classDeclaration.getSourceFile()
+  if (ts.isIdentifier(baseType.expression)) {
+    return getClassDeclaration(baseSourceFile, baseType.expression.text, baseSourceFile.fileName)
+  }
+  if (
+    ts.isPropertyAccessExpression(baseType.expression) &&
+    ts.isIdentifier(baseType.expression.expression)
+  ) {
+    return getNamespacedClassDeclaration(
+      baseSourceFile,
+      baseType.expression.expression.text,
+      baseType.expression.name.text
+    )
+  }
+  return undefined
 }
 
 function collectViewModelMembers(
@@ -99,11 +212,21 @@ function collectViewModelMembers(
 ): ViewModelMembers {
   const className = getClassName(classDeclaration)
   if (visited.has(className)) {
-    return { properties: [], methods: [], getters: [], arrows: [] }
+    return {
+      properties: [],
+      writableProperties: [],
+      readonlyProperties: [],
+      nonPublicProperties: [],
+      methods: [],
+      getters: [],
+      setters: [],
+      arrows: [],
+    }
   }
   visited.add(className)
 
   const paramProperties = getParameterPropertyNames(classDeclaration)
+  const writableParamProperties = getWritableParameterPropertyNames(classDeclaration)
   const directMembers = classDeclaration.members
     .filter(isRelevantMember)
     .filter((classMember) => !isStaticMember(classMember))
@@ -111,27 +234,59 @@ function collectViewModelMembers(
     .filter(
       (
         memberInfo
-      ): memberInfo is { name: string; kind: 'property' | 'method' | 'getter' | 'arrow' } =>
-        memberInfo !== null
+      ): memberInfo is {
+        name: string
+        kind: MemberKind
+        writable: boolean
+        readonly: boolean
+        nonPublic: boolean
+      } => memberInfo !== null
     )
     .reduce(
-      (accumulator, { name, kind }) => {
+      (accumulator, { name, kind, writable, readonly, nonPublic }) => {
         if (kind === 'method') {
           accumulator.methods.push(name)
         } else if (kind === 'arrow') {
           accumulator.arrows.push(name)
+          if (nonPublic) {
+            accumulator.nonPublicProperties.push(name)
+          }
+        } else if (kind === 'setter') {
+          accumulator.setters.push(name)
+          if (nonPublic && !accumulator.nonPublicProperties.includes(name)) {
+            accumulator.nonPublicProperties.push(name)
+          }
+          if (writable) {
+            accumulator.writableProperties.push(name)
+          }
+        } else if (kind === 'getter') {
+          accumulator.properties.push(name)
+          accumulator.getters.push(name)
+          if (nonPublic && !accumulator.nonPublicProperties.includes(name)) {
+            accumulator.nonPublicProperties.push(name)
+          }
         } else {
           accumulator.properties.push(name)
-          if (kind === 'getter') {
-            accumulator.getters.push(name)
+          if (nonPublic) {
+            accumulator.nonPublicProperties.push(name)
+          }
+          if (writable) {
+            accumulator.writableProperties.push(name)
+          }
+          if (readonly) {
+            accumulator.readonlyProperties.push(name)
           }
         }
         return accumulator
       },
       {
         properties: [...paramProperties],
+        writableProperties: [...writableParamProperties],
+        readonlyProperties: [...getReadonlyParameterPropertyNames(classDeclaration)],
+        nonPublicProperties: [...getNonPublicParameterPropertyNames(classDeclaration)],
         methods: [] as string[],
         getters: [] as string[],
+        setters: [] as string[],
         arrows: [] as string[],
       }
     )
@@ -141,19 +296,43 @@ function collectViewModelMembers(
   )
 
   if (extendsClause && extendsClause.types.length > 0) {
-    const baseType = extendsClause.types[0]
-    if (ts.isIdentifier(baseType.expression)) {
-      const baseClassName = baseType.expression.text
-      const baseSourceFile = classDeclaration.getSourceFile()
-      const baseClass = getClassDeclaration(baseSourceFile, baseClassName, baseSourceFile.fileName)
-      if (baseClass) {
-        const baseMembers = collectViewModelMembers(baseClass, visited)
-        return {
-          properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
-          methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
-          getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
-          arrows: [...new Set([...directMembers.arrows, ...baseMembers.arrows])],
-        }
+    const baseClass = resolveBaseClassDeclaration(extendsClause.types[0], classDeclaration)
+    if (baseClass) {
+      const baseMembers = collectViewModelMembers(baseClass, visited)
+      const directMemberNames = new Set([
+        ...directMembers.properties,
+        ...directMembers.methods,
+        ...directMembers.getters,
+        ...directMembers.setters,
+        ...directMembers.arrows,
+      ])
+      const inheritedSetters = baseMembers.setters.filter(
+        (setter) => !directMemberNames.has(setter)
+      )
+      const inheritedWritableProperties = baseMembers.writableProperties.filter(
+        (property) => !directMemberNames.has(property)
+      )
+      const inheritedReadonlyProperties = baseMembers.readonlyProperties.filter(
+        (property) => !directMemberNames.has(property)
+      )
+      const inheritedNonPublicProperties = baseMembers.nonPublicProperties.filter(
+        (property) => !directMemberNames.has(property)
+      )
+      return {
+        properties: [...new Set([...directMembers.properties, ...baseMembers.properties])],
+        writableProperties: [
+          ...new Set([...directMembers.writableProperties, ...inheritedWritableProperties]),
+        ],
+        readonlyProperties: [
+          ...new Set([...directMembers.readonlyProperties, ...inheritedReadonlyProperties]),
+        ],
+        nonPublicProperties: [
+          ...new Set([...directMembers.nonPublicProperties, ...inheritedNonPublicProperties]),
+        ],
+        methods: [...new Set([...directMembers.methods, ...baseMembers.methods])],
+        getters: [...new Set([...directMembers.getters, ...baseMembers.getters])],
+        setters: [...new Set([...directMembers.setters, ...inheritedSetters])],
+        arrows: [...new Set([...directMembers.arrows, ...baseMembers.arrows])],
       }
     }
   }
@@ -169,7 +348,16 @@ export function extractViewModelMembers(
 
   const classDeclaration = getClassDeclaration(sourceFile, className, typescriptFilePath, true)
   if (!classDeclaration) {
-    return { properties: [], methods: [], getters: [], arrows: [] }
+    return {
+      properties: [],
+      writableProperties: [],
+      readonlyProperties: [],
+      nonPublicProperties: [],
+      methods: [],
+      getters: [],
+      setters: [],
+      arrows: [],
+    }
   }
 
   return collectViewModelMembers(classDeclaration, new Set<string>())
@@ -279,11 +467,15 @@ function findPropertyTypeNode(
     (clause) => clause.token === ts.SyntaxKind.ExtendsKeyword
   )
   if (extendsClause && extendsClause.types.length > 0) {
-    const baseType = extendsClause.types[0]
-    if (ts.isIdentifier(baseType.expression)) {
-      const baseClassName = baseType.expression.text
-      const baseSourceFile = classDeclaration.getSourceFile()
-      return findPropertyTypeNode(baseSourceFile, propertyName, baseClassName, filePath, visited)
+    const baseClass = resolveBaseClassDeclaration(extendsClause.types[0], classDeclaration)
+    if (baseClass?.name) {
+      return findPropertyTypeNode(
+        baseClass.getSourceFile(),
+        propertyName,
+        baseClass.name.text,
+        filePath,
+        visited
+      )
     }
   }
 
@@ -709,6 +901,47 @@ function getParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
   if (!ctor) return []
   return ctor.parameters
     .filter((param) => isParameterProperty(param))
+    .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function getWritableParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
+  const ctor = declaration.members.find((member): member is ts.ConstructorDeclaration =>
+    ts.isConstructorDeclaration(member)
+  )
+  if (!ctor) return []
+  return ctor.parameters
+    .filter(
+      (param) =>
+        isParameterProperty(param) && isPublicWritableMember(ts.getCombinedModifierFlags(param))
+    )
+    .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function getReadonlyParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
+  const ctor = declaration.members.find((member): member is ts.ConstructorDeclaration =>
+    ts.isConstructorDeclaration(member)
+  )
+  if (!ctor) return []
+  return ctor.parameters
+    .filter(
+      (param) =>
+        isParameterProperty(param) && isPublicReadonlyMember(ts.getCombinedModifierFlags(param))
+    )
+    .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
+    .filter((name) => name !== '')
+}
+
+function getNonPublicParameterPropertyNames(declaration: ts.ClassDeclaration): string[] {
+  const ctor = declaration.members.find((member): member is ts.ConstructorDeclaration =>
+    ts.isConstructorDeclaration(member)
+  )
+  if (!ctor) return []
+  return ctor.parameters
+    .filter(
+      (param) => isParameterProperty(param) && isNonPublicMember(ts.getCombinedModifierFlags(param))
+    )
     .map((param) => (param.name && ts.isIdentifier(param.name) ? param.name.text : ''))
     .filter((name) => name !== '')
 }
