@@ -397,6 +397,11 @@ export function extractNestedMembers(
   return collectViewModelMembers(classDeclaration, new Set<string>())
 }
 
+/**
+ * Resolves the class declaration behind a type node, unwrapping array types,
+ * nullable unions and array literals built from class instances. Returns
+ * undefined when the node does not resolve to a class.
+ */
 function resolveClassDeclarationOfType(
   node: ts.Node,
   sourceFile: ts.SourceFile,
@@ -405,6 +410,25 @@ function resolveClassDeclarationOfType(
   if (ts.isClassDeclaration(node)) return node
   if (ts.isArrayTypeNode(node)) {
     return resolveClassDeclarationOfType(node.elementType, sourceFile, filePath)
+  }
+  if (ts.isUnionTypeNode(node)) {
+    const nonNullTypes = node.types.filter(
+      (unionMember) =>
+        unionMember.kind !== ts.SyntaxKind.NullKeyword &&
+        unionMember.kind !== ts.SyntaxKind.UndefinedKeyword
+    )
+    const first = nonNullTypes[0]
+    if (!first) return undefined
+    return resolveClassDeclarationOfType(first, sourceFile, filePath)
+  }
+  if (ts.isArrayLiteralExpression(node)) {
+    const newElement = node.elements.find(
+      (element): element is ts.NewExpression & { expression: ts.Identifier } =>
+        ts.isNewExpression(element) && ts.isIdentifier(element.expression)
+    )
+    if (!newElement) return undefined
+    const typeRef = ts.factory.createTypeReferenceNode(newElement.expression, undefined)
+    return resolveClassDeclarationOfType(typeRef, sourceFile, filePath)
   }
   if (ts.isTypeReferenceNode(node)) {
     if (

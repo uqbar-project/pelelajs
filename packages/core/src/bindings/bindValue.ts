@@ -2,6 +2,7 @@ import { parse, stringify } from 'devalue'
 import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
 import { getDecimalSeparator, getThousandsSeparator } from '../commons/i18n'
 import { UnsupportedElementError } from '../errors'
+import { unwrapReactive } from '../reactivity/proxyIdentity'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
 import { getOptionValue, hasOptionValue } from './optionValues'
@@ -122,13 +123,19 @@ export function setupValueBindings<T extends object>(
     .filter((binding): binding is ValueBinding => binding !== null)
 }
 
+/**
+ * Matches a select option against the bound value by identity.
+ *
+ * Identity is compared on unwrapped raw objects because the same object can be
+ * reached through different aliases holding distinct reactive proxies.
+ */
 function renderSelectWithWeakMap(select: HTMLSelectElement, value: unknown): boolean {
   const matchingIndex = Array.from(select.options).findIndex((opt) => {
     if (!hasOptionValue(opt)) {
       return false
     }
     const optionValue = getOptionValue(opt)
-    if (optionValue === value) {
+    if (unwrapReactive(optionValue) === unwrapReactive(value)) {
       return true
     }
     // If both are objects, compare their properties

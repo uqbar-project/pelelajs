@@ -11,7 +11,7 @@ const ARRAY_MUTATION_METHODS = [
   'reverse',
 ] as const
 
-type ReactiveProxyCache = WeakMap<object, object>
+type ReactiveProxyCache = WeakMap<object, Map<string, object>>
 
 type ReactiveContext = {
   onChange: (changedPath: string) => void
@@ -161,6 +161,8 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
  *
  * Why we use WeakMap/WeakSet:
  * - proxyCache: To avoid creating redundant proxies within one reactive context.
+ *   Proxies are keyed by raw object and access path, so the same object reached
+ *   through different aliases notifies under the path used to reach it.
  * - rawObjectCache: To unwrap proxies when values cross reactive contexts.
  * - visited: To handle circular references and prevent infinite recursion.
  */
@@ -176,7 +178,7 @@ function makeReactive<T>(
 
   const rawTarget = getRawObject(target)
 
-  const existingProxy = context.proxyCache.get(rawTarget) as T | undefined
+  const existingProxy = context.proxyCache.get(rawTarget)?.get(parentPath) as T | undefined
   if (existingProxy) {
     return existingProxy
   }
@@ -190,7 +192,12 @@ function makeReactive<T>(
   const handler = new ReactiveHandler<object>(context, parentPath)
   const proxy = new Proxy(rawTarget, handler) as T & object
 
-  context.proxyCache.set(rawTarget, proxy)
+  let proxiesByPath = context.proxyCache.get(rawTarget)
+  if (proxiesByPath === undefined) {
+    proxiesByPath = new Map<string, object>()
+    context.proxyCache.set(rawTarget, proxiesByPath)
+  }
+  proxiesByPath.set(parentPath, proxy)
   registerReactiveProxy(proxy, rawTarget)
 
   return proxy as T
@@ -206,6 +213,6 @@ export function createReactiveViewModel<T extends object>(
   target: T,
   onChange: (changedPath: string) => void,
 ): ReactiveViewModel<T> {
-  const proxyCache: ReactiveProxyCache = new WeakMap<object, object>()
+  const proxyCache: ReactiveProxyCache = new WeakMap<object, Map<string, object>>()
   return makeReactive(target, { onChange, proxyCache }) as ReactiveViewModel<T>
 }

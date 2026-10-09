@@ -1015,6 +1015,10 @@ describe('viewModelValidator', () => {
         assert.deepStrictEqual(validateInForEach('click="link.navigate"'), [])
       })
 
+      it('skips validation of deeper item paths addressing nested types', () => {
+        assert.deepStrictEqual(validateInForEach('click="link.nested.navigate"'), [])
+      })
+
       it('rejects an arrow function field of the item with arrowFunctionAsMethod', () => {
         const diagnostics = validateInForEach('click="link.goTo"')
         assert.strictEqual(diagnostics.length, 1)

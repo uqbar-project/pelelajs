@@ -314,7 +314,9 @@ function validateEventMember(
 /**
  * Validates a handler whose path starts with the iterated item of a `for-each`
  * (e.g. `link.navigate`) against the members of the item's own type, applying
- * the same ladder as a view model handler.
+ * the same ladder as a view model handler. Only single-segment paths are
+ * validated: deeper paths address nested types whose members are out of scope,
+ * so they produce no diagnostics.
  */
 function validateForEachEventMethod(
   attribute: AttrInfo,
@@ -333,7 +335,8 @@ function validateForEachEventMethod(
   if (!forEachExpression) return []
 
   const remainingParts = attribute.value.split('.').slice(1)
-  const memberName = remainingParts[remainingParts.length - 1]
+  if (remainingParts.length !== 1) return []
+  const memberName = remainingParts[0]
   if (memberName === undefined) return []
 
   const itemMembers = extractNestedMembers(tsPath, forEachExpression.collectionName, className)

@@ -1514,6 +1514,67 @@ describe('bindComponent', () => {
     })
   })
 
+  describe('link-* array reassignment single notification', () => {
+    it('should notify the parent exactly once when reassigning a linked array', () => {
+      const initialItems = ['a']
+      const reassignedItems = ['b', 'c']
+      class ChildVM {
+        items: string[] = []
+      }
+      defineComponent('array-child', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<array-child link-items="parentItems"></array-child>'
+
+      const parentNotifications = vi.fn()
+      const parentVM = createReactiveViewModel(
+        { parentItems: [...initialItems] },
+        parentNotifications,
+      )
+      const forwardNotifications = vi.fn()
+      const bindings = setupComponentBindings(container, parentVM, forwardNotifications)
+
+      parentNotifications.mockClear()
+      forwardNotifications.mockClear()
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+      childVM.items = [...reassignedItems]
+
+      expect(parentVM.parentItems).toEqual(reassignedItems)
+      expect(parentNotifications).toHaveBeenCalledTimes(1)
+      expect(forwardNotifications).not.toHaveBeenCalled()
+    })
+
+    it('should still forward a single notification for in-place array mutations', () => {
+      const initialItems = ['a']
+      const pushedItem = 'b'
+      class ChildVM {
+        items: string[] = []
+      }
+      defineComponent('array-child', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<array-child link-items="parentItems"></array-child>'
+
+      const parentNotifications = vi.fn()
+      const parentVM = createReactiveViewModel(
+        { parentItems: [...initialItems] },
+        parentNotifications,
+      )
+      const forwardNotifications = vi.fn()
+      const bindings = setupComponentBindings(container, parentVM, forwardNotifications)
+
+      parentNotifications.mockClear()
+      forwardNotifications.mockClear()
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+      childVM.items.push(pushedItem)
+
+      expect(parentVM.parentItems).toEqual([...initialItems, pushedItem])
+      expect(parentNotifications).not.toHaveBeenCalled()
+      expect(forwardNotifications).toHaveBeenCalledTimes(1)
+      expect(forwardNotifications).toHaveBeenCalledWith('parentItems')
+    })
+  })
+
   describe('prop-* one-way contract', () => {
     it('should NOT propagate a nested mutation of a prop-* child back to the parent', () => {
       class OrderItemVM {

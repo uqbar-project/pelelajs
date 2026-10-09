@@ -26,7 +26,7 @@ Two rules that are easy to confuse, because one is about *naming* and the other 
 src/
   counter-view-model.pelela   -> declares view-model="CounterViewModel"
   counter-view-model.ts       -> exports class CounterViewModel
-  counter-view-model.css      -> optional styles, scoped to this component
+  counter-view-model.css      -> optional styles associated with this component
 ```
 
 At build time, the Vite plugin walks the `.ts` files and keeps only those that have a sibling `.pelela`, so the base name is what pairs a template with its ViewModel and its styles. Both the runtime registry and the VSCode extension derive the tag from the `view-model` value and never from a file name, which is what keeps runtime resolution and editor diagnostics in agreement.

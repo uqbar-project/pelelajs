@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { setupBindings } from './setupBindings'
 
@@ -8,6 +8,10 @@ describe('Selective Rendering Performance', () => {
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)
+  })
+
+  afterEach(() => {
+    container.remove()
   })
 
   it('should only re-render bindings affected by changed property', () => {
@@ -143,6 +147,39 @@ describe('Selective Rendering Performance', () => {
 
     expect(renderCount).toBeGreaterThan(0)
     expect(renderCount).toBeLessThan(10)
+  })
+
+  it('should notify selected.status when the same object was first reached through orders[0]', () => {
+    const initialStatus = 'PENDING'
+    const updatedStatus = 'DONE'
+    const sharedOrder = { status: initialStatus }
+    const viewModel = {
+      orders: [sharedOrder],
+      selected: sharedOrder,
+      other: 'data',
+    }
+
+    container.innerHTML = `
+      <span bind-content="selected.status" class="selected-status"></span>
+      <span bind-content="other" class="other"></span>
+    `
+
+    const notifications: string[] = []
+    const reactiveViewModel = createReactiveViewModel(viewModel, (changedPath) => {
+      notifications.push(changedPath)
+      render(changedPath)
+    })
+
+    expect(reactiveViewModel.orders[0].status).toBe(initialStatus)
+
+    const render = setupBindings(container, reactiveViewModel)
+    notifications.length = 0
+
+    reactiveViewModel.selected.status = updatedStatus
+
+    expect(notifications).toEqual(['selected.status'])
+    expect(container.querySelector('.selected-status')!.textContent).toBe(updatedStatus)
+    expect(container.querySelector('.other')!.textContent).toBe('data')
   })
 
   it('should demonstrate performance improvement with many bindings', () => {

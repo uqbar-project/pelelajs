@@ -138,6 +138,16 @@ describe('executeEventHandler', () => {
     expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 
+  it('should fall back to Unknown for owners without a constructor', () => {
+    const missingHandlerName = 'missingHandler'
+    const viewModel: ViewModel = Object.setPrototypeOf({}, null)
+
+    executeHandler(viewModel, missingHandlerName)
+
+    const expectedError = new InvalidHandlerError(missingHandlerName, 'Unknown', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
   it.each([
     { description: 'a string', invalidHandler: INVALID_HANDLER_VALUE },
     { description: 'null', invalidHandler: null },

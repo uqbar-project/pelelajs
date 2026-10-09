@@ -78,7 +78,7 @@ export function executeEventHandler<T extends object, E extends Event>({
     const resolvedOwner = resolveHandlerOwner(viewModel, handlerName)
     const owner = resolvedOwner === null ? viewModel : resolvedOwner.owner
     const memberName = resolvedOwner === null ? handlerName : resolvedOwner.memberName
-    const ownerName = owner.constructor.name
+    const ownerName = owner.constructor?.name ?? 'Unknown'
 
     if (isGetterProperty(owner, memberName)) {
       throw new GetterAsHandlerError(handlerName, ownerName, eventType)
