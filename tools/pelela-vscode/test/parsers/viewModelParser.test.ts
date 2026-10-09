@@ -1162,6 +1162,23 @@ class NavLink {
       assert.ok(members !== null, 'should resolve members of the instantiated item class')
       assert.ok(members.methods.includes('navigate'), 'should include item method navigate')
     })
+
+    it('should resolve the item class when null comes before the array type', () => {
+      const fixturePath = path.join(testFilesDir, 'NullFirstLinks.ts')
+      fs.writeFileSync(
+        fixturePath,
+        `export class NullFirstLinksViewModel {
+  links: null | NavLink[] = null
+}
+class NavLink {
+  navigate(): void {}
+}`
+      )
+      createdFiles.push(fixturePath)
+      const members = extractNestedMembers(fixturePath, 'links', 'NullFirstLinksViewModel')
+      assert.ok(members !== null, 'should resolve members of the union item class')
+      assert.ok(members.methods.includes('navigate'), 'should include item method navigate')
+    })
   })
 
   describe('extractInterfaceProperties', () => {

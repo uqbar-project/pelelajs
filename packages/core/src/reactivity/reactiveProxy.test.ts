@@ -324,6 +324,22 @@ describe('reactiveProxy', () => {
       expect(onChange).toHaveBeenCalled()
     })
 
+    it('should keep circular paths reactive by reusing the registered proxy', () => {
+      const target: Record<string, unknown> = { name: 'root' }
+      target.self = target
+
+      const onChange = vi.fn()
+      const proxy = createReactiveViewModel(target, onChange)
+      onChange.mockClear()
+
+      const circularRef = proxy.self as Record<string, unknown>
+      circularRef.name = 'changed'
+
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledWith('name')
+      expect(proxy.name).toBe('changed')
+    })
+
     it('should make objects added via push reactive', () => {
       const target = { items: [] as Array<{ value: number }> }
       const onChange = vi.fn()

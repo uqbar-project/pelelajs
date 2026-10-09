@@ -85,6 +85,18 @@ export class NavBar {
 }
 `
 
+const NULLABLE_UNION_NAV_FIXTURE = `
+export class NavLink {
+  navigate(): void {
+    console.log("navigate")
+  }
+}
+
+export class NullableUnionNav {
+  links: null | NavLink[] = null
+}
+`
+
 interface ViewModelContext {
   tsPath: string
   pelelaPath: string
@@ -114,6 +126,8 @@ describe('viewModelValidator', () => {
   let inheritedPath: string
   let navBarPath: string
   let navBarMembers: ViewModelMembers
+  let nullableUnionPath: string
+  let nullableUnionMembers: ViewModelMembers
 
   before(() => {
     if (!fs.existsSync(testFilesDir)) {
@@ -136,6 +150,9 @@ describe('viewModelValidator', () => {
     navBarPath = path.join(testFilesDir, 'NavBarViewModel.ts')
     fs.writeFileSync(navBarPath, NAV_BAR_VIEW_MODEL_FIXTURE)
     navBarMembers = extractViewModelMembers(navBarPath, 'NavBar')
+    nullableUnionPath = path.join(testFilesDir, 'NullableUnionNavViewModel.ts')
+    fs.writeFileSync(nullableUnionPath, NULLABLE_UNION_NAV_FIXTURE)
+    nullableUnionMembers = extractViewModelMembers(nullableUnionPath, 'NullableUnionNav')
   })
 
   afterEach(() => {
@@ -1108,6 +1125,48 @@ describe('viewModelValidator', () => {
         assertDiagnostic(
           diagnostics[0],
           t('diagnostics.methodNotFound', { name: 'nonExistentMethod' }),
+          vscode.DiagnosticSeverity.Error
+        )
+      })
+    })
+
+    describe('handlers of a nullable-union collection inside for-each', () => {
+      const nullableUnionContext: ViewModelContext = {
+        tsPath: nullableUnionPath,
+        pelelaPath: testPelelaPath,
+        members: nullableUnionMembers,
+      }
+
+      function validateNullableUnionInForEach(attribute: string): vscode.Diagnostic[] {
+        const { tags, document } = prepareValidation(
+          [
+            '<pelela view-model="NullableUnionNav">',
+            `  <div for-each="link of links">`,
+            `    <button ${attribute}></button>`,
+            '  </div>',
+            '</pelela>',
+          ],
+          nullableUnionContext
+        )
+        return validateEventMethods(
+          tags,
+          nullableUnionMembers,
+          nullableUnionPath,
+          document,
+          'NullableUnionNav'
+        )
+      }
+
+      it('accepts an instance method of the item with null before the array type', () => {
+        assert.deepStrictEqual(validateNullableUnionInForEach('click="link.navigate"'), [])
+      })
+
+      it('rejects a non-existent item method with methodNotFound', () => {
+        const diagnostics = validateNullableUnionInForEach('click="link.missing"')
+        assert.strictEqual(diagnostics.length, 1)
+        assertDiagnostic(
+          diagnostics[0],
+          t('diagnostics.methodNotFound', { name: 'missing' }),
           vscode.DiagnosticSeverity.Error
         )
       })

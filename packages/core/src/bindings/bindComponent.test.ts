@@ -1573,6 +1573,32 @@ describe('bindComponent', () => {
       expect(forwardNotifications).toHaveBeenCalledTimes(1)
       expect(forwardNotifications).toHaveBeenCalledWith('parentItems')
     })
+
+    it('should notify the parent through the reactive update when no forwarding callback is provided', () => {
+      const initialItems = ['a']
+      const pushedItem = 'b'
+      class ChildVM {
+        items: string[] = []
+      }
+      defineComponent('array-child', ChildVM, '<component view-model="ChildVM"></component>')
+
+      container.innerHTML = '<array-child link-items="parentItems"></array-child>'
+
+      const parentNotifications = vi.fn()
+      const parentVM = createReactiveViewModel(
+        { parentItems: [...initialItems] },
+        parentNotifications,
+      )
+      const bindings = setupComponentBindings(container, parentVM)
+
+      parentNotifications.mockClear()
+
+      const childVM = bindings[0].childViewModel as unknown as ChildVM
+      childVM.items.push(pushedItem)
+
+      expect(parentVM.parentItems).toEqual([...initialItems, pushedItem])
+      expect(parentNotifications).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('prop-* one-way contract', () => {

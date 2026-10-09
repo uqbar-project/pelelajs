@@ -157,6 +157,17 @@ class ReactiveHandler<T extends object> implements ProxyHandler<T> {
 }
 
 /**
+ * Reuses any proxy already registered for a raw object.
+ *
+ * Circular references reach objects whose proxy was created under a different
+ * path; returning it keeps writes through circular paths reactive instead of
+ * silently mutating the raw object.
+ */
+function getRegisteredProxy<T>(context: ReactiveContext, rawTarget: object): T | undefined {
+  return context.proxyCache.get(rawTarget)?.values().next().value as T | undefined
+}
+
+/**
  * Creates a reactive proxy for the given target object.
  *
  * Why we use WeakMap/WeakSet:
@@ -184,7 +195,7 @@ function makeReactive<T>(
   }
 
   if (visited.has(rawTarget)) {
-    return rawTarget as T
+    return getRegisteredProxy<T>(context, rawTarget) ?? (rawTarget as T)
   }
 
   visited.add(rawTarget)

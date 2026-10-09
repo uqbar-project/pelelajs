@@ -299,9 +299,9 @@ function resolveLinkParentValue<T extends object>(
 /**
  * Propagates an exact top-level child change to the parent view model.
  *
- * Returns whether the parent was assigned. In-place array mutations share the
- * same raw reference with the parent, so assigning would emit a redundant
- * parent notification while rendering is covered by forwardLinkChange.
+ * Returns whether the parent was assigned. Assigning always notifies the
+ * parent reactive view model, which covers shared-array mutations when no
+ * forwarding callback is available.
  */
 function handleLinkPropagation(
   linkBindings: Array<{ parentKey: string; childKey: string }>,
@@ -313,13 +313,6 @@ function handleLinkPropagation(
   if (!linkBinding) return false
 
   if (isUnsafeKey(linkBinding.parentKey)) return false
-
-  const childValue = reactiveInstance[changedPath]
-  const parentValue = resolveLinkParentValue(parentViewModel, linkBinding.parentKey)
-
-  if (Array.isArray(childValue) && haveSameRawValue(parentValue, childValue)) {
-    return false
-  }
 
   if (linkBinding.parentKey.includes('.')) {
     setNestedProperty(parentViewModel, linkBinding.parentKey, reactiveInstance[changedPath])
@@ -354,6 +347,25 @@ function isInPlaceArrayMutation<T extends object>(
   if (!Array.isArray(childValue)) return false
   const parentValue = resolveLinkParentValue(parentViewModel, link.parentKey)
   return haveSameRawValue(parentValue, childValue)
+}
+
+/**
+ * Detects a shared-array mutation on an exact top-level link.
+ *
+ * Forwarding covers the parent render for such mutations, so the redundant
+ * reactive assignment is skipped only when a forwarding callback is available.
+ */
+function isSharedArrayChange<T extends object>(
+  linkBindings: Array<{ parentKey: string; childKey: string }>,
+  parentViewModel: ViewModel<T>,
+  reactiveInstance: ViewModel<object>,
+  changedPath: string,
+): boolean {
+  const topLevelLink = linkBindings.find((binding) => binding.childKey === changedPath)
+  return (
+    topLevelLink !== undefined &&
+    isInPlaceArrayMutation(parentViewModel, reactiveInstance, topLevelLink)
+  )
 }
 
 /**
@@ -508,13 +520,20 @@ export function setupComponentBindings<T extends object>(
     const reactiveInstance = createReactiveViewModel(instance, (changedPath: string) => {
       if (isUnsafeKey(changedPath)) return
 
-      const propagated = handleLinkPropagation(
-        linkBindings,
-        parentViewModel,
-        reactiveInstance,
-        changedPath,
-      )
-      forwardLinkChange(changedPath, propagated)
+      if (
+        notifyParent !== undefined &&
+        isSharedArrayChange(linkBindings, parentViewModel, reactiveInstance, changedPath)
+      ) {
+        forwardLinkChange(changedPath, false)
+      } else {
+        const propagated = handleLinkPropagation(
+          linkBindings,
+          parentViewModel,
+          reactiveInstance,
+          changedPath,
+        )
+        forwardLinkChange(changedPath, propagated)
+      }
 
       // Buffer changes during setup, render directly after setup
       if (isSetupComplete.value) {

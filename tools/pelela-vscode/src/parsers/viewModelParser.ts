@@ -415,7 +415,11 @@ function resolveClassDeclarationOfType(
     const nonNullTypes = node.types.filter(
       (unionMember) =>
         unionMember.kind !== ts.SyntaxKind.NullKeyword &&
-        unionMember.kind !== ts.SyntaxKind.UndefinedKeyword
+        unionMember.kind !== ts.SyntaxKind.UndefinedKeyword &&
+        !(
+          ts.isLiteralTypeNode(unionMember) &&
+          unionMember.literal.kind === ts.SyntaxKind.NullKeyword
+        )
     )
     const first = nonNullTypes[0]
     if (!first) return undefined
