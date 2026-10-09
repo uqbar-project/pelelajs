@@ -12,6 +12,8 @@ Every PelelaJS component is conceptually composed of three parts:
 
 3. **`.css` (The Styles)**: Optional styling associated with the component.
 
+These three files share the same base name, which is what pairs a template with its ViewModel and its styles. The name of the ViewModel class itself is independent from the file name; see [Component Naming and File Layout](./COMPONENTS_AND_ROUTING.md#component-naming-and-file-layout).
+
 ```mermaid
 graph LR
     A[ViewModel .ts] -->|State updates| B(View .pelela)
@@ -35,7 +37,7 @@ The developer experience in PelelaJS relies heavily on a custom Vite plugin that
 
 ### 1. Auto-discovery & Registration
 
-PelelaJS favors convention over configuration. The plugin scans the `src/` directory for `.pelela` files and dynamically generates a **Virtual Module** (`virtual:pelela-auto-register`).
+PelelaJS favors convention over configuration. The plugin walks the `.ts` files in the `src/` directory, keeps those that have a sibling `.pelela` with the same base name, and dynamically generates a **Virtual Module** (`virtual:pelela-auto-register`).
 
 - **Mechanism:** This virtual module contains the necessary `import` statements and calls to the `ComponentRegistry`.
 
@@ -47,7 +49,7 @@ sequenceDiagram
     participant Registry as Component Registry (Runtime)
     participant Main as main.ts (Developer Code)
     
-    Build->>Build: Scan src/ for .pelela files
+    Build->>Build: Walk src/ for .ts files with a sibling .pelela
     Build->>Main: Expose virtual:pelela-auto-register
     Main->>Registry: Import virtual module & Register components
     Note over Registry: Registry is now populated with metadata

@@ -47,7 +47,7 @@ function validateViewModelDiagnostics(
   return [
     ...viewModelDiagnostics,
     ...validateBindingProperties(tags, tsPath, members, document, viewModelName),
-    ...validateEventMethods(tags, members),
+    ...validateEventMethods(tags, members, tsPath, document, viewModelName),
   ]
 }
 

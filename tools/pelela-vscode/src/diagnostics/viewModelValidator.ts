@@ -8,6 +8,7 @@ import {
 import * as vscode from 'vscode'
 import { findForEachInElement, parseForEachExpression } from '../parsers/documentParser'
 import {
+  extractNestedMembers,
   extractNestedProperties,
   pathExists,
   type ViewModelMembers,
@@ -253,73 +254,118 @@ function validateNestedPath(
   return validatePropertyExists(attribute, pathParts, tsPath, className)
 }
 
+/**
+ * Applies the handler ladder to a single member: it must be a method. Arrow
+ * functions, getters and plain properties get their own message, and a
+ * case-insensitive match is reported as a typo. `isItemMember` reports the
+ * member of a `for-each` item, which the messages name as the full attribute
+ * value (e.g. `link.navigate`) rather than the bare member name.
+ */
+function validateEventMember(
+  attribute: AttrInfo,
+  memberName: string,
+  members: ViewModelMembers,
+  isItemMember: boolean
+): vscode.Diagnostic[] {
+  const range = attribute.valueRange ?? attribute.nameRange
+  const reportedName = isItemMember ? attribute.value : memberName
+
+  if (members.methods.includes(memberName)) return []
+
+  const rejection = members.arrows.includes(memberName)
+    ? 'diagnostics.arrowFunctionAsMethod'
+    : members.getters.includes(memberName)
+      ? 'diagnostics.getterAsMethod'
+      : members.properties.includes(memberName)
+        ? 'diagnostics.propertyAsMethod'
+        : null
+  if (rejection !== null) {
+    return [
+      makeDiagnostic(range, rejection, { name: reportedName }, vscode.DiagnosticSeverity.Error),
+    ]
+  }
+
+  const suggestedName =
+    findCaseInsensitiveMember(members.methods, memberName) ??
+    findCaseInsensitiveMember(members.getters, memberName) ??
+    findCaseInsensitiveMember(members.properties, memberName) ??
+    findCaseInsensitiveMember(members.arrows, memberName)
+  if (suggestedName) {
+    return [
+      makeDiagnostic(
+        range,
+        'diagnostics.methodCaseMismatch',
+        { name: reportedName, suggestedName },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+
+  return [
+    makeDiagnostic(
+      range,
+      'diagnostics.methodNotFound',
+      { name: memberName },
+      vscode.DiagnosticSeverity.Error
+    ),
+  ]
+}
+
+/**
+ * Validates a handler whose path starts with the iterated item of a `for-each`
+ * (e.g. `link.navigate`) against the members of the item's own type, applying
+ * the same ladder as a view model handler. Only single-segment paths are
+ * validated: deeper paths address nested types whose members are out of scope,
+ * so they produce no diagnostics.
+ */
+function validateForEachEventMethod(
+  attribute: AttrInfo,
+  lineIndex: number,
+  tsPath: string,
+  document: vscode.TextDocument,
+  className: string
+): vscode.Diagnostic[] | null {
+  const forEachResult = findForEachInElement(document, lineIndex)
+  if (!forEachResult) return null
+  if (forEachResult.indexName === attribute.value) return []
+  if (!attribute.value.startsWith(`${forEachResult.itemName}.`)) return null
+
+  const forEachLine = document.lineAt(forEachResult.line).text
+  const forEachExpression = parseForEachExpression(forEachLine)
+  if (!forEachExpression) return []
+
+  const remainingParts = attribute.value.split('.').slice(1)
+  if (remainingParts.length !== 1) return []
+  const memberName = remainingParts[0]
+  if (memberName === undefined) return []
+
+  const itemMembers = extractNestedMembers(tsPath, forEachExpression.collectionName, className)
+  if (itemMembers === null) return []
+
+  return validateEventMember(attribute, memberName, itemMembers, true)
+}
+
 export function validateEventMethods(
   tags: TagInfo[],
-  members: ViewModelMembers
+  members: ViewModelMembers,
+  tsPath: string,
+  document: vscode.TextDocument,
+  className: string
 ): vscode.Diagnostic[] {
   return tags.flatMap((tag) =>
     tag.attributes
       .filter((attribute) => isEventAttribute(attribute.name))
       .flatMap((attribute) => {
-        if (members.methods.includes(attribute.value)) return []
+        const forEachDiagnostics = validateForEachEventMethod(
+          attribute,
+          tag.lineIndex,
+          tsPath,
+          document,
+          className
+        )
+        if (forEachDiagnostics !== null) return forEachDiagnostics
 
-        if (members.arrows.includes(attribute.value)) {
-          return [
-            makeDiagnostic(
-              attribute.valueRange ?? attribute.nameRange,
-              'diagnostics.arrowFunctionAsMethod',
-              { name: attribute.value },
-              vscode.DiagnosticSeverity.Error
-            ),
-          ]
-        }
-
-        if (members.getters.includes(attribute.value)) {
-          return [
-            makeDiagnostic(
-              attribute.valueRange ?? attribute.nameRange,
-              'diagnostics.getterAsMethod',
-              { name: attribute.value },
-              vscode.DiagnosticSeverity.Error
-            ),
-          ]
-        }
-
-        if (members.properties.includes(attribute.value)) {
-          return [
-            makeDiagnostic(
-              attribute.valueRange ?? attribute.nameRange,
-              'diagnostics.propertyAsMethod',
-              { name: attribute.value },
-              vscode.DiagnosticSeverity.Error
-            ),
-          ]
-        }
-
-        const suggestedName =
-          findCaseInsensitiveMember(members.methods, attribute.value) ??
-          findCaseInsensitiveMember(members.getters, attribute.value) ??
-          findCaseInsensitiveMember(members.properties, attribute.value) ??
-          findCaseInsensitiveMember(members.arrows, attribute.value)
-        if (suggestedName) {
-          return [
-            makeDiagnostic(
-              attribute.valueRange ?? attribute.nameRange,
-              'diagnostics.methodCaseMismatch',
-              { name: attribute.value, suggestedName },
-              vscode.DiagnosticSeverity.Error
-            ),
-          ]
-        }
-
-        return [
-          makeDiagnostic(
-            attribute.valueRange ?? attribute.nameRange,
-            'diagnostics.methodNotFound',
-            { name: attribute.value },
-            vscode.DiagnosticSeverity.Error
-          ),
-        ]
+        return validateEventMember(attribute, attribute.value, members, false)
       })
   )
 }

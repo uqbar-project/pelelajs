@@ -7,6 +7,7 @@ import {
   InvalidHandlerError,
   PropertyAsHandlerError,
 } from '../errors/index'
+import { createExtendedViewModel } from './bindForEach'
 import { executeEventHandler } from './executeEventHandler'
 import type { ViewModel } from './types'
 
@@ -69,6 +70,30 @@ describe('executeEventHandler', () => {
     expect(viewModel.count).toBe(1)
   })
 
+  it('should execute view model instance methods through the extended view model proxy used by for-each', () => {
+    class TestViewModel {
+      [key: string]: unknown
+      count = 0
+
+      handleEvent(): void {
+        this.count++
+      }
+    }
+    const parentViewModel = new TestViewModel()
+    const extendedViewModel = createExtendedViewModel({
+      parentViewModel,
+      itemName: 'item',
+      itemRef: { current: 'order' },
+      indexName: null,
+      indexRef: { current: 0 },
+    })
+
+    executeHandler(extendedViewModel)
+
+    expect(parentViewModel.count).toBe(1)
+    expect(errorPage.renderErrorPage).not.toHaveBeenCalled()
+  })
+
   it('should render ArrowFunctionAsHandlerError when the handler is an arrow function field of the view model class', () => {
     class TestViewModel {
       [key: string]: unknown
@@ -110,6 +135,16 @@ describe('executeEventHandler', () => {
     executeHandler({}, missingHandlerName)
 
     const expectedError = new InvalidHandlerError(missingHandlerName, 'Object', EVENT_TYPE)
+    expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+  })
+
+  it('should fall back to Unknown for owners without a constructor', () => {
+    const missingHandlerName = 'missingHandler'
+    const viewModel: ViewModel = Object.setPrototypeOf({}, null)
+
+    executeHandler(viewModel, missingHandlerName)
+
+    const expectedError = new InvalidHandlerError(missingHandlerName, 'Unknown', EVENT_TYPE)
     expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
   })
 
@@ -163,6 +198,29 @@ describe('executeEventHandler', () => {
       expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
     },
   )
+
+  it.each(['toString', 'valueOf', 'hasOwnProperty'])(
+    'should reject an unoverridden Object.prototype method %s',
+    (objectPrototypeMember) => {
+      executeHandler({}, objectPrototypeMember)
+
+      const expectedError = new InvalidHandlerError(objectPrototypeMember, 'Object', EVENT_TYPE)
+      expect(errorPage.renderErrorPage).toHaveBeenCalledWith(expectedError)
+    },
+  )
+
+  it('should execute an Object.prototype method overridden by the view model', () => {
+    let handlerContext: unknown
+    const handler = vi.fn(function (this: unknown) {
+      handlerContext = this
+    })
+    const viewModel = { toString: handler }
+
+    executeHandler(viewModel, 'toString')
+
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handlerContext).toBe(viewModel)
+  })
 
   it('should render the error page when the handler throws', () => {
     const handlerError = new Error(HANDLER_ERROR_MESSAGE)

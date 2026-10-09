@@ -5,6 +5,7 @@ import * as path from 'node:path'
 import { after, afterEach, before, describe, it } from 'mocha'
 import {
   extractInterfaceProperties,
+  extractNestedMembers,
   extractNestedProperties,
   extractViewModelMembers,
 } from '../../src/parsers/viewModelParser'
@@ -1124,6 +1125,59 @@ export class AppVM {
 
       const properties = extractNestedProperties(appPath, ['b', 'a', 'attribute'], 'AppVM')
       assert.ok(properties.includes('length'), 'should include String built-in length on attribute')
+    })
+  })
+
+  describe('extractNestedMembers', () => {
+    it('should resolve the item class of a nullable union collection', () => {
+      const fixturePath = path.join(testFilesDir, 'UnionLinks.ts')
+      fs.writeFileSync(
+        fixturePath,
+        `export class UnionLinksViewModel {
+  links: NavLink[] | null = null
+}
+class NavLink {
+  navigate(): void {}
+}`
+      )
+      createdFiles.push(fixturePath)
+      const members = extractNestedMembers(fixturePath, 'links', 'UnionLinksViewModel')
+      assert.ok(members !== null, 'should resolve members of the union item class')
+      assert.ok(members.methods.includes('navigate'), 'should include item method navigate')
+    })
+
+    it('should resolve the item class of an untyped getter returning an array', () => {
+      const fixturePath = path.join(testFilesDir, 'GetterLinks.ts')
+      fs.writeFileSync(
+        fixturePath,
+        `export class GetterLinksViewModel {
+  get links() { return [new NavLink()] }
+}
+class NavLink {
+  navigate(): void {}
+}`
+      )
+      createdFiles.push(fixturePath)
+      const members = extractNestedMembers(fixturePath, 'links', 'GetterLinksViewModel')
+      assert.ok(members !== null, 'should resolve members of the instantiated item class')
+      assert.ok(members.methods.includes('navigate'), 'should include item method navigate')
+    })
+
+    it('should resolve the item class when null comes before the array type', () => {
+      const fixturePath = path.join(testFilesDir, 'NullFirstLinks.ts')
+      fs.writeFileSync(
+        fixturePath,
+        `export class NullFirstLinksViewModel {
+  links: null | NavLink[] = null
+}
+class NavLink {
+  navigate(): void {}
+}`
+      )
+      createdFiles.push(fixturePath)
+      const members = extractNestedMembers(fixturePath, 'links', 'NullFirstLinksViewModel')
+      assert.ok(members !== null, 'should resolve members of the union item class')
+      assert.ok(members.methods.includes('navigate'), 'should include item method navigate')
     })
   })
 

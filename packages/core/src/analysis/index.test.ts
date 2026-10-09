@@ -374,9 +374,7 @@ describe('extractViewModelPropertyTypes', () => {
     return tsPath
   }
 
-  const writeViewModel = (tsSource: string): string => writeModule(tsSource, 'counter.ts')
-
-  const extractCounter = (tsSource: string) => {
+  const extractCounter = (tsSource: string, className = 'Counter') => {
     viewModelSource = tsSource
     scriptVersion += 1
     const program = languageService?.getProgram()
@@ -384,7 +382,7 @@ describe('extractViewModelPropertyTypes', () => {
       throw new Error('Language service could not create a program for the test ViewModel')
     }
     const context = createViewModelProgramContextFromProgram(program, viewModelPath)
-    return extractViewModelPropertyTypesWithContext(context, 'Counter')
+    return extractViewModelPropertyTypesWithContext(context, className)
   }
 
   const describeCounter = (tsSource: string) => {
@@ -498,8 +496,7 @@ describe('extractViewModelPropertyTypes', () => {
   })
 
   it('collects base class types for same-file inheritance and prefers own members', () => {
-    const types = extractViewModelPropertyTypes(
-      writeViewModel(`export class BaseCounter {
+    const types = extractCounter(`export class BaseCounter {
   base = 0
   shared = 'from-base'
 }
@@ -507,33 +504,28 @@ describe('extractViewModelPropertyTypes', () => {
 export class Counter extends BaseCounter {
   shared = 2
   own = 1
-}`),
-      'Counter',
-    )
+}`)
 
     expect(types).toEqual({ base: 'number', shared: 'number', own: 'number' })
   })
 
   it('returns an empty map when the class does not exist', () => {
-    const types = extractViewModelPropertyTypes(
-      writeViewModel('export class BaseCounter {}'),
-      'MissingClass',
-    )
+    const types = extractCounter('export class BaseCounter {}', 'MissingClass')
 
     expect(types).toEqual({})
   })
 
   it('returns an empty map when the entry file declares no module', () => {
-    expect(extractViewModelPropertyTypes(writeModule('', 'empty.ts'), 'Counter')).toEqual({})
+    expect(extractCounter('')).toEqual({})
   })
 
   it('resolves a class through a single-level namespace path', () => {
-    const types = extractViewModelPropertyTypes(
-      writeViewModel(`export namespace models {
+    const types = extractCounter(
+      `export namespace models {
   export class Counter {
     value = 0
   }
-}`),
+}`,
       'models.Counter',
     )
 
@@ -541,21 +533,18 @@ export class Counter extends BaseCounter {
   })
 
   it('returns an empty map when a dotted path crosses a class instead of a namespace', () => {
-    const types = extractViewModelPropertyTypes(
-      writeViewModel('export class Counter {\n  value = 0\n}'),
-      'Counter.value',
-    )
+    const types = extractCounter('export class Counter {\n  value = 0\n}', 'Counter.value')
 
     expect(types).toEqual({})
   })
 
   it('returns an empty map when a path names a namespace instead of a class', () => {
-    const types = extractViewModelPropertyTypes(
-      writeViewModel(`export namespace models {
+    const types = extractCounter(
+      `export namespace models {
   export class Counter {
     value = 0
   }
-}`),
+}`,
       'models',
     )
 
@@ -819,13 +808,10 @@ export class Counter {
 
   it('resolves a type alias imported from another module with its allowed values', () => {
     writeModule(`export type Size = 'sm' | 'lg'`, 'sizes.ts')
-    const types = extractViewModelPropertyTypes(
-      writeViewModel(`import { Size } from './sizes'
+    const types = extractCounter(`import { Size } from './sizes'
 export class Counter {
   size: Size = 'sm'
-}`),
-      'Counter',
-    )
+}`)
 
     expect(types).toEqual({ size: { kind: 'string', allowedValues: ['sm', 'lg'] } })
   })
@@ -837,13 +823,10 @@ export class Counter {
 }`,
       'base.ts',
     )
-    const types = extractViewModelPropertyTypes(
-      writeViewModel(`import { BaseCounter } from './base'
+    const types = extractCounter(`import { BaseCounter } from './base'
 export class Counter extends BaseCounter {
   own = 1
-}`),
-      'Counter',
-    )
+}`)
 
     expect(types).toEqual({ inherited: 'string', own: 'number' })
   })
@@ -855,8 +838,10 @@ export class Counter extends BaseCounter {
 }`,
       'model.ts',
     )
-    const barrelPath = writeViewModel(`export { Counter as CounterViewModel } from './model'`)
-    const types = extractViewModelPropertyTypes(barrelPath, 'CounterViewModel')
+    const types = extractCounter(
+      `export { Counter as CounterViewModel } from './model'`,
+      'CounterViewModel',
+    )
 
     expect(types).toEqual({ count: 'number' })
   })
@@ -871,13 +856,10 @@ export class Counter extends BaseCounter {
 }`,
       'base.ts',
     )
-    const types = extractViewModelPropertyTypes(
-      writeViewModel(`import { BaseCounter } from './base'
+    const types = extractCounter(`import { BaseCounter } from './base'
 export class Counter extends BaseCounter {
   own = 1
-}`),
-      'Counter',
-    )
+}`)
 
     expect(types).toEqual({ inherited: 'string', own: 'number' })
   })
@@ -1011,6 +993,7 @@ describe('resolveCompilerOptions', () => {
 describe('strict nullish unions', () => {
   let strictDir: string
   let strictTsPath: string
+  let strictContext: ViewModelProgramContext
 
   beforeAll(() => {
     strictDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-strict-'))
@@ -1026,6 +1009,7 @@ describe('strict nullish unions', () => {
   nil!: null | undefined
 }`,
     )
+    strictContext = createViewModelProgramContext(strictTsPath)
   })
 
   afterAll(() => {
@@ -1040,17 +1024,18 @@ describe('strict nullish unions', () => {
   })
 
   it('leaves an all-nullish union unchecked for const validation', () => {
-    const context = createViewModelProgramContext(strictTsPath)
-
     expect(
-      checkConstValue({ context, className: 'Counter', propertyName: 'nil', rawValue: 'anything' }),
+      checkConstValue({
+        context: strictContext,
+        className: 'Counter',
+        propertyName: 'nil',
+        rawValue: 'anything',
+      }),
     ).toEqual({ accepted: 'unchecked' })
   })
 
   it('keeps unknown-typed members in the const value completions', () => {
-    const context = createViewModelProgramContext(strictTsPath)
-
-    expect(extractConstValueCompletionPropertiesWithContext(context, 'Counter')).toEqual([
+    expect(extractConstValueCompletionPropertiesWithContext(strictContext, 'Counter')).toEqual([
       'active',
       'nil',
     ])

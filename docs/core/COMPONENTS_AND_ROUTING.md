@@ -6,6 +6,31 @@ PelelaJS promotes modularity through components, treating both reusable UI fragm
 
 A component in PelelaJS encapsulates a self-contained View and ViewModel. When the framework encounters a custom HTML tag in a template (e.g., `<user-profile>`), it resolves it using the `ComponentRegistry`.
 
+### Component Naming and File Layout
+
+A component is identified by a single source of truth: the `view-model` attribute declared in its `.pelela` template. That value must match the class exported by the ViewModel file, and the tag used to reference the component is derived from it with `toKebabCase`.
+
+| View Model class | `view-model` value | Tag used in templates |
+| --- | --- | --- |
+| `CounterViewModel` | `CounterViewModel` | `<counter-view-model>` |
+| `OrderComponent` | `OrderComponent` | `<order-component>` |
+| `Base` | `Base` | `<base>` |
+
+Two rules that are easy to confuse, because one is about *naming* and the other about *files*:
+
+- **The ViewModel name is independent from the file name.** Only the class name matters for the tag. A class called `CounterViewModel` may live in a file with any name, and the tag will still be `<counter-view-model>`.
+
+- **The files that make up a component share the same base name.** The `.pelela` and its `.ts` are paired by base name, and the optional `.css` follows that same base name.
+
+```text
+src/
+  counter-view-model.pelela   -> declares view-model="CounterViewModel"
+  counter-view-model.ts       -> exports class CounterViewModel
+  counter-view-model.css      -> optional styles associated with this component
+```
+
+At build time, the Vite plugin walks the `.ts` files and keeps only those that have a sibling `.pelela`, so the base name is what pairs a template with its ViewModel and its styles. Both the runtime registry and the VSCode extension derive the tag from the `view-model` value and never from a file name, which is what keeps runtime resolution and editor diagnostics in agreement.
+
 ### Parent-Child Communication
 
 Data flow between components is handled strictly through state synchronization, maintaining a single source of truth within the reactive tree.

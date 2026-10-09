@@ -328,6 +328,54 @@ describe('validateBindingTargets', () => {
     )
   })
 
+  it('rejects a method as a prop target (it cannot be set)', () => {
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model prop-increment="count"></counter-view-model>')
+    )
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('increment'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects a method as a link target (it cannot be set)', () => {
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model link-increment="count"></counter-view-model>')
+    )
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('increment'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects a method as a const target (it cannot be set)', () => {
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model const-increment="1"></counter-view-model>')
+    )
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('increment'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
+  it('rejects an arrow field as a prop target (it cannot be set)', () => {
+    const diagnostics = validate(
+      PARENT_TEMPLATE('<counter-view-model prop-on-update="count"></counter-view-model>')
+    )
+
+    assertDiagnostic(
+      getSingleDiagnostic(diagnostics),
+      childPropertyNotFound('onUpdate'),
+      vscode.DiagnosticSeverity.Error
+    )
+  })
+
   it('reports no diagnostic when a getter is the child target of a bind attribute', () => {
     const diagnostics = validate(
       PARENT_TEMPLATE('<counter-view-model bind-is-lucky></counter-view-model>')
