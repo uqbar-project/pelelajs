@@ -3,11 +3,15 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { after, afterEach, before, describe, it } from 'mocha'
+import type { ViewModelMembers } from '../../src/parsers/viewModelParser'
 import {
   extractInterfaceProperties,
   extractNestedMembers,
   extractNestedProperties,
+  extractTypeMembers,
   extractViewModelMembers,
+  isArrayCollection,
+  pathExists,
 } from '../../src/parsers/viewModelParser'
 
 const FIXTURE_CONTENT = `
@@ -1026,6 +1030,23 @@ export class TypeLiteralGettersVM {
       assert.ok(properties.includes('count'), 'should include count MethodSignature getter')
     })
 
+    it('should include getter names from an interface-typed member', () => {
+      const fPath = path.join(testFilesDir, 'InterfaceGetterNamesVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export interface IType {
+  get something(): number
+}
+
+export class InterfaceGetterNamesVM {
+  item!: IType
+}`
+      )
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['item'], 'InterfaceGetterNamesVM')
+      assert.ok(properties.includes('something'), 'should include something interface getter')
+    })
+
     it('should resolve properties from a getter without explicit return type', () => {
       const fPath = path.join(testFilesDir, 'GetterNoReturnTypeVM.ts')
       fs.writeFileSync(
@@ -1128,6 +1149,119 @@ export class AppVM {
     })
   })
 
+  describe('pathExists', () => {
+    it('should resolve a getter declared in a type alias', () => {
+      const fPath = path.join(testFilesDir, 'AliasGetterVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export type BetType = {
+  description: string
+  get gain(): number
+}
+
+export class AliasGetterVM {
+  bets: BetType[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(pathExists(fPath, ['bets', 'gain'], 'AliasGetterVM'), true)
+    })
+
+    it('should resolve a getter declared in an interface', () => {
+      const fPath = path.join(testFilesDir, 'InterfaceGetterVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export interface BetOption {
+  description: string
+  get gain(): number
+}
+
+export class InterfaceGetterVM {
+  options: BetOption[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(pathExists(fPath, ['options', 'gain'], 'InterfaceGetterVM'), true)
+    })
+
+    it('should miss a member absent from a type alias', () => {
+      const fPath = path.join(testFilesDir, 'AliasMissingVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export type BetType = {
+  description: string
+  get gain(): number
+}
+
+export class AliasMissingVM {
+  bets: BetType[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(pathExists(fPath, ['bets', 'missing'], 'AliasMissingVM'), false)
+    })
+  })
+
+  describe('isArrayCollection', () => {
+    it('should accept a class extending Array', () => {
+      const fPath = path.join(testFilesDir, 'ArraySubclassVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class OrderList extends Array<string> {}
+
+export class ArraySubclassVM {
+  orders!: OrderList
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(isArrayCollection(fPath, ['orders'], 'ArraySubclassVM'), true)
+    })
+
+    it('should accept an interface extending Array', () => {
+      const fPath = path.join(testFilesDir, 'ArrayInterfaceVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export interface StringList extends Array<string> {}
+
+export class ArrayInterfaceVM {
+  items!: StringList
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(isArrayCollection(fPath, ['items'], 'ArrayInterfaceVM'), true)
+    })
+
+    it('should stay silent for a class extending an unknown base', () => {
+      const fPath = path.join(testFilesDir, 'UnknownBaseVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class BaseList {}
+
+class OrderList extends BaseList {}
+
+export class UnknownBaseVM {
+  orders!: OrderList
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(isArrayCollection(fPath, ['orders'], 'UnknownBaseVM'), null)
+    })
+
+    it('should reject a plain class without extends clauses', () => {
+      const fPath = path.join(testFilesDir, 'PlainClassVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class Order {}
+
+export class PlainClassVM {
+  current!: Order
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(isArrayCollection(fPath, ['current'], 'PlainClassVM'), false)
+    })
+  })
+
   describe('extractNestedMembers', () => {
     it('should resolve the item class of a nullable union collection', () => {
       const fixturePath = path.join(testFilesDir, 'UnionLinks.ts')
@@ -1178,6 +1312,75 @@ class NavLink {
       const members = extractNestedMembers(fixturePath, 'links', 'NullFirstLinksViewModel')
       assert.ok(members !== null, 'should resolve members of the union item class')
       assert.ok(members.methods.includes('navigate'), 'should include item method navigate')
+    })
+  })
+
+  describe('extractTypeMembers', () => {
+    const UNION_FIXTURE = `export type Left = {
+  shared(): void
+  onlyLeft(): void
+}
+
+export type Right = {
+  shared(): void
+  onlyRight(): void
+}
+
+export class UnionVM {
+  items: (Left | Right)[] = []
+}
+`
+
+    function extractUnionMembers(): ViewModelMembers | null {
+      const fPath = path.join(testFilesDir, 'UnionItemsVM.ts')
+      fs.writeFileSync(fPath, UNION_FIXTURE)
+      createdFiles.push(fPath)
+      return extractTypeMembers(fPath, 'items', 'UnionVM')
+    }
+
+    function extractLiteralMembers(): ViewModelMembers | null {
+      const fPath = path.join(testFilesDir, 'LiteralItemsVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class LiteralItemsVM {
+  items = [
+    {
+      name: 'a',
+      goTo: () => {},
+      get title() {
+        return 't'
+      },
+      confirm() {}
+    }
+  ]
+}`
+      )
+      createdFiles.push(fPath)
+      return extractTypeMembers(fPath, 'items', 'LiteralItemsVM')
+    }
+
+    it('should keep a member present in every union arm', () => {
+      assert.ok(extractUnionMembers()?.methods.includes('shared'), 'should include shared')
+    })
+
+    it('should drop a member missing from one union arm', () => {
+      assert.ok(!extractUnionMembers()?.methods.includes('onlyLeft'), 'should exclude onlyLeft')
+    })
+
+    it('should collect methods from an object literal item', () => {
+      assert.ok(extractLiteralMembers()?.methods.includes('confirm'), 'should include confirm')
+    })
+
+    it('should collect arrow fields from an object literal item', () => {
+      assert.ok(extractLiteralMembers()?.arrows.includes('goTo'), 'should include goTo')
+    })
+
+    it('should collect getters from an object literal item', () => {
+      assert.ok(extractLiteralMembers()?.getters.includes('title'), 'should include title')
+    })
+
+    it('should collect properties from an object literal item', () => {
+      assert.ok(extractLiteralMembers()?.properties.includes('name'), 'should include name')
     })
   })
 

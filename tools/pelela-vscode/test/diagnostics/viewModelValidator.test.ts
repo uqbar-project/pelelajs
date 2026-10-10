@@ -8,6 +8,7 @@ import type { TagInfo } from '../../src/diagnostics/types'
 import {
   validateBindingProperties,
   validateEventMethods,
+  validateForEachCollections,
   validateViewModelExistence,
 } from '../../src/diagnostics/viewModelValidator'
 import { t } from '../../src/i18n/index'
@@ -22,6 +23,7 @@ export class TestViewModel {
   total: number = 0
   obj = { value: "hello" }
   items: { name: string }[] = []
+  ids: Set<number> = new Set()
   selectedBetClass: { bets: { name: string }[] } = { bets: [] }
   selectedClass: string = "active"
   product: { image: string; description: string } = { image: "", description: "" }
@@ -97,6 +99,25 @@ export class NullableUnionNav {
 }
 `
 
+const BET_SLIP_FIXTURE = `
+export type BetType = {
+  description: string
+  get gain(): number
+  confirm(): void
+  goTo: () => void
+}
+
+export interface BetOption {
+  description: string
+  get gain(): number
+  confirm(): void
+}
+
+export class BetSlip {
+  bets: BetType[] = []
+  options: BetOption[] = []
+}
+`
 interface ViewModelContext {
   tsPath: string
   pelelaPath: string
@@ -1170,6 +1191,453 @@ describe('viewModelValidator', () => {
           vscode.DiagnosticSeverity.Error
         )
       })
+    })
+  })
+
+  describe('validateForEachCollections', () => {
+    function validateForEachCollection(lines: string[]): vscode.Diagnostic[] {
+      const { tags } = prepareValidation(lines, context)
+      return validateForEachCollections(tags, context.tsPath, context.members, 'TestViewModel')
+    }
+
+    it('accepts an existing root collection', () => {
+      assert.deepStrictEqual(validateForEachCollection(['<div for-each="item of items">']), [])
+    })
+
+    it('accepts an existing nested collection', () => {
+      assert.deepStrictEqual(
+        validateForEachCollection(['<div for-each="bet of selectedBetClass.bets">']),
+        []
+      )
+    })
+
+    it('rejects a missing root collection', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="order of orders3">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'orders3' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a missing nested collection segment', () => {
+      const diagnostics = validateForEachCollection([
+        '<div for-each="bet of selectedBetClass.missing">',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an expression without the item of collection format', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="alotofwords">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachInvalidSyntax', {
+          expression: 'alotofwords',
+          format: 'item of collection',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an expression without a collection', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="order of">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachInvalidSyntax', {
+          expression: 'order of',
+          format: 'item of collection',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('ignores an empty expression', () => {
+      assert.deepStrictEqual(validateForEachCollection(['<div for-each="">']), [])
+    })
+
+    it('rejects a method used as collection with methodNeedsGetter', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="item of handleClick">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNeedsGetter', { name: 'handleClick' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an arrow function used as collection', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="item of increment">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionNotAllowed', { name: 'increment' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('reports a collection name with wrong case', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="item of Items">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', { name: 'Items', suggestedName: 'items' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a root property that is not an array', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="letter of name">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachNotArray', { name: 'name' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a Set used as collection', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="id of ids">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachNotArray', { name: 'ids' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a nested property that is not an array', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="value of obj.value">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachNotArray', { name: 'obj.value' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+  })
+
+  describe('for-each over type-level items', () => {
+    const betSlipFileName = 'BetSlipForEachVM.ts'
+    let betSlipPath: string
+    let betSlipMembers: ViewModelMembers
+
+    before(() => {
+      betSlipPath = path.join(testFilesDir, betSlipFileName)
+      fs.writeFileSync(betSlipPath, BET_SLIP_FIXTURE)
+      betSlipMembers = extractViewModelMembers(betSlipPath, 'BetSlip')
+    })
+
+    after(() => {
+      if (fs.existsSync(betSlipPath)) {
+        fs.unlinkSync(betSlipPath)
+      }
+    })
+
+    function betSlipContext(): ViewModelContext {
+      return { tsPath: betSlipPath, pelelaPath: testPelelaPath, members: betSlipMembers }
+    }
+
+    function validateItemBinding(lines: string[]): vscode.Diagnostic[] {
+      const { tags, document } = prepareValidation(lines, betSlipContext())
+      return validateBindingProperties(tags, betSlipPath, betSlipMembers, document, 'BetSlip')
+    }
+
+    function validateItemHandler(lines: string[]): vscode.Diagnostic[] {
+      const { tags, document } = prepareValidation(lines, betSlipContext())
+      return validateEventMethods(tags, betSlipMembers, betSlipPath, document, 'BetSlip')
+    }
+
+    it('accepts a getter of an item typed by alias', () => {
+      const diagnostics = validateItemBinding([
+        '<div for-each="bet of bets">',
+        '  <span bind-content="bet.gain"></span>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a missing member of an item typed by alias', () => {
+      const diagnostics = validateItemBinding([
+        '<div for-each="bet of bets">',
+        '  <span bind-content="bet.missing"></span>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('accepts a getter of an item typed by interface', () => {
+      const diagnostics = validateItemBinding([
+        '<div for-each="opt of options">',
+        '  <span bind-content="opt.gain"></span>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts an instance method of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.confirm"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects an arrow function field of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.goTo"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'bet.goTo' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a getter of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.gain"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.getterAsMethod', { name: 'bet.gain' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a plain property of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.description"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyAsMethod', { name: 'bet.description' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a missing method of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.missing"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a missing method of an item typed by interface', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="opt of options">',
+        '  <button click="opt.missing"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+  })
+
+  describe('nested bindings over interface-typed members', () => {
+    const holderFileName = 'InterfaceMemberVM.ts'
+    let holderPath: string
+    let holderMembers: ViewModelMembers
+
+    before(() => {
+      holderPath = path.join(testFilesDir, holderFileName)
+      fs.writeFileSync(
+        holderPath,
+        `export interface IItem {
+  get something(): number
+}
+
+export class Holder {
+  item!: IItem
+}`
+      )
+      holderMembers = extractViewModelMembers(holderPath, 'Holder')
+    })
+
+    after(() => {
+      if (fs.existsSync(holderPath)) {
+        fs.unlinkSync(holderPath)
+      }
+    })
+
+    function validateNestedBinding(lines: string[]): vscode.Diagnostic[] {
+      const context: ViewModelContext = {
+        tsPath: holderPath,
+        pelelaPath: testPelelaPath,
+        members: holderMembers,
+      }
+      const { tags, document } = prepareValidation(lines, context)
+      return validateBindingProperties(tags, holderPath, holderMembers, document, 'Holder')
+    }
+
+    it('accepts a getter of an interface-typed member', () => {
+      const diagnostics = validateNestedBinding(['<span bind-content="item.something"></span>'])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a missing member of an interface-typed member', () => {
+      const diagnostics = validateNestedBinding(['<span bind-content="item.missing"></span>'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+  })
+
+  describe('for-each over union items', () => {
+    const unionFileName = 'UnionItemsVM.ts'
+    let unionPath: string
+    let unionMembers: ViewModelMembers
+
+    before(() => {
+      unionPath = path.join(testFilesDir, unionFileName)
+      fs.writeFileSync(
+        unionPath,
+        `export type Left = {
+  shared(): void
+  onlyLeft(): void
+}
+
+export type Right = {
+  shared(): void
+  onlyRight(): void
+}
+
+export class UnionVM {
+  items: (Left | Right)[] = []
+}`
+      )
+      unionMembers = extractViewModelMembers(unionPath, 'UnionVM')
+    })
+
+    after(() => {
+      if (fs.existsSync(unionPath)) {
+        fs.unlinkSync(unionPath)
+      }
+    })
+
+    function validateUnionHandler(lines: string[]): vscode.Diagnostic[] {
+      const context: ViewModelContext = {
+        tsPath: unionPath,
+        pelelaPath: testPelelaPath,
+        members: unionMembers,
+      }
+      const { tags, document } = prepareValidation(lines, context)
+      return validateEventMethods(tags, unionMembers, unionPath, document, 'UnionVM')
+    }
+
+    it('accepts a handler present in every union arm', () => {
+      const diagnostics = validateUnionHandler([
+        '<div for-each="item of items">',
+        '  <button click="item.shared"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a handler missing from one union arm', () => {
+      const diagnostics = validateUnionHandler([
+        '<div for-each="item of items">',
+        '  <button click="item.onlyLeft"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNotFound', { name: 'onlyLeft' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+  })
+
+  describe('for-each over literal items', () => {
+    const literalFileName = 'LiteralItemsVM.ts'
+    let literalPath: string
+    let literalMembers: ViewModelMembers
+
+    before(() => {
+      literalPath = path.join(testFilesDir, literalFileName)
+      fs.writeFileSync(
+        literalPath,
+        `export class LiteralVM {
+  items = [{ name: 'a', confirm() {} }]
+}`
+      )
+      literalMembers = extractViewModelMembers(literalPath, 'LiteralVM')
+    })
+
+    after(() => {
+      if (fs.existsSync(literalPath)) {
+        fs.unlinkSync(literalPath)
+      }
+    })
+
+    function validateLiteralHandler(lines: string[]): vscode.Diagnostic[] {
+      const context: ViewModelContext = {
+        tsPath: literalPath,
+        pelelaPath: testPelelaPath,
+        members: literalMembers,
+      }
+      const { tags, document } = prepareValidation(lines, context)
+      return validateEventMethods(tags, literalMembers, literalPath, document, 'LiteralVM')
+    }
+
+    it('accepts a method of a literal item', () => {
+      const diagnostics = validateLiteralHandler([
+        '<div for-each="item of items">',
+        '  <button click="item.confirm"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a missing method of a literal item', () => {
+      const diagnostics = validateLiteralHandler([
+        '<div for-each="item of items">',
+        '  <button click="item.missing"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
     })
   })
 })

@@ -397,6 +397,220 @@ export function extractNestedMembers(
   return collectViewModelMembers(classDeclaration, new Set<string>())
 }
 
+export function extractTypeMembers(
+  typescriptFilePath: string,
+  propertyPath: string,
+  className: string
+): ViewModelMembers | null {
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
+  const startingNode = findPropertyTypeNode(
+    sourceFile,
+    propertyPath.split('.')[0],
+    className,
+    typescriptFilePath
+  )
+  if (!startingNode) return null
+
+  const finalNode = resolveToNode(
+    startingNode,
+    propertyPath.split('.').slice(1),
+    sourceFile,
+    typescriptFilePath
+  )
+  if (!finalNode) return null
+
+  const itemNodes = resolveItemTypeNodes(finalNode, sourceFile, typescriptFilePath)
+  if (itemNodes.length === 0) return null
+
+  return intersectMembers(
+    itemNodes.map((itemNode) => collectItemMembers(itemNode, sourceFile, typescriptFilePath))
+  )
+}
+
+function intersectNames(first: string[], second: string[]): string[] {
+  return first.filter((name) => second.includes(name))
+}
+
+function intersectMembers(membersList: (ViewModelMembers | null)[]): ViewModelMembers | null {
+  const [first, ...rest] = membersList
+  if (first === undefined || first === null) return null
+  return rest.reduce<ViewModelMembers | null>((accumulator, members) => {
+    if (accumulator === null || members === null) return null
+    return {
+      properties: intersectNames(accumulator.properties, members.properties),
+      writableProperties: intersectNames(
+        accumulator.writableProperties,
+        members.writableProperties
+      ),
+      readonlyProperties: intersectNames(
+        accumulator.readonlyProperties,
+        members.readonlyProperties
+      ),
+      nonPublicProperties: intersectNames(
+        accumulator.nonPublicProperties,
+        members.nonPublicProperties
+      ),
+      methods: intersectNames(accumulator.methods, members.methods),
+      getters: intersectNames(accumulator.getters, members.getters),
+      setters: intersectNames(accumulator.setters, members.setters),
+      arrows: intersectNames(accumulator.arrows, members.arrows),
+    }
+  }, first)
+}
+
+function resolveItemTypeNodes(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  filePath: string
+): ts.Node[] {
+  if (
+    ts.isParenthesizedExpression(node) ||
+    ts.isAsExpression(node) ||
+    ts.isSatisfiesExpression(node) ||
+    ts.isNonNullExpression(node)
+  ) {
+    return resolveItemTypeNodes(node.expression, sourceFile, filePath)
+  }
+  if (ts.isParenthesizedTypeNode(node)) {
+    return resolveItemTypeNodes(node.type, sourceFile, filePath)
+  }
+  if (ts.isTypeOperatorNode(node) && node.operator === ts.SyntaxKind.ReadonlyKeyword) {
+    return resolveItemTypeNodes(node.type, sourceFile, filePath)
+  }
+  if (ts.isArrayTypeNode(node)) {
+    return resolveItemTypeNodes(node.elementType, sourceFile, filePath)
+  }
+  if (ts.isTupleTypeNode(node)) {
+    const firstElement = node.elements[0]
+    return firstElement ? resolveItemTypeNodes(firstElement, sourceFile, filePath) : []
+  }
+  if (ts.isTypeReferenceNode(node)) {
+    if (
+      ts.isIdentifier(node.typeName) &&
+      (node.typeName.text === 'Array' || node.typeName.text === 'ReadonlyArray') &&
+      node.typeArguments?.length === 1
+    ) {
+      return resolveItemTypeNodes(node.typeArguments[0], sourceFile, filePath)
+    }
+    return [node]
+  }
+  if (ts.isUnionTypeNode(node)) {
+    const meaningfulMembers = node.types.filter(
+      (unionMember) =>
+        unionMember.kind !== ts.SyntaxKind.NullKeyword &&
+        unionMember.kind !== ts.SyntaxKind.UndefinedKeyword &&
+        !(
+          ts.isLiteralTypeNode(unionMember) &&
+          unionMember.literal.kind === ts.SyntaxKind.NullKeyword
+        )
+    )
+    return meaningfulMembers.flatMap((unionMember) =>
+      resolveItemTypeNodes(unionMember, sourceFile, filePath)
+    )
+  }
+  if (ts.isArrayLiteralExpression(node)) {
+    const firstElement = node.elements[0]
+    return firstElement ? [firstElement] : []
+  }
+  return [node]
+}
+
+function collectItemMembers(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  filePath: string
+): ViewModelMembers | null {
+  if (ts.isClassDeclaration(node)) {
+    return collectViewModelMembers(node, new Set<string>())
+  }
+  if (ts.isInterfaceDeclaration(node)) {
+    return collectTypeElementMembers(node.members)
+  }
+  if (ts.isTypeLiteralNode(node)) {
+    return collectTypeElementMembers(node.members)
+  }
+  if (ts.isTypeReferenceNode(node)) {
+    const declaration = resolveTypeReference(node, sourceFile, filePath)
+    if (!declaration) return null
+    if (ts.isTypeAliasDeclaration(declaration)) {
+      return collectItemMembers(declaration.type, sourceFile, filePath)
+    }
+    if (ts.isClassDeclaration(declaration) || ts.isInterfaceDeclaration(declaration)) {
+      return collectItemMembers(declaration, sourceFile, filePath)
+    }
+    return null
+  }
+  if (ts.isNewExpression(node) && ts.isIdentifier(node.expression)) {
+    const typeReference = ts.factory.createTypeReferenceNode(node.expression, undefined)
+    return collectItemMembers(typeReference, sourceFile, filePath)
+  }
+  if (ts.isObjectLiteralExpression(node)) {
+    return collectObjectLiteralMembers(node.properties)
+  }
+  return null
+}
+
+function createEmptyMembers(): ViewModelMembers {
+  return {
+    properties: [],
+    writableProperties: [],
+    readonlyProperties: [],
+    nonPublicProperties: [],
+    methods: [],
+    getters: [],
+    setters: [],
+    arrows: [],
+  }
+}
+
+function collectTypeElementMembers(members: readonly ts.TypeElement[]): ViewModelMembers {
+  return members.reduce((accumulator, member) => {
+    if (member.name === undefined || !ts.isIdentifier(member.name)) return accumulator
+    const name = member.name.text
+    if (ts.isMethodSignature(member)) {
+      accumulator.methods.push(name)
+    } else if (ts.isGetAccessorDeclaration(member)) {
+      accumulator.properties.push(name)
+      accumulator.getters.push(name)
+    } else if (ts.isSetAccessorDeclaration(member)) {
+      accumulator.setters.push(name)
+    } else if (ts.isPropertySignature(member)) {
+      if (member.type !== undefined && ts.isFunctionTypeNode(member.type)) {
+        accumulator.arrows.push(name)
+      } else {
+        accumulator.properties.push(name)
+      }
+    }
+    return accumulator
+  }, createEmptyMembers())
+}
+
+function collectObjectLiteralMembers(
+  members: readonly ts.ObjectLiteralElementLike[]
+): ViewModelMembers {
+  return members.reduce((accumulator, member) => {
+    if (ts.isSpreadAssignment(member)) return accumulator
+    if (member.name === undefined || !ts.isIdentifier(member.name)) return accumulator
+    const name = member.name.text
+    if (ts.isMethodDeclaration(member)) {
+      accumulator.methods.push(name)
+    } else if (ts.isGetAccessorDeclaration(member)) {
+      accumulator.properties.push(name)
+      accumulator.getters.push(name)
+    } else if (ts.isSetAccessorDeclaration(member)) {
+      accumulator.setters.push(name)
+    } else if (
+      ts.isPropertyAssignment(member) &&
+      (ts.isArrowFunction(member.initializer) || ts.isFunctionExpression(member.initializer))
+    ) {
+      accumulator.arrows.push(name)
+    } else {
+      accumulator.properties.push(name)
+    }
+    return accumulator
+  }, createEmptyMembers())
+}
+
 /**
  * Resolves the class declaration behind a type node, unwrapping array types,
  * nullable unions and array literals built from class instances. Returns
@@ -632,6 +846,160 @@ export function pathExists(
   return finalNode !== undefined
 }
 
+/**
+ * Tells whether a property path resolves to an array type, so for-each
+ * collections can be rejected with their own message instead of failing at
+ * runtime. Returns null when the type cannot be resolved, in which case the
+ * caller stays silent to avoid false positives.
+ */
+export function isArrayCollection(
+  typescriptFilePath: string,
+  propertyPaths: string[],
+  className: string
+): boolean | null {
+  if (propertyPaths.length === 0) return null
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
+  const rootPropertyName = propertyPaths[0]
+  const startingNode = findPropertyTypeNode(
+    sourceFile,
+    rootPropertyName,
+    className,
+    typescriptFilePath
+  )
+  if (!startingNode) return null
+  const remainingPaths = propertyPaths.slice(1)
+  const finalNode = resolveToNode(startingNode, remainingPaths, sourceFile, typescriptFilePath)
+  if (!finalNode) return null
+  return isArrayType(finalNode, sourceFile, typescriptFilePath)
+}
+
+const ARRAY_TYPE_NAMES = ['Array', 'ReadonlyArray']
+
+const NON_ARRAY_BUILTIN_NAMES = [
+  'Set',
+  'ReadonlySet',
+  'Map',
+  'ReadonlyMap',
+  'WeakSet',
+  'WeakMap',
+  'Promise',
+]
+
+/**
+ * Classifies a type or initializer node as an array collection or not. Known
+ * builtin generics that are never arrays (Set, Map, Promise and their readonly
+ * variants) are rejected without resolving lib declarations, which this
+ * single-file parser cannot see.
+ */
+function isArrayType(node: ts.Node, sourceFile: ts.SourceFile, filePath: string): boolean | null {
+  if (
+    ts.isParenthesizedExpression(node) ||
+    ts.isAsExpression(node) ||
+    ts.isSatisfiesExpression(node) ||
+    ts.isNonNullExpression(node)
+  ) {
+    return isArrayType(node.expression, sourceFile, filePath)
+  }
+  if (ts.isParenthesizedTypeNode(node)) {
+    return isArrayType(node.type, sourceFile, filePath)
+  }
+  if (ts.isTypeOperatorNode(node) && node.operator === ts.SyntaxKind.ReadonlyKeyword) {
+    return isArrayType(node.type, sourceFile, filePath)
+  }
+  if (ts.isArrayTypeNode(node) || ts.isTupleTypeNode(node)) return true
+  if (ts.isArrayLiteralExpression(node)) return true
+  if (ts.isTypeReferenceNode(node)) return isArrayTypeReference(node, sourceFile, filePath)
+  if (ts.isUnionTypeNode(node)) return isArrayUnion(node, sourceFile, filePath)
+  if (ts.isNewExpression(node)) return isArrayConstructor(node)
+  if (
+    ts.isTypeLiteralNode(node) ||
+    ts.isObjectLiteralExpression(node) ||
+    ts.isStringLiteral(node) ||
+    ts.isNoSubstitutionTemplateLiteral(node) ||
+    ts.isNumericLiteral(node) ||
+    node.kind === ts.SyntaxKind.TrueKeyword ||
+    node.kind === ts.SyntaxKind.FalseKeyword ||
+    node.kind === ts.SyntaxKind.StringKeyword ||
+    node.kind === ts.SyntaxKind.NumberKeyword ||
+    node.kind === ts.SyntaxKind.BooleanKeyword
+  ) {
+    return false
+  }
+  return null
+}
+
+/**
+ * Resolves the array question for a type reference. Array and ReadonlyArray
+ * with a single type argument are collections; other known builtin generics
+ * are not; aliases unwrap to their target; a class or interface counts as a
+ * collection only when it extends an array type.
+ */
+function isArrayTypeReference(
+  node: ts.TypeReferenceNode,
+  sourceFile: ts.SourceFile,
+  filePath: string
+): boolean | null {
+  if (!ts.isIdentifier(node.typeName)) return null
+  const typeName = node.typeName.text
+  if (ARRAY_TYPE_NAMES.includes(typeName) && node.typeArguments?.length === 1) {
+    return true
+  }
+  if (NON_ARRAY_BUILTIN_NAMES.includes(typeName)) {
+    return false
+  }
+  const declaration = resolveTypeReference(node, sourceFile, filePath)
+  if (!declaration) return null
+  if (ts.isTypeAliasDeclaration(declaration)) {
+    return isArrayType(declaration.type, sourceFile, filePath)
+  }
+  return isArrayHeritage(declaration)
+}
+
+function isArrayHeritage(
+  declaration: ts.ClassDeclaration | ts.InterfaceDeclaration
+): boolean | null {
+  const extendedNames = (declaration.heritageClauses ?? [])
+    .filter((clause) => clause.token === ts.SyntaxKind.ExtendsKeyword)
+    .flatMap((clause) => [...clause.types])
+    .map((clauseType) => (ts.isIdentifier(clauseType.expression) ? clauseType.expression.text : ''))
+  if (extendedNames.length === 0) return false
+  if (extendedNames.some((extendedName) => ARRAY_TYPE_NAMES.includes(extendedName))) return true
+  return null
+}
+
+/**
+ * Unwraps nullable unions the same way the item type resolution does: null
+ * and undefined members are ignored, and the remaining members decide
+ * together whether the collection is an array.
+ */
+function isArrayUnion(
+  node: ts.UnionTypeNode,
+  sourceFile: ts.SourceFile,
+  filePath: string
+): boolean | null {
+  const meaningfulMembers = node.types.filter(
+    (unionMember) =>
+      unionMember.kind !== ts.SyntaxKind.NullKeyword &&
+      unionMember.kind !== ts.SyntaxKind.UndefinedKeyword &&
+      !(ts.isLiteralTypeNode(unionMember) && unionMember.literal.kind === ts.SyntaxKind.NullKeyword)
+  )
+  if (meaningfulMembers.length === 0) return null
+  const memberResults = meaningfulMembers.map((unionMember) =>
+    isArrayType(unionMember, sourceFile, filePath)
+  )
+  if (memberResults.every((result) => result === true)) return true
+  if (memberResults.some((result) => result === false)) return false
+  return null
+}
+
+/**
+ * Only an Array construction is an array collection; any other instantiation
+ * produces a plain object.
+ */
+function isArrayConstructor(node: ts.NewExpression): boolean {
+  return ts.isIdentifier(node.expression) && node.expression.text === 'Array'
+}
+
 const BUILTIN_CLASSES: Record<string, string[]> = {
   Array: Object.getOwnPropertyNames(Array.prototype),
   String: Object.getOwnPropertyNames(String.prototype),
@@ -849,6 +1217,7 @@ function resolvePropertyInTypeLiteral(
   if (!member) return undefined
   if (ts.isPropertySignature(member)) return member.type
   if (ts.isMethodSignature(member)) return member.type
+  if (ts.isGetAccessorDeclaration(member)) return member.type
   return undefined
 }
 
@@ -904,6 +1273,14 @@ function resolvePropertyInTypeReference(
       }
       return undefined
     }
+  }
+  if (ts.isInterfaceDeclaration(declaration)) {
+    const getter = declaration.members.find(
+      (getterMember): getterMember is ts.GetAccessorDeclaration =>
+        ts.isGetAccessorDeclaration(getterMember) &&
+        getDeclarationName(getterMember) === propertyName
+    )
+    if (getter?.type) return getter.type
   }
   return undefined
 }
@@ -1049,7 +1426,7 @@ function getParameterPropertyType(
   return param?.type
 }
 
-function getAccessorNames(declaration: ts.ClassDeclaration): string[] {
+function getAccessorNames(declaration: { members: readonly ts.Node[] }): string[] {
   return declaration.members
     .filter((member): member is ts.GetAccessorDeclaration => ts.isGetAccessorDeclaration(member))
     .map((member) => (member.name && ts.isIdentifier(member.name) ? member.name.text : ''))
@@ -1078,6 +1455,9 @@ function membersFromDeclaration(
       ...getParameterPropertyNames(declaration),
       ...getAccessorNames(declaration),
     ]
+  }
+  if (ts.isInterfaceDeclaration(declaration)) {
+    return [...regularMembers, ...getAccessorNames(declaration)]
   }
   return regularMembers
 }
