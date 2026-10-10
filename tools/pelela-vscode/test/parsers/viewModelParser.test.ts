@@ -8,6 +8,7 @@ import {
   extractNestedMembers,
   extractNestedProperties,
   extractViewModelMembers,
+  isArrayCollection,
   pathExists,
 } from '../../src/parsers/viewModelParser'
 
@@ -1027,6 +1028,23 @@ export class TypeLiteralGettersVM {
       assert.ok(properties.includes('count'), 'should include count MethodSignature getter')
     })
 
+    it('should include getter names from an interface-typed member', () => {
+      const fPath = path.join(testFilesDir, 'InterfaceGetterNamesVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export interface IType {
+  get something(): number
+}
+
+export class InterfaceGetterNamesVM {
+  item!: IType
+}`
+      )
+      createdFiles.push(fPath)
+      const properties = extractNestedProperties(fPath, ['item'], 'InterfaceGetterNamesVM')
+      assert.ok(properties.includes('something'), 'should include something interface getter')
+    })
+
     it('should resolve properties from a getter without explicit return type', () => {
       const fPath = path.join(testFilesDir, 'GetterNoReturnTypeVM.ts')
       fs.writeFileSync(
@@ -1179,6 +1197,66 @@ export class AliasMissingVM {
       )
       createdFiles.push(fPath)
       assert.strictEqual(pathExists(fPath, ['bets', 'missing'], 'AliasMissingVM'), false)
+    })
+  })
+
+  describe('isArrayCollection', () => {
+    it('should accept a class extending Array', () => {
+      const fPath = path.join(testFilesDir, 'ArraySubclassVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class OrderList extends Array<string> {}
+
+export class ArraySubclassVM {
+  orders!: OrderList
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(isArrayCollection(fPath, ['orders'], 'ArraySubclassVM'), true)
+    })
+
+    it('should accept an interface extending Array', () => {
+      const fPath = path.join(testFilesDir, 'ArrayInterfaceVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export interface StringList extends Array<string> {}
+
+export class ArrayInterfaceVM {
+  items!: StringList
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(isArrayCollection(fPath, ['items'], 'ArrayInterfaceVM'), true)
+    })
+
+    it('should stay silent for a class extending an unknown base', () => {
+      const fPath = path.join(testFilesDir, 'UnknownBaseVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class BaseList {}
+
+class OrderList extends BaseList {}
+
+export class UnknownBaseVM {
+  orders!: OrderList
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(isArrayCollection(fPath, ['orders'], 'UnknownBaseVM'), null)
+    })
+
+    it('should reject a plain class without extends clauses', () => {
+      const fPath = path.join(testFilesDir, 'PlainClassVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `class Order {}
+
+export class PlainClassVM {
+  current!: Order
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(isArrayCollection(fPath, ['current'], 'PlainClassVM'), false)
     })
   })
 

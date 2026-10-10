@@ -1466,4 +1466,56 @@ describe('viewModelValidator', () => {
       )
     })
   })
+
+  describe('nested bindings over interface-typed members', () => {
+    const holderFileName = 'InterfaceMemberVM.ts'
+    let holderPath: string
+    let holderMembers: ViewModelMembers
+
+    before(() => {
+      holderPath = path.join(testFilesDir, holderFileName)
+      fs.writeFileSync(
+        holderPath,
+        `export interface IItem {
+  get something(): number
+}
+
+export class Holder {
+  item!: IItem
+}`
+      )
+      holderMembers = extractViewModelMembers(holderPath, 'Holder')
+    })
+
+    after(() => {
+      if (fs.existsSync(holderPath)) {
+        fs.unlinkSync(holderPath)
+      }
+    })
+
+    function validateNestedBinding(lines: string[]): vscode.Diagnostic[] {
+      const context: ViewModelContext = {
+        tsPath: holderPath,
+        pelelaPath: testPelelaPath,
+        members: holderMembers,
+      }
+      const { tags, document } = prepareValidation(lines, context)
+      return validateBindingProperties(tags, holderPath, holderMembers, document, 'Holder')
+    }
+
+    it('accepts a getter of an interface-typed member', () => {
+      const diagnostics = validateNestedBinding(['<span bind-content="item.something"></span>'])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a missing member of an interface-typed member', () => {
+      const diagnostics = validateNestedBinding(['<span bind-content="item.missing"></span>'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+  })
 })

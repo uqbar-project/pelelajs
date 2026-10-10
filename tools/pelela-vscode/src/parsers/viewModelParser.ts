@@ -865,8 +865,8 @@ function isArrayType(node: ts.Node, sourceFile: ts.SourceFile, filePath: string)
 /**
  * Resolves the array question for a type reference. Array and ReadonlyArray
  * with a single type argument are collections; other known builtin generics
- * are not; aliases unwrap to their target; a class or interface used as the
- * collection itself is a plain object, not an array.
+ * are not; aliases unwrap to their target; a class or interface counts as a
+ * collection only when it extends an array type.
  */
 function isArrayTypeReference(
   node: ts.TypeReferenceNode,
@@ -886,7 +886,19 @@ function isArrayTypeReference(
   if (ts.isTypeAliasDeclaration(declaration)) {
     return isArrayType(declaration.type, sourceFile, filePath)
   }
-  return false
+  return isArrayHeritage(declaration)
+}
+
+function isArrayHeritage(
+  declaration: ts.ClassDeclaration | ts.InterfaceDeclaration
+): boolean | null {
+  const extendedNames = (declaration.heritageClauses ?? [])
+    .filter((clause) => clause.token === ts.SyntaxKind.ExtendsKeyword)
+    .flatMap((clause) => [...clause.types])
+    .map((clauseType) => (ts.isIdentifier(clauseType.expression) ? clauseType.expression.text : ''))
+  if (extendedNames.length === 0) return false
+  if (extendedNames.some((extendedName) => ARRAY_TYPE_NAMES.includes(extendedName))) return true
+  return null
 }
 
 /**
@@ -1348,7 +1360,7 @@ function getParameterPropertyType(
   return param?.type
 }
 
-function getAccessorNames(declaration: ts.ClassDeclaration): string[] {
+function getAccessorNames(declaration: { members: readonly ts.Node[] }): string[] {
   return declaration.members
     .filter((member): member is ts.GetAccessorDeclaration => ts.isGetAccessorDeclaration(member))
     .map((member) => (member.name && ts.isIdentifier(member.name) ? member.name.text : ''))
@@ -1377,6 +1389,9 @@ function membersFromDeclaration(
       ...getParameterPropertyNames(declaration),
       ...getAccessorNames(declaration),
     ]
+  }
+  if (ts.isInterfaceDeclaration(declaration)) {
+    return [...regularMembers, ...getAccessorNames(declaration)]
   }
   return regularMembers
 }
