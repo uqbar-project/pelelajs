@@ -1518,4 +1518,126 @@ export class Holder {
       )
     })
   })
+
+  describe('for-each over union items', () => {
+    const unionFileName = 'UnionItemsVM.ts'
+    let unionPath: string
+    let unionMembers: ViewModelMembers
+
+    before(() => {
+      unionPath = path.join(testFilesDir, unionFileName)
+      fs.writeFileSync(
+        unionPath,
+        `export type Left = {
+  shared(): void
+  onlyLeft(): void
+}
+
+export type Right = {
+  shared(): void
+  onlyRight(): void
+}
+
+export class UnionVM {
+  items: (Left | Right)[] = []
+}`
+      )
+      unionMembers = extractViewModelMembers(unionPath, 'UnionVM')
+    })
+
+    after(() => {
+      if (fs.existsSync(unionPath)) {
+        fs.unlinkSync(unionPath)
+      }
+    })
+
+    function validateUnionHandler(lines: string[]): vscode.Diagnostic[] {
+      const context: ViewModelContext = {
+        tsPath: unionPath,
+        pelelaPath: testPelelaPath,
+        members: unionMembers,
+      }
+      const { tags, document } = prepareValidation(lines, context)
+      return validateEventMethods(tags, unionMembers, unionPath, document, 'UnionVM')
+    }
+
+    it('accepts a handler present in every union arm', () => {
+      const diagnostics = validateUnionHandler([
+        '<div for-each="item of items">',
+        '  <button click="item.shared"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a handler missing from one union arm', () => {
+      const diagnostics = validateUnionHandler([
+        '<div for-each="item of items">',
+        '  <button click="item.onlyLeft"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNotFound', { name: 'onlyLeft' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+  })
+
+  describe('for-each over literal items', () => {
+    const literalFileName = 'LiteralItemsVM.ts'
+    let literalPath: string
+    let literalMembers: ViewModelMembers
+
+    before(() => {
+      literalPath = path.join(testFilesDir, literalFileName)
+      fs.writeFileSync(
+        literalPath,
+        `export class LiteralVM {
+  items = [{ name: 'a', confirm() {} }]
+}`
+      )
+      literalMembers = extractViewModelMembers(literalPath, 'LiteralVM')
+    })
+
+    after(() => {
+      if (fs.existsSync(literalPath)) {
+        fs.unlinkSync(literalPath)
+      }
+    })
+
+    function validateLiteralHandler(lines: string[]): vscode.Diagnostic[] {
+      const context: ViewModelContext = {
+        tsPath: literalPath,
+        pelelaPath: testPelelaPath,
+        members: literalMembers,
+      }
+      const { tags, document } = prepareValidation(lines, context)
+      return validateEventMethods(tags, literalMembers, literalPath, document, 'LiteralVM')
+    }
+
+    it('accepts a method of a literal item', () => {
+      const diagnostics = validateLiteralHandler([
+        '<div for-each="item of items">',
+        '  <button click="item.confirm"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a missing method of a literal item', () => {
+      const diagnostics = validateLiteralHandler([
+        '<div for-each="item of items">',
+        '  <button click="item.missing"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+  })
 })

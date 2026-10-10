@@ -419,37 +419,70 @@ export function extractTypeMembers(
   )
   if (!finalNode) return null
 
-  const itemNode = resolveItemTypeNode(finalNode, sourceFile, typescriptFilePath)
-  if (!itemNode) return null
+  const itemNodes = resolveItemTypeNodes(finalNode, sourceFile, typescriptFilePath)
+  if (itemNodes.length === 0) return null
 
-  return collectItemMembers(itemNode, sourceFile, typescriptFilePath)
+  return intersectMembers(
+    itemNodes.map((itemNode) => collectItemMembers(itemNode, sourceFile, typescriptFilePath))
+  )
 }
 
-function resolveItemTypeNode(
+function intersectNames(first: string[], second: string[]): string[] {
+  return first.filter((name) => second.includes(name))
+}
+
+function intersectMembers(membersList: (ViewModelMembers | null)[]): ViewModelMembers | null {
+  const [first, ...rest] = membersList
+  if (first === undefined || first === null) return null
+  return rest.reduce<ViewModelMembers | null>((accumulator, members) => {
+    if (accumulator === null || members === null) return null
+    return {
+      properties: intersectNames(accumulator.properties, members.properties),
+      writableProperties: intersectNames(
+        accumulator.writableProperties,
+        members.writableProperties
+      ),
+      readonlyProperties: intersectNames(
+        accumulator.readonlyProperties,
+        members.readonlyProperties
+      ),
+      nonPublicProperties: intersectNames(
+        accumulator.nonPublicProperties,
+        members.nonPublicProperties
+      ),
+      methods: intersectNames(accumulator.methods, members.methods),
+      getters: intersectNames(accumulator.getters, members.getters),
+      setters: intersectNames(accumulator.setters, members.setters),
+      arrows: intersectNames(accumulator.arrows, members.arrows),
+    }
+  }, first)
+}
+
+function resolveItemTypeNodes(
   node: ts.Node,
   sourceFile: ts.SourceFile,
   filePath: string
-): ts.Node | undefined {
+): ts.Node[] {
   if (
     ts.isParenthesizedExpression(node) ||
     ts.isAsExpression(node) ||
     ts.isSatisfiesExpression(node) ||
     ts.isNonNullExpression(node)
   ) {
-    return resolveItemTypeNode(node.expression, sourceFile, filePath)
+    return resolveItemTypeNodes(node.expression, sourceFile, filePath)
   }
   if (ts.isParenthesizedTypeNode(node)) {
-    return resolveItemTypeNode(node.type, sourceFile, filePath)
+    return resolveItemTypeNodes(node.type, sourceFile, filePath)
   }
   if (ts.isTypeOperatorNode(node) && node.operator === ts.SyntaxKind.ReadonlyKeyword) {
-    return resolveItemTypeNode(node.type, sourceFile, filePath)
+    return resolveItemTypeNodes(node.type, sourceFile, filePath)
   }
   if (ts.isArrayTypeNode(node)) {
-    return resolveItemTypeNode(node.elementType, sourceFile, filePath)
+    return resolveItemTypeNodes(node.elementType, sourceFile, filePath)
   }
   if (ts.isTupleTypeNode(node)) {
     const firstElement = node.elements[0]
-    return firstElement ? resolveItemTypeNode(firstElement, sourceFile, filePath) : undefined
+    return firstElement ? resolveItemTypeNodes(firstElement, sourceFile, filePath) : []
   }
   if (ts.isTypeReferenceNode(node)) {
     if (
@@ -457,9 +490,9 @@ function resolveItemTypeNode(
       (node.typeName.text === 'Array' || node.typeName.text === 'ReadonlyArray') &&
       node.typeArguments?.length === 1
     ) {
-      return resolveItemTypeNode(node.typeArguments[0], sourceFile, filePath)
+      return resolveItemTypeNodes(node.typeArguments[0], sourceFile, filePath)
     }
-    return node
+    return [node]
   }
   if (ts.isUnionTypeNode(node)) {
     const meaningfulMembers = node.types.filter(
@@ -471,14 +504,15 @@ function resolveItemTypeNode(
           unionMember.literal.kind === ts.SyntaxKind.NullKeyword
         )
     )
-    const firstMember = meaningfulMembers[0]
-    return firstMember ? resolveItemTypeNode(firstMember, sourceFile, filePath) : undefined
+    return meaningfulMembers.flatMap((unionMember) =>
+      resolveItemTypeNodes(unionMember, sourceFile, filePath)
+    )
   }
   if (ts.isArrayLiteralExpression(node)) {
     const firstElement = node.elements[0]
-    return firstElement ?? undefined
+    return firstElement ? [firstElement] : []
   }
-  return node
+  return [node]
 }
 
 function collectItemMembers(
@@ -510,11 +544,14 @@ function collectItemMembers(
     const typeReference = ts.factory.createTypeReferenceNode(node.expression, undefined)
     return collectItemMembers(typeReference, sourceFile, filePath)
   }
+  if (ts.isObjectLiteralExpression(node)) {
+    return collectObjectLiteralMembers(node.properties)
+  }
   return null
 }
 
-function collectTypeElementMembers(members: readonly ts.TypeElement[]): ViewModelMembers {
-  const collected: ViewModelMembers = {
+function createEmptyMembers(): ViewModelMembers {
+  return {
     properties: [],
     writableProperties: [],
     readonlyProperties: [],
@@ -524,6 +561,9 @@ function collectTypeElementMembers(members: readonly ts.TypeElement[]): ViewMode
     setters: [],
     arrows: [],
   }
+}
+
+function collectTypeElementMembers(members: readonly ts.TypeElement[]): ViewModelMembers {
   return members.reduce((accumulator, member) => {
     if (member.name === undefined || !ts.isIdentifier(member.name)) return accumulator
     const name = member.name.text
@@ -542,7 +582,33 @@ function collectTypeElementMembers(members: readonly ts.TypeElement[]): ViewMode
       }
     }
     return accumulator
-  }, collected)
+  }, createEmptyMembers())
+}
+
+function collectObjectLiteralMembers(
+  members: readonly ts.ObjectLiteralElementLike[]
+): ViewModelMembers {
+  return members.reduce((accumulator, member) => {
+    if (ts.isSpreadAssignment(member)) return accumulator
+    if (member.name === undefined || !ts.isIdentifier(member.name)) return accumulator
+    const name = member.name.text
+    if (ts.isMethodDeclaration(member)) {
+      accumulator.methods.push(name)
+    } else if (ts.isGetAccessorDeclaration(member)) {
+      accumulator.properties.push(name)
+      accumulator.getters.push(name)
+    } else if (ts.isSetAccessorDeclaration(member)) {
+      accumulator.setters.push(name)
+    } else if (
+      ts.isPropertyAssignment(member) &&
+      (ts.isArrowFunction(member.initializer) || ts.isFunctionExpression(member.initializer))
+    ) {
+      accumulator.arrows.push(name)
+    } else {
+      accumulator.properties.push(name)
+    }
+    return accumulator
+  }, createEmptyMembers())
 }
 
 /**

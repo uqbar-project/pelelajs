@@ -3,10 +3,12 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { after, afterEach, before, describe, it } from 'mocha'
+import type { ViewModelMembers } from '../../src/parsers/viewModelParser'
 import {
   extractInterfaceProperties,
   extractNestedMembers,
   extractNestedProperties,
+  extractTypeMembers,
   extractViewModelMembers,
   isArrayCollection,
   pathExists,
@@ -1310,6 +1312,75 @@ class NavLink {
       const members = extractNestedMembers(fixturePath, 'links', 'NullFirstLinksViewModel')
       assert.ok(members !== null, 'should resolve members of the union item class')
       assert.ok(members.methods.includes('navigate'), 'should include item method navigate')
+    })
+  })
+
+  describe('extractTypeMembers', () => {
+    const UNION_FIXTURE = `export type Left = {
+  shared(): void
+  onlyLeft(): void
+}
+
+export type Right = {
+  shared(): void
+  onlyRight(): void
+}
+
+export class UnionVM {
+  items: (Left | Right)[] = []
+}
+`
+
+    function extractUnionMembers(): ViewModelMembers | null {
+      const fPath = path.join(testFilesDir, 'UnionItemsVM.ts')
+      fs.writeFileSync(fPath, UNION_FIXTURE)
+      createdFiles.push(fPath)
+      return extractTypeMembers(fPath, 'items', 'UnionVM')
+    }
+
+    function extractLiteralMembers(): ViewModelMembers | null {
+      const fPath = path.join(testFilesDir, 'LiteralItemsVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export class LiteralItemsVM {
+  items = [
+    {
+      name: 'a',
+      goTo: () => {},
+      get title() {
+        return 't'
+      },
+      confirm() {}
+    }
+  ]
+}`
+      )
+      createdFiles.push(fPath)
+      return extractTypeMembers(fPath, 'items', 'LiteralItemsVM')
+    }
+
+    it('should keep a member present in every union arm', () => {
+      assert.ok(extractUnionMembers()?.methods.includes('shared'), 'should include shared')
+    })
+
+    it('should drop a member missing from one union arm', () => {
+      assert.ok(!extractUnionMembers()?.methods.includes('onlyLeft'), 'should exclude onlyLeft')
+    })
+
+    it('should collect methods from an object literal item', () => {
+      assert.ok(extractLiteralMembers()?.methods.includes('confirm'), 'should include confirm')
+    })
+
+    it('should collect arrow fields from an object literal item', () => {
+      assert.ok(extractLiteralMembers()?.arrows.includes('goTo'), 'should include goTo')
+    })
+
+    it('should collect getters from an object literal item', () => {
+      assert.ok(extractLiteralMembers()?.getters.includes('title'), 'should include title')
+    })
+
+    it('should collect properties from an object literal item', () => {
+      assert.ok(extractLiteralMembers()?.properties.includes('name'), 'should include name')
     })
   })
 

@@ -3,7 +3,7 @@ import { orderService } from './orderService'
 
 export class Base {
   orders: Order[] = orderService.getAll()
-  document: IDocument = new Document()
+  orderHeader: IOrderHeader = new OrderHeader()
 
   confirm({ order }: { order: Order }): void {
     order.confirm()
@@ -11,11 +11,11 @@ export class Base {
   }
 }
 
-interface IDocument {
+interface IOrderHeader {
   get description(): string
 }
 
-class Document implements IDocument {
+class OrderHeader implements IOrderHeader {
   get description() {
     return 'A list of orders'
   }
