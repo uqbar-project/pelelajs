@@ -13,6 +13,7 @@ import type { TagInfo } from './types'
 import {
   validateBindingProperties,
   validateEventMethods,
+  validateForEachCollections,
   validateViewModelExistence,
 } from './viewModelValidator'
 
@@ -48,6 +49,7 @@ function validateViewModelDiagnostics(
     ...viewModelDiagnostics,
     ...validateBindingProperties(tags, tsPath, members, document, viewModelName),
     ...validateEventMethods(tags, members, tsPath, document, viewModelName),
+    ...validateForEachCollections(tags, tsPath, members, viewModelName),
   ]
 }
 

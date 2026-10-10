@@ -25,6 +25,8 @@ const diagnostics = {
   propertyCaseMismatch:
     "Property '{{name}}' does not match by case. Did you mean '{{suggestedName}}'?",
   methodCaseMismatch: "Method '{{name}}' does not match by case. Did you mean '{{suggestedName}}'?",
+  forEachInvalidSyntax: 'Invalid for-each expression "{{expression}}". Expected format: {{format}}',
+  forEachNotArray: "'for-each' expects an Array collection, but '{{name}}' is not an array",
   propertyAsMethod:
     "Events must invoke a method; they cannot reference a ViewModel property like '{{name}}'.",
   unknownAttribute: "Unknown attribute: '{{name}}'",

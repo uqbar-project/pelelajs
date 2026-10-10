@@ -632,6 +632,148 @@ export function pathExists(
   return finalNode !== undefined
 }
 
+/**
+ * Tells whether a property path resolves to an array type, so for-each
+ * collections can be rejected with their own message instead of failing at
+ * runtime. Returns null when the type cannot be resolved, in which case the
+ * caller stays silent to avoid false positives.
+ */
+export function isArrayCollection(
+  typescriptFilePath: string,
+  propertyPaths: string[],
+  className: string
+): boolean | null {
+  if (propertyPaths.length === 0) return null
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
+  const rootPropertyName = propertyPaths[0]
+  const startingNode = findPropertyTypeNode(
+    sourceFile,
+    rootPropertyName,
+    className,
+    typescriptFilePath
+  )
+  if (!startingNode) return null
+  const remainingPaths = propertyPaths.slice(1)
+  const finalNode = resolveToNode(startingNode, remainingPaths, sourceFile, typescriptFilePath)
+  if (!finalNode) return null
+  return isArrayType(finalNode, sourceFile, typescriptFilePath)
+}
+
+const ARRAY_TYPE_NAMES = ['Array', 'ReadonlyArray']
+
+const NON_ARRAY_BUILTIN_NAMES = [
+  'Set',
+  'ReadonlySet',
+  'Map',
+  'ReadonlyMap',
+  'WeakSet',
+  'WeakMap',
+  'Promise',
+]
+
+/**
+ * Classifies a type or initializer node as an array collection or not. Known
+ * builtin generics that are never arrays (Set, Map, Promise and their readonly
+ * variants) are rejected without resolving lib declarations, which this
+ * single-file parser cannot see.
+ */
+function isArrayType(node: ts.Node, sourceFile: ts.SourceFile, filePath: string): boolean | null {
+  if (
+    ts.isParenthesizedExpression(node) ||
+    ts.isAsExpression(node) ||
+    ts.isSatisfiesExpression(node) ||
+    ts.isNonNullExpression(node)
+  ) {
+    return isArrayType(node.expression, sourceFile, filePath)
+  }
+  if (ts.isParenthesizedTypeNode(node)) {
+    return isArrayType(node.type, sourceFile, filePath)
+  }
+  if (ts.isTypeOperatorNode(node) && node.operator === ts.SyntaxKind.ReadonlyKeyword) {
+    return isArrayType(node.type, sourceFile, filePath)
+  }
+  if (ts.isArrayTypeNode(node) || ts.isTupleTypeNode(node)) return true
+  if (ts.isArrayLiteralExpression(node)) return true
+  if (ts.isTypeReferenceNode(node)) return isArrayTypeReference(node, sourceFile, filePath)
+  if (ts.isUnionTypeNode(node)) return isArrayUnion(node, sourceFile, filePath)
+  if (ts.isNewExpression(node)) return isArrayConstructor(node)
+  if (
+    ts.isTypeLiteralNode(node) ||
+    ts.isObjectLiteralExpression(node) ||
+    ts.isStringLiteral(node) ||
+    ts.isNoSubstitutionTemplateLiteral(node) ||
+    ts.isNumericLiteral(node) ||
+    node.kind === ts.SyntaxKind.TrueKeyword ||
+    node.kind === ts.SyntaxKind.FalseKeyword ||
+    node.kind === ts.SyntaxKind.StringKeyword ||
+    node.kind === ts.SyntaxKind.NumberKeyword ||
+    node.kind === ts.SyntaxKind.BooleanKeyword
+  ) {
+    return false
+  }
+  return null
+}
+
+/**
+ * Resolves the array question for a type reference. Array and ReadonlyArray
+ * with a single type argument are collections; other known builtin generics
+ * are not; aliases unwrap to their target; a class or interface used as the
+ * collection itself is a plain object, not an array.
+ */
+function isArrayTypeReference(
+  node: ts.TypeReferenceNode,
+  sourceFile: ts.SourceFile,
+  filePath: string
+): boolean | null {
+  if (!ts.isIdentifier(node.typeName)) return null
+  const typeName = node.typeName.text
+  if (ARRAY_TYPE_NAMES.includes(typeName) && node.typeArguments?.length === 1) {
+    return true
+  }
+  if (NON_ARRAY_BUILTIN_NAMES.includes(typeName)) {
+    return false
+  }
+  const declaration = resolveTypeReference(node, sourceFile, filePath)
+  if (!declaration) return null
+  if (ts.isTypeAliasDeclaration(declaration)) {
+    return isArrayType(declaration.type, sourceFile, filePath)
+  }
+  return false
+}
+
+/**
+ * Unwraps nullable unions the same way the item type resolution does: null
+ * and undefined members are ignored, and the remaining members decide
+ * together whether the collection is an array.
+ */
+function isArrayUnion(
+  node: ts.UnionTypeNode,
+  sourceFile: ts.SourceFile,
+  filePath: string
+): boolean | null {
+  const meaningfulMembers = node.types.filter(
+    (unionMember) =>
+      unionMember.kind !== ts.SyntaxKind.NullKeyword &&
+      unionMember.kind !== ts.SyntaxKind.UndefinedKeyword &&
+      !(ts.isLiteralTypeNode(unionMember) && unionMember.literal.kind === ts.SyntaxKind.NullKeyword)
+  )
+  if (meaningfulMembers.length === 0) return null
+  const memberResults = meaningfulMembers.map((unionMember) =>
+    isArrayType(unionMember, sourceFile, filePath)
+  )
+  if (memberResults.every((result) => result === true)) return true
+  if (memberResults.some((result) => result === false)) return false
+  return null
+}
+
+/**
+ * Only an Array construction is an array collection; any other instantiation
+ * produces a plain object.
+ */
+function isArrayConstructor(node: ts.NewExpression): boolean {
+  return ts.isIdentifier(node.expression) && node.expression.text === 'Array'
+}
+
 const BUILTIN_CLASSES: Record<string, string[]> = {
   Array: Object.getOwnPropertyNames(Array.prototype),
   String: Object.getOwnPropertyNames(String.prototype),

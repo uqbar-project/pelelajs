@@ -8,6 +8,7 @@ import type { TagInfo } from '../../src/diagnostics/types'
 import {
   validateBindingProperties,
   validateEventMethods,
+  validateForEachCollections,
   validateViewModelExistence,
 } from '../../src/diagnostics/viewModelValidator'
 import { t } from '../../src/i18n/index'
@@ -1170,6 +1171,126 @@ describe('viewModelValidator', () => {
           vscode.DiagnosticSeverity.Error
         )
       })
+    })
+  })
+
+  describe('validateForEachCollections', () => {
+    function validateForEachCollection(lines: string[]): vscode.Diagnostic[] {
+      const { tags } = prepareValidation(lines, context)
+      return validateForEachCollections(tags, context.tsPath, context.members, 'TestViewModel')
+    }
+
+    it('accepts an existing root collection', () => {
+      assert.deepStrictEqual(validateForEachCollection(['<div for-each="item of items">']), [])
+    })
+
+    it('accepts an existing nested collection', () => {
+      assert.deepStrictEqual(
+        validateForEachCollection(['<div for-each="bet of selectedBetClass.bets">']),
+        []
+      )
+    })
+
+    it('rejects a missing root collection', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="order of orders3">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'orders3' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a missing nested collection segment', () => {
+      const diagnostics = validateForEachCollection([
+        '<div for-each="bet of selectedBetClass.missing">',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an expression without the item of collection format', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="alotofwords">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachInvalidSyntax', {
+          expression: 'alotofwords',
+          format: 'item of collection',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an expression without a collection', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="order of">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachInvalidSyntax', {
+          expression: 'order of',
+          format: 'item of collection',
+        }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('ignores an empty expression', () => {
+      assert.deepStrictEqual(validateForEachCollection(['<div for-each="">']), [])
+    })
+
+    it('rejects a method used as collection with methodNeedsGetter', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="item of handleClick">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNeedsGetter', { name: 'handleClick' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects an arrow function used as collection', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="item of increment">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionNotAllowed', { name: 'increment' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('reports a collection name with wrong case', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="item of Items">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyCaseMismatch', { name: 'Items', suggestedName: 'items' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a root property that is not an array', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="letter of name">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachNotArray', { name: 'name' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a nested property that is not an array', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="value of obj.value">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachNotArray', { name: 'obj.value' }),
+        vscode.DiagnosticSeverity.Error
+      )
     })
   })
 })

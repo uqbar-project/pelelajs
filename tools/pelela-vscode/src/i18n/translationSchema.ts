@@ -14,6 +14,8 @@ type DiagnosticsMessages = {
   arrowFunctionNotAllowed: string
   propertyCaseMismatch: string
   methodCaseMismatch: string
+  forEachInvalidSyntax: string
+  forEachNotArray: string
   unknownAttribute: string
   attributeNotAllowed: string
   invalidComponentAttribute: string

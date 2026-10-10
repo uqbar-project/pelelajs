@@ -26,6 +26,9 @@ const diagnostics = {
     "La propiedad '{{name}}' no coincide por mayúsculas. ¿Quisiste decir '{{suggestedName}}'?",
   methodCaseMismatch:
     "El método '{{name}}' no coincide por mayúsculas. ¿Quisiste decir '{{suggestedName}}'?",
+  forEachInvalidSyntax:
+    'Expresión for-each inválida "{{expression}}". Formato esperado: {{format}}',
+  forEachNotArray: "'for-each' espera una colección Array, pero '{{name}}' no es un array",
   propertyAsMethod:
     "Los eventos deben invocar un método, no pueden referenciar a una propiedad del view model como '{{name}}'.",
   unknownAttribute: "Atributo desconocido: '{{name}}'",
