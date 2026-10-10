@@ -23,6 +23,7 @@ export class TestViewModel {
   total: number = 0
   obj = { value: "hello" }
   items: { name: string }[] = []
+  ids: Set<number> = new Set()
   selectedBetClass: { bets: { name: string }[] } = { bets: [] }
   selectedClass: string = "active"
   product: { image: string; description: string } = { image: "", description: "" }
@@ -1279,6 +1280,16 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.forEachNotArray', { name: 'name' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a Set used as collection', () => {
+      const diagnostics = validateForEachCollection(['<div for-each="id of ids">'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachNotArray', { name: 'ids' }),
         vscode.DiagnosticSeverity.Error
       )
     })

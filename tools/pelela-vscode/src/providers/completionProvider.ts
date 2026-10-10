@@ -17,7 +17,11 @@ import {
   parsePropertyPath,
 } from '../parsers/documentParser'
 import { acquireViewModelLanguageService } from '../parsers/viewModelLanguageServiceRegistry'
-import { extractNestedProperties, extractViewModelMembers } from '../parsers/viewModelParser'
+import {
+  extractNestedProperties,
+  extractViewModelMembers,
+  isArrayCollection,
+} from '../parsers/viewModelParser'
 import { findViewModelFile } from '../utils/fileUtils'
 import {
   getHtmlAttributesForTag,
@@ -318,6 +322,39 @@ async function provideAttributeValueCompletions(
       })
 }
 
+const FOR_EACH_COLLECTION_POSITION_PATTERN = /\bof\s+[\w.]*$/
+
+/**
+ * Tells whether the cursor sits in the collection part of a for-each value
+ * (after "of"). The item name position keeps the existing behavior, since the
+ * user is typing a new variable name there rather than picking a collection.
+ */
+function isForEachCollectionPosition(
+  document: vscode.TextDocument,
+  position: vscode.Position
+): boolean {
+  const lineText = document.lineAt(position.line).text
+  const valueBeforeCursor = getAttributeValueMatch(lineText.slice(0, position.character))
+  return valueBeforeCursor !== null && FOR_EACH_COLLECTION_POSITION_PATTERN.test(valueBeforeCursor)
+}
+
+/**
+ * Suggests only the view model members proven to be arrays as for-each
+ * collections. Anything else stays hidden: a wrong suggestion would mislead
+ * more than a missing one, since a valid collection can still be typed out.
+ */
+function createArrayCollectionCompletions(
+  typescriptFilePath: string,
+  viewModelName: string
+): vscode.CompletionItem[] {
+  const { properties, getters } = extractViewModelMembers(typescriptFilePath, viewModelName)
+  return properties
+    .filter((name) => isArrayCollection(typescriptFilePath, [name], viewModelName) === true)
+    .map((name) =>
+      getters.includes(name) ? createGetterCompletion(name) : createPropertyCompletion(name)
+    )
+}
+
 export function provideBasicViewModelCompletions(params: {
   typescriptFilePath: string
   attributeName: string
@@ -334,6 +371,8 @@ export function provideBasicViewModelCompletions(params: {
 
   if (EVENT_ATTRIBUTES.has(attributeName)) {
     items.push(...methods.map(createMethodCompletion))
+  } else if (attributeName === 'for-each' && isForEachCollectionPosition(document, position)) {
+    items.push(...createArrayCollectionCompletions(typescriptFilePath, viewModelName))
   } else {
     const forEachInElement = findForEachInElement(document, position.line)
     if (forEachInElement) {

@@ -16,10 +16,20 @@ const VIEWMODEL_FIXTURE = `
 export class TestViewModel {
   name: string = "test"
   items: Item[] = []
+  scores: number[] = []
+  ids: Set<number> = new Set()
   increment = () => { this.name = "incremented" }
 
   get fullName() {
     return this.name
+  }
+
+  get totalCount(): number {
+    return 0
+  }
+
+  get allItems(): Item[] {
+    return this.items
   }
 
   handleClick(event: Event) {
@@ -212,6 +222,72 @@ describe('completionProvider', () => {
       assert.ok(fullNameItem, 'getter completion should exist')
       assert.strictEqual(fullNameItem.detail, t('completions.getterDetail'))
       assert.strictEqual(fullNameItem.kind, vscode.CompletionItemKind.Property)
+    })
+  })
+
+  describe('for-each collection completions', () => {
+    function completeForEachCollection(partialValue: string): vscode.CompletionItem[] {
+      const line = `<div for-each="${partialValue}`
+      const document = createMockDocument([line])
+      return provideBasicViewModelCompletions({
+        typescriptFilePath: testVMPath,
+        attributeName: 'for-each',
+        document,
+        position: createMockPosition(0, line.length),
+        viewModelName: 'TestViewModel',
+      })
+    }
+
+    it('should suggest an array property as collection', () => {
+      const labels = completeForEachCollection('item of ').map((item) => item.label)
+      assert.ok(labels.includes('items'), 'should suggest the array property')
+      assert.ok(labels.includes('scores'), 'should suggest the number array property')
+    })
+
+    it('should suggest an array getter as collection', () => {
+      const completions = completeForEachCollection('item of ')
+      const allItems = completions.find((item) => item.label === 'allItems')
+      assert.ok(allItems, 'should suggest the array getter')
+      assert.strictEqual(allItems.detail, t('completions.getterDetail'))
+      assert.strictEqual(allItems.kind, vscode.CompletionItemKind.Property)
+    })
+
+    it('should discard a non-array Set as collection', () => {
+      const labels = completeForEachCollection('item of ').map((item) => item.label)
+      assert.ok(!labels.includes('ids'), 'should NOT suggest the Set property')
+    })
+
+    it('should discard a non-array string property as collection', () => {
+      const labels = completeForEachCollection('item of ').map((item) => item.label)
+      assert.ok(!labels.includes('name'), 'should NOT suggest the string property')
+    })
+
+    it('should discard non-array getters as collection', () => {
+      const labels = completeForEachCollection('item of ').map((item) => item.label)
+      assert.ok(!labels.includes('totalCount'), 'should NOT suggest the numeric getter')
+      assert.ok(!labels.includes('fullName'), 'should NOT suggest the string getter')
+    })
+
+    it('should discard methods as collection', () => {
+      const labels = completeForEachCollection('item of ').map((item) => item.label)
+      assert.ok(!labels.includes('handleClick'), 'should NOT suggest methods')
+    })
+
+    it('should discard arrow functions as collection', () => {
+      const labels = completeForEachCollection('item of ').map((item) => item.label)
+      assert.ok(!labels.includes('increment'), 'should NOT suggest arrow function fields')
+    })
+
+    it('should keep filtering arrays while typing a partial collection name', () => {
+      const labels = completeForEachCollection('item of it').map((item) => item.label)
+      assert.ok(labels.includes('items'), 'should still suggest the array property')
+      assert.ok(!labels.includes('name'), 'should still hide the string property')
+      assert.ok(!labels.includes('ids'), 'should still hide the Set property')
+    })
+
+    it('should keep suggesting every property in the item name position', () => {
+      const labels = completeForEachCollection('it').map((item) => item.label)
+      assert.ok(labels.includes('name'), 'should keep the existing behavior before "of"')
     })
   })
 
