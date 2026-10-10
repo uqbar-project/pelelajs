@@ -8,8 +8,8 @@ import {
 import * as vscode from 'vscode'
 import { findForEachInElement, parseForEachExpression } from '../parsers/documentParser'
 import {
-  extractNestedMembers,
   extractNestedProperties,
+  extractTypeMembers,
   isArrayCollection,
   pathExists,
   type ViewModelMembers,
@@ -432,7 +432,7 @@ function validateForEachEventMethod(
   const memberName = remainingParts[0]
   if (memberName === undefined) return []
 
-  const itemMembers = extractNestedMembers(tsPath, forEachExpression.collectionName, className)
+  const itemMembers = extractTypeMembers(tsPath, forEachExpression.collectionName, className)
   if (itemMembers === null) return []
 
   return validateEventMember(attribute, memberName, itemMembers, true)

@@ -8,6 +8,7 @@ import {
   extractNestedMembers,
   extractNestedProperties,
   extractViewModelMembers,
+  pathExists,
 } from '../../src/parsers/viewModelParser'
 
 const FIXTURE_CONTENT = `
@@ -1125,6 +1126,59 @@ export class AppVM {
 
       const properties = extractNestedProperties(appPath, ['b', 'a', 'attribute'], 'AppVM')
       assert.ok(properties.includes('length'), 'should include String built-in length on attribute')
+    })
+  })
+
+  describe('pathExists', () => {
+    it('should resolve a getter declared in a type alias', () => {
+      const fPath = path.join(testFilesDir, 'AliasGetterVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export type BetType = {
+  description: string
+  get gain(): number
+}
+
+export class AliasGetterVM {
+  bets: BetType[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(pathExists(fPath, ['bets', 'gain'], 'AliasGetterVM'), true)
+    })
+
+    it('should resolve a getter declared in an interface', () => {
+      const fPath = path.join(testFilesDir, 'InterfaceGetterVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export interface BetOption {
+  description: string
+  get gain(): number
+}
+
+export class InterfaceGetterVM {
+  options: BetOption[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(pathExists(fPath, ['options', 'gain'], 'InterfaceGetterVM'), true)
+    })
+
+    it('should miss a member absent from a type alias', () => {
+      const fPath = path.join(testFilesDir, 'AliasMissingVM.ts')
+      fs.writeFileSync(
+        fPath,
+        `export type BetType = {
+  description: string
+  get gain(): number
+}
+
+export class AliasMissingVM {
+  bets: BetType[] = []
+}`
+      )
+      createdFiles.push(fPath)
+      assert.strictEqual(pathExists(fPath, ['bets', 'missing'], 'AliasMissingVM'), false)
     })
   })
 

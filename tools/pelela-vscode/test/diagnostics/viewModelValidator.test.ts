@@ -99,6 +99,25 @@ export class NullableUnionNav {
 }
 `
 
+const BET_SLIP_FIXTURE = `
+export type BetType = {
+  description: string
+  get gain(): number
+  confirm(): void
+  goTo: () => void
+}
+
+export interface BetOption {
+  description: string
+  get gain(): number
+  confirm(): void
+}
+
+export class BetSlip {
+  bets: BetType[] = []
+  options: BetOption[] = []
+}
+`
 interface ViewModelContext {
   tsPath: string
   pelelaPath: string
@@ -1300,6 +1319,149 @@ describe('viewModelValidator', () => {
       assertDiagnostic(
         diagnostics[0],
         t('diagnostics.forEachNotArray', { name: 'obj.value' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+  })
+
+  describe('for-each over type-level items', () => {
+    const betSlipFileName = 'BetSlipForEachVM.ts'
+    let betSlipPath: string
+    let betSlipMembers: ViewModelMembers
+
+    before(() => {
+      betSlipPath = path.join(testFilesDir, betSlipFileName)
+      fs.writeFileSync(betSlipPath, BET_SLIP_FIXTURE)
+      betSlipMembers = extractViewModelMembers(betSlipPath, 'BetSlip')
+    })
+
+    after(() => {
+      if (fs.existsSync(betSlipPath)) {
+        fs.unlinkSync(betSlipPath)
+      }
+    })
+
+    function betSlipContext(): ViewModelContext {
+      return { tsPath: betSlipPath, pelelaPath: testPelelaPath, members: betSlipMembers }
+    }
+
+    function validateItemBinding(lines: string[]): vscode.Diagnostic[] {
+      const { tags, document } = prepareValidation(lines, betSlipContext())
+      return validateBindingProperties(tags, betSlipPath, betSlipMembers, document, 'BetSlip')
+    }
+
+    function validateItemHandler(lines: string[]): vscode.Diagnostic[] {
+      const { tags, document } = prepareValidation(lines, betSlipContext())
+      return validateEventMethods(tags, betSlipMembers, betSlipPath, document, 'BetSlip')
+    }
+
+    it('accepts a getter of an item typed by alias', () => {
+      const diagnostics = validateItemBinding([
+        '<div for-each="bet of bets">',
+        '  <span bind-content="bet.gain"></span>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a missing member of an item typed by alias', () => {
+      const diagnostics = validateItemBinding([
+        '<div for-each="bet of bets">',
+        '  <span bind-content="bet.missing"></span>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('accepts a getter of an item typed by interface', () => {
+      const diagnostics = validateItemBinding([
+        '<div for-each="opt of options">',
+        '  <span bind-content="opt.gain"></span>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts an instance method of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.confirm"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects an arrow function field of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.goTo"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.arrowFunctionAsMethod', { name: 'bet.goTo' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a getter of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.gain"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.getterAsMethod', { name: 'bet.gain' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a plain property of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.description"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.propertyAsMethod', { name: 'bet.description' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a missing method of an item typed by alias', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="bet of bets">',
+        '  <button click="bet.missing"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNotFound', { name: 'missing' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a missing method of an item typed by interface', () => {
+      const diagnostics = validateItemHandler([
+        '<div for-each="opt of options">',
+        '  <button click="opt.missing"></button>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNotFound', { name: 'missing' }),
         vscode.DiagnosticSeverity.Error
       )
     })
