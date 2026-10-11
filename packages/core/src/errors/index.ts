@@ -1,6 +1,8 @@
 export { ArrowFunctionAsHandlerError } from './ArrowFunctionAsHandlerError'
 export { ArrowFunctionAsPropertyError } from './ArrowFunctionAsPropertyError'
 export { DOMEnvironmentError } from './DOMEnvironmentError'
+export { ForEachMethodArityError } from './ForEachMethodArityError'
+export { ForEachMethodScopeError } from './ForEachMethodScopeError'
 export { FunctionAsPropertyError } from './FunctionAsPropertyError'
 export { GetterAsHandlerError } from './GetterAsHandlerError'
 export { HandlerCaseMismatchError } from './HandlerCaseMismatchError'

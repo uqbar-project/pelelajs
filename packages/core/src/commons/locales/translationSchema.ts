@@ -26,6 +26,8 @@ type ErrorTranslations = {
     isMethod: string
     isArrow: string
     isFunction: string
+    forEachMethodScope: string
+    forEachMethodArity: string
     caseMismatch: string
   }
   viewmodel: {

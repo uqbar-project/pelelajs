@@ -42,6 +42,10 @@ const errors = {
       '[pelela] "{{name}}" is an arrow function of view model "{{viewModel}}", but properties must be bindable values. Arrow functions are not allowed in a view model. Convert it into a getter: get {{name}}() { ... }',
     isFunction:
       '[pelela] "{{name}}" is a function value that cannot be bound as a property of view model "{{viewModel}}". A bindable property must resolve to a plain value, not a function.',
+    forEachMethodScope:
+      '[pelela] "{{name}}" is not available as a for-each method of view model "{{viewModel}}". Bindings can only invoke view model methods with a single scope argument inside a for-each template.',
+    forEachMethodArity:
+      '[pelela] "{{name}}" must declare exactly 1 parameter (the for-each scope object), but declares {{count}}. Called from view model "{{viewModel}}".\nElement: {{snippet}}',
     caseMismatch:
       '[pelela] Property "{{name}}" used in {{kind}} does not exist in view model "{{viewModel}}", but "{{suggestedName}}" does. TypeScript names are case-sensitive.\nElement: {{snippet}}',
   },

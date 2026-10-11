@@ -27,6 +27,41 @@ export function registerForEachScope(scope: object, info: ForEachScopeInfo): voi
   scopeInfos.set(scope, info)
 }
 
+/**
+ * Returns the iteration scope registered for an extended view model, or null
+ * when the view model was not created by a for-each. Bindings use it to decide
+ * whether a method name is a for-each method call (valid) or a plain method
+ * used as a property (invalid).
+ */
+export function getForEachScopeInfo(viewModel: object): ForEachScopeInfo | null {
+  return scopeInfos.get(viewModel) ?? null
+}
+
+/**
+ * Tells whether a name matches the iteration or index variable of any enclosing
+ * for-each scope. Walk the scope chain because an inner template can reference
+ * an outer loop variable, and data always wins over a same-named method.
+ */
+export function isForEachScopeVariable(viewModel: object, propertyName: string): boolean {
+  const scopeInfo = scopeInfos.get(viewModel)
+  if (!scopeInfo) return false
+  if (isPropertyOrNestedPath(propertyName, scopeInfo.itemName)) return true
+  if (scopeInfo.indexName !== null && isPropertyOrNestedPath(propertyName, scopeInfo.indexName)) {
+    return true
+  }
+  return isForEachScopeVariable(scopeInfo.parentViewModel, propertyName)
+}
+
+/**
+ * Unwraps nested for-each scopes up to the owning view model. Prototype
+ * lookups (methods, getters) must run against the real view model because the
+ * scope proxy does not forward them.
+ */
+export function resolveScopeRootViewModel(viewModel: object): object {
+  const scopeInfo = scopeInfos.get(viewModel)
+  return scopeInfo ? resolveScopeRootViewModel(scopeInfo.parentViewModel) : viewModel
+}
+
 function walkNestedOwner(base: unknown, segments: string[]): object | null {
   let current: unknown = base
   for (const segment of segments) {

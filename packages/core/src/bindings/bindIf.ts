@@ -1,22 +1,16 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
-import { assertViewModelProperty } from '../validation/assertViewModelProperty'
-import { getNestedProperty } from './nestedProperties'
+import { resolveBindingValue } from './forEachMethodBinding'
+import { setupSingleBinding } from './setupSingleBinding'
 import type { IfBinding, ViewModel } from './types'
 
 function setupSingleIfBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): IfBinding | null {
-  const propertyName = element.getAttribute('if')
-  if (!propertyName?.trim()) return null
-
-  assertViewModelProperty(viewModel, propertyName, 'if', element)
-
-  return {
-    element,
-    propertyName,
+  return setupSingleBinding(element, viewModel, 'if', (base) => ({
+    ...base,
     originalDisplay: element.style.display || '',
-  }
+  }))
 }
 
 export function setupIfBindings<T extends object>(
@@ -36,7 +30,7 @@ function renderSingleIfBinding<T extends object>(
   binding: IfBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = getNestedProperty(viewModel, binding.propertyName)
+  const value = resolveBindingValue(viewModel, binding)
   const shouldShow = Boolean(value)
 
   binding.element.style.display = shouldShow ? binding.originalDisplay : 'none'

@@ -1,8 +1,8 @@
 import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
 import { t } from '../commons/i18n'
 import { InvalidPropertyTypeError } from '../errors/InvalidPropertyTypeError'
-import { assertViewModelProperty } from '../validation/assertViewModelProperty'
-import { getNestedProperty } from './nestedProperties'
+import { resolveBindingValue } from './forEachMethodBinding'
+import { setupSingleBinding } from './setupSingleBinding'
 import type { EnabledBinding, ViewModel } from './types'
 
 export const VALID_TAGS = [
@@ -19,18 +19,16 @@ function setupSingleEnabledBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): EnabledBinding | null {
-  const propertyName = element.getAttribute('bind-enabled')
-  if (!propertyName?.trim()) return null
-
   if (!VALID_TAGS.includes(element.tagName)) {
     throw new Error(
       t('errors.bindings.enabledOnlyForFormControls', { tag: element.tagName.toLowerCase() }),
     )
   }
 
-  assertViewModelProperty(viewModel, propertyName, 'bind-enabled', element)
-
-  return { element: element as EnabledBinding['element'], propertyName }
+  return setupSingleBinding(element, viewModel, 'bind-enabled', (base) => ({
+    ...base,
+    element: element as EnabledBinding['element'],
+  }))
 }
 
 export function setupEnabledBindings<T extends object>(
@@ -49,7 +47,7 @@ function renderSingleEnabledBinding<T extends object>(
   binding: EnabledBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = getNestedProperty(viewModel, binding.propertyName)
+  const value = resolveBindingValue(viewModel, binding)
 
   if (value === null || value === undefined) {
     binding.element.disabled = true
