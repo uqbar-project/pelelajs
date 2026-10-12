@@ -4,10 +4,10 @@ import * as errorPage from '../bootstrap/errorPage'
 import * as mountTemplate from '../bootstrap/mountTemplate'
 import * as i18n from '../commons/i18n'
 import { t } from '../commons/i18n'
-import { RoutingError } from '../errors/index'
+import { RoutingError, ViewModelExportError } from '../errors/index'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import { clearRegistry } from '../registry/viewModelRegistry'
-import type { PelelaElement } from '../types'
+import type { PelelaElement, ViewModelConstructor } from '../types'
 import { resetRouter, router } from './router'
 import type { RouteDefinition } from './types'
 
@@ -40,6 +40,9 @@ const NOT_FOUND_TEMPLATE =
   '<pelela view-model="NotFoundPage"><p bind-content="message"></p></pelela>'
 const UNMATCHED_PATH = '/nonexistent'
 const ROUTE_NOT_FOUND_IN_ENGLISH = `[pelela] No route defined for "${UNMATCHED_PATH}"`
+const RUNTIME_TS_FILE_PATH = 'runtime'
+const UNKNOWN_VIEW_MODEL_NAME = 'Unknown'
+const NOT_A_CLASS_FUNCTION_NAME = 'notAClassFunction'
 
 function registerTestComponents(): void {
   defineComponent('ProductCatalog', ProductCatalog, CATALOG_TEMPLATE)
@@ -63,6 +66,9 @@ describe('router', () => {
     document.querySelectorAll('link[data-pelela-css-url]').forEach((link) => {
       link.remove()
     })
+    resetRouter()
+    clearRegistry()
+    clearComponentRegistry()
   })
 
   describe('start', () => {
@@ -89,6 +95,49 @@ describe('router', () => {
       expect(() => {
         router.start(container, [{ path: '/', component: ProductCatalog }])
       }).toThrow(RoutingError)
+    })
+
+    describe('non-class view model', () => {
+      // A named function expression keeps a deterministic runtime name without
+      // tripping the naming-convention lint that a PascalCase declaration would.
+      const rawFunction = function notAClassFunction() {}
+      const functionComponent = rawFunction as unknown as ViewModelConstructor
+
+      function startWithComponent(component: ViewModelConstructor): unknown {
+        try {
+          router.start(container, [{ path: '/', component }])
+        } catch (error) {
+          return error
+        }
+        return undefined
+      }
+
+      it('should throw ViewModelExportError when the route component is an object', () => {
+        const objectComponent = {} as unknown as ViewModelConstructor
+        const expectedMessage = t('errors.viewmodel.export.notAClassObject', {
+          viewModelName: UNKNOWN_VIEW_MODEL_NAME,
+          tsFilePath: RUNTIME_TS_FILE_PATH,
+        })
+
+        const thrownError = startWithComponent(objectComponent)
+
+        expect(thrownError).toBeInstanceOf(ViewModelExportError)
+        expect((thrownError as ViewModelExportError).message).toBe(expectedMessage)
+        expect(thrownError).not.toBeInstanceOf(RoutingError)
+      })
+
+      it('should throw ViewModelExportError when the route component is a function', () => {
+        const expectedMessage = t('errors.viewmodel.export.notAClassFunction', {
+          viewModelName: NOT_A_CLASS_FUNCTION_NAME,
+          tsFilePath: RUNTIME_TS_FILE_PATH,
+        })
+
+        const thrownError = startWithComponent(functionComponent)
+
+        expect(thrownError).toBeInstanceOf(ViewModelExportError)
+        expect((thrownError as ViewModelExportError).message).toBe(expectedMessage)
+        expect(thrownError).not.toBeInstanceOf(RoutingError)
+      })
     })
 
     it('should reset isRouterActive when start fails due to unregistered component', () => {
