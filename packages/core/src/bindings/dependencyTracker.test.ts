@@ -197,6 +197,7 @@ describe('DependencyTracker', () => {
         renderedElements: [],
         previousLength: 0,
         extraDependencies: [],
+        hasMethodBindings: false,
       }
 
       tracker.registerDependency(forEachBinding, 'users')
@@ -317,6 +318,7 @@ describe('DependencyTracker', () => {
         renderedElements: [],
         previousLength: 0,
         extraDependencies: ['selectedPersonName'],
+        hasMethodBindings: false,
       }
 
       tracker.registerDependency(forEachBinding, 'people', viewModel)
@@ -406,6 +408,7 @@ describe('DependencyTracker', () => {
         renderedElements: [],
         previousLength: 0,
         extraDependencies: ['totalPeople'],
+        hasMethodBindings: false,
       }
 
       const componentBinding = {

@@ -1,18 +1,13 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
-import { assertViewModelProperty } from '../validation/assertViewModelProperty'
-import { getNestedProperty } from './nestedProperties'
+import { resolveBindingValue } from './forEachMethodBinding'
+import { setupSingleBinding } from './setupSingleBinding'
 import type { ContentBinding, ViewModel } from './types'
 
 function setupSingleContentBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): ContentBinding | null {
-  const propertyName = element.getAttribute('bind-content')
-  if (!propertyName?.trim()) return null
-
-  assertViewModelProperty(viewModel, propertyName, 'bind-content', element)
-
-  return { element, propertyName }
+  return setupSingleBinding(element, viewModel, 'bind-content', (base) => base)
 }
 
 export function setupContentBindings<T extends object>(
@@ -31,7 +26,7 @@ function renderSingleContentBinding<T extends object>(
   binding: ContentBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = getNestedProperty(viewModel, binding.propertyName)
+  const value = resolveBindingValue(viewModel, binding)
 
   binding.element.textContent = value === undefined || value === null ? '' : String(value)
 }

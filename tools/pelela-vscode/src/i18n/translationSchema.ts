@@ -14,6 +14,10 @@ type DiagnosticsMessages = {
   arrowFunctionNotAllowed: string
   propertyCaseMismatch: string
   methodCaseMismatch: string
+  forEachInvalidSyntax: string
+  forEachNotArray: string
+  forEachMethodArity: string
+  forEachMethodShape: string
   unknownAttribute: string
   attributeNotAllowed: string
   invalidComponentAttribute: string
@@ -45,6 +49,7 @@ type CompletionMessages = {
   linkDetail: string
   constDetail: string
   methodDetail: string
+  forEachMethodDetail: string
   propertyDetail: string
   getterDetail: string
   iterationPropertyDetail: string

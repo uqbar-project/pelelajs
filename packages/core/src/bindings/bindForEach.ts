@@ -6,6 +6,7 @@ import {
   isPropertyOrNestedPath,
   isValidIdentifier,
 } from '../commons/helpers'
+import { isUnsafeKey } from '../commons/sanitization'
 import {
   InvalidBindingSyntaxError,
   InvalidDOMStructureError,
@@ -129,6 +130,51 @@ function setupBindingsForElement<T extends object>(
   }
 }
 
+/**
+ * Attributes whose values read from the view model on every render. Event
+ * handlers resolve when the event fires, the loop definition is not a value,
+ * and two-way bindings reject methods, so none of them can carry a for-each
+ * method call.
+ */
+const NON_METHOD_BINDING_ATTRIBUTES = ['click', 'enter', 'for-each', 'index', 'bind-value']
+
+function isMethodBindingAttribute(attrName: string): boolean {
+  return isBindingAttribute(attrName) && !NON_METHOD_BINDING_ATTRIBUTES.includes(attrName)
+}
+
+function isBareMethodReference<T extends object>(
+  viewModel: ViewModel<T>,
+  value: string,
+  itemName: string,
+  indexName: string | null,
+): boolean {
+  if (!isValidIdentifier(value) || isUnsafeKey(value)) return false
+  if (isPropertyOrNestedPath(value, itemName)) return false
+  if (indexName !== null && isPropertyOrNestedPath(value, indexName)) return false
+  return typeof (viewModel as ViewModel)[value] === 'function'
+}
+
+/**
+ * Why this exists:
+ * A for-each template holding method bindings must re-render like a getter:
+ * the method can read any view model state besides its scope argument, so no
+ * declared dependency covers it. The scan only hints reactivity; per-element
+ * setup still validates each binding authoritatively.
+ */
+function templateContainsMethodBinding<T extends object>(
+  template: HTMLElement,
+  viewModel: ViewModel<T>,
+  itemName: string,
+  indexName: string | null,
+): boolean {
+  const templateElements = [template, ...Array.from(template.querySelectorAll<HTMLElement>('*'))]
+  return templateElements
+    .flatMap((element) => Array.from(element.attributes))
+    .filter((attr) => isMethodBindingAttribute(attr.name))
+    .map((attr) => attr.value)
+    .some((value) => isBareMethodReference(viewModel, value, itemName, indexName))
+}
+
 export function setupSingleForEachBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
@@ -168,6 +214,7 @@ export function setupSingleForEachBinding<T extends object>(
   const placeholder = document.createComment(`for-each: ${itemName} of ${collectionName}`)
   element.parentNode.insertBefore(placeholder, element)
   const extraDependencies = extractExtraDependencies(element, itemName, collectionName, indexName)
+  const hasMethodBindings = templateContainsMethodBinding(element, viewModel, itemName, indexName)
   element.remove()
   return {
     collectionName,
@@ -179,6 +226,7 @@ export function setupSingleForEachBinding<T extends object>(
     renderedElements: [],
     previousLength: 0,
     extraDependencies,
+    hasMethodBindings,
   }
 }
 

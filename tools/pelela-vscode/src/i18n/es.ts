@@ -26,6 +26,13 @@ const diagnostics = {
     "La propiedad '{{name}}' no coincide por mayúsculas. ¿Quisiste decir '{{suggestedName}}'?",
   methodCaseMismatch:
     "El método '{{name}}' no coincide por mayúsculas. ¿Quisiste decir '{{suggestedName}}'?",
+  forEachInvalidSyntax:
+    'Expresión for-each inválida "{{expression}}". Formato esperado: {{format}}',
+  forEachNotArray: "'for-each' espera una colección Array, pero '{{name}}' no es un array",
+  forEachMethodArity:
+    "El método '{{name}}' debe declarar exactamente 1 parámetro (el objeto de scope del for-each) para usarse como binding de método en un for-each.",
+  forEachMethodShape:
+    "El método '{{name}}' debe recibir el scope de iteración como un único objeto que lleve '{{item}}'.",
   propertyAsMethod:
     "Los eventos deben invocar un método, no pueden referenciar a una propiedad del view model como '{{name}}'.",
   unknownAttribute: "Atributo desconocido: '{{name}}'",
@@ -67,6 +74,7 @@ const completions = {
   linkDetail: 'Pelela: two-way binding para un componente hijo',
   constDetail: 'Pelela: valor constante para un componente',
   methodDetail: 'Método del ViewModel de Pelela',
+  forEachMethodDetail: 'Método de for-each de Pelela',
   propertyDetail: 'Propiedad del ViewModel de Pelela',
   getterDetail: 'Getter del ViewModel de Pelela',
   iterationPropertyDetail: 'Propiedad de iteración de Pelela',

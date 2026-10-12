@@ -19,16 +19,19 @@ export type ValueBinding = {
 export type ContentBinding = {
   element: HTMLElement
   propertyName: string
+  isMethodBinding?: boolean
 }
 
 export type SrcBinding = {
   element: HTMLImageElement
   propertyName: string
+  isMethodBinding?: boolean
 }
 
 export type AltBinding = {
   element: HTMLImageElement
   propertyName: string
+  isMethodBinding?: boolean
 }
 
 export type EnabledBinding = {
@@ -41,23 +44,27 @@ export type EnabledBinding = {
     | HTMLOptionElement
     | HTMLFieldSetElement
   propertyName: string
+  isMethodBinding?: boolean
 }
 
 export type IfBinding = {
   element: HTMLElement
   propertyName: string
   originalDisplay: string
+  isMethodBinding?: boolean
 }
 
 export type ClassBinding = {
   element: HTMLElement
   propertyName: string
   staticClassName: string
+  isMethodBinding?: boolean
 }
 
 export type StyleBinding = {
   element: HTMLElement
   propertyName: string
+  isMethodBinding?: boolean
 }
 
 export type NotifyParent = (parentPath: string) => void
@@ -78,11 +85,12 @@ export type ForEachBinding = {
   }[]
   previousLength: number
   extraDependencies: string[]
+  hasMethodBindings: boolean
 }
 
 export type ComponentBinding = {
   childViewModel: ViewModel
-  mappings: Array<{ parentKey: string; childKey: string }>
+  mappings: Array<{ parentKey: string; childKey: string; isMethodBinding?: boolean }>
   renderChild?: (changedPath?: string) => void
 }
 

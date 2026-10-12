@@ -1,23 +1,21 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { t } from '../commons/i18n'
-import { assertViewModelProperty } from '../validation/assertViewModelProperty'
-import { getNestedProperty } from './nestedProperties'
+import { resolveBindingValue } from './forEachMethodBinding'
+import { setupSingleBinding } from './setupSingleBinding'
 import type { AltBinding, ViewModel } from './types'
 
 function setupSingleAltBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): AltBinding | null {
-  const propertyName = element.getAttribute('bind-alt')
-  if (!propertyName?.trim()) return null
-
   if (!(element instanceof HTMLImageElement)) {
     throw new Error(t('errors.bindings.altOnlyForImg', { tag: element.tagName.toLowerCase() }))
   }
 
-  assertViewModelProperty(viewModel, propertyName, 'bind-alt', element)
-
-  return { element, propertyName }
+  return setupSingleBinding(element, viewModel, 'bind-alt', (base) => ({
+    ...base,
+    element,
+  }))
 }
 
 export function setupAltBindings<T extends object>(
@@ -36,7 +34,7 @@ function renderSingleAltBinding<T extends object>(
   binding: AltBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = getNestedProperty(viewModel, binding.propertyName)
+  const value = resolveBindingValue(viewModel, binding)
   const altValue = value === undefined || value === null ? '' : String(value)
 
   if (binding.element.getAttribute('alt') !== altValue) {

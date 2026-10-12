@@ -1,22 +1,16 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
-import { assertViewModelProperty } from '../validation/assertViewModelProperty'
-import { getNestedProperty } from './nestedProperties'
+import { resolveBindingValue } from './forEachMethodBinding'
+import { setupSingleBinding } from './setupSingleBinding'
 import type { ClassBinding, ViewModel } from './types'
 
 function setupSingleClassBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): ClassBinding | null {
-  const propertyName = element.getAttribute('bind-class')
-  if (!propertyName?.trim()) return null
-
-  assertViewModelProperty(viewModel, propertyName, 'bind-class', element)
-
-  return {
-    element,
-    propertyName,
+  return setupSingleBinding(element, viewModel, 'bind-class', (base) => ({
+    ...base,
     staticClassName: element.className,
-  }
+  }))
 }
 
 export function setupClassBindings<T extends object>(
@@ -35,7 +29,7 @@ function renderSingleClassBinding<T extends object>(
   binding: ClassBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = getNestedProperty(viewModel, binding.propertyName)
+  const value = resolveBindingValue(viewModel, binding)
 
   const dynamicClasses = buildDynamicClasses(value)
   const finalClasses = [binding.staticClassName.trim(), dynamicClasses].filter(Boolean).join(' ')

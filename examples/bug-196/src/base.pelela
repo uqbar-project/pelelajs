@@ -1,6 +1,6 @@
 <pelela view-model="Base">
   <div class="card">
-    <h1>Orders</h1>
+    <h1 bind-content="orderHeader.description"></h1>
 
     <div for-each="order of orders">
       <div bind-content="order.description"

@@ -1,23 +1,21 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { t } from '../commons/i18n'
-import { assertViewModelProperty } from '../validation/assertViewModelProperty'
-import { getNestedProperty } from './nestedProperties'
+import { resolveBindingValue } from './forEachMethodBinding'
+import { setupSingleBinding } from './setupSingleBinding'
 import type { SrcBinding, ViewModel } from './types'
 
 function setupSingleSrcBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): SrcBinding | null {
-  const propertyName = element.getAttribute('bind-src')
-  if (!propertyName?.trim()) return null
-
   if (!(element instanceof HTMLImageElement)) {
     throw new Error(t('errors.bindings.srcOnlyForImg', { tag: element.tagName.toLowerCase() }))
   }
 
-  assertViewModelProperty(viewModel, propertyName, 'bind-src', element)
-
-  return { element, propertyName }
+  return setupSingleBinding(element, viewModel, 'bind-src', (base) => ({
+    ...base,
+    element,
+  }))
 }
 
 export function setupSrcBindings<T extends object>(
@@ -36,7 +34,7 @@ function renderSingleSrcBinding<T extends object>(
   binding: SrcBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = getNestedProperty(viewModel, binding.propertyName)
+  const value = resolveBindingValue(viewModel, binding)
   const srcValue = value === undefined || value === null ? '' : String(value)
 
   if (binding.element.getAttribute('src') !== srcValue) {

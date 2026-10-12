@@ -12,6 +12,8 @@ export type BindingKind =
   | 'for-each'
   | 'if'
   | 'index'
+  | 'prop'
+  | 'link'
 
 interface PropertyValidationErrorParams {
   propertyName: string

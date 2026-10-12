@@ -164,4 +164,20 @@
 
   <p>Factor del multiplicador seleccionado: <span bind-content="selectedMultiplier.factor"></span></p>
 
+  <hr/>
+
+  <h2>13) Métodos con parámetros dentro de for-each (Issue #201)</h2>
+
+  <p>Un binding puede nombrar un método del view model: Pelela lo invoca por cada fila con un único objeto que lleva la variable de iteración y el índice</p>
+
+  <div for-each="product of cartProducts" index="position" bind-class="rowClass" class="card">
+    <span bind-content="productLabel" class="result-text"></span>
+    <span bind-content="product.finalPrice" class="result-text"></span>
+  </div>
+
+  <button click="selectPreviousProduct">Anterior</button>
+  <button click="selectNextProduct">Siguiente</button>
+
+  <p>Seleccionado: <span bind-content="selectedProductName" class="result-text"></span></p>
+
 </pelela>

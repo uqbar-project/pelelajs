@@ -26,6 +26,12 @@ import { getRawObject } from '../reactivity/proxyIdentity'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { getComponentByTag, getRegisteredTags } from '../registry/componentRegistry'
 import type { ConstKind, ConstTypeInfo, PelelaElement, ScalarKind } from '../types'
+import {
+  assertForEachMethodBinding,
+  assertNoForEachMethodInTwoWayBinding,
+  isForEachMethodBinding,
+} from '../validation/assertForEachMethodBinding'
+import { resolveForEachMethodValue } from './forEachMethodBinding'
 import { getNestedProperty, isPathAffected, setNestedProperty } from './nestedProperties'
 import { setupBindings } from './setupBindings'
 import type { ComponentBinding, NotifyParent, ViewModel } from './types'
@@ -427,7 +433,13 @@ export function setupComponentBindings<T extends object>(
     const constantBindings = extractConstantBindings(element.attributes)
     const linkBindings = extractLinkBindings(element.attributes)
     const oneWayBindings = extractOneWayBindings(element.attributes)
-    const allMappings = [...linkBindings, ...oneWayBindings]
+    const allMappings: ComponentBinding['mappings'] = [
+      ...linkBindings,
+      ...oneWayBindings.map((mapping) => ({
+        ...mapping,
+        isMethodBinding: isForEachMethodBinding(parentViewModel, mapping.parentKey),
+      })),
+    ]
 
     constantBindings.forEach(({ childKey, rawValue }) => {
       if (isUnsafeKey(childKey)) {
@@ -460,7 +472,11 @@ export function setupComponentBindings<T extends object>(
       })
     })
 
-    allMappings.forEach(({ parentKey, childKey }) => {
+    linkBindings.forEach(({ parentKey }) => {
+      assertNoForEachMethodInTwoWayBinding(parentViewModel, parentKey, 'link', element)
+    })
+
+    allMappings.forEach(({ parentKey, childKey, isMethodBinding }) => {
       if (isUnsafeKey(parentKey) || isUnsafeKey(childKey)) {
         throw new Error(
           t('errors.security.prototypePollution', {
@@ -470,6 +486,12 @@ export function setupComponentBindings<T extends object>(
       }
 
       assertAssignableChildViewModelProperty(instance, childKey, tagName, element)
+
+      if (isMethodBinding === true) {
+        assertForEachMethodBinding(parentViewModel, parentKey, 'prop', element)
+        instance[childKey] = resolveForEachMethodValue(parentViewModel, parentKey)
+        return
+      }
 
       const pathSegments = parentKey.split('.')
       const isNested = pathSegments.length > 1
@@ -577,7 +599,11 @@ export function setupComponentBindings<T extends object>(
 function resolveBoundValue<T extends object>(
   parentViewModel: ViewModel<T>,
   parentKey: string,
+  isMethodBinding = false,
 ): unknown {
+  if (isMethodBinding) {
+    return resolveForEachMethodValue(parentViewModel, parentKey)
+  }
   return parentKey.includes('.')
     ? getNestedProperty(parentViewModel, parentKey)
     : (parentViewModel as Record<string, unknown>)[parentKey]
@@ -589,12 +615,12 @@ export function renderComponentBindings<T extends object>(
   changedPath?: string,
 ): void {
   bindings.forEach((binding) => {
-    binding.mappings.forEach(({ parentKey, childKey }) => {
+    binding.mappings.forEach(({ parentKey, childKey, isMethodBinding }) => {
       if (isUnsafeKey(parentKey) || isUnsafeKey(childKey)) {
         return
       }
 
-      const parentValue = resolveBoundValue(parentViewModel, parentKey)
+      const parentValue = resolveBoundValue(parentViewModel, parentKey, isMethodBinding)
       const childValue = (binding.childViewModel as Record<string, unknown>)[childKey]
 
       // Skip the assignment when parent and child only differ by proxy identity but

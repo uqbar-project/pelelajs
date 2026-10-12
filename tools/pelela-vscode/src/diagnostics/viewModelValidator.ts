@@ -6,10 +6,16 @@ import {
   type ViewModelIssue,
 } from 'pelelajs/analysis'
 import * as vscode from 'vscode'
-import { findForEachInElement, parseForEachExpression } from '../parsers/documentParser'
 import {
-  extractNestedMembers,
+  type ForEachResult,
+  findForEachInElement,
+  parseForEachExpression,
+} from '../parsers/documentParser'
+import {
+  checkForEachMethod,
   extractNestedProperties,
+  extractTypeMembers,
+  isArrayCollection,
   pathExists,
   type ViewModelMembers,
 } from '../parsers/viewModelParser'
@@ -136,55 +142,13 @@ function validatePropertyPath(
     if (forEachResult.indexName === firstPart) {
       return []
     }
+    if (members.methods.includes(firstPart)) {
+      return validateForEachMethod(attribute, firstPart, tsPath, forEachResult, document, className)
+    }
   }
 
   if (!members.properties.includes(firstPart) && !members.getters.includes(firstPart)) {
-    if (members.arrows.includes(firstPart)) {
-      return [
-        makeDiagnostic(
-          attribute.valueRange ?? attribute.nameRange,
-          'diagnostics.arrowFunctionNotAllowed',
-          { name: firstPart },
-          vscode.DiagnosticSeverity.Error
-        ),
-      ]
-    }
-
-    if (members.methods.includes(firstPart)) {
-      return [
-        makeDiagnostic(
-          attribute.valueRange ?? attribute.nameRange,
-          'diagnostics.methodNeedsGetter',
-          { name: firstPart },
-          vscode.DiagnosticSeverity.Error
-        ),
-      ]
-    }
-
-    const suggestedName =
-      findCaseInsensitiveMember(members.properties, firstPart) ??
-      findCaseInsensitiveMember(members.getters, firstPart) ??
-      findCaseInsensitiveMember(members.methods, firstPart) ??
-      findCaseInsensitiveMember(members.arrows, firstPart)
-    if (suggestedName) {
-      return [
-        makeDiagnostic(
-          attribute.valueRange ?? attribute.nameRange,
-          'diagnostics.propertyCaseMismatch',
-          { name: firstPart, suggestedName },
-          vscode.DiagnosticSeverity.Error
-        ),
-      ]
-    }
-
-    return [
-      makeDiagnostic(
-        attribute.valueRange ?? attribute.nameRange,
-        'diagnostics.propertyNotFound',
-        { name: firstPart },
-        vscode.DiagnosticSeverity.Error
-      ),
-    ]
+    return validateRootProperty(attribute, firstPart, members)
   }
 
   if (pathParts.length > 1) {
@@ -192,6 +156,64 @@ function validatePropertyPath(
   }
 
   return []
+}
+
+/**
+ * Applies the property ladder to a root member: arrow functions and methods
+ * get their own message, a case-insensitive match is reported as a typo, and
+ * anything else is an unknown property.
+ */
+function validateRootProperty(
+  attribute: AttrInfo,
+  firstPart: string,
+  members: ViewModelMembers
+): vscode.Diagnostic[] {
+  if (members.arrows.includes(firstPart)) {
+    return [
+      makeDiagnostic(
+        attribute.valueRange ?? attribute.nameRange,
+        'diagnostics.arrowFunctionNotAllowed',
+        { name: firstPart },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+
+  if (members.methods.includes(firstPart)) {
+    return [
+      makeDiagnostic(
+        attribute.valueRange ?? attribute.nameRange,
+        'diagnostics.methodNeedsGetter',
+        { name: firstPart },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+
+  const suggestedName =
+    findCaseInsensitiveMember(members.properties, firstPart) ??
+    findCaseInsensitiveMember(members.getters, firstPart) ??
+    findCaseInsensitiveMember(members.methods, firstPart) ??
+    findCaseInsensitiveMember(members.arrows, firstPart)
+  if (suggestedName) {
+    return [
+      makeDiagnostic(
+        attribute.valueRange ?? attribute.nameRange,
+        'diagnostics.propertyCaseMismatch',
+        { name: firstPart, suggestedName },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+
+  return [
+    makeDiagnostic(
+      attribute.valueRange ?? attribute.nameRange,
+      'diagnostics.propertyNotFound',
+      { name: firstPart },
+      vscode.DiagnosticSeverity.Error
+    ),
+  ]
 }
 
 function validatePropertyExists(
@@ -245,6 +267,48 @@ function validateForEachPath(
   ]
 }
 
+/**
+ * Validates a method named by a value binding inside a for-each template: it
+ * must follow the single scope object convention to be invoked per iteration.
+ * Methods outside a loop keep the methodNeedsGetter error from the root ladder.
+ */
+function validateForEachMethod(
+  attribute: AttrInfo,
+  methodName: string,
+  tsPath: string,
+  forEachResult: ForEachResult,
+  document: vscode.TextDocument,
+  className: string
+): vscode.Diagnostic[] {
+  const forEachLine = document.lineAt(forEachResult.line).text
+  const forEachExpression = parseForEachExpression(forEachLine)
+  if (!forEachExpression) return []
+  const check = checkForEachMethod(tsPath, className, methodName, {
+    itemName: forEachResult.itemName,
+    indexName: forEachResult.indexName,
+    collectionPath: forEachExpression.collectionName,
+  })
+  if (check === 'ok') return []
+  if (check === 'invalidArity') {
+    return [
+      makeDiagnostic(
+        attribute.valueRange ?? attribute.nameRange,
+        'diagnostics.forEachMethodArity',
+        { name: methodName },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+  return [
+    makeDiagnostic(
+      attribute.valueRange ?? attribute.nameRange,
+      'diagnostics.forEachMethodShape',
+      { name: methodName, item: forEachResult.itemName },
+      vscode.DiagnosticSeverity.Error
+    ),
+  ]
+}
+
 function validateNestedPath(
   attribute: AttrInfo,
   pathParts: string[],
@@ -252,6 +316,85 @@ function validateNestedPath(
   className: string
 ): vscode.Diagnostic[] {
   return validatePropertyExists(attribute, pathParts, tsPath, className)
+}
+
+const FOR_EACH_EXPECTED_FORMAT = 'item of collection'
+const FOR_EACH_IDENTIFIER = '[A-Za-z_$][A-Za-z0-9_$]*'
+const FOR_EACH_EXPRESSION_PATTERN = new RegExp(
+  `^(${FOR_EACH_IDENTIFIER})\\s+of\\s+(${FOR_EACH_IDENTIFIER}(\\.${FOR_EACH_IDENTIFIER})*)$`
+)
+
+/**
+ * Validates every for-each collection against the view model, mirroring the
+ * runtime checks in bindForEach: expression syntax first, then existence of
+ * the collection with the same ladder as other bindings, then the array type.
+ * Each step stops at the first failure so one attribute yields one diagnostic.
+ * The strict pattern lives here instead of reusing the document parser one,
+ * which only locates loop scopes and stays permissive on purpose.
+ */
+export function validateForEachCollections(
+  tags: TagInfo[],
+  tsPath: string,
+  members: ViewModelMembers,
+  className: string
+): vscode.Diagnostic[] {
+  return tags.flatMap((tag) =>
+    tag.attributes
+      .filter((attribute) => attribute.name === 'for-each')
+      .flatMap((attribute) => validateForEachAttribute(attribute, tsPath, members, className))
+  )
+}
+
+function parseStrictForEachCollection(value: string): string | null {
+  const collectionMatch = FOR_EACH_EXPRESSION_PATTERN.exec(value.trim())
+  return collectionMatch?.[2] ?? null
+}
+
+function validateForEachAttribute(
+  attribute: AttrInfo,
+  tsPath: string,
+  members: ViewModelMembers,
+  className: string
+): vscode.Diagnostic[] {
+  const collectionName = parseStrictForEachCollection(attribute.value)
+  if (collectionName === null) {
+    if (attribute.value.trim() === '') return []
+    return [
+      makeDiagnostic(
+        attribute.valueRange ?? attribute.nameRange,
+        'diagnostics.forEachInvalidSyntax',
+        { expression: attribute.value, format: FOR_EACH_EXPECTED_FORMAT },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+  const pathParts = collectionName.split('.')
+  const rootName = pathParts[0]
+  if (!members.properties.includes(rootName) && !members.getters.includes(rootName)) {
+    return validateRootProperty(attribute, rootName, members)
+  }
+  if (pathParts.length > 1 && !pathExists(tsPath, pathParts, className)) {
+    const lastPart = pathParts[pathParts.length - 1]
+    return [
+      makeDiagnostic(
+        attribute.valueRange ?? attribute.nameRange,
+        'diagnostics.propertyNotFound',
+        { name: lastPart },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+  if (isArrayCollection(tsPath, pathParts, className) === false) {
+    return [
+      makeDiagnostic(
+        attribute.valueRange ?? attribute.nameRange,
+        'diagnostics.forEachNotArray',
+        { name: collectionName },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+  return []
 }
 
 /**
@@ -339,7 +482,7 @@ function validateForEachEventMethod(
   const memberName = remainingParts[0]
   if (memberName === undefined) return []
 
-  const itemMembers = extractNestedMembers(tsPath, forEachExpression.collectionName, className)
+  const itemMembers = extractTypeMembers(tsPath, forEachExpression.collectionName, className)
   if (itemMembers === null) return []
 
   return validateEventMember(attribute, memberName, itemMembers, true)

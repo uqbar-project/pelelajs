@@ -385,6 +385,22 @@
         </tbody>
       </table>
       </div>
+
+      <div class="note">
+        <strong>Methods in for-each:</strong> inside a <span class="code">for-each</span>, a binding can name a view model method instead of a property (except in <span class="code">bind-value</span> and <span class="code">link-*</span>, which write back). Pelela calls it per item with a single scope object using the loop variable names as keys. The method must declare exactly one parameter.
+      </div>
+
+      <div class="example">
+        &lt;div for-each="product of products" index="position"&gt;
+          &lt;product-row prop-product="product" prop-is-selected="isSelected"&gt;&lt;/product-row&gt;
+        &lt;/div&gt;
+      </div>
+
+      <div class="example">
+        isSelected({ product, position }: { product: Product; position: number }): boolean {
+          return product.id === this.selectedId
+        }
+      </div>
     </div>
 
     <div id="parent-child" class="section">

@@ -42,6 +42,10 @@ const errors = {
       '[pelela] "{{name}}" es una arrow function del view model "{{viewModel}}", pero las propiedades deben ser valores bindeables. Las arrow functions no están permitidas en un view model. Convertila en un getter: get {{name}}() { ... }',
     isFunction:
       '[pelela] "{{name}}" es un valor de función que no puede bindearse como propiedad del view model "{{viewModel}}". Una propiedad bindeable debe resolver a un valor plano, no a una función.',
+    forEachMethodScope:
+      '[pelela] "{{name}}" no está disponible como método de for-each del view model "{{viewModel}}". Los bindings solo pueden invocar métodos del view model con un único argumento de scope dentro de un template for-each.',
+    forEachMethodArity:
+      '[pelela] "{{name}}" debe declarar exactamente 1 parámetro (el objeto de scope del for-each), pero declara {{count}}. Llamado desde el view model "{{viewModel}}".\nElemento: {{snippet}}',
     caseMismatch:
       '[pelela] La propiedad "{{name}}" usada en {{kind}} no existe en el view model "{{viewModel}}", pero sí "{{suggestedName}}". En TypeScript los nombres distinguen mayúsculas.\nElemento: {{snippet}}',
   },

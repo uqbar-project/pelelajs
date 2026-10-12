@@ -37,7 +37,7 @@ function hasNestedProperty(targetObject: unknown, path: string): boolean {
   })
 }
 
-function isViewModelMethod(viewModel: unknown, memberName: string): boolean {
+export function isViewModelMethod(viewModel: unknown, memberName: string): boolean {
   if (!isObject(viewModel) || Object.hasOwn(viewModel, memberName)) return false
 
   let proto: object | null = Object.getPrototypeOf(viewModel)

@@ -1,21 +1,13 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
-import { assertViewModelProperty } from '../validation/assertViewModelProperty'
-import { getNestedProperty } from './nestedProperties'
+import { resolveBindingValue } from './forEachMethodBinding'
+import { setupSingleBinding } from './setupSingleBinding'
 import type { StyleBinding, ViewModel } from './types'
 
 function setupSingleStyleBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): StyleBinding | null {
-  const propertyName = element.getAttribute('bind-style')
-  if (!propertyName?.trim()) return null
-
-  assertViewModelProperty(viewModel, propertyName, 'bind-style', element)
-
-  return {
-    element,
-    propertyName,
-  }
+  return setupSingleBinding(element, viewModel, 'bind-style', (base) => base)
 }
 
 export function setupStyleBindings<T extends object>(
@@ -34,7 +26,7 @@ function renderSingleStyleBinding<T extends object>(
   binding: StyleBinding,
   viewModel: ViewModel<T>,
 ): void {
-  const value = getNestedProperty(viewModel, binding.propertyName)
+  const value = resolveBindingValue(viewModel, binding)
 
   if (!value || typeof value !== 'object') {
     binding.element.removeAttribute('style')

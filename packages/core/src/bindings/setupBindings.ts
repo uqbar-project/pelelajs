@@ -106,6 +106,10 @@ function registerAllBindingDependencies(
       })
     })
   })
+
+  bindings.forEachBindings.forEach((binding) => {
+    if (binding.hasMethodBindings) tracker.markAsGetterBinding(binding)
+  })
 }
 
 function executeRenderPipeline<T extends object>(
