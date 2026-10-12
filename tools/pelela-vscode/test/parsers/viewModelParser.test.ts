@@ -1412,6 +1412,8 @@ export class BaseCartViewModel {
 
 export class CartViewModel extends BaseCartViewModel {
   products: Product[] = []
+  readonlyProducts: readonly Product[] = []
+  readonlyGenericProducts: ReadonlyArray<Product> = []
   selectedId: number = 0
 
   isSelected({ product, position }: { product: Product; position?: number }): boolean {
@@ -1479,6 +1481,28 @@ export class CartViewModel extends BaseCartViewModel {
           itemName: 'product',
           indexName: null,
           collectionPath: 'products',
+        }),
+        'ok'
+      )
+    })
+
+    it('should accept the method for a readonly array collection', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'isSelected', {
+          itemName: 'product',
+          indexName: 'position',
+          collectionPath: 'readonlyProducts',
+        }),
+        'ok'
+      )
+    })
+
+    it('should accept the method for a ReadonlyArray collection', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'isSelected', {
+          itemName: 'product',
+          indexName: 'position',
+          collectionPath: 'readonlyGenericProducts',
         }),
         'ok'
       )

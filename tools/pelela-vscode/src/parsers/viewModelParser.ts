@@ -947,9 +947,16 @@ function getCollectionItemTypeName(
   if (!collectionNode) return undefined
   if (ts.isArrayTypeNode(collectionNode)) return collectionNode.elementType.getText()
   if (
+    ts.isTypeOperatorNode(collectionNode) &&
+    collectionNode.operator === ts.SyntaxKind.ReadonlyKeyword &&
+    ts.isArrayTypeNode(collectionNode.type)
+  ) {
+    return collectionNode.type.elementType.getText()
+  }
+  if (
     ts.isTypeReferenceNode(collectionNode) &&
     ts.isIdentifier(collectionNode.typeName) &&
-    collectionNode.typeName.text === 'Array' &&
+    ARRAY_TYPE_NAMES.includes(collectionNode.typeName.text) &&
     collectionNode.typeArguments?.length === 1
   ) {
     return collectionNode.typeArguments[0].getText()
