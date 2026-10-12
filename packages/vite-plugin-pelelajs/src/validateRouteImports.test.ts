@@ -7,6 +7,7 @@ const ROUTES_FILE_PATH = '/project/src/routes.ts'
 const BASE_TS_PATH = '/project/src/base.ts'
 const BASE_VIEW_MODEL = 'Base'
 const BASE_ALIAS = 'BaseAlias'
+const NAMESPACE_ALIAS = 'baseModule'
 const MISSING_VIEW_MODEL = 'Base2'
 const SUGGESTED_VIEW_MODEL = 'Base'
 
@@ -123,6 +124,72 @@ describe('validateRouteImports', () => {
       routesImporting(`${BASE_VIEW_MODEL} as ${BASE_ALIAS}`),
       OBJECT_MODULE_SOURCE,
     )
+
+    expect(reportedErrors).toEqual([])
+  })
+
+  it('ignores statements that are not import declarations', () => {
+    const reportedErrors = collectRouteImportErrors(
+      `const viewModelName = '${BASE_VIEW_MODEL}'\n${routesImporting(BASE_VIEW_MODEL)}`,
+      VALID_CLASS_SOURCE,
+    )
+
+    expect(reportedErrors).toEqual([])
+  })
+
+  it('ignores side-effect-only imports', () => {
+    const reportedErrors = collectRouteImportErrors("import './base'", VALID_CLASS_SOURCE)
+
+    expect(reportedErrors).toEqual([])
+  })
+
+  it('ignores type-only imports', () => {
+    const reportedErrors = collectRouteImportErrors(
+      `import type { ${BASE_VIEW_MODEL} } from './base'`,
+      VALID_CLASS_SOURCE,
+    )
+
+    expect(reportedErrors).toEqual([])
+  })
+
+  it('ignores inline type-only specifiers', () => {
+    const reportedErrors = collectRouteImportErrors(
+      `import { type ${BASE_VIEW_MODEL} } from './base'`,
+      VALID_CLASS_SOURCE,
+    )
+
+    expect(reportedErrors).toEqual([])
+  })
+
+  it('ignores default imports', () => {
+    const reportedErrors = collectRouteImportErrors(
+      `import ${BASE_VIEW_MODEL} from './base'`,
+      VALID_CLASS_SOURCE,
+    )
+
+    expect(reportedErrors).toEqual([])
+  })
+
+  it('ignores namespace imports', () => {
+    const reportedErrors = collectRouteImportErrors(
+      `import * as ${NAMESPACE_ALIAS} from './base'`,
+      VALID_CLASS_SOURCE,
+    )
+
+    expect(reportedErrors).toEqual([])
+  })
+
+  it('emits no error when the import cannot be resolved to a component file', () => {
+    const reportedErrors: ViewModelExportError[] = []
+
+    validateRouteImports({
+      sourceCode: `import { ${BASE_VIEW_MODEL} } from 'pelelajs'`,
+      filePath: ROUTES_FILE_PATH,
+      resolveFile: () => null,
+      errorFn: (error) => {
+        reportedErrors.push(error)
+      },
+    })
 
     expect(reportedErrors).toEqual([])
   })
