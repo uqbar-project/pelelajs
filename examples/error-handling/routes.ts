@@ -16,7 +16,7 @@ import { TextArea } from './src/text-area'
 // import { BadViewmodelFunction } from './src/bad-viewmodel-function'
 // import { BadViewmodelNoExport } from './src/bad-viewmodel-no-export'
 // import { BadViewmodelMissing } from './src/bad-viewmodel-not-found'
-import { BadViewmodelObject } from './src/bad-viewmodel-object'
+// import { BadViewmodelObject } from './src/bad-viewmodel-object'
 
 export const routes: RouteDefinition[] = [
   { path: '/', component: App },
@@ -29,7 +29,7 @@ export const routes: RouteDefinition[] = [
   { path: '/bad-const-parent', component: BadConstParent },
   { path: '/outside-pelela', component: OutsidePelela },
   // Uncomment one fixture at a time together with its import above.
-  { path: '/bad-viewmodel-object', component: BadViewmodelObject },
+  // { path: '/bad-viewmodel-object', component: BadViewmodelObject },
   // { path: '/bad-viewmodel-function', component: BadViewmodelFunction },
   // { path: '/bad-viewmodel-no-export', component: BadViewmodelNoExport },
   // { path: '/bad-viewmodel-not-found', component: BadViewmodelMissing },
