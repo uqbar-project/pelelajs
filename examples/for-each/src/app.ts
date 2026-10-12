@@ -41,10 +41,16 @@ interface SelectableType {
   value: number
 }
 
-interface CartProduct {
-  id: number
-  name: string
-  price: number
+class CartProduct {
+  constructor(
+    public id: number,
+    public name: string,
+    public price: number
+  ) {}
+
+  get finalPrice(): number {
+    return Math.round(this.price * 1.21)
+  }
 }
 
 interface Character {
@@ -162,9 +168,9 @@ export class App {
 
   // 13) Métodos con parámetros dentro de for-each (Issue #201)
   cartProducts: CartProduct[] = [
-    { id: 1, name: 'Yerba', price: 2500 },
-    { id: 2, name: 'Café', price: 4800 },
-    { id: 3, name: 'Té', price: 1900 },
+    new CartProduct(1, 'Yerba', 2500),
+    new CartProduct(2, 'Café', 4800),
+    new CartProduct(3, 'Té', 1900),
   ]
 
   selectedProductId = 2

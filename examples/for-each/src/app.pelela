@@ -172,6 +172,7 @@
 
   <div for-each="product of cartProducts" index="position" bind-class="rowClass" class="card">
     <span bind-content="productLabel" class="result-text"></span>
+    <span bind-content="product.finalPrice" class="result-text"></span>
   </div>
 
   <button click="selectPreviousProduct">Anterior</button>
