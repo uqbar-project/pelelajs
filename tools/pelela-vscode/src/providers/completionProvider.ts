@@ -18,6 +18,7 @@ import {
 } from '../parsers/documentParser'
 import { acquireViewModelLanguageService } from '../parsers/viewModelLanguageServiceRegistry'
 import {
+  checkForEachMethod,
   extractNestedProperties,
   extractViewModelMembers,
   isArrayCollection,
@@ -380,6 +381,14 @@ export function provideBasicViewModelCompletions(params: {
       if (forEachInElement.indexName) {
         items.push(createIterationPropertyCompletion(forEachInElement.indexName))
       }
+      items.push(
+        ...createForEachMethodCompletions({
+          typescriptFilePath,
+          viewModelName,
+          forEachInElement,
+          document,
+        })
+      )
     }
     items.push(
       ...properties.map((name) =>
@@ -417,6 +426,39 @@ function createIterationPropertyCompletion(name: string): vscode.CompletionItem 
   item.detail = t('completions.iterationPropertyDetail')
   item.sortText = `!0_${name}`
   return item
+}
+
+/**
+ * Suggests the view model methods that can be invoked as for-each method
+ * bindings in this loop: prototype methods with a single scope object
+ * parameter carrying the iteration variable (and the index when declared).
+ */
+function createForEachMethodCompletions(params: {
+  typescriptFilePath: string
+  viewModelName: string
+  forEachInElement: ForEachResult
+  document: vscode.TextDocument
+}): vscode.CompletionItem[] {
+  const { typescriptFilePath, viewModelName, forEachInElement, document } = params
+  const forEachLine = document.lineAt(forEachInElement.line).text
+  const forEachExpression = parseForEachExpression(forEachLine)
+  if (!forEachExpression) return []
+  const { methods } = extractViewModelMembers(typescriptFilePath, viewModelName)
+  return methods
+    .filter(
+      (name) =>
+        checkForEachMethod(typescriptFilePath, viewModelName, name, {
+          itemName: forEachInElement.itemName,
+          indexName: forEachInElement.indexName,
+          collectionPath: forEachExpression.collectionName,
+        }) === 'ok'
+    )
+    .map((name) => {
+      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Method)
+      item.detail = t('completions.forEachMethodDetail')
+      item.sortText = `!0_${name}`
+      return item
+    })
 }
 
 async function provideNestedPropertyCompletions(params: {

@@ -27,6 +27,10 @@ const diagnostics = {
   methodCaseMismatch: "Method '{{name}}' does not match by case. Did you mean '{{suggestedName}}'?",
   forEachInvalidSyntax: 'Invalid for-each expression "{{expression}}". Expected format: {{format}}',
   forEachNotArray: "'for-each' expects an Array collection, but '{{name}}' is not an array",
+  forEachMethodArity:
+    "Method '{{name}}' must declare exactly 1 parameter (the for-each scope object) to be used as a for-each method binding.",
+  forEachMethodShape:
+    "Method '{{name}}' must receive the iteration scope as a single object carrying '{{item}}'.",
   propertyAsMethod:
     "Events must invoke a method; they cannot reference a ViewModel property like '{{name}}'.",
   unknownAttribute: "Unknown attribute: '{{name}}'",
@@ -68,6 +72,7 @@ const completions = {
   linkDetail: 'Pelela: two-way binding to a child component',
   constDetail: 'Pelela: constant value for a child component',
   methodDetail: 'Pelela ViewModel method',
+  forEachMethodDetail: 'Pelela for-each method',
   propertyDetail: 'Pelela ViewModel property',
   getterDetail: 'Pelela ViewModel getter',
   iterationPropertyDetail: 'Pelela iteration property',

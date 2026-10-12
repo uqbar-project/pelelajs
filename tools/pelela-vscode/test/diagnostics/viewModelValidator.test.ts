@@ -1640,4 +1640,111 @@ export class UnionVM {
       )
     })
   })
+
+  describe('for-each method bindings', () => {
+    const CART_FIXTURE = `
+export interface Product {
+  id: number
+  name: string
+}
+
+export class CartViewModel {
+  products: Product[] = []
+  selectedId: number = 0
+
+  isSelected({ product, position }: { product: Product; position?: number }): boolean {
+    return true
+  }
+
+  compareProducts(first: { product: Product }, second: { product: Product }): boolean {
+    return true
+  }
+
+  wrongItemType({ product }: { product: string }): boolean {
+    return true
+  }
+}
+`
+    const cartFileName = 'ForEachMethodCartVM.ts'
+    let cartPath: string
+    let cartMembers: ViewModelMembers
+
+    before(() => {
+      cartPath = path.join(testFilesDir, cartFileName)
+      fs.writeFileSync(cartPath, CART_FIXTURE)
+      cartMembers = extractViewModelMembers(cartPath, 'CartViewModel')
+    })
+
+    after(() => {
+      if (fs.existsSync(cartPath)) {
+        fs.unlinkSync(cartPath)
+      }
+    })
+
+    function validateCartBinding(lines: string[]): vscode.Diagnostic[] {
+      const context: ViewModelContext = {
+        tsPath: cartPath,
+        pelelaPath: testPelelaPath,
+        members: cartMembers,
+      }
+      const { tags, document } = prepareValidation(lines, context)
+      return validateBindingProperties(tags, cartPath, cartMembers, document, 'CartViewModel')
+    }
+
+    it('accepts an eligible method in bind-content inside a for-each', () => {
+      const diagnostics = validateCartBinding([
+        '<div for-each="product of products" index="position">',
+        '  <span bind-content="isSelected"></span>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('accepts an eligible method in a child component prop inside a for-each', () => {
+      const diagnostics = validateCartBinding([
+        '<div for-each="product of products" index="position">',
+        '  <product-row prop-is-selected="isSelected"></product-row>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 0)
+    })
+
+    it('rejects a method with two parameters with an arity error', () => {
+      const diagnostics = validateCartBinding([
+        '<div for-each="product of products" index="position">',
+        '  <span bind-content="compareProducts"></span>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachMethodArity', { name: 'compareProducts' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('rejects a method with a mismatched item type with a shape error', () => {
+      const diagnostics = validateCartBinding([
+        '<div for-each="product of products" index="position">',
+        '  <span bind-content="wrongItemType"></span>',
+        '</div>',
+      ])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.forEachMethodShape', { name: 'wrongItemType', item: 'product' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('keeps rejecting a method outside a for-each with methodNeedsGetter', () => {
+      const diagnostics = validateCartBinding(['<span bind-content="isSelected"></span>'])
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.methodNeedsGetter', { name: 'isSelected' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+  })
 })

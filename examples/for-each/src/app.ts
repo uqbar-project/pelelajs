@@ -18,6 +18,10 @@ type Bet = number | string
 
 class BetClass {
   constructor(public description: string) {}
+
+  get bets(): Bet[] {
+    return []
+  }
 }
 
 class NumericBet extends BetClass {
@@ -35,6 +39,12 @@ class DozenBet extends BetClass {
 interface SelectableType {
   description: string
   value: number
+}
+
+interface CartProduct {
+  id: number
+  name: string
+  price: number
 }
 
 interface Character {
@@ -55,6 +65,12 @@ class MultiplierOption {
   }
 }
 
+interface TestObject {
+  name: string
+  age: number
+  address: { street: { name: string; number: number } }
+}
+
 export class App {
   // 1) Select example
   // 3) Dynamic filters example (if + for-each)
@@ -66,7 +82,7 @@ export class App {
 
   selectedBetType: string = this.betTypes[0].description
 
-  testObject: object = {
+  testObject: TestObject = {
     // 2) Binding nested objects
     name: 'Nicolas',
     age: 30,
@@ -143,6 +159,39 @@ export class App {
   ]
 
   selectedMultiplier: MultiplierOption = this.multipliers[1]
+
+  // 13) Métodos con parámetros dentro de for-each (Issue #201)
+  cartProducts: CartProduct[] = [
+    { id: 1, name: 'Yerba', price: 2500 },
+    { id: 2, name: 'Café', price: 4800 },
+    { id: 3, name: 'Té', price: 1900 },
+  ]
+
+  selectedProductId = 2
+
+  productLabel({ product }: { product: CartProduct }): string {
+    return `${product.name} - $${product.price}`
+  }
+
+  rowClass({ product }: { product: CartProduct }): string {
+    return product.id === this.selectedProductId ? 'selected' : ''
+  }
+
+  get selectedProductName(): string {
+    const selected = this.cartProducts.find((product) => product.id === this.selectedProductId)
+    return selected ? selected.name : 'Ninguno'
+  }
+
+  selectNextProduct(): void {
+    const index = this.cartProducts.findIndex((product) => product.id === this.selectedProductId)
+    this.selectedProductId = this.cartProducts[(index + 1) % this.cartProducts.length].id
+  }
+
+  selectPreviousProduct(): void {
+    const index = this.cartProducts.findIndex((product) => product.id === this.selectedProductId)
+    this.selectedProductId =
+      this.cartProducts[(index + this.cartProducts.length - 1) % this.cartProducts.length].id
+  }
 
   addUser() {
     if (!this.newUserName || !this.newUserEmail) return

@@ -5,6 +5,7 @@ import * as path from 'node:path'
 import { after, afterEach, before, describe, it } from 'mocha'
 import type { ViewModelMembers } from '../../src/parsers/viewModelParser'
 import {
+  checkForEachMethod,
   extractInterfaceProperties,
   extractNestedMembers,
   extractNestedProperties,
@@ -1393,6 +1394,149 @@ export class UnionVM {
     it('should return an empty array for a non-existent interface', () => {
       const properties = extractInterfaceProperties(FIXTURE_CONTENT, 'NonExistent')
       assert.deepStrictEqual(properties, [])
+    })
+  })
+
+  describe('checkForEachMethod', () => {
+    const FOR_EACH_METHOD_FIXTURE = `
+export interface Product {
+  id: number
+  name: string
+}
+
+export class BaseCartViewModel {
+  isBaseSelected({ product }: { product: Product }): boolean {
+    return true
+  }
+}
+
+export class CartViewModel extends BaseCartViewModel {
+  products: Product[] = []
+  selectedId: number = 0
+
+  isSelected({ product, position }: { product: Product; position?: number }): boolean {
+    return product.id === this.selectedId
+  }
+
+  compareProducts(first: { product: Product }, second: { product: Product }): boolean {
+    return first.product.id === second.product.id
+  }
+
+  resetSelection(): void {}
+
+  untypedSelection(scope): boolean {
+    return true
+  }
+
+  wrongItemType({ product }: { product: string }): boolean {
+    return true
+  }
+
+  wrongIndexType({ product, position }: { product: Product; position: string }): boolean {
+    return true
+  }
+}
+`
+
+    let forEachMethodPath: string
+
+    before(() => {
+      forEachMethodPath = path.join(testFilesDir, 'ForEachMethodVM.ts')
+      fs.writeFileSync(forEachMethodPath, FOR_EACH_METHOD_FIXTURE)
+    })
+
+    after(() => {
+      if (fs.existsSync(forEachMethodPath)) {
+        fs.unlinkSync(forEachMethodPath)
+      }
+    })
+
+    it('should accept a single scope object parameter carrying item and index', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'isSelected', {
+          itemName: 'product',
+          indexName: 'position',
+          collectionPath: 'products',
+        }),
+        'ok'
+      )
+    })
+
+    it('should accept the method when the loop declares no index', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'isSelected', {
+          itemName: 'product',
+          indexName: null,
+          collectionPath: 'products',
+        }),
+        'ok'
+      )
+    })
+
+    it('should accept a method inherited from a base view model', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'isBaseSelected', {
+          itemName: 'product',
+          indexName: null,
+          collectionPath: 'products',
+        }),
+        'ok'
+      )
+    })
+
+    it('should reject a method with two parameters', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'compareProducts', {
+          itemName: 'product',
+          indexName: null,
+          collectionPath: 'products',
+        }),
+        'invalidArity'
+      )
+    })
+
+    it('should reject a method without parameters', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'resetSelection', {
+          itemName: 'product',
+          indexName: null,
+          collectionPath: 'products',
+        }),
+        'invalidArity'
+      )
+    })
+
+    it('should reject a method without a parameter type annotation', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'untypedSelection', {
+          itemName: 'product',
+          indexName: null,
+          collectionPath: 'products',
+        }),
+        'invalidShape'
+      )
+    })
+
+    it('should reject a method whose item type does not match the collection', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'wrongItemType', {
+          itemName: 'product',
+          indexName: null,
+          collectionPath: 'products',
+        }),
+        'invalidShape'
+      )
+    })
+
+    it('should reject a method whose index type is not a number', () => {
+      assert.strictEqual(
+        checkForEachMethod(forEachMethodPath, 'CartViewModel', 'wrongIndexType', {
+          itemName: 'product',
+          indexName: 'position',
+          collectionPath: 'products',
+        }),
+        'invalidShape'
+      )
     })
   })
 })

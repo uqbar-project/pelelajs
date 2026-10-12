@@ -6,8 +6,13 @@ import {
   type ViewModelIssue,
 } from 'pelelajs/analysis'
 import * as vscode from 'vscode'
-import { findForEachInElement, parseForEachExpression } from '../parsers/documentParser'
 import {
+  type ForEachResult,
+  findForEachInElement,
+  parseForEachExpression,
+} from '../parsers/documentParser'
+import {
+  checkForEachMethod,
   extractNestedProperties,
   extractTypeMembers,
   isArrayCollection,
@@ -137,6 +142,9 @@ function validatePropertyPath(
     if (forEachResult.indexName === firstPart) {
       return []
     }
+    if (members.methods.includes(firstPart)) {
+      return validateForEachMethod(attribute, firstPart, tsPath, forEachResult, document, className)
+    }
   }
 
   if (!members.properties.includes(firstPart) && !members.getters.includes(firstPart)) {
@@ -254,6 +262,48 @@ function validateForEachPath(
       attribute.valueRange ?? attribute.nameRange,
       'diagnostics.propertyNotFound',
       { name: lastPart },
+      vscode.DiagnosticSeverity.Error
+    ),
+  ]
+}
+
+/**
+ * Validates a method named by a value binding inside a for-each template: it
+ * must follow the single scope object convention to be invoked per iteration.
+ * Methods outside a loop keep the methodNeedsGetter error from the root ladder.
+ */
+function validateForEachMethod(
+  attribute: AttrInfo,
+  methodName: string,
+  tsPath: string,
+  forEachResult: ForEachResult,
+  document: vscode.TextDocument,
+  className: string
+): vscode.Diagnostic[] {
+  const forEachLine = document.lineAt(forEachResult.line).text
+  const forEachExpression = parseForEachExpression(forEachLine)
+  if (!forEachExpression) return []
+  const check = checkForEachMethod(tsPath, className, methodName, {
+    itemName: forEachResult.itemName,
+    indexName: forEachResult.indexName,
+    collectionPath: forEachExpression.collectionName,
+  })
+  if (check === 'ok') return []
+  if (check === 'invalidArity') {
+    return [
+      makeDiagnostic(
+        attribute.valueRange ?? attribute.nameRange,
+        'diagnostics.forEachMethodArity',
+        { name: methodName },
+        vscode.DiagnosticSeverity.Error
+      ),
+    ]
+  }
+  return [
+    makeDiagnostic(
+      attribute.valueRange ?? attribute.nameRange,
+      'diagnostics.forEachMethodShape',
+      { name: methodName, item: forEachResult.itemName },
       vscode.DiagnosticSeverity.Error
     ),
   ]

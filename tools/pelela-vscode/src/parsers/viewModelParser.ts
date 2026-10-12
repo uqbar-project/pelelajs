@@ -873,8 +873,151 @@ export function isArrayCollection(
   return isArrayType(finalNode, sourceFile, typescriptFilePath)
 }
 
-const ARRAY_TYPE_NAMES = ['Array', 'ReadonlyArray']
+export type ForEachMethodCheck = 'ok' | 'invalidArity' | 'invalidShape'
 
+export interface ForEachMethodScope {
+  itemName: string
+  indexName: string | null
+  collectionPath: string
+}
+
+function findMethodDeclaration(
+  sourceFile: ts.SourceFile,
+  className: string,
+  filePath: string,
+  methodName: string,
+  visited: Set<string> = new Set<string>()
+): ts.MethodDeclaration | undefined {
+  if (visited.has(className)) return undefined
+  visited.add(className)
+
+  const classDeclaration = getClassDeclaration(sourceFile, className, filePath)
+  if (!classDeclaration) return undefined
+
+  const directMethod = classDeclaration.members.find(
+    (member): member is ts.MethodDeclaration =>
+      ts.isMethodDeclaration(member) &&
+      !isStaticMember(member) &&
+      getDeclarationName(member) === methodName
+  )
+  if (directMethod) return directMethod
+
+  const extendsClause = classDeclaration.heritageClauses?.find(
+    (clause) => clause.token === ts.SyntaxKind.ExtendsKeyword
+  )
+  if (extendsClause && extendsClause.types.length > 0) {
+    const baseClass = resolveBaseClassDeclaration(extendsClause.types[0], classDeclaration)
+    if (baseClass?.name) {
+      return findMethodDeclaration(
+        baseClass.getSourceFile(),
+        baseClass.name.text,
+        filePath,
+        methodName,
+        visited
+      )
+    }
+  }
+
+  return undefined
+}
+
+function hasSingleScopeParameter(method: ts.MethodDeclaration): boolean {
+  if (method.parameters.length !== 1) return false
+  const scopeParameter = method.parameters[0]
+  return (
+    !scopeParameter.dotDotDotToken && !scopeParameter.questionToken && !scopeParameter.initializer
+  )
+}
+
+function getCollectionItemTypeName(
+  sourceFile: ts.SourceFile,
+  collectionSegments: string[],
+  className: string,
+  filePath: string
+): string | undefined {
+  if (collectionSegments.length === 0) return undefined
+  const startingNode = findPropertyTypeNode(sourceFile, collectionSegments[0], className, filePath)
+  if (!startingNode) return undefined
+  const collectionNode = resolveToNode(
+    startingNode,
+    collectionSegments.slice(1),
+    sourceFile,
+    filePath
+  )
+  if (!collectionNode) return undefined
+  if (ts.isArrayTypeNode(collectionNode)) return collectionNode.elementType.getText()
+  if (
+    ts.isTypeReferenceNode(collectionNode) &&
+    ts.isIdentifier(collectionNode.typeName) &&
+    collectionNode.typeName.text === 'Array' &&
+    collectionNode.typeArguments?.length === 1
+  ) {
+    return collectionNode.typeArguments[0].getText()
+  }
+  return undefined
+}
+
+function isCompatibleItemType(candidateTypeName: string, expectedTypeName: string): boolean {
+  return (
+    candidateTypeName === expectedTypeName ||
+    candidateTypeName === 'any' ||
+    candidateTypeName === 'unknown' ||
+    expectedTypeName === 'any' ||
+    expectedTypeName === 'unknown'
+  )
+}
+
+/**
+ * Decides whether a view model method can be invoked as a for-each method
+ * binding: exactly one required parameter carrying the iteration scope as an
+ * object with the item (and, when the loop declares one, the index). Type
+ * names are compared textually following the parser's syntactic style; when
+ * either side cannot be resolved the shape is accepted to avoid false
+ * positives, since the runtime invokes any single-parameter method.
+ */
+export function checkForEachMethod(
+  typescriptFilePath: string,
+  className: string,
+  methodName: string,
+  scope: ForEachMethodScope
+): ForEachMethodCheck {
+  const sourceFile = getCachedSourceFile(typescriptFilePath)
+  const method = findMethodDeclaration(sourceFile, className, typescriptFilePath, methodName)
+  if (!method || !hasSingleScopeParameter(method)) return 'invalidArity'
+  const scopeParameter = method.parameters[0]
+  if (!scopeParameter.type) return 'invalidShape'
+  const itemType = resolvePropertyType(
+    scopeParameter.type,
+    scope.itemName,
+    sourceFile,
+    typescriptFilePath
+  )
+  if (!itemType) return 'invalidShape'
+  const expectedItemType = getCollectionItemTypeName(
+    sourceFile,
+    scope.collectionPath.split('.'),
+    className,
+    typescriptFilePath
+  )
+  if (
+    expectedItemType !== undefined &&
+    !isCompatibleItemType(itemType.getText(), expectedItemType)
+  ) {
+    return 'invalidShape'
+  }
+  if (scope.indexName !== null) {
+    const indexType = resolvePropertyType(
+      scopeParameter.type,
+      scope.indexName,
+      sourceFile,
+      typescriptFilePath
+    )
+    if (indexType && indexType.getText() !== 'number') return 'invalidShape'
+  }
+  return 'ok'
+}
+
+const ARRAY_TYPE_NAMES = ['Array', 'ReadonlyArray']
 const NON_ARRAY_BUILTIN_NAMES = [
   'Set',
   'ReadonlySet',
