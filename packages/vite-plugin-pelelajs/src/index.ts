@@ -23,6 +23,7 @@ import {
   getPelelaFilePath,
   validatePelelaSource,
 } from './templateValidation'
+import { type ResolvedRouteImport, validateRouteImports } from './validateRouteImports'
 
 export { extractLinkAttributeMatches } from './templateValidation'
 
@@ -246,6 +247,24 @@ function isComponentSourceFile(file: string): boolean {
   return COMPONENT_SOURCE_EXTENSIONS.has(path.extname(file))
 }
 
+function resolveRouteImport(
+  importSpecifier: string,
+  fromFilePath: string,
+): ResolvedRouteImport | null {
+  if (!importSpecifier.startsWith('.')) {
+    return null
+  }
+  const basePath = path.resolve(path.dirname(fromFilePath), importSpecifier)
+  const tsPath = basePath.endsWith('.ts') ? basePath : `${basePath}.ts`
+  if (!fs.existsSync(tsPath) || !fs.existsSync(tsPath.replace(/\.ts$/, '.pelela'))) {
+    return null
+  }
+  return {
+    tsPath: `./${path.relative(process.cwd(), tsPath).split(path.sep).join('/')}`,
+    tsSource: fs.readFileSync(tsPath, 'utf-8'),
+  }
+}
+
 function isRuntimeConvertible(value: ConstKind | ConstTypeInfo): boolean {
   if (typeof value === 'string') return value !== 'unknown' && value !== 'other'
   return true
@@ -401,6 +420,19 @@ export function pelelajsPlugin(): Plugin {
       const escapedTemplate = escapeTemplateForLiteral(sourceCode)
 
       return generateModuleCode(cssImport, viewModelName, escapedTemplate)
+    },
+
+    transform(sourceCode, filePath) {
+      if (!filePath.endsWith('.ts') || filePath.includes('node_modules')) {
+        return null
+      }
+      validateRouteImports({
+        sourceCode,
+        filePath,
+        resolveFile: resolveRouteImport,
+        errorFn: this.error.bind(this),
+      })
+      return null
     },
 
     hotUpdate({ file, modules }) {

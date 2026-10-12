@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { t } from 'pelelajs'
+import { t, ViewModelExportError } from 'pelelajs'
 import { extractViewModelPropertyTypes } from 'pelelajs/analysis'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -1094,6 +1094,121 @@ describe('pelelajsPlugin', () => {
           t('errors.compiler.invalidComponentAttribute', { tag: 'my-comp', attr: 'disabled' }),
         )
       })
+    })
+  })
+
+  describe('transform - route imports', () => {
+    let tempDir: string
+    let srcDir: string
+    let originalCwd: () => string
+
+    const BaseTs = 'base.ts'
+    const BaseViewModel = 'Base'
+    const RoutesTs = 'routes.ts'
+    const HelperName = 'helper'
+    const RouterName = 'router'
+
+    beforeEach(() => {
+      tempDir = createTempDir()
+      srcDir = path.join(tempDir, 'src')
+      fs.mkdirSync(srcDir)
+      originalCwd = process.cwd
+      process.cwd = () => tempDir
+    })
+
+    afterEach(() => {
+      process.cwd = originalCwd
+      removeTempDir(tempDir)
+    })
+
+    function writeComponent(tsSource: string): void {
+      fs.writeFileSync(path.join(srcDir, BaseTs), tsSource)
+      fs.writeFileSync(
+        path.join(srcDir, 'base.pelela'),
+        `<pelela view-model="${BaseViewModel}"><h1>Hello</h1></pelela>`,
+      )
+    }
+
+    function transformRoutes(sourceCode: string, fileName: string = RoutesTs): string | null {
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.transform!)
+      const throwingContext = {
+        error: (error: unknown): never => {
+          throw error
+        },
+      }
+      return handler.call(throwingContext as never, sourceCode, path.join(srcDir, fileName)) as
+        | string
+        | null
+    }
+
+    it('returns null without validating non-TypeScript files', () => {
+      const result = transformRoutes(
+        '<pelela view-model="Home"><h1>Hello</h1></pelela>',
+        'home.pelela',
+      )
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for files inside node_modules', () => {
+      const result = transformRoutes(
+        `import { ${BaseViewModel} } from './base'`,
+        path.join('node_modules', 'some-package', 'index.ts'),
+      )
+
+      expect(result).toBeNull()
+    })
+
+    it('throws the missingExport error when a route imports a non-exported class', () => {
+      writeComponent(`class ${BaseViewModel} {}`)
+      const expectedError = new ViewModelExportError({
+        kind: 'missingExport',
+        viewModelName: BaseViewModel,
+        tsFilePath: `src/${BaseTs}`,
+      })
+
+      let thrownError: unknown
+      try {
+        transformRoutes(`import { ${BaseViewModel} } from './base'`)
+      } catch (error) {
+        thrownError = error
+      }
+
+      expect(thrownError).toBeInstanceOf(ViewModelExportError)
+      expect((thrownError as ViewModelExportError).message).toBe(expectedError.message)
+      expect((thrownError as ViewModelExportError).params).toEqual(expectedError.params)
+    })
+
+    it('returns null when every route import resolves to a valid exported class', () => {
+      writeComponent(`export class ${BaseViewModel} {}`)
+
+      const result = transformRoutes(`import { ${BaseViewModel} } from './base'`)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null when a relative import has no pelela neighbor', () => {
+      fs.writeFileSync(
+        path.join(srcDir, 'helper.ts'),
+        `export function ${HelperName}() { return 1 }`,
+      )
+
+      const result = transformRoutes(`import { ${HelperName} } from './helper'`)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null when a relative import points to a missing file', () => {
+      const result = transformRoutes(`import { ${BaseViewModel} } from './missing'`)
+
+      expect(result).toBeNull()
+    })
+
+    it('returns null for bare package imports', () => {
+      const result = transformRoutes(`import { ${RouterName} } from 'pelelajs'`)
+
+      expect(result).toBeNull()
     })
   })
 

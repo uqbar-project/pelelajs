@@ -8,6 +8,7 @@ import {
 } from '../commons/cssLoader'
 import { toKebabCase } from '../commons/helpers'
 import { initializeI18n, t } from '../commons/i18n'
+import { assertViewModelIsClass } from '../commons/viewModelAssertion'
 import { RoutingError } from '../errors/RoutingError'
 import {
   getComponentByTag,
@@ -123,6 +124,7 @@ function resolveAndRender(): void {
 }
 
 function assertComponentIsRegistered(viewModel: ViewModelConstructor): void {
+  assertViewModelIsClass(viewModel, viewModel.name)
   if (!getComponentEntry(viewModel)) {
     throw new RoutingError(viewModel.name || 'Unknown', 'component-not-registered')
   }

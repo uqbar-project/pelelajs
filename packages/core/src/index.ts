@@ -1,4 +1,5 @@
 export { bootstrap } from './bootstrap/bootstrap'
+export { renderErrorPage } from './bootstrap/errorPage'
 export { mountTemplate } from './bootstrap/mountTemplate'
 export {
   CONST_PREFIX,
