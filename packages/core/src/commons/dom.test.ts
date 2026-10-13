@@ -1,10 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import {
+  isForeignElement,
+  isNativeTag,
   isPelelaRootTag,
   isRouterHtmlTag,
   isStandardHtmlTag,
   isValidComponentAttribute,
 } from './dom'
+
+const HTML_DIV_TAG = 'div'
+const SVG_CONTAINER_TAG = 'svg'
+const SVG_PATH_TAG = 'path'
+const SVG_GROUP_TAG = 'g'
+const SVG_CIRCLE_TAG = 'circle'
+const SVG_RECT_TAG = 'rect'
+const MATH_CONTAINER_TAG = 'math'
+const MATH_MI_TAG = 'mi'
+const MATH_MROW_TAG = 'mrow'
+const CUSTOM_TAG = 'my-component'
+const UNKNOWN_TAG = 'unknown'
 
 describe('dom utilities', () => {
   describe('isStandardHtmlTag', () => {
@@ -25,6 +39,57 @@ describe('dom utilities', () => {
       expect(isStandardHtmlTag('my-component')).toBe(false)
       expect(isStandardHtmlTag('unknown')).toBe(false)
       expect(isStandardHtmlTag('pelela')).toBe(false)
+    })
+
+    it('returns false for SVG and MathML tags', () => {
+      expect(isStandardHtmlTag(SVG_CONTAINER_TAG)).toBe(false)
+      expect(isStandardHtmlTag(SVG_PATH_TAG)).toBe(false)
+      expect(isStandardHtmlTag(MATH_CONTAINER_TAG)).toBe(false)
+      expect(isStandardHtmlTag(MATH_MI_TAG)).toBe(false)
+    })
+  })
+
+  describe('isForeignElement', () => {
+    it('returns true for SVG tags', () => {
+      expect(isForeignElement(SVG_CONTAINER_TAG)).toBe(true)
+      expect(isForeignElement(SVG_PATH_TAG)).toBe(true)
+      expect(isForeignElement(SVG_GROUP_TAG)).toBe(true)
+      expect(isForeignElement(SVG_CIRCLE_TAG)).toBe(true)
+      expect(isForeignElement(SVG_RECT_TAG)).toBe(true)
+    })
+
+    it('returns true for MathML tags', () => {
+      expect(isForeignElement(MATH_CONTAINER_TAG)).toBe(true)
+      expect(isForeignElement(MATH_MI_TAG)).toBe(true)
+      expect(isForeignElement(MATH_MROW_TAG)).toBe(true)
+    })
+
+    it('is case-insensitive', () => {
+      expect(isForeignElement(SVG_PATH_TAG.toUpperCase())).toBe(true)
+      expect(isForeignElement(MATH_MI_TAG.toUpperCase())).toBe(true)
+    })
+
+    it('returns false for HTML and custom tags', () => {
+      expect(isForeignElement(HTML_DIV_TAG)).toBe(false)
+      expect(isForeignElement(CUSTOM_TAG)).toBe(false)
+      expect(isForeignElement(UNKNOWN_TAG)).toBe(false)
+    })
+  })
+
+  describe('isNativeTag', () => {
+    it('returns true for HTML tags', () => {
+      expect(isNativeTag(HTML_DIV_TAG)).toBe(true)
+    })
+
+    it('returns true for SVG and MathML tags', () => {
+      expect(isNativeTag(SVG_PATH_TAG)).toBe(true)
+      expect(isNativeTag(SVG_CIRCLE_TAG)).toBe(true)
+      expect(isNativeTag(MATH_MI_TAG)).toBe(true)
+    })
+
+    it('returns false for custom or unknown tags', () => {
+      expect(isNativeTag(CUSTOM_TAG)).toBe(false)
+      expect(isNativeTag(UNKNOWN_TAG)).toBe(false)
     })
   })
 

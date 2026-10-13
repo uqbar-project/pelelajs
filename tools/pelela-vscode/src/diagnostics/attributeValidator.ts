@@ -1,4 +1,4 @@
-import { isPelelaRootTag, isStandardHtmlTag, isValidComponentAttribute } from 'pelelajs/dom'
+import { isNativeTag, isPelelaRootTag, isValidComponentAttribute } from 'pelelajs/dom'
 import * as vscode from 'vscode'
 import {
   getHtmlAttributes,
@@ -24,7 +24,7 @@ function isKnownAttribute(name: string): boolean {
 }
 
 function isComponentTag(tagName: string): boolean {
-  return !isStandardHtmlTag(tagName) && !isPelelaRootTag(tagName)
+  return !isNativeTag(tagName) && !isPelelaRootTag(tagName)
 }
 
 export function validateComponentAttributes(tags: TagInfo[]): vscode.Diagnostic[] {

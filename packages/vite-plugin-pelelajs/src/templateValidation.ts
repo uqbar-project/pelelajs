@@ -1,7 +1,7 @@
 import {
   findUniqueCollapsedTag,
+  isNativeTag,
   isPelelaRootTag,
-  isStandardHtmlTag,
   isValidComponentAttribute,
   LINK_PREFIX,
   t,
@@ -65,7 +65,7 @@ function validateComponentAttributes(sourceCode: string, errorFn: (message: stri
   const invalidMatches = componentMatches.filter(
     (match) =>
       !isPelelaRootTag(match.tagName) &&
-      !isStandardHtmlTag(match.tagName) &&
+      !isNativeTag(match.tagName) &&
       !isValidComponentAttribute(match.attributeName),
   )
 
@@ -94,7 +94,7 @@ function validateComponentTagCase(sourceCode: string, errorFn: (message: string)
       return (
         tagName !== normalizedTagName &&
         !isPelelaRootTag(normalizedTagName) &&
-        !isStandardHtmlTag(normalizedTagName)
+        !isNativeTag(normalizedTagName)
       )
     })
     .forEach((tagName) => {
@@ -123,7 +123,7 @@ function validateCollapsedComponentTags(
         tagName === normalizedTagName &&
         !tagName.includes('-') &&
         !isPelelaRootTag(tagName) &&
-        !isStandardHtmlTag(tagName)
+        !isNativeTag(tagName)
       )
     })
     .map((tagName) => ({
@@ -152,7 +152,7 @@ function validateNoForbiddenHtmlAttributes(
   const linkMatches = extractLinkAttributeMatches(sourceCode)
 
   const invalidMatches = linkMatches.filter(
-    (match) => !isPelelaRootTag(match.tagName) && isStandardHtmlTag(match.tagName),
+    (match) => !isPelelaRootTag(match.tagName) && isNativeTag(match.tagName),
   )
 
   invalidMatches.forEach((match) => {

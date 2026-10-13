@@ -1,4 +1,5 @@
 import { DOMEnvironmentError } from '../errors'
+import { isForeignElement } from './dom'
 import { isObject } from './helpers'
 import { t } from './i18n'
 
@@ -110,14 +111,20 @@ const VALID_VOID_ELEMENTS = new Set([
 
 /**
  * Ensures that normal elements or custom tags are not incorrectly self-closed.
+ * Void elements and foreign elements (SVG and MathML) are the only tags
+ * allowed to be self-closed, as defined by the HTML standard.
  */
 function validateNoInvalidSelfClosingTags(htmlContent: string): void {
   const selfClosingTagPattern = /<([a-zA-Z0-9_-]+)([^>]*)\/>/g
   const matches = Array.from(htmlContent.matchAll(selfClosingTagPattern))
 
-  const invalidMatch = matches.find((match) => !VALID_VOID_ELEMENTS.has(match[1].toLowerCase()))
+  const invalidMatch = matches.find((match) => {
+    const tagName = match[1]
+    return !VALID_VOID_ELEMENTS.has(tagName.toLowerCase()) && !isForeignElement(tagName)
+  })
 
   if (invalidMatch) {
+    const tagName = invalidMatch[1]
     const matchIndex = invalidMatch.index ?? 0
     const contextSnippet = htmlContent.substring(
       Math.max(0, matchIndex - 20),
@@ -125,7 +132,7 @@ function validateNoInvalidSelfClosingTags(htmlContent: string): void {
     )
 
     const errorMessage = t('errors.security.selfClosingError', '', {
-      element: invalidMatch[1],
+      element: tagName,
       context: contextSnippet.trim(),
     })
 

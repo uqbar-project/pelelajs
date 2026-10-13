@@ -1,31 +1,52 @@
-import { isPelelaRootTag, isStandardHtmlTag } from '../commons/dom'
+import { isNativeTag, isPelelaRootTag } from '../commons/dom'
 import { initializeI18n, t } from '../commons/i18n'
 import { sanitizeHTML } from '../commons/sanitization'
 import { bootstrap } from './bootstrap'
 import { renderErrorPage } from './errorPage'
 
+type RootTagName = 'pelela' | 'component'
+
+// The match starts at '<', so its second character tells which root tag opened.
+function rootTagAt(templateHtml: string, matchIndex: number): RootTagName {
+  return templateHtml[matchIndex + 1] === 'p' ? 'pelela' : 'component'
+}
+
+// An open tag only counts when a word boundary follows, so `<pelela-x` never matches `<pelela`.
+function isOpenRootTagAt(templateHtml: string, position: number, rootTag: string): boolean {
+  return (
+    templateHtml.startsWith(`<${rootTag}`, position) &&
+    /[\s>]/.test(templateHtml[position + rootTag.length + 1] ?? '')
+  )
+}
+
+// Scans forward tracking nesting depth to find where this root actually closes.
+function findMatchingCloseIndex(
+  templateHtml: string,
+  rootStart: number,
+  rootTag: string,
+  closeTag: string,
+): number | undefined {
+  let depth = 0
+  let position = rootStart
+  while (position < templateHtml.length) {
+    if (isOpenRootTagAt(templateHtml, position, rootTag)) {
+      depth++
+    } else if (templateHtml.startsWith(closeTag, position)) {
+      depth--
+      if (depth === 0) return position
+    }
+    position++
+  }
+  return undefined
+}
+
 function isInsideRoot(index: number, templateHtml: string, pelelaMatch: RegExpMatchArray): boolean {
   if (pelelaMatch.index === undefined) return false
-  const rootTag = templateHtml[pelelaMatch.index + 1] === 'p' ? 'pelela' : 'component'
+  const rootTag = rootTagAt(templateHtml, pelelaMatch.index)
   const closeTag = `</${rootTag}>`
-
-  let depth = 0
-  let i = pelelaMatch.index
-  while (i < templateHtml.length) {
-    if (
-      templateHtml.startsWith(`<${rootTag}`, i) &&
-      /[\s>]/.test(templateHtml[i + rootTag.length + 1] ?? '')
-    ) {
-      depth++
-    } else if (templateHtml.startsWith(closeTag, i)) {
-      depth--
-      if (depth === 0) {
-        return index > pelelaMatch.index && index < i + closeTag.length
-      }
-    }
-    i++
-  }
-  return false
+  const closeIndex = findMatchingCloseIndex(templateHtml, pelelaMatch.index, rootTag, closeTag)
+  if (closeIndex === undefined) return false
+  return index > pelelaMatch.index && index < closeIndex + closeTag.length
 }
 
 function isInsideAnyRoot(
@@ -85,9 +106,9 @@ function validateNoComponentsOutsideRoot(templateHtml: string): void {
     const componentIndex = match.index
 
     const isRootTag = isPelelaRootTag(tagName)
-    const isStandardTag = isStandardHtmlTag(tagName)
+    const isNative = isNativeTag(tagName)
 
-    if (!isRootTag && !isStandardTag) {
+    if (!isRootTag && !isNative) {
       const hasComponentAttributes = /prop-|link-|const-/.test(attributes)
       if (hasComponentAttributes && !isInsideAnyRoot(componentIndex, templateHtml, pelelaMatches)) {
         throw new Error(

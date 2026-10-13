@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { DOMEnvironmentError } from '../errors'
 import { escapeHTML, sanitize, sanitizeHTML } from './sanitization'
 
+const SELF_CLOSING_SVG_PATH = '<path d="M5 12h14" />'
+const SELF_CLOSING_SVG_CIRCLE = '<circle cx="12" cy="12" r="10" />'
+
 describe('sanitization', () => {
   describe('escapeHTML', () => {
     it('should escape special characters', () => {
@@ -141,6 +144,14 @@ describe('sanitization', () => {
         expect(() => sanitizeHTML('<custom-component />')).toThrow(
           /Malformed HTML5.*custom-component.*cannot be self-closed/,
         )
+      })
+
+      it('should allow self-closing foreign elements like path', () => {
+        expect(() => sanitizeHTML(SELF_CLOSING_SVG_PATH)).not.toThrow()
+      })
+
+      it('should allow self-closing foreign elements like circle', () => {
+        expect(() => sanitizeHTML(SELF_CLOSING_SVG_CIRCLE)).not.toThrow()
       })
     })
   })
