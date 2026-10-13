@@ -20,19 +20,23 @@ export function isStandardHtmlTag(tagName: string): boolean {
 }
 
 // Foreign elements (SVG and MathML) belong to their own namespaces per the HTML
-// standard, so they are tracked separately from standard HTML tags.
+// standard, so they are tracked separately from standard HTML tags. Tags that
+// already exist in HTML (a, script, style, title) are intentionally excluded:
+// the lexical checks cannot know the namespace, and in HTML context `<a/>`
+// would silently stay open. Entries are lowercase because lookups normalize
+// input with toLowerCase(), same convention as STANDARD_HTML_TAGS.
 // biome-ignore format: <line length exceeds 100 due to comprehensive foreign elements list>
 export const FOREIGN_ELEMENTS = [
   'svg', 'g', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'ellipse',
-  'text', 'tspan', 'textPath', 'use', 'defs', 'symbol', 'marker', 'pattern', 'clipPath',
-  'mask', 'filter', 'linearGradient', 'radialGradient', 'stop', 'image', 'foreignObject',
-  'desc', 'title', 'metadata', 'view', 'switch', 'animate', 'animateMotion', 'animateTransform',
-  'set', 'mpath', 'discard', 'hatch', 'hatchpath', 'a', 'script', 'style',
-  'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite', 'feConvolveMatrix',
-  'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight', 'feDropShadow', 'feFlood',
-  'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge',
-  'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting',
-  'feSpotLight', 'feTile', 'feTurbulence',
+  'text', 'tspan', 'textpath', 'use', 'defs', 'symbol', 'marker', 'pattern', 'clippath',
+  'mask', 'filter', 'lineargradient', 'radialgradient', 'stop', 'image', 'foreignobject',
+  'desc', 'metadata', 'view', 'switch', 'animate', 'animatemotion', 'animatetransform',
+  'set', 'mpath', 'discard', 'hatch', 'hatchpath',
+  'feblend', 'fecolormatrix', 'fecomponenttransfer', 'fecomposite', 'feconvolvematrix',
+  'fediffuselighting', 'fedisplacementmap', 'fedistantlight', 'fedropshadow', 'feflood',
+  'fefunca', 'fefuncb', 'fefuncg', 'fefuncr', 'fegaussianblur', 'feimage', 'femerge',
+  'femergenode', 'femorphology', 'feoffset', 'fepointlight', 'fespecularlighting',
+  'fespotlight', 'fetile', 'feturbulence',
   'math', 'mi', 'mo', 'mn', 'ms', 'mtext', 'mrow', 'mfrac', 'msqrt', 'mroot',
   'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mtable', 'mtr', 'mtd',
   'maction', 'menclose', 'mfenced', 'mpadded', 'mphantom', 'mstyle', 'merror',

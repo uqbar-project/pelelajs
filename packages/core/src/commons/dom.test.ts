@@ -14,6 +14,13 @@ const SVG_PATH_TAG = 'path'
 const SVG_GROUP_TAG = 'g'
 const SVG_CIRCLE_TAG = 'circle'
 const SVG_RECT_TAG = 'rect'
+const LINEAR_GRADIENT_TAG = 'linearGradient'
+const CLIP_PATH_TAG = 'clipPath'
+const FOREIGN_OBJECT_TAG = 'foreignObject'
+const HTML_ANCHOR_TAG = 'a'
+const HTML_SCRIPT_TAG = 'script'
+const HTML_STYLE_TAG = 'style'
+const HTML_TITLE_TAG = 'title'
 const MATH_CONTAINER_TAG = 'math'
 const MATH_MI_TAG = 'mi'
 const MATH_MROW_TAG = 'mrow'
@@ -58,6 +65,12 @@ describe('dom utilities', () => {
       expect(isForeignElement(SVG_RECT_TAG)).toBe(true)
     })
 
+    it('returns true for camelCase SVG tags', () => {
+      expect(isForeignElement(LINEAR_GRADIENT_TAG)).toBe(true)
+      expect(isForeignElement(CLIP_PATH_TAG)).toBe(true)
+      expect(isForeignElement(FOREIGN_OBJECT_TAG)).toBe(true)
+    })
+
     it('returns true for MathML tags', () => {
       expect(isForeignElement(MATH_CONTAINER_TAG)).toBe(true)
       expect(isForeignElement(MATH_MI_TAG)).toBe(true)
@@ -71,6 +84,10 @@ describe('dom utilities', () => {
 
     it('returns false for HTML and custom tags', () => {
       expect(isForeignElement(HTML_DIV_TAG)).toBe(false)
+      expect(isForeignElement(HTML_ANCHOR_TAG)).toBe(false)
+      expect(isForeignElement(HTML_SCRIPT_TAG)).toBe(false)
+      expect(isForeignElement(HTML_STYLE_TAG)).toBe(false)
+      expect(isForeignElement(HTML_TITLE_TAG)).toBe(false)
       expect(isForeignElement(CUSTOM_TAG)).toBe(false)
       expect(isForeignElement(UNKNOWN_TAG)).toBe(false)
     })
@@ -84,6 +101,9 @@ describe('dom utilities', () => {
     it('returns true for SVG and MathML tags', () => {
       expect(isNativeTag(SVG_PATH_TAG)).toBe(true)
       expect(isNativeTag(SVG_CIRCLE_TAG)).toBe(true)
+      expect(isNativeTag(LINEAR_GRADIENT_TAG)).toBe(true)
+      expect(isNativeTag(CLIP_PATH_TAG)).toBe(true)
+      expect(isNativeTag(FOREIGN_OBJECT_TAG)).toBe(true)
       expect(isNativeTag(MATH_MI_TAG)).toBe(true)
     })
 

@@ -4,6 +4,11 @@ import { escapeHTML, sanitize, sanitizeHTML } from './sanitization'
 
 const SELF_CLOSING_SVG_PATH = '<path d="M5 12h14" />'
 const SELF_CLOSING_SVG_CIRCLE = '<circle cx="12" cy="12" r="10" />'
+const HTML_ANCHOR_TAG = 'a'
+const HTML_SCRIPT_TAG = 'script'
+const SELF_CLOSING_ANCHOR = `<${HTML_ANCHOR_TAG} href="https://example.com" />`
+const SELF_CLOSING_SCRIPT = `<${HTML_SCRIPT_TAG} src="app.js" />`
+const SELF_CLOSING_SVG_GRADIENT = '<linearGradient><stop offset="0" /></linearGradient>'
 
 describe('sanitization', () => {
   describe('escapeHTML', () => {
@@ -150,8 +155,24 @@ describe('sanitization', () => {
         expect(() => sanitizeHTML(SELF_CLOSING_SVG_PATH)).not.toThrow()
       })
 
+      it('should throw error for self-closing anchor', () => {
+        expect(() => sanitizeHTML(SELF_CLOSING_ANCHOR)).toThrow(
+          new RegExp(`Malformed HTML5.*${HTML_ANCHOR_TAG}.*cannot be self-closed`),
+        )
+      })
+
+      it('should throw error for self-closing script', () => {
+        expect(() => sanitizeHTML(SELF_CLOSING_SCRIPT)).toThrow(
+          new RegExp(`Malformed HTML5.*${HTML_SCRIPT_TAG}.*cannot be self-closed`),
+        )
+      })
+
       it('should allow self-closing foreign elements like circle', () => {
         expect(() => sanitizeHTML(SELF_CLOSING_SVG_CIRCLE)).not.toThrow()
+      })
+
+      it('should allow nested foreign elements with a self-closing stop', () => {
+        expect(() => sanitizeHTML(SELF_CLOSING_SVG_GRADIENT)).not.toThrow()
       })
     })
   })
