@@ -1,10 +1,10 @@
-import { isPelelaRootTag, isStandardHtmlTag } from 'pelelajs/dom'
+import { isNativeTag, isPelelaRootTag } from 'pelelajs/dom'
 import * as vscode from 'vscode'
 import { findChildTemplate } from '../utils/componentIndex'
 import { findViewModelFile } from '../utils/fileUtils'
 
 export function isComponentTag(tagName: string): boolean {
-  return !isStandardHtmlTag(tagName) && !isPelelaRootTag(tagName)
+  return !isNativeTag(tagName) && !isPelelaRootTag(tagName)
 }
 
 export interface ResolvedChildComponent {

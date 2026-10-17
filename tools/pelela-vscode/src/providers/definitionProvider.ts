@@ -1,6 +1,6 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { isPelelaRootTag, isStandardHtmlTag } from 'pelelajs/dom'
+import { isNativeTag, isPelelaRootTag } from 'pelelajs/dom'
 import * as vscode from 'vscode'
 import {
   findClassDefinition,
@@ -49,7 +49,7 @@ function resolveComponentDefinition(
   document: vscode.TextDocument,
   tagName: string
 ): vscode.ProviderResult<vscode.Definition> {
-  if (isStandardHtmlTag(tagName) || isPelelaRootTag(tagName)) {
+  if (isNativeTag(tagName) || isPelelaRootTag(tagName)) {
     return null
   }
 

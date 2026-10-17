@@ -13,6 +13,17 @@ const PELELA_ROOT_TAG = 'pelela'
 const HTML_TAG = 'div'
 const INVALID_ATTRIBUTE = 'value'
 const LINK_ATTRIBUTE = 'link-value'
+const SVG_TAG = 'svg'
+const SVG_PATH_TAG = 'path'
+const SVG_DEFS_TAG = 'defs'
+const SVG_GRADIENT_TAG = 'linearGradient'
+const SVG_STOP_TAG = 'stop'
+const SVG_STOP_OFFSET = '0'
+const SVG_VIEWBOX = '0 0 24 24'
+const SVG_PATH_D = 'M5 12h14'
+const MATH_TAG = 'math'
+const MATH_MI_TAG = 'mi'
+const MATH_VARIANT = 'bold'
 
 function pelelaTemplate(content: string): string {
   return `<pelela view-model="${HOME_VIEW_MODEL}">${content}</pelela>`
@@ -174,5 +185,30 @@ describe('validatePelelaSource', () => {
         snippet: `<${HTML_TAG} ${LINK_ATTRIBUTE}="...">`,
       }),
     ])
+  })
+
+  it('accepts inline SVG tags with native attributes', () => {
+    const errors = validateTemplate(
+      pelelaTemplate(
+        `<${SVG_TAG} viewBox="${SVG_VIEWBOX}">` +
+          `<${SVG_DEFS_TAG}><${SVG_GRADIENT_TAG}>` +
+          `<${SVG_STOP_TAG} offset="${SVG_STOP_OFFSET}" />` +
+          `</${SVG_GRADIENT_TAG}></${SVG_DEFS_TAG}>` +
+          `<${SVG_PATH_TAG} d="${SVG_PATH_D}"></${SVG_PATH_TAG}>` +
+          `</${SVG_TAG}>`,
+      ),
+    )
+
+    expect(errors).toEqual([])
+  })
+
+  it('accepts inline MathML tags with native attributes', () => {
+    const errors = validateTemplate(
+      pelelaTemplate(
+        `<${MATH_TAG}><${MATH_MI_TAG} mathvariant="${MATH_VARIANT}">x</${MATH_MI_TAG}></${MATH_TAG}>`,
+      ),
+    )
+
+    expect(errors).toEqual([])
   })
 })

@@ -1,7 +1,7 @@
 import {
   CONST_PREFIX,
+  isNativeTag,
   isPelelaRootTag,
-  isStandardHtmlTag,
   isValidComponentAttribute,
   LINK_PREFIX,
   PROP_PREFIX,
@@ -271,7 +271,7 @@ function hasWritableDescriptor(instance: object, childKey: string): boolean {
 
 function isPotentialComponent(element: HTMLElement): boolean {
   const tagName = element.tagName.toLowerCase()
-  return !isPelelaRootTag(tagName) && !isStandardHtmlTag(tagName)
+  return !isPelelaRootTag(tagName) && !isNativeTag(tagName)
 }
 
 function validateTags(root: HTMLElement, registeredTags: string[]): void {

@@ -6,7 +6,7 @@ export const STANDARD_HTML_TAGS = [
   'button', 'select', 'option', 'textarea', 'label', 'table', 'tr', 'td',
   'th', 'thead', 'tbody', 'tfoot', 'caption', 'col', 'colgroup', 'section',
   'article', 'nav', 'aside', 'header', 'footer', 'main', 'figure', 'figcaption',
-  'iframe', 'canvas', 'svg', 'math', 'video', 'audio', 'source', 'track',
+  'iframe', 'canvas', 'video', 'audio', 'source', 'track',
   'map', 'area', 'object', 'param', 'embed', 'details', 'summary', 'dialog',
   'template', 'slot', 'time', 'data', 'code', 'pre', 'blockquote', 'q',
   'cite', 'abbr', 'address', 'bdo', 'ins', 'del', 'small', 'strong', 'em',
@@ -17,6 +17,40 @@ export const STANDARD_HTML_TAGS = [
 
 export function isStandardHtmlTag(tagName: string): boolean {
   return STANDARD_HTML_TAGS.includes(tagName.toLowerCase() as (typeof STANDARD_HTML_TAGS)[number])
+}
+
+// Foreign elements (SVG and MathML) belong to their own namespaces per the HTML
+// standard, so they are tracked separately from standard HTML tags. Tags that
+// already exist in HTML (a, script, style, title) are intentionally excluded:
+// the lexical checks cannot know the namespace, and in HTML context `<a/>`
+// would silently stay open. Entries are lowercase because lookups normalize
+// input with toLowerCase(), same convention as STANDARD_HTML_TAGS.
+// biome-ignore format: <line length exceeds 100 due to comprehensive foreign elements list>
+export const FOREIGN_ELEMENTS = [
+  'svg', 'g', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'ellipse',
+  'text', 'tspan', 'textpath', 'use', 'defs', 'symbol', 'marker', 'pattern', 'clippath',
+  'mask', 'filter', 'lineargradient', 'radialgradient', 'stop', 'image', 'foreignobject',
+  'desc', 'metadata', 'view', 'switch', 'animate', 'animatemotion', 'animatetransform',
+  'set', 'mpath', 'discard', 'hatch', 'hatchpath',
+  'feblend', 'fecolormatrix', 'fecomponenttransfer', 'fecomposite', 'feconvolvematrix',
+  'fediffuselighting', 'fedisplacementmap', 'fedistantlight', 'fedropshadow', 'feflood',
+  'fefunca', 'fefuncb', 'fefuncg', 'fefuncr', 'fegaussianblur', 'feimage', 'femerge',
+  'femergenode', 'femorphology', 'feoffset', 'fepointlight', 'fespecularlighting',
+  'fespotlight', 'fetile', 'feturbulence',
+  'math', 'mi', 'mo', 'mn', 'ms', 'mtext', 'mrow', 'mfrac', 'msqrt', 'mroot',
+  'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mtable', 'mtr', 'mtd',
+  'maction', 'menclose', 'mfenced', 'mpadded', 'mphantom', 'mstyle', 'merror',
+  'semantics', 'annotation', 'annotation-xml', 'mprescripts', 'mmultiscripts',
+  'mlabeledtr', 'mglyph', 'mspace', 'maligngroup', 'malignmark', 'mlongdiv',
+  'mscarries', 'mscarry', 'msgroup', 'msline', 'msrow', 'mstack',
+] as const
+
+export function isForeignElement(tagName: string): boolean {
+  return FOREIGN_ELEMENTS.includes(tagName.toLowerCase() as (typeof FOREIGN_ELEMENTS)[number])
+}
+
+export function isNativeTag(tagName: string): boolean {
+  return isStandardHtmlTag(tagName) || isForeignElement(tagName)
 }
 
 export function isPelelaRootTag(tagName: string): boolean {

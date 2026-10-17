@@ -163,6 +163,17 @@ describe('mountTemplate', () => {
     expect(span.innerHTML).toBe('42')
   })
 
+  it('should mount inline SVG tags with native attributes without rendering an error', () => {
+    const template =
+      '<pelela view-model="TestVM"><svg viewBox="0 0 24 24"><path d="M5 12h14"></path></svg></pelela>'
+
+    registerViewModel('TestVM', TestViewModel)
+    mountTemplate(container, template)
+
+    expect(container.querySelector('path')).not.toBeNull()
+    expect(container.innerHTML).not.toContain('error-container')
+  })
+
   describe('validation', () => {
     it('should render the error page when a component throws a ViewModelExportError', () => {
       class FailingConverter {
