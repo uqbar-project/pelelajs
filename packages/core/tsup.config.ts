@@ -29,13 +29,14 @@ export default defineConfig([
     entry: {
       analysis: 'src/analysis/index.ts',
     },
-    // CJS only: the bundled TypeScript compiler performs dynamic require("fs"),
-    // which is illegal in strict ESM output.
+    // Keep the established CommonJS contract while TypeScript is loaded from
+    // the exact runtime dependency declared by pelelajs.
     format: ['cjs'],
     dts: true,
     clean: true,
     target: 'esnext',
     outDir: 'dist',
+    external: ['typescript'],
   },
   {
     entry: {
