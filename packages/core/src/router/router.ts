@@ -113,6 +113,7 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
 
     loadRouteCss(pageEntry)
   } catch (error) {
+    currentMatch = null
     resetRouterActive()
     renderErrorPage(error)
   }

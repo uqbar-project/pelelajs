@@ -284,6 +284,20 @@ describe('router', () => {
       expect(getRouterActive()).toBe(false)
     })
 
+    it('should clear the active match when navigation fails', () => {
+      registerTestComponents()
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: PATH_PRODUCT_ID, component: ProductDetail },
+      ])
+      router.navigateTo(PATH_PRODUCT_42)
+
+      router.navigateTo(UNMATCHED_PATH)
+
+      expect(router.currentPath()).toBe('')
+      expect(router.currentRoute()).toBe('')
+    })
+
     it('should NOT update the browser URL when navigation fails (atomicity)', () => {
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
