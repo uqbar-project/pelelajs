@@ -26,12 +26,12 @@
   "author": "",
   "license": "GPL-3.0-or-later",
   "dependencies": {
-    "pelelajs": "workspace:*"
+    "pelelajs": "workspace:*",
+    "typescript": "5.9.3"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
-    "tsup": "8.5.1",
-    "typescript": "5.9.3"
+    "tsup": "8.5.1"
   },
   "peerDependencies": {
     "vite": "^7.2.4"

@@ -49,7 +49,8 @@
     "cli-box": "6.0.11",
     "commander": "12.1.0",
     "devalue": "^5.1.0",
-    "i18next": "^23.7.6"
+    "i18next": "^23.7.6",
+    "typescript": "5.9.3"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
@@ -58,7 +59,6 @@
     "jsdom": "27.2.0",
     "semver": "7.7.0",
     "tsup": "8.5.1",
-    "typescript": "5.9.3",
     "vitest": "4.0.14"
   }
 }
