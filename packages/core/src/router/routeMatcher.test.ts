@@ -203,6 +203,9 @@ describe('flattenRoutes', () => {
   })
 })
 
+const PATHNAME_PRODUCT_42 = '/product/42'
+const PATHNAME_NONEXISTENT = '/inexistent/path'
+
 describe('routeMatcher', () => {
   describe('exact path matching', () => {
     it('should match the root path', () => {
@@ -222,6 +225,25 @@ describe('routeMatcher', () => {
       const result = matchRoute('', '', ROUTES)
 
       expect(result.route.component).toBe(ProductCatalog)
+    })
+
+    it('should expose the concrete pathname on match', () => {
+      const result = matchRoute(PATHNAME_PRODUCT_42, '', ROUTES)
+
+      expect(result.pathname).toBe(PATHNAME_PRODUCT_42)
+    })
+
+    it('should normalize empty pathname to root in the exposed pathname', () => {
+      const result = matchRoute('', '', ROUTES)
+
+      expect(result.pathname).toBe('/')
+    })
+
+    it('should expose the concrete pathname when matched by catch-all', () => {
+      const result = matchRoute(PATHNAME_NONEXISTENT, '', ROUTES)
+
+      expect(result.route.component).toBe(NotFoundPage)
+      expect(result.pathname).toBe(PATHNAME_NONEXISTENT)
     })
 
     it('should escape regex metacharacters in static routes', () => {

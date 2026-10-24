@@ -43,6 +43,10 @@ const ROUTE_NOT_FOUND_IN_ENGLISH = `[pelela] No route defined for "${UNMATCHED_P
 const RUNTIME_TS_FILE_PATH = 'runtime'
 const UNKNOWN_VIEW_MODEL_NAME = 'Unknown'
 const NOT_A_CLASS_FUNCTION_NAME = 'notAClassFunction'
+const PATH_PRODUCT_ID = '/product/:id'
+const PATH_PRODUCT_42 = '/product/42'
+const PATH_PRODUCT_42_WITH_QUERY = '/product/42?detail=true'
+const PATH_DETAIL = '/detail'
 
 function registerTestComponents(): void {
   defineComponent('ProductCatalog', ProductCatalog, CATALOG_TEMPLATE)
@@ -280,6 +284,20 @@ describe('router', () => {
       expect(getRouterActive()).toBe(false)
     })
 
+    it('should clear the active match when navigation fails', () => {
+      registerTestComponents()
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: PATH_PRODUCT_ID, component: ProductDetail },
+      ])
+      router.navigateTo(PATH_PRODUCT_42)
+
+      router.navigateTo(UNMATCHED_PATH)
+
+      expect(router.currentPath()).toBe('')
+      expect(router.currentRoute()).toBe('')
+    })
+
     it('should NOT update the browser URL when navigation fails (atomicity)', () => {
       registerTestComponents()
       router.start(container, [{ path: '/', component: ProductCatalog }])
@@ -356,6 +374,214 @@ describe('router', () => {
 
       expect(capturedId).toBe('123')
       expect(capturedDetail).toBe('enabled')
+    })
+  })
+
+  describe('currentPath', () => {
+    it('should return empty string before start', () => {
+      expect(router.currentPath()).toBe('')
+    })
+
+    it('should return root path after start', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      expect(router.currentPath()).toBe('/')
+    })
+
+    it('should return the concrete pathname after navigateTo with dynamic segments', () => {
+      registerTestComponents()
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: PATH_PRODUCT_ID, component: ProductDetail },
+      ])
+
+      router.navigateTo(PATH_PRODUCT_42)
+
+      expect(router.currentPath()).toBe(PATH_PRODUCT_42)
+    })
+
+    it('should exclude query string from currentPath', () => {
+      registerTestComponents()
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: PATH_PRODUCT_ID, component: ProductDetail },
+      ])
+
+      router.navigateTo(PATH_PRODUCT_42_WITH_QUERY)
+
+      expect(router.currentPath()).toBe(PATH_PRODUCT_42)
+    })
+
+    it('should update currentPath after popstate', () => {
+      registerTestComponents()
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: PATH_PRODUCT_ID, component: ProductDetail },
+      ])
+
+      router.navigateTo(PATH_PRODUCT_42)
+      expect(router.currentPath()).toBe(PATH_PRODUCT_42)
+
+      window.history.replaceState(null, '', '/')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+
+      expect(router.currentPath()).toBe('/')
+    })
+
+    it('should provide currentPath during ViewModel construction', () => {
+      registerTestComponents()
+      let capturedPath: string | undefined
+
+      class ConstructorPathCheck {
+        constructor() {
+          capturedPath = router.currentPath()
+        }
+      }
+
+      defineComponent(
+        'ConstructorPathCheck',
+        ConstructorPathCheck,
+        '<pelela view-model="ConstructorPathCheck"></pelela>',
+      )
+
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: PATH_PRODUCT_ID, component: ConstructorPathCheck },
+      ])
+
+      router.navigateTo(PATH_PRODUCT_42)
+
+      expect(capturedPath).toBe(PATH_PRODUCT_42)
+    })
+
+    it('should return empty string after resetRouter', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      expect(router.currentPath()).toBe('/')
+
+      resetRouter()
+
+      expect(router.currentPath()).toBe('')
+    })
+  })
+
+  describe('currentRoute', () => {
+    it('should return empty string before start', () => {
+      expect(router.currentRoute()).toBe('')
+    })
+
+    it('should return root pattern after start', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      expect(router.currentRoute()).toBe('/')
+    })
+
+    it('should return route pattern not concrete pathname for dynamic segments', () => {
+      registerTestComponents()
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: PATH_PRODUCT_ID, component: ProductDetail },
+      ])
+
+      router.navigateTo(PATH_PRODUCT_42)
+
+      expect(router.currentRoute()).toBe(PATH_PRODUCT_ID)
+      expect(router.currentPath()).toBe(PATH_PRODUCT_42)
+    })
+
+    it('should return catch-all pattern when matched by catch-all route', () => {
+      registerTestComponents()
+      window.history.replaceState(null, '', UNMATCHED_PATH)
+
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: '*', component: NotFoundPage },
+      ])
+
+      expect(router.currentRoute()).toBe('*')
+      expect(router.currentPath()).toBe(UNMATCHED_PATH)
+    })
+
+    it('should return child route pattern with layout', () => {
+      registerTestComponents()
+      class LayoutForCurrentRoute {
+        title = 'Main Layout'
+      }
+      const layoutForCurrentRouteTemplate =
+        '<pelela view-model="LayoutForCurrentRoute"><main><outlet></outlet></main></pelela>'
+      defineComponent('LayoutForCurrentRoute', LayoutForCurrentRoute, layoutForCurrentRouteTemplate)
+
+      router.start(container, [
+        {
+          path: '',
+          layout: LayoutForCurrentRoute,
+          children: [
+            { path: '', component: ProductCatalog },
+            { path: 'detail', component: ProductDetail },
+          ],
+        },
+      ])
+
+      router.navigateTo(PATH_DETAIL)
+
+      expect(router.currentRoute()).toBe('/detail')
+      expect(router.currentPath()).toBe(PATH_DETAIL)
+    })
+
+    it('should update currentRoute after popstate', () => {
+      registerTestComponents()
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: PATH_PRODUCT_ID, component: ProductDetail },
+      ])
+
+      router.navigateTo(PATH_PRODUCT_42)
+      expect(router.currentRoute()).toBe(PATH_PRODUCT_ID)
+
+      window.history.replaceState(null, '', '/')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+
+      expect(router.currentRoute()).toBe('/')
+    })
+
+    it('should provide currentRoute during ViewModel construction', () => {
+      registerTestComponents()
+      let capturedRoute: string | undefined
+
+      class ConstructorRouteCheck {
+        constructor() {
+          capturedRoute = router.currentRoute()
+        }
+      }
+
+      defineComponent(
+        'ConstructorRouteCheck',
+        ConstructorRouteCheck,
+        '<pelela view-model="ConstructorRouteCheck"></pelela>',
+      )
+
+      router.start(container, [
+        { path: '/', component: ProductCatalog },
+        { path: PATH_PRODUCT_ID, component: ConstructorRouteCheck },
+      ])
+
+      router.navigateTo(PATH_PRODUCT_42)
+
+      expect(capturedRoute).toBe(PATH_PRODUCT_ID)
+    })
+
+    it('should return empty string after resetRouter', () => {
+      registerTestComponents()
+      router.start(container, [{ path: '/', component: ProductCatalog }])
+
+      expect(router.currentRoute()).toBe('/')
+
+      resetRouter()
+
+      expect(router.currentRoute()).toBe('')
     })
   })
 
@@ -764,7 +990,7 @@ describe('router', () => {
       class LayoutWithBreadcrumb {
         breadcrumb = ''
         constructor() {
-          this.breadcrumb = window.location.pathname.startsWith('/detail') ? ' > Detail' : ''
+          this.breadcrumb = router.currentPath().startsWith('/detail') ? ' > Detail' : ''
         }
       }
       class PageOne {

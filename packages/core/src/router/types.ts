@@ -19,4 +19,5 @@ export type MatchedRoute = {
   route: FlattenedRoute
   urlParameters: Record<string, string>
   searchParameters: Record<string, string>
+  pathname: string
 }

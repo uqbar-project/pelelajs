@@ -115,5 +115,6 @@ export function matchRoute(
     route: found.entry.route,
     urlParameters: extractUrlParameters(found.match, found.entry.paramNames),
     searchParameters: extractSearchParameters(search),
+    pathname: normalizedPath,
   }
 }

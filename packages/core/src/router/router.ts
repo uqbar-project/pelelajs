@@ -113,6 +113,7 @@ function renderPath(pathname: string, search: string, nextPath?: string): void {
 
     loadRouteCss(pageEntry)
   } catch (error) {
+    currentMatch = null
     resetRouterActive()
     renderErrorPage(error)
   }
@@ -263,6 +264,22 @@ export const router = {
    */
   searchParameters(): Record<string, string> {
     return currentMatch?.searchParameters ?? {}
+  },
+
+  /**
+   * Returns the concrete pathname of the current route, excluding the query string.
+   * Returns an empty string if there is no active route.
+   */
+  currentPath(): string {
+    return currentMatch?.pathname ?? ''
+  },
+
+  /**
+   * Returns the route pattern that matched the current URL (e.g. '/detail/:id', '*').
+   * Returns an empty string if there is no active route.
+   */
+  currentRoute(): string {
+    return currentMatch?.route.path ?? ''
   },
 
   registerCss(cssPath: string): void {

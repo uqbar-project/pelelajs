@@ -100,6 +100,10 @@ Inside the ViewModel class (typically in the `constructor`), the developer can a
 - **`router.urlParameters()`**: Returns an object containing the dynamic segments defined in the path (e.g., `{ id: '42' }`).
 
 - **`router.searchParameters()`**: Returns an object containing the query string parameters from the URL (e.g., `?name=Leon` -> `{ name: 'Leon' }`).
+- **`router.currentPath()`**: Returns the concrete pathname of the current route, excluding the query string (e.g., `/detail/42`). Returns `''` if there is no active route.
+- **`router.currentRoute()`**: Returns the route pattern that matched the current URL (e.g., `/detail/:id` or `*` for the catch-all route). Returns `''` if there is no active route.
+
+*Example:* for a URL like `/detail/42?tab=info`, `router.currentPath()` returns `'/detail/42'`, `router.currentRoute()` returns `'/detail/:id'`, and `router.searchParameters()` returns `{ tab: 'info' }`.
 
 *Example ViewModel usage:*
 
