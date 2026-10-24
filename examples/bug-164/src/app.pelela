@@ -1,0 +1,25 @@
+<pelela view-model="App" class="pelela">
+  <h1>Bug #164: autocomplete dentro de un for-each</h1>
+
+  <section class="card">
+    <h2>Caso con bug</h2>
+    <p>
+      Borrá <code>name</code> en la línea de abajo para que quede <code>character.</code>
+      y pedí autocompletado con <kbd>Ctrl</kbd> + <kbd>Space</kbd>.
+    </p>
+    <ul>
+      <li for-each="character of characters">
+        <span bind-content="character.name" click="character.birthday"></span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Caso que sí funciona (fuera del for-each)</h2>
+    <p>
+      Repetí la prueba borrando <code>description</code> en la línea de abajo:
+      acá el autocompletado sí sugiere los miembros de <code>Character</code>.
+    </p>
+    <p bind-content="selectedCharacter.description"></p>
+  </section>
+</pelela>

@@ -20,6 +20,7 @@ import { acquireViewModelLanguageService } from '../parsers/viewModelLanguageSer
 import {
   checkForEachMethod,
   extractNestedProperties,
+  extractTypeMembers,
   extractViewModelMembers,
   isArrayCollection,
 } from '../parsers/viewModelParser'
@@ -312,6 +313,7 @@ async function provideAttributeValueCompletions(
         position,
         typescriptFilePath,
         propertyPath,
+        attributeName,
         viewModelName,
       })
     : provideBasicViewModelCompletions({
@@ -466,9 +468,11 @@ async function provideNestedPropertyCompletions(params: {
   position: vscode.Position
   typescriptFilePath: string
   propertyPath: string[]
+  attributeName: string
   viewModelName: string
 }): Promise<vscode.CompletionItem[]> {
-  const { document, position, typescriptFilePath, propertyPath, viewModelName } = params
+  const { document, position, typescriptFilePath, propertyPath, attributeName, viewModelName } =
+    params
   const forEachInElement = findForEachInElement(document, position.line)
 
   if (isIteratedItemProperty(forEachInElement, propertyPath) && forEachInElement) {
@@ -476,6 +480,7 @@ async function provideNestedPropertyCompletions(params: {
       document,
       forEachInElement,
       typescriptFilePath,
+      attributeName,
       viewModelName
     )
   }
@@ -501,6 +506,7 @@ function handleIteratedItemCompletions(
   document: vscode.TextDocument,
   forEachInElement: ForEachResult,
   typescriptFilePath: string,
+  attributeName: string,
   viewModelName: string
 ): vscode.CompletionItem[] {
   const forEachLine = document.lineAt(forEachInElement.line).text
@@ -508,16 +514,29 @@ function handleIteratedItemCompletions(
 
   if (!forEachExpr) return []
 
-  return extractNestedProperties(
+  const itemMembers = extractTypeMembers(
     typescriptFilePath,
-    forEachExpr.collectionName.split('.'),
+    forEachExpr.collectionName,
     viewModelName
-  ).map((name) => {
-    const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
-    item.detail = t('completions.nestedPropertyDetail')
-    item.sortText = `!0_${name}`
-    return item
-  })
+  )
+  if (itemMembers === null) return []
+
+  if (EVENT_ATTRIBUTES.has(attributeName)) {
+    return itemMembers.methods.map(createMethodCompletion)
+  }
+
+  return itemMembers.properties.map((name) =>
+    itemMembers.getters.includes(name)
+      ? createGetterCompletion(name)
+      : createNestedPropertyCompletion(name)
+  )
+}
+
+function createNestedPropertyCompletion(name: string): vscode.CompletionItem {
+  const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field)
+  item.detail = t('completions.nestedPropertyDetail')
+  item.sortText = `!0_${name}`
+  return item
 }
 
 export function createCompletionProvider(): vscode.Disposable {

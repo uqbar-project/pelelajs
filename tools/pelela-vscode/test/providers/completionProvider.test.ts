@@ -308,6 +308,127 @@ describe('completionProvider', () => {
     })
   })
 
+  describe('for-each item member completions', () => {
+    const ITEM_VIEW_MODEL = `export class Character {
+  name = ''
+  house = ''
+  age = 17
+
+  get description(): string {
+    return this.name
+  }
+
+  confirm(): void {}
+}
+
+export class App {
+  characters: Character[] = []
+  plainCharacters: PlainCharacter[] = []
+  unknownCharacters: unknown[] = []
+}
+
+export class PlainCharacter {
+  name = ''
+  age = 17
+}`
+    let fixtureDir: string
+
+    before(() => {
+      fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-for-each-item-completions-'))
+      fs.writeFileSync(path.join(fixtureDir, 'app.ts'), ITEM_VIEW_MODEL)
+    })
+
+    after(() => {
+      fs.rmSync(fixtureDir, { recursive: true, force: true })
+    })
+
+    function createDocumentWithUri(lines: string[]): vscode.TextDocument {
+      return {
+        lineCount: lines.length,
+        lineAt: (lineIndex: number) => ({ text: lines[lineIndex] }),
+        uri: vscode.Uri.file(path.join(fixtureDir, 'app.pelela')),
+      } as unknown as vscode.TextDocument
+    }
+
+    async function completeItemMember(
+      attributeName: 'bind-content' | 'click' | 'enter',
+      collectionName = 'characters'
+    ): Promise<vscode.CompletionItem[]> {
+      const lines = [
+        '<pelela view-model="App">',
+        '  <ul>',
+        `    <li for-each="character of ${collectionName}">`,
+        `      <span ${attributeName}="character.`,
+        '    </li>',
+        '  </ul>',
+        '</pelela>',
+      ]
+      const position = createMockPosition(3, lines[3].length)
+      return provideCompletionItems(
+        createDocumentWithUri(lines),
+        position,
+        {} as vscode.CancellationToken,
+        {} as vscode.CompletionContext
+      )
+    }
+
+    it('suggests only item properties and getters for property bindings', async () => {
+      const completions = await completeItemMember('bind-content')
+      const labels = completions.map((item) => item.label)
+      const propertyLabels = labels.filter((label): label is string => typeof label === 'string')
+
+      assert.deepStrictEqual(propertyLabels.sort(), ['age', 'description', 'house', 'name'])
+
+      const getter = completions.find((item) => item.label === 'description')
+      assert.ok(getter, 'item getter completion should exist')
+      assert.strictEqual(getter.kind, vscode.CompletionItemKind.Property)
+      assert.strictEqual(getter.detail, t('completions.getterDetail'))
+
+      const property = completions.find((item) => item.label === 'name')
+      assert.ok(property, 'item property completion should exist')
+      assert.strictEqual(property.kind, vscode.CompletionItemKind.Field)
+      assert.strictEqual(property.detail, t('completions.nestedPropertyDetail'))
+    })
+
+    it('suggests item methods for click events', async () => {
+      const completions = await completeItemMember('click')
+      const labels = completions.map((item) => item.label)
+
+      assert.deepStrictEqual(labels, ['confirm'])
+      assert.strictEqual(completions[0].kind, vscode.CompletionItemKind.Method)
+      assert.strictEqual(completions[0].detail, t('completions.methodDetail'))
+      assert.strictEqual(completions[0].sortText, '!0_confirm')
+    })
+
+    it('suggests item methods for enter events', async () => {
+      const completions = await completeItemMember('enter')
+      const labels = completions.map((item) => item.label)
+
+      assert.deepStrictEqual(labels, ['confirm'])
+      assert.strictEqual(completions[0].kind, vscode.CompletionItemKind.Method)
+      assert.strictEqual(completions[0].detail, t('completions.methodDetail'))
+      assert.strictEqual(completions[0].sortText, '!0_confirm')
+    })
+
+    it('returns no click completions when the item type has no methods', async () => {
+      const completions = await completeItemMember('click', 'plainCharacters')
+
+      assert.deepStrictEqual(completions, [])
+    })
+
+    it('returns no enter completions when the item type has no methods', async () => {
+      const completions = await completeItemMember('enter', 'plainCharacters')
+
+      assert.deepStrictEqual(completions, [])
+    })
+
+    it('returns no completions when the collection item type cannot be resolved', async () => {
+      const completions = await completeItemMember('click', 'unknownCharacters')
+
+      assert.deepStrictEqual(completions, [])
+    })
+  })
+
   describe('child component property completions', () => {
     const COUNTER_VIEW_MODEL = `export class CounterViewModel {
   items: string[] = []
