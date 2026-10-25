@@ -1,23 +1,14 @@
 {
   "version": "0.2.0",
   "configurations": [
-    
     {
       "name": "Pelela Extension",
       "type": "extensionHost",
       "request": "launch",
       "preLaunchTask": "build-extension",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/tools/pelela-vscode"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/tools/pelela-vscode/dist/**/*.js"
-      ]
-    }
-  ]
-}{
-  "version": "0.2.0",
-  "configurations": [
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/tools/pelela-vscode"],
+      "outFiles": ["${workspaceFolder}/tools/pelela-vscode/dist/**/*.js"]
+    },
     {
       "name": "Launch Pelela Extension",
       "type": "extensionHost",

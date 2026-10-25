@@ -1,11 +1,10 @@
 import {
-  cpSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   renameSync,
-  statSync,
   writeFileSync,
 } from 'node:fs'
 import { join } from 'node:path'
@@ -17,23 +16,32 @@ export const BASE_TEMPLATE_FOR_CLI = 'base-template-for-cli'
 
 /**
  * Recursively copy a directory.
- * Node's cpSync can be flaky across different OS/Node versions for global packages.
- * This implementation is declarative and robust.
+ * Uses copyFileSync explicitly to ensure hidden files like .gitignore and .vscode contents are copied reliably.
  */
-function copyRecursive(src: string, dest: string): void {
-  const stats = statSync(src)
-  if (stats.isDirectory()) {
-    if (!existsSync(dest)) {
-      mkdirSync(dest, { recursive: true })
-    }
-    readdirSync(src, { withFileTypes: true }).forEach((dirent) => {
-      if (dirent.name !== 'node_modules') {
-        copyRecursive(join(src, dirent.name), join(dest, dirent.name))
+function copyRecursive(sourceDirectory: string, destinationDirectory: string): void {
+  if (!existsSync(destinationDirectory)) {
+    mkdirSync(destinationDirectory, { recursive: true })
+  }
+
+  readdirSync(sourceDirectory, { withFileTypes: true })
+    .filter((directoryEntry) => directoryEntry.name !== 'node_modules')
+    .forEach((directoryEntry) => {
+      const sourcePath = join(sourceDirectory, directoryEntry.name)
+      const destinationPath = join(destinationDirectory, directoryEntry.name)
+
+      if (directoryEntry.isDirectory()) {
+        copyRecursive(sourcePath, destinationPath)
+      } else {
+        try {
+          copyFileSync(sourcePath, destinationPath)
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error)
+          console.warn(
+            `[WARN] ${t('commands.init.error.copyFileFailed', { fileName: directoryEntry.name, error: message })}`,
+          )
+        }
       }
     })
-  } else {
-    cpSync(src, dest, { force: true })
-  }
 }
 
 export function computeTemplatePath(currentDir: string): string {

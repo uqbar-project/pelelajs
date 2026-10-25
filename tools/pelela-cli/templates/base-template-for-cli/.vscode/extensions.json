@@ -1,6 +1,3 @@
 {
-  "recommendations": [
-    "biomejs.biome",
-    "uqbar.pelela-vscode"
-  ]
+  "recommendations": ["biomejs.biome", "uqbar.pelela-vscode"]
 }

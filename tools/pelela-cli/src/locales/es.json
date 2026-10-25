@@ -13,6 +13,7 @@
         "templateNotFound": "Origen de la plantilla no encontrado en: {{source}}",
         "directoryExists": "El directorio \"{{projectName}}\" ya existe",
         "copyFailed": "Error al copiar la plantilla desde {{source}} hacia {{dest}}: {{error}}",
+        "copyFileFailed": "No se pudo copiar el archivo {{fileName}}: {{error}}",
         "verificationFailed": "La plantilla no se copió correctamente. package.json no se encuentra en {{path}}. Archivos encontrados: {{files}}",
         "packageJsonUpdateFailed": "Error al leer/escribir package.json en {{path}}: {{error}}",
         "initializationFailed": "Error al inicializar el proyecto: {{error}}"

@@ -67,4 +67,12 @@ describe('initCommand (Integration)', () => {
     expect(settings['editor.formatOnSave']).toBe(true)
     expect(settings['editor.defaultFormatter']).toBe('biomejs.biome')
   })
+
+  it('copies .gitignore and .vscode folder from template', async () => {
+    await initCommand({ projectName: testDir })
+
+    expect(existsSync(join(testDir, '.gitignore'))).toBe(true)
+    expect(existsSync(join(testDir, '.vscode'))).toBe(true)
+    expect(existsSync(join(testDir, '.vscode', 'extensions.json'))).toBe(true)
+  })
 })

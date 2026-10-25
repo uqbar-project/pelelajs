@@ -1,7 +1,3 @@
 {
-  "recommendations": [
-    "biomejs.biome",
-    "uqbar.pelela-vscode",
-    "vitest.explorer"
-  ]
+  "recommendations": ["biomejs.biome", "uqbar.pelela-vscode", "vitest.explorer"]
 }
