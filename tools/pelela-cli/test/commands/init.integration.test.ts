@@ -53,4 +53,18 @@ describe('initCommand (Integration)', () => {
     expect(templateLines.at(0)).toBe(BASE_COMPONENT_OPENING_TAG)
     expect(templateLines.at(-1)).toBe(BASE_COMPONENT_CLOSING_TAG)
   })
+
+  it('copies .vscode settings for .pelela formatting', async () => {
+    await initCommand({ projectName: testDir })
+
+    const settingsPath = join(testDir, '.vscode', 'settings.json')
+    expect(existsSync(settingsPath)).toBe(true)
+
+    const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'))
+
+    expect(settings['files.associations']['*.pelela']).toBe('html')
+    expect(settings['[html]']['editor.defaultFormatter']).toBe('vscode.html-language-features')
+    expect(settings['editor.formatOnSave']).toBe(true)
+    expect(settings['editor.defaultFormatter']).toBe('biomejs.biome')
+  })
 })
