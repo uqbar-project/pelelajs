@@ -7,6 +7,9 @@
   "commands": {
     "init": {
       "description": "📦 Inicializar un nuevo proyecto PelelaJS",
+      "options": {
+        "testing": "Configurar Vitest para el proyecto"
+      },
       "error": {
         "nameEmpty": "El nombre del proyecto no puede estar vacío",
         "nameTooLong": "El nombre del proyecto es demasiado largo (máximo 100 caracteres)",
@@ -17,6 +20,27 @@
         "verificationFailed": "La plantilla no se copió correctamente. package.json no se encuentra en {{path}}. Archivos encontrados: {{files}}",
         "packageJsonUpdateFailed": "Error al leer/escribir package.json en {{path}}: {{error}}",
         "initializationFailed": "Error al inicializar el proyecto: {{error}}"
+      }
+    },
+    "add": {
+      "description": "Agregar una configuración compatible al proyecto actual",
+      "error": {
+        "unknownPreset": "Configuración desconocida \"{{preset}}\""
+      },
+      "messages": {
+        "testingApplied": "✅ Configuración de testing agregada exitosamente"
+      }
+    },
+    "testing": {
+      "error": {
+        "presetNotFound": "No se encontró el preset de testing en {{presetDirectory}}",
+        "presetFilesMissing": "Faltan los archivos del preset de testing en {{presetFilesPath}}",
+        "invalidPreset": "El manifiesto del preset de testing en {{manifestPath}} no es válido",
+        "fileReadFailed": "No se pudo leer {{filePath}}: {{error}}",
+        "invalidJson": "La configuración JSON en {{filePath}} no es válida",
+        "invalidConfig": "La configuración {{section}} en {{filePath}} no es válida",
+        "conflict": "No se puede aplicar el preset de testing porque {{entry}} entra en conflicto en {{filePath}}",
+        "applyFailed": "No se pudo aplicar el preset de testing: {{error}}"
       }
     },
     "new": {

@@ -43,4 +43,34 @@ describe('CLI structure', () => {
     expect(result.stdout).toMatch(/\d+\.\d+\.\d+/)
     expect(result.stderr).toBe('')
   })
+
+  it('shows the testing option in the init command help', async () => {
+    const result = await execFileAsync('pnpm', [
+      '-C',
+      'tools/pelela-cli',
+      'exec',
+      'tsx',
+      'src/index.ts',
+      'init',
+      '--help',
+    ])
+
+    expect(result.stdout).toContain('-T, --testing')
+    expect(result.stderr).toBe('')
+  })
+
+  it('shows the add preset command in the CLI help', async () => {
+    const result = await execFileAsync('pnpm', [
+      '-C',
+      'tools/pelela-cli',
+      'exec',
+      'tsx',
+      'src/index.ts',
+      'add',
+      '--help',
+    ])
+
+    expect(result.stdout).toContain('add [options] <preset>')
+    expect(result.stderr).toBe('')
+  })
 })

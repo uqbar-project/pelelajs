@@ -44,6 +44,29 @@ describe('initCommand (Integration)', () => {
     expect(existsSync(join(testDir, 'main.ts'))).toBe(true)
   })
 
+  it('initializes a project with the testing preset when requested', async () => {
+    await initCommand({ projectName: testDir, testing: true })
+
+    const packageJson = JSON.parse(readFileSync(join(testDir, 'package.json'), 'utf-8'))
+    const tsConfig = JSON.parse(readFileSync(join(testDir, 'tsconfig.json'), 'utf-8'))
+    const extensions = JSON.parse(
+      readFileSync(join(testDir, '.vscode', 'extensions.json'), 'utf-8'),
+    )
+
+    expect(packageJson.devDependencies.vitest).toBe('4.0.14')
+    expect(packageJson.devDependencies['@vitest/coverage-v8']).toBe('4.0.14')
+    expect(packageJson.scripts.test).toBe('vitest')
+    expect(packageJson.scripts['test:coverage']).toBe('vitest --coverage')
+    expect(tsConfig.compilerOptions.types).toEqual(['vitest/globals'])
+    expect(extensions.recommendations).toEqual([
+      'biomejs.biome',
+      'uqbar.pelela-vscode',
+      'vitest.explorer',
+    ])
+    expect(existsSync(join(testDir, 'vitest.config.ts'))).toBe(true)
+    expect(existsSync(join(testDir, '.github', 'workflows', 'testing.yml'))).toBe(true)
+  })
+
   it('creates the base component with pelela as root', async () => {
     await initCommand({ projectName: testDir })
 

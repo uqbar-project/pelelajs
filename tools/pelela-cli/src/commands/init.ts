@@ -3,12 +3,14 @@ import boxen from 'cli-box'
 import { t } from '../utils/i18n'
 import { pathExists, resolvePath } from '../utils/shell'
 import { copyTemplate, updateProjectPackageJson, validateTemplatePath } from '../utils/templates'
+import { applyTestingPreset } from '../utils/testingPreset'
 
 const { log } = console
 const DEFAULT_PROJECT_NAME = 'Example'
 
 export interface InitCommandOptions {
   projectName?: string
+  testing?: boolean
 }
 
 export function normalizeProjectName(input: string): string {
@@ -47,6 +49,9 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
   try {
     copyTemplate(projectPath)
     updateProjectPackageJson(projectPath, projectName)
+    if (options.testing) {
+      applyTestingPreset(projectPath)
+    }
 
     displaySuccessMessage(projectName)
   } catch (error) {

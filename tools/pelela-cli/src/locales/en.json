@@ -7,6 +7,9 @@
   "commands": {
     "init": {
       "description": "📦 Initialize a new PelelaJS project",
+      "options": {
+        "testing": "Configure Vitest for the project"
+      },
       "error": {
         "nameEmpty": "Project name cannot be empty",
         "nameTooLong": "Project name is too long (max 100 characters)",
@@ -17,6 +20,27 @@
         "verificationFailed": "Template was not copied correctly. package.json is missing in {{path}}. Files found: {{files}}",
         "packageJsonUpdateFailed": "Failed to read/write package.json in {{path}}: {{error}}",
         "initializationFailed": "Failed to initialize project: {{error}}"
+      }
+    },
+    "add": {
+      "description": "Add a supported configuration to the current project",
+      "error": {
+        "unknownPreset": "Unknown preset \"{{preset}}\""
+      },
+      "messages": {
+        "testingApplied": "✅ Testing configuration added successfully"
+      }
+    },
+    "testing": {
+      "error": {
+        "presetNotFound": "Testing preset not found at {{presetDirectory}}",
+        "presetFilesMissing": "Testing preset files are missing from {{presetFilesPath}}",
+        "invalidPreset": "Invalid testing preset manifest at {{manifestPath}}",
+        "fileReadFailed": "Could not read {{filePath}}: {{error}}",
+        "invalidJson": "Invalid JSON configuration in {{filePath}}",
+        "invalidConfig": "Invalid {{section}} configuration in {{filePath}}",
+        "conflict": "Cannot apply testing preset because {{entry}} conflicts in {{filePath}}",
+        "applyFailed": "Failed to apply testing preset: {{error}}"
       }
     },
     "new": {
