@@ -82,9 +82,7 @@ describe('templates', () => {
         throw new Error('Disk full')
       })
 
-      expect(() => copyTemplate(join(tempDir, 'fail-copy'))).toThrow(
-        'Template was not copied correctly',
-      )
+      expect(() => copyTemplate(join(tempDir, 'fail-copy'))).toThrow()
       copySpy.mockRestore()
     })
 

@@ -18,7 +18,11 @@ export const BASE_TEMPLATE_FOR_CLI = 'base-template-for-cli'
  * Recursively copy a directory.
  * Uses copyFileSync explicitly to ensure hidden files like .gitignore and .vscode contents are copied reliably.
  */
-function copyRecursive(sourceDirectory: string, destinationDirectory: string): void {
+function copyRecursive(
+  sourceDirectory: string,
+  destinationDirectory: string,
+  errors: string[],
+): void {
   if (!existsSync(destinationDirectory)) {
     mkdirSync(destinationDirectory, { recursive: true })
   }
@@ -30,14 +34,17 @@ function copyRecursive(sourceDirectory: string, destinationDirectory: string): v
       const destinationPath = join(destinationDirectory, directoryEntry.name)
 
       if (directoryEntry.isDirectory()) {
-        copyRecursive(sourcePath, destinationPath)
+        copyRecursive(sourcePath, destinationPath, errors)
       } else {
         try {
           copyFileSync(sourcePath, destinationPath)
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error)
-          console.warn(
-            `[WARN] ${t('commands.init.error.copyFileFailed', { fileName: directoryEntry.name, error: message })}`,
+          errors.push(
+            t('commands.init.error.copyFileFailed', {
+              fileName: directoryEntry.name,
+              error: message,
+            }),
           )
         }
       }
@@ -63,9 +70,11 @@ export function copyTemplate(projectPath: string): void {
 
   createDirectory(projectPath)
 
+  const errors: string[] = []
+
   try {
     // Manual recursive copy to ensure reliability across all environments
-    copyRecursive(TEMPLATE_SOURCE, projectPath)
+    copyRecursive(TEMPLATE_SOURCE, projectPath, errors)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     throw new Error(
@@ -75,6 +84,10 @@ export function copyTemplate(projectPath: string): void {
         error: message,
       }),
     )
+  }
+
+  if (errors.length > 0) {
+    throw new Error(errors.join('; '))
   }
 
   // Verify that at least package.json was copied
