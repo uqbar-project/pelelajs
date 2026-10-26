@@ -210,7 +210,7 @@ function validatePresetFiles(fileUpdates: PresetFileUpdate[]): void {
 }
 
 function writeJsonFile(filePath: string, content: Record<string, unknown>): void {
-  writeFileSync(filePath, JSON.stringify(content, null, 2))
+  writeFileSync(filePath, `${JSON.stringify(content, null, 2)}\n`)
 }
 
 export function applyTestingPreset(projectPath: string): void {

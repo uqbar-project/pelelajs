@@ -1,11 +1,16 @@
 import { execFile } from 'node:child_process'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { describe, expect, it } from 'vitest'
 
 const execFileAsync = promisify(execFile)
+const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 function runCli(args: string[]) {
-  return execFileAsync('pnpm', ['-C', 'tools/pelela-cli', 'exec', 'tsx', 'src/index.ts', ...args])
+  return execFileAsync('pnpm', ['exec', 'tsx', 'src/index.ts', ...args], {
+    cwd: packageDirectory,
+  })
 }
 
 describe('CLI structure', () => {
