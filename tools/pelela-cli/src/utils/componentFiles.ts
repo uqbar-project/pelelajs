@@ -17,6 +17,11 @@ export function getComponentTargetDir(): string {
   return existsSync(SRC_DIR) ? SRC_DIR : '.'
 }
 
+export function getComponentBasePath(componentPath: string): string {
+  const extension = extname(componentPath)
+  return extension ? componentPath.slice(0, -extension.length) : componentPath
+}
+
 export function validateBasename(name: string, errorKey: string): void {
   if (isAbsolute(name) || name.includes('..')) {
     throw new Error(t(errorKey))
@@ -40,7 +45,12 @@ export function findComponentFile(componentName: string, extension: string): str
 
   const matchesPath = (fullPath: string): boolean => {
     const normalizedFullPath = relative(resolve(targetDir), resolve(fullPath)).replace(/\\/g, '/')
-    return normalizedFullPath.endsWith(`${kebabInput}${extension}`)
+    const suffix = `${kebabInput}${extension}`
+    if (!normalizedFullPath.endsWith(suffix)) {
+      return false
+    }
+    const prefix = normalizedFullPath.slice(0, -suffix.length)
+    return prefix === '' || prefix.endsWith('/')
   }
 
   function searchDirectory(dir: string): string | null {
@@ -149,6 +159,8 @@ interface PrepareRenameParams {
 export function prepareRenamePaths(params: PrepareRenameParams): {
   oldPath: string
   newPath: string
+  oldBasePath: string
+  newBasePath: string
   oldClassName: string
   newClassName: string
 } {
@@ -158,13 +170,15 @@ export function prepareRenamePaths(params: PrepareRenameParams): {
 
   const kebabOldName = toKebabCase(normalizedOldName)
   const kebabNewName = toKebabCase(normalizedNewName)
+  const oldBasePath = join(targetDir, kebabOldName)
+  const newBasePath = join(targetDir, kebabNewName)
   const oldPath = resolveExistingComponentPath(kebabOldName, targetDir, `.${extension}`)
   const newPath = join(targetDir, `${kebabNewName}.${extension}`)
 
   const oldClassName = basename(normalizedOldName)
   const newClassName = basename(normalizedNewName)
 
-  return { oldPath, newPath, oldClassName, newClassName }
+  return { oldPath, newPath, oldBasePath, newBasePath, oldClassName, newClassName }
 }
 
 export function createTsFile(name: string, targetDir: string): void {
@@ -232,17 +246,25 @@ function renameViewModelName(content: string, oldClassName: string, newClassName
 }
 
 export function renameTsFile(oldName: string, newName: string, targetDir: string): void {
-  const { oldPath, newPath, oldClassName, newClassName } = prepareRenamePaths({
-    oldName,
-    newName,
-    extension: 'ts',
-    targetDir,
-  })
+  const { oldPath, newPath, oldBasePath, newBasePath, oldClassName, newClassName } =
+    prepareRenamePaths({
+      oldName,
+      newName,
+      extension: 'ts',
+      targetDir,
+    })
+  const movedFiles = buildMovedFilesMap(oldBasePath, newBasePath)
 
   modifyAndRenameFile({
     oldPath,
     newPath,
-    contentModifier: (content) => renameClassName(content, oldClassName, newClassName),
+    contentModifier: (content) =>
+      rebaseRelativeImports(
+        renameClassName(content, oldClassName, newClassName),
+        oldPath,
+        newPath,
+        movedFiles,
+      ),
   })
 }
 
@@ -278,25 +300,85 @@ export function renameCssFile(oldName: string, newName: string, targetDir: strin
   renameSync(oldPath, newPath)
 }
 
+const RELATIVE_SPECIFIER_PATTERN = /((?:\bfrom\b|\bimport\b)\s*\(?\s*)(['"])(\.[^'"]+)\2/g
+
+const COMPONENT_FILE_EXTENSIONS = ['', '.ts', '.pelela', '.css']
+
+/**
+ * Map every file of a component from its old base path to its new base path
+ * so relative imports can be rebased after a move or a rename.
+ */
+function buildMovedFilesMap(oldBasePath: string, newBasePath: string): ReadonlyMap<string, string> {
+  const movedFiles = new Map<string, string>()
+  COMPONENT_FILE_EXTENSIONS.forEach((extension) => {
+    movedFiles.set(resolve(`${oldBasePath}${extension}`), resolve(`${newBasePath}${extension}`))
+  })
+  return movedFiles
+}
+
+function toDotRelativeSpecifier(baseDirectory: string, targetPath: string): string {
+  const relativePath = relative(baseDirectory, targetPath).replace(/\\/g, '/')
+  return relativePath.startsWith('.') ? relativePath : `./${relativePath}`
+}
+
+function getRebaseTarget(
+  specifier: string,
+  sourceDirectory: string,
+  movedFiles: ReadonlyMap<string, string>,
+): string {
+  const resolvedSpecifier = resolve(sourceDirectory, specifier)
+  return movedFiles.get(resolvedSpecifier) ?? resolvedSpecifier
+}
+
+/**
+ * Rebase relative import specifiers from the source file directory to the
+ * destination directory, keeping specifiers of relocated sibling files
+ * pointing at their moved path.
+ */
+function rebaseRelativeImports(
+  content: string,
+  sourceFilePath: string,
+  destinationFilePath: string,
+  movedFiles: ReadonlyMap<string, string>,
+): string {
+  const sourceDirectory = dirname(sourceFilePath)
+  const destinationDirectory = dirname(destinationFilePath)
+
+  return content.replace(
+    RELATIVE_SPECIFIER_PATTERN,
+    (_match: string, prefix: string, quote: string, specifier: string) => {
+      const targetPath = getRebaseTarget(specifier, sourceDirectory, movedFiles)
+      const rebasedSpecifier = toDotRelativeSpecifier(destinationDirectory, targetPath)
+      return `${prefix}${quote}${rebasedSpecifier}${quote}`
+    },
+  )
+}
+
 export function moveComponentFiles(
   sourceTsPath: string,
   destinationBasePath: string,
   oldClassName: string,
   newClassName: string,
 ): void {
-  const sourceBasePath = sourceTsPath.slice(0, -extname(sourceTsPath).length)
+  const sourceBasePath = getComponentBasePath(sourceTsPath)
   const sourcePelelaPath = `${sourceBasePath}.pelela`
   const sourceCssPath = `${sourceBasePath}.css`
   const destinationTsPath = `${destinationBasePath}.ts`
   const destinationPelelaPath = `${destinationBasePath}.pelela`
   const destinationCssPath = `${destinationBasePath}.css`
-  const updatedTs = renameClassName(readFileSync(sourceTsPath, 'utf-8'), oldClassName, newClassName)
+  const cssContent = existsSync(sourceCssPath) ? readFileSync(sourceCssPath, 'utf-8') : null
+  const movedFiles = buildMovedFilesMap(sourceBasePath, destinationBasePath)
+  const updatedTs = rebaseRelativeImports(
+    renameClassName(readFileSync(sourceTsPath, 'utf-8'), oldClassName, newClassName),
+    sourceTsPath,
+    destinationTsPath,
+    movedFiles,
+  )
   const updatedPelela = renameViewModelName(
     readFileSync(sourcePelelaPath, 'utf-8'),
     oldClassName,
     newClassName,
   )
-  const cssContent = existsSync(sourceCssPath) ? readFileSync(sourceCssPath, 'utf-8') : null
 
   mkdirSync(dirname(destinationTsPath), { recursive: true })
   writeFileSync(destinationTsPath, updatedTs)
@@ -342,15 +424,14 @@ function getMovedImportPath(
   if (!normalizedImportPath.startsWith('.')) return null
 
   const resolvedImportPath = resolve(dirname(importerPath), normalizedImportPath)
-  const oldBasePath = oldFilePath.slice(0, -extname(oldFilePath).length)
+  const oldBasePath = getComponentBasePath(oldFilePath)
   const isOldComponentImport = [oldBasePath, `${oldBasePath}.ts`, `${oldBasePath}.js`].some(
     (path) => resolve(path) === resolvedImportPath,
   )
   if (!isOldComponentImport) return null
 
-  const newBasePath = newFilePath.slice(0, -extname(newFilePath).length)
-  const relativePath = relative(dirname(importerPath), newBasePath).replace(/\\/g, '/')
-  const pathWithDotPrefix = relativePath.startsWith('.') ? relativePath : `./${relativePath}`
+  const newBasePath = getComponentBasePath(newFilePath)
+  const pathWithDotPrefix = toDotRelativeSpecifier(dirname(importerPath), newBasePath)
   const importExtension = extname(normalizedImportPath)
   return importExtension ? `${pathWithDotPrefix}${importExtension}` : pathWithDotPrefix
 }
@@ -387,23 +468,17 @@ function replaceImportPath(importPath: string, context: ImportUpdateContext): st
 
 function replaceComponentUsage(content: string, context: ImportUpdateContext): string {
   const { oldClass, newClass } = context
-  const importRegex = new RegExp(`import\\s+.*?\\b${escapeRegExp(oldClass)}\\b.*?\\s+from`, 'gs')
+  const importRegex = new RegExp(`import\\s+[^';]*?\\b${escapeRegExp(oldClass)}\\b[^';]*?\\s+from`)
 
-  if (!importRegex.test(content)) return content
+  const updatedContent = importRegex.test(content)
+    ? content.replace(new RegExp(`\\b${escapeRegExp(oldClass)}\\b`, 'g'), newClass)
+    : content
 
-  const updatedContent = content.replace(
-    new RegExp(`\\b${escapeRegExp(oldClass)}\\b`, 'g'),
-    newClass,
-  )
+  const importSpecifierRegex = /(\bimport\b[^'";]*?)(['"])([^'"]+)\2/g
 
-  const pathRegex = new RegExp(
-    `(import\\s+.*?\\b${escapeRegExp(newClass)}\\b.*?\\s+from\\s+['"])([^'"]+)(['"])`,
-    'gs',
-  )
-
-  return updatedContent.replace(pathRegex, (_regexMatch, prefix, importPath, suffix) => {
+  return updatedContent.replace(importSpecifierRegex, (_match, prefix, quote, importPath) => {
     const updatedPath = replaceImportPath(importPath, context)
-    return `${prefix}${updatedPath}${suffix}`
+    return `${prefix}${quote}${updatedPath}${quote}`
   })
 }
 

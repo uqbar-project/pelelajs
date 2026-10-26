@@ -1,8 +1,9 @@
 import { existsSync } from 'node:fs'
-import { basename, extname, isAbsolute, join, relative, resolve, win32 } from 'node:path'
+import { basename, isAbsolute, join, relative, resolve, win32 } from 'node:path'
 import chalk from 'chalk'
 import {
   findComponentFile,
+  getComponentBasePath,
   getComponentTargetDir,
   moveComponentFiles,
   normalizeComponentName,
@@ -36,10 +37,6 @@ function normalizeMovePath(path: string): string {
 
   validateBasename(normalizedPath, 'commands.move.error.pathInvalid')
   return normalizedPath
-}
-
-function getComponentBasePath(componentPath: string): string {
-  return componentPath.slice(0, -extname(componentPath).length)
 }
 
 function resolveDestinationPath(destination: string, targetRoot: string): string {

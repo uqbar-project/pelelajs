@@ -196,4 +196,61 @@ export const route = Reports`,
     expect(existsSync(HOME_TS)).toBe(true)
     expect(existsSync('src/pages')).toBe(false)
   })
+
+  it('selects the correct component when directories have similar suffixes', async () => {
+    mkdirSync('src/components/myhome', { recursive: true })
+    writeFileSync('src/components/myhome/home.ts', 'export class HomeWrong {}')
+    writeFileSync('src/components/myhome/home.pelela', '<pelela view-model="HomeWrong"></pelela>')
+
+    await moveCommand({
+      source: 'components/home/Home',
+      destination: 'components/dashboard/Dashboard',
+    })
+
+    expect(existsSync(HOME_TS)).toBe(false)
+    expect(existsSync('src/components/dashboard/dashboard.ts')).toBe(true)
+    expect(readFileSync('src/components/dashboard/dashboard.ts', 'utf-8')).toContain(
+      'class Dashboard',
+    )
+    expect(existsSync('src/components/myhome/home.ts')).toBe(true)
+    expect(readFileSync('src/components/myhome/home.ts', 'utf-8')).toContain('class HomeWrong')
+  })
+
+  it('rebases relative imports inside the moved component file', async () => {
+    writeFileSync(
+      HOME_TS,
+      "import './home.css'\nimport { formatDate } from '../../utils/date'\nexport class Home {}",
+    )
+    mkdirSync('src/utils', { recursive: true })
+    writeFileSync('src/utils/date.ts', 'export const formatDate = (): string => ""')
+
+    await moveCommand({
+      source: 'components/home/Home',
+      destination: 'dashboard/Dashboard',
+    })
+
+    const movedContent = readFileSync('src/dashboard/dashboard.ts', 'utf-8')
+    expect(movedContent).toContain("import './dashboard.css'")
+    expect(movedContent).toContain("import { formatDate } from '../utils/date'")
+    expect(movedContent).not.toContain('../../utils/date')
+  })
+
+  it('rebases non-relocated siblings and keeps package imports untouched', async () => {
+    writeFileSync(
+      HOME_TS,
+      'import "./sibling"\nimport { join } from "node:path"\nexport class Home {}',
+    )
+    writeFileSync('src/components/home/sibling.ts', 'export const sibling = 1')
+
+    await moveCommand({
+      source: 'components/home/Home',
+      destination: 'dashboard/Dashboard',
+    })
+
+    const movedContent = readFileSync('src/dashboard/dashboard.ts', 'utf-8')
+    expect(movedContent).toContain('import "../components/home/sibling"')
+    expect(movedContent).not.toContain('import "./sibling"')
+    expect(movedContent).toContain('import { join } from "node:path"')
+    expect(existsSync('src/components/home/sibling.ts')).toBe(true)
+  })
 })

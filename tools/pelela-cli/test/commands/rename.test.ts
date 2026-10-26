@@ -206,4 +206,40 @@ describe('renameCommand (Integration)', () => {
     expect(updatedTs).toContain('export class New {}')
     expect(updatedTs).toContain('export class OldHelper {}')
   })
+
+  it('rebases relative imports of renamed sibling files', async () => {
+    mkdirSync('src')
+    writeFileSync(
+      OLD_TS,
+      "import './old.css'\nimport type { Old } from './old'\nimport { helper } from './helper'\nexport class Old {}",
+    )
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+    writeFileSync(OLD_CSS, '/* old css */')
+    writeFileSync('src/helper.ts', 'export const helper = 1')
+
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
+
+    const updatedTs = readFileSync(NEW_TS, 'utf-8')
+    expect(updatedTs).toContain("import './new.css'")
+    expect(updatedTs).toContain("import type { New } from './new'")
+    expect(updatedTs).toContain("import { helper } from './helper'")
+    expect(updatedTs).not.toContain("import './old.css'")
+    expect(existsSync('src/helper.ts')).toBe(true)
+  })
+
+  it('keeps package imports untouched when renaming', async () => {
+    mkdirSync('src')
+    writeFileSync(
+      OLD_TS,
+      "import { join } from 'node:path'\nimport './old.css'\nexport class Old {}",
+    )
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+    writeFileSync(OLD_CSS, '/* old css */')
+
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
+
+    const updatedTs = readFileSync(NEW_TS, 'utf-8')
+    expect(updatedTs).toContain("import { join } from 'node:path'")
+    expect(updatedTs).toContain("import './new.css'")
+  })
 })

@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  getComponentBasePath,
   prepareFile,
   prepareRenamePaths,
   resolveExistingComponentPath,
@@ -190,6 +191,8 @@ describe('prepareRenamePaths', () => {
 
     expect(result.oldPath).toBe('src/old.ts')
     expect(result.newPath).toBe('src/new.ts')
+    expect(result.oldBasePath).toBe('src/old')
+    expect(result.newBasePath).toBe('src/new')
     expect(result.oldClassName).toBe('Old')
     expect(result.newClassName).toBe('New')
   })
@@ -267,5 +270,78 @@ describe('updateImports', () => {
 
     const content = readFileSync('src/app.ts', 'utf-8')
     expect(content).toContain("import { OtherComponent } from './src/other-component.ts'")
+  })
+
+  it('updates side-effect import paths that do not mention the class', () => {
+    mkdirSync('src')
+    writeFileSync('src/app.ts', "import './src/my-component'\nexport const app = true")
+
+    updateImports('MyComponent', 'OtherComponent')
+
+    const content = readFileSync('src/app.ts', 'utf-8')
+    expect(content).toContain("import './src/other-component'")
+    expect(content).not.toContain('my-component')
+  })
+
+  it('updates default import paths while keeping their local identifier', () => {
+    mkdirSync('src')
+    writeFileSync(
+      'src/app.ts',
+      "import myComponent from './src/my-component'\nexport const app = myComponent",
+    )
+
+    updateImports('MyComponent', 'OtherComponent')
+
+    const content = readFileSync('src/app.ts', 'utf-8')
+    expect(content).toContain("import myComponent from './src/other-component'")
+    expect(content).toContain('export const app = myComponent')
+  })
+
+  it('updates moved component side-effect imports even without the class name', () => {
+    mkdirSync('src')
+    writeFileSync('src/app.ts', "import './components/home/home'\nexport const app = true")
+
+    updateImports('Home', 'Dashboard', {
+      oldFilePath: 'src/components/home/home.ts',
+      newFilePath: 'src/dashboard/dashboard.ts',
+    })
+
+    const content = readFileSync('src/app.ts', 'utf-8')
+    expect(content).toContain("import './dashboard/dashboard'")
+    expect(content).not.toContain('components/home/home')
+  })
+
+  it('leaves the file untouched when the class is only mentioned in a comment', () => {
+    mkdirSync('src')
+    const originalContent = "// legacy import 'Home' from the barrel file\nexport const app = true"
+    writeFileSync('src/app.ts', originalContent)
+
+    updateImports('Home', 'Dashboard')
+
+    expect(readFileSync('src/app.ts', 'utf-8')).toBe(originalContent)
+  })
+
+  it('updates multiline import declarations', () => {
+    mkdirSync('src')
+    writeFileSync(
+      'src/app.ts',
+      "import {\n  MyComponent,\n} from './src/my-component'\nconst comp = new MyComponent()",
+    )
+
+    updateImports('MyComponent', 'OtherComponent')
+
+    const content = readFileSync('src/app.ts', 'utf-8')
+    expect(content).toContain("} from './src/other-component'")
+    expect(content).toContain('const comp = new OtherComponent()')
+  })
+})
+
+describe('getComponentBasePath', () => {
+  it('removes the extension from a path with extension', () => {
+    expect(getComponentBasePath('src/components/home/home.ts')).toBe('src/components/home/home')
+  })
+
+  it('returns a path without extension unchanged', () => {
+    expect(getComponentBasePath('src/components/home/home')).toBe('src/components/home/home')
   })
 })
