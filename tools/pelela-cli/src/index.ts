@@ -3,6 +3,7 @@ import { Command } from 'commander'
 import semver from 'semver'
 import { addCommand } from './commands/add'
 import { initCommand } from './commands/init'
+import { moveCommand } from './commands/move'
 import { newCommand } from './commands/new'
 import { renameCommand } from './commands/rename'
 import { initializeI18n, t } from './utils/i18n'
@@ -71,11 +72,24 @@ async function main(): Promise<void> {
     })
 
   program
-    .command('rename <path/oldComponentName> <path/newComponentName>')
+    .command('rename <path/componentName> <newComponentName>')
     .description(t('commands.rename.description'))
     .action(async (oldComponentName: string, newComponentName: string) => {
       try {
         await renameCommand({ oldComponentName, newComponentName })
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))
+        process.exit(1)
+      }
+    })
+
+  program
+    .command('move <path/sourceComponentName> <path/destinationComponentName>')
+    .description(t('commands.move.description'))
+    .action(async (source: string, destination: string) => {
+      try {
+        await moveCommand({ source, destination })
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         warn(chalk.red.bold(`${t('errors.prefix')} `), chalk.red(errorMessage))

@@ -8,7 +8,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { t } from './i18n'
 
 const SRC_DIR = 'src'
@@ -161,11 +161,6 @@ export function prepareRenamePaths(params: PrepareRenameParams): {
   const oldPath = resolveExistingComponentPath(kebabOldName, targetDir, `.${extension}`)
   const newPath = join(targetDir, `${kebabNewName}.${extension}`)
 
-  const newDir = dirname(newPath)
-  if (!existsSync(newDir)) {
-    mkdirSync(newDir, { recursive: true })
-  }
-
   const oldClassName = basename(normalizedOldName)
   const newClassName = basename(normalizedNewName)
 
@@ -222,6 +217,20 @@ function modifyAndRenameFile(params: ModifyContentParams): void {
   rmSync(oldPath)
 }
 
+function renameClassName(content: string, oldClassName: string, newClassName: string): string {
+  return content.replace(
+    new RegExp(`class\\s+${escapeRegExp(oldClassName)}\\b`, 'g'),
+    () => `class ${newClassName}`,
+  )
+}
+
+function renameViewModelName(content: string, oldClassName: string, newClassName: string): string {
+  return content.replace(
+    new RegExp(`view-model="${escapeRegExp(oldClassName)}"`, 'g'),
+    () => `view-model="${newClassName}"`,
+  )
+}
+
 export function renameTsFile(oldName: string, newName: string, targetDir: string): void {
   const { oldPath, newPath, oldClassName, newClassName } = prepareRenamePaths({
     oldName,
@@ -233,11 +242,7 @@ export function renameTsFile(oldName: string, newName: string, targetDir: string
   modifyAndRenameFile({
     oldPath,
     newPath,
-    contentModifier: (content) =>
-      content.replace(
-        new RegExp(`class\\s+${escapeRegExp(oldClassName)}\\b`, 'g'),
-        () => `class ${newClassName}`,
-      ),
+    contentModifier: (content) => renameClassName(content, oldClassName, newClassName),
   })
 }
 
@@ -257,11 +262,7 @@ export function renamePelelaFile(oldName: string, newName: string, targetDir: st
   modifyAndRenameFile({
     oldPath,
     newPath,
-    contentModifier: (content) =>
-      content.replace(
-        new RegExp(`view-model="${escapeRegExp(oldComponentName)}"`, 'g'),
-        () => `view-model="${newComponentName}"`,
-      ),
+    contentModifier: (content) => renameViewModelName(content, oldComponentName, newComponentName),
   })
 }
 
@@ -277,8 +278,49 @@ export function renameCssFile(oldName: string, newName: string, targetDir: strin
   renameSync(oldPath, newPath)
 }
 
+export function moveComponentFiles(
+  sourceTsPath: string,
+  destinationBasePath: string,
+  oldClassName: string,
+  newClassName: string,
+): void {
+  const sourceBasePath = sourceTsPath.slice(0, -extname(sourceTsPath).length)
+  const sourcePelelaPath = `${sourceBasePath}.pelela`
+  const sourceCssPath = `${sourceBasePath}.css`
+  const destinationTsPath = `${destinationBasePath}.ts`
+  const destinationPelelaPath = `${destinationBasePath}.pelela`
+  const destinationCssPath = `${destinationBasePath}.css`
+  const updatedTs = renameClassName(readFileSync(sourceTsPath, 'utf-8'), oldClassName, newClassName)
+  const updatedPelela = renameViewModelName(
+    readFileSync(sourcePelelaPath, 'utf-8'),
+    oldClassName,
+    newClassName,
+  )
+  const cssContent = existsSync(sourceCssPath) ? readFileSync(sourceCssPath, 'utf-8') : null
+
+  mkdirSync(dirname(destinationTsPath), { recursive: true })
+  writeFileSync(destinationTsPath, updatedTs)
+  writeFileSync(destinationPelelaPath, updatedPelela)
+  if (cssContent !== null) {
+    writeFileSync(destinationCssPath, cssContent)
+  }
+
+  rmSync(sourceTsPath)
+  rmSync(sourcePelelaPath)
+  if (cssContent !== null) {
+    rmSync(sourceCssPath)
+  }
+}
+
 const IGNORED_DIRS = ['node_modules', 'dist']
 const SUPPORTED_EXTENSIONS = ['.ts', '.js']
+
+interface ImportUpdateContext {
+  oldClass: string
+  newClass: string
+  importerPath: string
+  movedFilePaths?: { oldFilePath: string; newFilePath: string }
+}
 
 function getFiles(directoryPath: string): string[] {
   return readdirSync(directoryPath)
@@ -290,7 +332,41 @@ function getFiles(directoryPath: string): string[] {
     .filter((filePath) => SUPPORTED_EXTENSIONS.some((extension) => filePath.endsWith(extension)))
 }
 
-function replaceImportPath(importPath: string, oldClass: string, newClass: string): string {
+function getMovedImportPath(
+  importPath: string,
+  importerPath: string,
+  oldFilePath: string,
+  newFilePath: string,
+): string | null {
+  const normalizedImportPath = importPath.replace(/\\/g, '/')
+  if (!normalizedImportPath.startsWith('.')) return null
+
+  const resolvedImportPath = resolve(dirname(importerPath), normalizedImportPath)
+  const oldBasePath = oldFilePath.slice(0, -extname(oldFilePath).length)
+  const isOldComponentImport = [oldBasePath, `${oldBasePath}.ts`, `${oldBasePath}.js`].some(
+    (path) => resolve(path) === resolvedImportPath,
+  )
+  if (!isOldComponentImport) return null
+
+  const newBasePath = newFilePath.slice(0, -extname(newFilePath).length)
+  const relativePath = relative(dirname(importerPath), newBasePath).replace(/\\/g, '/')
+  const pathWithDotPrefix = relativePath.startsWith('.') ? relativePath : `./${relativePath}`
+  const importExtension = extname(normalizedImportPath)
+  return importExtension ? `${pathWithDotPrefix}${importExtension}` : pathWithDotPrefix
+}
+
+function replaceImportPath(importPath: string, context: ImportUpdateContext): string {
+  const { oldClass, newClass, importerPath, movedFilePaths } = context
+  if (movedFilePaths) {
+    const movedImportPath = getMovedImportPath(
+      importPath,
+      importerPath,
+      movedFilePaths.oldFilePath,
+      movedFilePaths.newFilePath,
+    )
+    if (movedImportPath) return movedImportPath
+  }
+
   const pathSegments = importPath.split('/')
   const fileNameFromPath = pathSegments.pop() || ''
 
@@ -309,8 +385,9 @@ function replaceImportPath(importPath: string, oldClass: string, newClass: strin
   return pathSegments.join('/')
 }
 
-function replaceComponentUsage(content: string, oldClass: string, newClass: string): string {
-  const importRegex = new RegExp(`import\\s+.*?\\b${escapeRegExp(oldClass)}\\b.*?\\s+from`, 'g')
+function replaceComponentUsage(content: string, context: ImportUpdateContext): string {
+  const { oldClass, newClass } = context
+  const importRegex = new RegExp(`import\\s+.*?\\b${escapeRegExp(oldClass)}\\b.*?\\s+from`, 'gs')
 
   if (!importRegex.test(content)) return content
 
@@ -321,22 +398,31 @@ function replaceComponentUsage(content: string, oldClass: string, newClass: stri
 
   const pathRegex = new RegExp(
     `(import\\s+.*?\\b${escapeRegExp(newClass)}\\b.*?\\s+from\\s+['"])([^'"]+)(['"])`,
-    'g',
+    'gs',
   )
 
   return updatedContent.replace(pathRegex, (_regexMatch, prefix, importPath, suffix) => {
-    const updatedPath = replaceImportPath(importPath, oldClass, newClass)
+    const updatedPath = replaceImportPath(importPath, context)
     return `${prefix}${updatedPath}${suffix}`
   })
 }
 
-export function updateImports(oldName: string, newName: string): void {
+export function updateImports(
+  oldName: string,
+  newName: string,
+  movedFilePaths?: { oldFilePath: string; newFilePath: string },
+): void {
   const oldClass = basename(oldName)
   const newClass = basename(newName)
 
   getFiles('.').forEach((file) => {
     const content = readFileSync(file, 'utf-8')
-    const newContent = replaceComponentUsage(content, oldClass, newClass)
+    const newContent = replaceComponentUsage(content, {
+      oldClass,
+      newClass,
+      importerPath: file,
+      movedFilePaths,
+    })
 
     if (content !== newContent) {
       writeFileSync(file, newContent)

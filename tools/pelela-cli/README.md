@@ -54,8 +54,11 @@ pelela init [projectName]
 # Crear un nuevo componente
 pelela new [path/componentName]
 
-# Renombrar un componente existente
-pelela rename [oldComponentName] [newComponentName]
+# Renombrar un componente sin moverlo
+pelela rename [path/componentName] [newComponentName]
+
+# Mover un componente a otra ruta
+pelela move [path/sourceComponentName] [path/destinationComponentName]
 
 # Mostrar versión
 pelela --version
@@ -89,19 +92,30 @@ Esto creará los archivos en `src/carpeta/my-component.*`.
 
 ### Renombrar componentes
 
-Renombrar un componente existente:
+Renombrar un componente conserva su ubicación. Se puede indicar el path del componente desde `src`:
 
 ```bash
-pelela rename OldComponent NewComponent
+pelela rename components/Home Dashboard
 ```
 
 Este comando:
-- Busca recursivamente el archivo del componente en el proyecto
-- Renombra los archivos `.ts`, `.pelela` y `.css` a kebab-case
-- Actualiza el nombre de la clase en los archivos
-- Actualiza los imports en todo el proyecto
+- Renombra la clase/view-model y los archivos `.ts`, `.pelela` y `.css` (si existe)
+- Mantiene el componente en su carpeta actual
+- Actualiza sus imports en el proyecto
 
-El comando valida que el nuevo nombre sea **PascalCase** y que el componente antiguo exista en el proyecto.
+El nombre nuevo debe ser **PascalCase** y no puede incluir una ruta. Para cambiar de carpeta, usá `move`.
+
+### Mover componentes
+
+`move` recibe paths completos de origen y destino, relativos a `src`. El último segmento del destino determina el nuevo nombre:
+
+```bash
+pelela move components/home/Home components/dashboard/Dashboard
+pelela move components/dashboard/Dashboard components/dashboard/reports/Reports
+pelela move components/dashboard/Dashboard pages/reports/Reports
+```
+
+El comando mueve el conjunto `.ts` y `.pelela`, mueve el `.css` si existe, actualiza el nombre del view-model y las referencias/imports. No sobrescribe archivos existentes ni mueve otros recursos de las carpetas.
 
 ## Inicio rápido después de la inicialización
 
@@ -160,6 +174,7 @@ El CLI está organizado en módulos lógicos:
 - **`commands/init.ts`** - Lógica de inicialización de proyectos
 - **`commands/new.ts`** - Lógica de creación de componentes
 - **`commands/rename.ts`** - Lógica de renombramiento de componentes
+- **`commands/move.ts`** - Lógica de movimiento de componentes
 - **`utils/componentFiles.ts`** - Utilidades para gestión de archivos de componentes (creación, renombramiento, normalización de nombres)
 - **`utils/version.ts`** - Verificación de versiones contra el registro NPM
 - **`utils/shell.ts`** - Utilidades de shell (operaciones de archivos, gestión de directorios)

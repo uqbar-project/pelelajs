@@ -140,6 +140,44 @@ describe('renameCommand (Integration)', () => {
     expect(existsSync('src/subdir/new.css')).toBe(true)
   })
 
+  it('renames a component selected by path without duplicating its directory', async () => {
+    mkdirSync('src/components', { recursive: true })
+    writeFileSync('src/components/home.ts', 'export class Home {}')
+    writeFileSync('src/components/home.pelela', '<pelela view-model="Home"></pelela>')
+    writeFileSync('src/components/home.css', '/* home css */')
+
+    await renameCommand({
+      oldComponentName: 'components/Home',
+      newComponentName: 'Dashboard',
+    })
+
+    expect(existsSync('src/components/home.ts')).toBe(false)
+    expect(existsSync('src/components/dashboard.ts')).toBe(true)
+    expect(existsSync('src/components/dashboard.pelela')).toBe(true)
+    expect(existsSync('src/components/dashboard.css')).toBe(true)
+    expect(existsSync('src/components/components')).toBe(false)
+    expect(readFileSync('src/components/dashboard.ts', 'utf-8')).toContain('class Dashboard')
+    expect(readFileSync('src/components/dashboard.pelela', 'utf-8')).toContain(
+      'view-model="Dashboard"',
+    )
+  })
+
+  it('directs users to move when the new name includes a directory', async () => {
+    mkdirSync('src/components', { recursive: true })
+    writeFileSync('src/components/home.ts', 'export class Home {}')
+    writeFileSync('src/components/home.pelela', '<pelela view-model="Home"></pelela>')
+
+    await expect(
+      renameCommand({
+        oldComponentName: 'components/Home',
+        newComponentName: 'dashboard/Dashboard',
+      }),
+    ).rejects.toThrow(t('commands.rename.error.newNamePathNotAllowed'))
+
+    expect(existsSync('src/components/home.ts')).toBe(true)
+    expect(existsSync('src/dashboard')).toBe(false)
+  })
+
   it('updates import path when filename is lowercase in import statement', async () => {
     mkdirSync('src')
     writeFileSync(OLD_TS, OLD_CONTENT_TS)

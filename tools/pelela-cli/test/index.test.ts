@@ -4,6 +4,10 @@ import { describe, expect, it } from 'vitest'
 
 const execFileAsync = promisify(execFile)
 
+function runCli(args: string[]) {
+  return execFileAsync('pnpm', ['-C', 'tools/pelela-cli', 'exec', 'tsx', 'src/index.ts', ...args])
+}
+
 describe('CLI structure', () => {
   it('exports expected modules from commands', async () => {
     const { initCommand } = await import('../src/commands/init')
@@ -31,46 +35,30 @@ describe('CLI structure', () => {
   })
 
   it('runs the standalone CLI entrypoint in ESM mode and prints the version', async () => {
-    const result = await execFileAsync('pnpm', [
-      '-C',
-      'tools/pelela-cli',
-      'exec',
-      'tsx',
-      'src/index.ts',
-      '--version',
-    ])
+    const result = await runCli(['--version'])
 
     expect(result.stdout).toMatch(/\d+\.\d+\.\d+/)
     expect(result.stderr).toBe('')
   })
 
   it('shows the testing option in the init command help', async () => {
-    const result = await execFileAsync('pnpm', [
-      '-C',
-      'tools/pelela-cli',
-      'exec',
-      'tsx',
-      'src/index.ts',
-      'init',
-      '--help',
-    ])
+    const result = await runCli(['init', '--help'])
 
     expect(result.stdout).toContain('-T, --testing')
     expect(result.stderr).toBe('')
   })
 
   it('shows the add preset command in the CLI help', async () => {
-    const result = await execFileAsync('pnpm', [
-      '-C',
-      'tools/pelela-cli',
-      'exec',
-      'tsx',
-      'src/index.ts',
-      'add',
-      '--help',
-    ])
+    const result = await runCli(['add', '--help'])
 
     expect(result.stdout).toContain('add [options] <preset>')
+    expect(result.stderr).toBe('')
+  })
+
+  it('shows the move command in the CLI help', async () => {
+    const result = await runCli(['move', '--help'])
+
+    expect(result.stdout).toContain('move [options]')
     expect(result.stderr).toBe('')
   })
 })

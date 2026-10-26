@@ -194,17 +194,18 @@ describe('prepareRenamePaths', () => {
     expect(result.newClassName).toBe('New')
   })
 
-  it('creates new directory if it does not exist', () => {
+  it('does not create the destination directory while preparing paths', () => {
     writeFileSync('src/old.ts', '')
 
-    prepareRenamePaths({
+    const result = prepareRenamePaths({
       oldName: 'Old',
       newName: 'new-dir/New',
       extension: 'ts',
       targetDir: 'src',
     })
 
-    expect(existsSync('src/new-dir')).toBe(true)
+    expect(result.newPath).toBe('src/new-dir/new.ts')
+    expect(existsSync('src/new-dir')).toBe(false)
   })
 
   it('handles subdirectories', () => {

@@ -7,6 +7,7 @@ import {
   renameCssFile,
   renamePelelaFile,
   renameTsFile,
+  resolveExistingComponentPath,
   toKebabCase,
   updateImports,
   validateBasename,
@@ -20,6 +21,7 @@ export interface RenameCommandOptions {
 
 export async function renameCommand(options: RenameCommandOptions): Promise<void> {
   const { oldComponentName, newComponentName } = options
+  const normalizedOldPath = oldComponentName.replace(/\\/g, '/')
 
   if (!oldComponentName) {
     throw new Error(t('commands.rename.error.oldNameEmpty'))
@@ -28,31 +30,41 @@ export async function renameCommand(options: RenameCommandOptions): Promise<void
     throw new Error(t('commands.rename.error.newNameEmpty'))
   }
 
-  validateBasename(oldComponentName, 'commands.rename.error.nameInvalid')
+  validateBasename(normalizedOldPath, 'commands.rename.error.nameInvalid')
+  if (newComponentName.includes('/') || newComponentName.includes('\\')) {
+    throw new Error(t('commands.rename.error.newNamePathNotAllowed'))
+  }
   validateBasename(newComponentName, 'commands.rename.error.nameInvalid')
 
-  const oldTsFile = findComponentFile(oldComponentName, '.ts')
+  const oldTsFile = findComponentFile(normalizedOldPath, '.ts')
   if (!oldTsFile) {
     throw new Error(t('commands.rename.error.oldNotFound', { name: oldComponentName }))
   }
 
   const targetDir = dirname(oldTsFile)
+  const oldFileName = normalizedOldPath.split('/').at(-1) ?? normalizedOldPath
+  const normalizedOldName = normalizeComponentName(oldFileName, targetDir)
   const normalizedNewName = normalizeComponentName(newComponentName, targetDir)
   const kebabNewName = toKebabCase(normalizedNewName)
 
   const newTsFile = join(targetDir, `${kebabNewName}.ts`)
   const newPelelaFile = join(targetDir, `${kebabNewName}.pelela`)
   const newCssFile = join(targetDir, `${kebabNewName}.css`)
+  const oldKebabName = toKebabCase(normalizedOldName)
+  const oldPelelaFile = resolveExistingComponentPath(oldKebabName, targetDir, '.pelela')
 
   if (existsSync(newTsFile) || existsSync(newPelelaFile) || existsSync(newCssFile)) {
     throw new Error(t('commands.rename.error.newNameExists', { name: newComponentName }))
   }
+  if (!existsSync(oldPelelaFile)) {
+    throw new Error(t('commands.rename.error.oldNotFound', { name: oldComponentName }))
+  }
 
   try {
-    renameTsFile(oldComponentName, newComponentName, targetDir)
-    renamePelelaFile(oldComponentName, newComponentName, targetDir)
-    renameCssFile(oldComponentName, newComponentName, targetDir)
-    updateImports(oldComponentName, newComponentName)
+    renameTsFile(oldFileName, newComponentName, targetDir)
+    renamePelelaFile(oldFileName, newComponentName, targetDir)
+    renameCssFile(oldFileName, newComponentName, targetDir)
+    updateImports(normalizedOldName, normalizedNewName)
 
     console.log(
       chalk.green(

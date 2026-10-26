@@ -60,17 +60,31 @@
       }
     },
     "rename": {
-      "description": "🔄 Renombrar un componente (usar path/nombre para desambiguar si es necesario)",
+      "description": "🔄 Renombrar un componente sin cambiarlo de carpeta",
       "error": {
         "oldNameEmpty": "El nombre actual del componente no puede estar vacío",
         "newNameEmpty": "El nuevo nombre del componente no puede estar vacío",
         "nameInvalid": "El nuevo nombre del componente debe ser PascalCase (ej: MiComponente)",
+        "newNamePathNotAllowed": "El nuevo nombre del componente no puede incluir una ruta. Usá \"pelela move\" para cambiarlo de carpeta",
         "oldNotFound": "No se encontraron los archivos para el componente \"{{name}}\"",
         "newNameExists": "Ya existen archivos con el nombre \"{{name}}\"",
         "renameFailed": "Error al renombrar el componente: {{error}}"
       },
       "messages": {
         "success": "✅ Componente \"{{oldName}}\" renombrado a \"{{newName}}\" exitosamente"
+      }
+    },
+    "move": {
+      "description": "Mover un componente a una ruta de destino",
+      "error": {
+        "pathInvalid": "Las rutas deben ser relativas, normalizadas y terminar con un nombre PascalCase",
+        "sourceNotFound": "No se encontró un componente en \"{{source}}\"",
+        "templateNotFound": "No se encontró una plantilla para el componente en \"{{source}}\"",
+        "destinationExists": "Ya existe un archivo de componente en \"{{destination}}\"",
+        "moveFailed": "No se pudo mover el componente: {{error}}"
+      },
+      "messages": {
+        "success": "✅ Componente movido de \"{{source}}\" a \"{{destination}}\" exitosamente"
       }
     }
   },

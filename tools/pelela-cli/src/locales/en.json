@@ -60,17 +60,31 @@
       }
     },
     "rename": {
-      "description": "🔄 Rename a component (use path/name to disambiguate if necessary)",
+      "description": "🔄 Rename a component without changing its directory",
       "error": {
         "oldNameEmpty": "Current component name cannot be empty",
         "newNameEmpty": "New component name cannot be empty",
         "nameInvalid": "New component name must be PascalCase (e.g., MyComponent)",
+        "newNamePathNotAllowed": "The new component name cannot include a path. Use \"pelela move\" to change its directory",
         "oldNotFound": "Could not find files for component \"{{name}}\"",
         "newNameExists": "Files with name \"{{name}}\" already exist",
         "renameFailed": "Failed to rename component: {{error}}"
       },
       "messages": {
         "success": "✅ Component \"{{oldName}}\" renamed to \"{{newName}}\" successfully"
+      }
+    },
+    "move": {
+      "description": "Move a component to a destination path",
+      "error": {
+        "pathInvalid": "Component paths must be relative, normalized paths ending in a PascalCase name",
+        "sourceNotFound": "Could not find a component at \"{{source}}\"",
+        "templateNotFound": "Could not find a template for component at \"{{source}}\"",
+        "destinationExists": "A component file already exists at \"{{destination}}\"",
+        "moveFailed": "Failed to move component: {{error}}"
+      },
+      "messages": {
+        "success": "✅ Component moved from \"{{source}}\" to \"{{destination}}\" successfully"
       }
     }
   },
