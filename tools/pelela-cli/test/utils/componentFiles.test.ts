@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  findComponentFile,
   getComponentBasePath,
   prepareFile,
   prepareRenamePaths,
@@ -11,6 +12,41 @@ import {
   toPascalCase,
   updateImports,
 } from '../../src/utils/componentFiles'
+
+describe('findComponentFile', () => {
+  let tempDir: string
+  let originalCwd: string
+
+  beforeEach(() => {
+    originalCwd = process.cwd()
+    tempDir = mkdtempSync(join(tmpdir(), 'find-component-test-'))
+    process.chdir(tempDir)
+    mkdirSync('src', { recursive: true })
+  })
+
+  afterEach(() => {
+    process.chdir(originalCwd)
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  it('matches component paths on segment boundaries only', () => {
+    mkdirSync('src/a-components/home', { recursive: true })
+    writeFileSync('src/a-components/home/home.ts', 'export class HomeWrong {}')
+    mkdirSync('src/components/home', { recursive: true })
+    writeFileSync('src/components/home/home.ts', 'export class Home {}')
+
+    const foundPath = findComponentFile('components/home/Home', '.ts')
+
+    expect(foundPath).toBe('src/components/home/home.ts')
+  })
+
+  it('returns null when the only candidate crosses a segment boundary', () => {
+    mkdirSync('src/a-components/home', { recursive: true })
+    writeFileSync('src/a-components/home/home.ts', 'export class HomeWrong {}')
+
+    expect(findComponentFile('components/home/Home', '.ts')).toBeNull()
+  })
+})
 
 describe('resolveExistingComponentPath', () => {
   let tempDir: string
@@ -333,6 +369,16 @@ describe('updateImports', () => {
     const content = readFileSync('src/app.ts', 'utf-8')
     expect(content).toContain("} from './src/other-component'")
     expect(content).toContain('const comp = new OtherComponent()')
+  })
+
+  it('updates re-exported symbols and their paths when renaming', () => {
+    mkdirSync('src')
+    writeFileSync('src/routes.ts', "export { MyComponent } from './src/my-component'")
+
+    updateImports('MyComponent', 'OtherComponent')
+
+    const content = readFileSync('src/routes.ts', 'utf-8')
+    expect(content).toBe("export { OtherComponent } from './src/other-component'")
   })
 })
 

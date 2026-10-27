@@ -198,9 +198,9 @@ export const route = Reports`,
   })
 
   it('selects the correct component when directories have similar suffixes', async () => {
-    mkdirSync('src/components/myhome', { recursive: true })
-    writeFileSync('src/components/myhome/home.ts', 'export class HomeWrong {}')
-    writeFileSync('src/components/myhome/home.pelela', '<pelela view-model="HomeWrong"></pelela>')
+    mkdirSync('src/a-components/home', { recursive: true })
+    writeFileSync('src/a-components/home/home.ts', 'export class HomeWrong {}')
+    writeFileSync('src/a-components/home/home.pelela', '<pelela view-model="HomeWrong"></pelela>')
 
     await moveCommand({
       source: 'components/home/Home',
@@ -212,8 +212,8 @@ export const route = Reports`,
     expect(readFileSync('src/components/dashboard/dashboard.ts', 'utf-8')).toContain(
       'class Dashboard',
     )
-    expect(existsSync('src/components/myhome/home.ts')).toBe(true)
-    expect(readFileSync('src/components/myhome/home.ts', 'utf-8')).toContain('class HomeWrong')
+    expect(existsSync('src/a-components/home/home.ts')).toBe(true)
+    expect(readFileSync('src/a-components/home/home.ts', 'utf-8')).toContain('class HomeWrong')
   })
 
   it('rebases relative imports inside the moved component file', async () => {
@@ -252,5 +252,38 @@ export const route = Reports`,
     expect(movedContent).not.toContain('import "./sibling"')
     expect(movedContent).toContain('import { join } from "node:path"')
     expect(existsSync('src/components/home/sibling.ts')).toBe(true)
+  })
+
+  it('updates external stylesheet imports during a move', async () => {
+    writeFileSync(
+      'src/styles.ts',
+      "import './components/home/home.css'\nexport const styles = true",
+    )
+
+    await moveCommand({
+      source: 'components/home/Home',
+      destination: 'dashboard/Dashboard',
+    })
+
+    const stylesContent = readFileSync('src/styles.ts', 'utf-8')
+    expect(stylesContent).toContain("import './dashboard/dashboard.css'")
+    expect(stylesContent).not.toContain('components/home/home.css')
+  })
+
+  it('updates the symbol and path of a re-export during a move', async () => {
+    writeFileSync(
+      ROUTES_PATH,
+      "export { Home } from './components/home/home'\nexport const route = Home",
+    )
+
+    await moveCommand({
+      source: 'components/home/Home',
+      destination: 'dashboard/Dashboard',
+    })
+
+    const routesContent = readFileSync(ROUTES_PATH, 'utf-8')
+    expect(routesContent).toContain("export { Dashboard } from './dashboard/dashboard'")
+    expect(routesContent).toContain('export const route = Dashboard')
+    expect(routesContent).not.toContain('components/home/home')
   })
 })

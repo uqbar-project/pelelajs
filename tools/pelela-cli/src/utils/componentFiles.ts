@@ -318,7 +318,9 @@ function buildMovedFilesMap(oldBasePath: string, newBasePath: string): ReadonlyM
 
 function toDotRelativeSpecifier(baseDirectory: string, targetPath: string): string {
   const relativePath = relative(baseDirectory, targetPath).replace(/\\/g, '/')
-  return relativePath.startsWith('.') ? relativePath : `./${relativePath}`
+  const isAlreadyRelative =
+    relativePath === '..' || relativePath.startsWith('./') || relativePath.startsWith('../')
+  return isAlreadyRelative ? relativePath : `./${relativePath}`
 }
 
 function getRebaseTarget(
@@ -425,9 +427,12 @@ function getMovedImportPath(
 
   const resolvedImportPath = resolve(dirname(importerPath), normalizedImportPath)
   const oldBasePath = getComponentBasePath(oldFilePath)
-  const isOldComponentImport = [oldBasePath, `${oldBasePath}.ts`, `${oldBasePath}.js`].some(
-    (path) => resolve(path) === resolvedImportPath,
-  )
+  const isOldComponentImport = [
+    oldBasePath,
+    `${oldBasePath}.ts`,
+    `${oldBasePath}.js`,
+    `${oldBasePath}.css`,
+  ].some((path) => resolve(path) === resolvedImportPath)
   if (!isOldComponentImport) return null
 
   const newBasePath = getComponentBasePath(newFilePath)
@@ -451,7 +456,7 @@ function replaceImportPath(importPath: string, context: ImportUpdateContext): st
   const pathSegments = importPath.split('/')
   const fileNameFromPath = pathSegments.pop() || ''
 
-  const extensions = ['.ts', '.js', '']
+  const extensions = ['.ts', '.js', '.css', '']
   const matchedExtension = extensions.find(
     (extension) => fileNameFromPath === `${toKebabCase(oldClass)}${extension}`,
   )
@@ -468,18 +473,30 @@ function replaceImportPath(importPath: string, context: ImportUpdateContext): st
 
 function replaceComponentUsage(content: string, context: ImportUpdateContext): string {
   const { oldClass, newClass } = context
-  const importRegex = new RegExp(`import\\s+[^';]*?\\b${escapeRegExp(oldClass)}\\b[^';]*?\\s+from`)
+  const declarationRegex = new RegExp(
+    `(?:import|export)\\s+[^';]*?\\b${escapeRegExp(oldClass)}\\b[^';]*?\\s+from`,
+  )
 
-  const updatedContent = importRegex.test(content)
+  const updatedContent = declarationRegex.test(content)
     ? content.replace(new RegExp(`\\b${escapeRegExp(oldClass)}\\b`, 'g'), newClass)
     : content
 
   const importSpecifierRegex = /(\bimport\b[^'";]*?)(['"])([^'"]+)\2/g
+  const reExportSpecifierRegex = /(\bexport\b[^'";]*?\bfrom\s*)(['"])([^'"]+)\2/g
 
-  return updatedContent.replace(importSpecifierRegex, (_match, prefix, quote, importPath) => {
-    const updatedPath = replaceImportPath(importPath, context)
+  const rewriteSpecifierPath = (
+    _match: string,
+    prefix: string,
+    quote: string,
+    specifierPath: string,
+  ): string => {
+    const updatedPath = replaceImportPath(specifierPath, context)
     return `${prefix}${quote}${updatedPath}${quote}`
-  })
+  }
+
+  return updatedContent
+    .replace(importSpecifierRegex, rewriteSpecifierPath)
+    .replace(reExportSpecifierRegex, rewriteSpecifierPath)
 }
 
 export function updateImports(
