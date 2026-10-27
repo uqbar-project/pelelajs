@@ -4,7 +4,8 @@ This guide provides the necessary steps to set up the PelelaJS monorepo for loca
 
 ## Prerequisites
 
-- **Node.js**: Ensure you have Node `v22` or higher.
+- **Node.js**: Use the version in the root `.nvmrc` (`22.23.4`) with `nvm install` and `nvm use`.
+  Other supported versions are listed in the [project requirements](../README.md#requirements).
 
 - **pnpm**: This project strictly uses `pnpm` as the package manager (`npm` or `yarn` will fail).
 

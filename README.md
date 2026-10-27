@@ -18,7 +18,9 @@ This installs both the library and the `pelela` CLI tool.
 
 ### Requirements
 
-- **Node.js >= 22.0.0**
+- **Node.js**: `22.23.4` or later within Node 22, `24.22.1` or later within Node 24,
+  or `26.12.1` or later within Node 26. These minimums include the
+  [October 2026 security fixes](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases).
 
 - **pnpm** (required package manager)
 

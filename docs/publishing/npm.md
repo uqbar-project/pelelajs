@@ -4,7 +4,8 @@ This document describes how to publish a new version of PelelaJS to the NPM regi
 
 ## Prerequisites
 
-- Node.js >= 22.0.0
+- Node.js matching the [project requirements](../../README.md#requirements).
+  Use the root `.nvmrc` for releases.
 
 - NPM/pnpm permissions for the `pelelajs` package.
 

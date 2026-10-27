@@ -4,7 +4,8 @@ This document describes how to publish a new version of the `pelela-vscode` exte
 
 ## Prerequisites
 
-- Node.js >= 22.0.0
+- Node.js matching the [project requirements](../../README.md#requirements).
+  Use the root `.nvmrc` for releases.
 
 - pnpm (workspace package manager)
 

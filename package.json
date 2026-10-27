@@ -32,7 +32,7 @@
   "author": "",
   "license": "GPL-3.0-or-later",
   "engines": {
-    "node": ">=22.0.0",
+    "node": "^22.23.4 || ^24.22.1 || ^26.12.1",
     "pnpm": ">=10.0.0"
   },
   "packageManager": "pnpm@12.4.1",
