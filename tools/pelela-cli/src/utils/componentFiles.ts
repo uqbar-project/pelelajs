@@ -456,6 +456,11 @@ function replaceImportPath(importPath: string, context: ImportUpdateContext): st
   const pathSegments = importPath.split('/')
   const fileNameFromPath = pathSegments.pop() || ''
 
+  const isUnrelatedCssImport = movedFilePaths !== undefined && fileNameFromPath.endsWith('.css')
+  if (isUnrelatedCssImport) {
+    return importPath
+  }
+
   const extensions = ['.ts', '.js', '.css', '']
   const matchedExtension = extensions.find(
     (extension) => fileNameFromPath === `${toKebabCase(oldClass)}${extension}`,

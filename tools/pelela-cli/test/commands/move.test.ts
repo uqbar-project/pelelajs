@@ -270,6 +270,20 @@ export const route = Reports`,
     expect(stylesContent).not.toContain('components/home/home.css')
   })
 
+  it('keeps external imports of an unrelated stylesheet with a similar name', async () => {
+    mkdirSync('src/pages/home', { recursive: true })
+    writeFileSync('src/pages/home/home.css', '/* unrelated css */')
+    writeFileSync('src/styles.ts', "import './pages/home/home.css'\nexport const styles = true")
+
+    await moveCommand({
+      source: 'components/home/Home',
+      destination: 'dashboard/Dashboard',
+    })
+
+    const stylesContent = readFileSync('src/styles.ts', 'utf-8')
+    expect(stylesContent).toContain("import './pages/home/home.css'")
+  })
+
   it('updates the symbol and path of a re-export during a move', async () => {
     writeFileSync(
       ROUTES_PATH,

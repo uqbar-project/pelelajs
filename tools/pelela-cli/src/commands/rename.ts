@@ -64,7 +64,10 @@ export async function renameCommand(options: RenameCommandOptions): Promise<void
     renameTsFile(oldFileName, newComponentName, targetDir)
     renamePelelaFile(oldFileName, newComponentName, targetDir)
     renameCssFile(oldFileName, newComponentName, targetDir)
-    updateImports(normalizedOldName, normalizedNewName)
+    updateImports(normalizedOldName, normalizedNewName, {
+      oldFilePath: oldTsFile,
+      newFilePath: newTsFile,
+    })
 
     console.log(
       chalk.green(

@@ -271,4 +271,18 @@ describe('renameCommand (Integration)', () => {
     expect(stylesContent).toContain("import './src/new.css'")
     expect(stylesContent).not.toContain('old.css')
   })
+
+  it('keeps external imports of an unrelated stylesheet when renaming', async () => {
+    mkdirSync('src/legacy', { recursive: true })
+    writeFileSync(OLD_TS, OLD_CONTENT_TS)
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+    writeFileSync(OLD_CSS, '/* old css */')
+    writeFileSync('src/legacy/old.css', '/* unrelated css */')
+    writeFileSync('styles.ts', "import './src/legacy/old.css'\nexport const styles = true")
+
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
+
+    const stylesContent = readFileSync('styles.ts', 'utf-8')
+    expect(stylesContent).toContain("import './src/legacy/old.css'")
+  })
 })
