@@ -4,10 +4,8 @@
 
 ## 🚀 Cómo ejecutarlo
 
-> **Nota sobre Node.js:** Usá Node.js `24.22.1`, la versión indicada en `.nvmrc`,
-> ejecutando `nvm install` y `nvm use` antes de continuar. También se admiten las ramas
-> 22, 24 y 26 desde los parches `22.23.4`, `24.22.1` y `26.12.1`, respectivamente,
-> según `engines.node` en `package.json`.
+> **Nota sobre Node.js:** Ejecutá `nvm install` y `nvm use` antes de continuar.
+> Estos comandos instalan y seleccionan Node.js según lo indicado en `.nvmrc`.
 
 1. **Instalar las dependencias:**
 
