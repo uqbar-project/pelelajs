@@ -4,7 +4,8 @@
 
 ## 🚀 Cómo ejecutarlo
 
-> **Nota sobre Node.js:** Este proyecto requiere la versión LTS de Node.js especificada en el archivo `.nvmrc` y en el `package.json` (`engines.node`, ej. Node 24). Si tu versión actual es más antigua, te recomendamos ejecutar `nvm use` (o instalar la versión requerida) antes de continuar.
+> **Nota sobre Node.js:** Ejecutá `nvm install` y `nvm use` antes de continuar.
+> Estos comandos instalan y seleccionan Node.js según lo indicado en `.nvmrc`.
 
 1. **Instalar las dependencias:**
 

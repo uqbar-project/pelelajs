@@ -18,7 +18,7 @@ This installs both the library and the `pelela` CLI tool.
 
 ### Requirements
 
-- **Node.js >= 22.0.0**
+- **Node.js**: Use the recommended version from [.nvmrc](./.nvmrc).
 
 - **pnpm** (required package manager)
 
