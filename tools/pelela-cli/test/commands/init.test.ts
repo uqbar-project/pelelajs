@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initCommand, normalizeProjectName, validateProjectName } from '../../src/commands/init'
 import { initializeI18n, t } from '../../src/utils/i18n'
@@ -161,12 +162,17 @@ describe('initCommand', () => {
 
   it('does not suggest a manual install in the next steps', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+    const projectName = 'my-project'
 
-    await initCommand({ projectName: 'my-project' })
+    await initCommand({ projectName })
 
-    const output = logSpy.mock.calls.flat().join('\n')
-    expect(output).toContain(t('messages.dev'))
-    expect(output).not.toContain('pnpm install')
+    const [, ...nextStepsCalls] = logSpy.mock.calls
+    expect(nextStepsCalls).toEqual([
+      [chalk.dim(t('messages.nextSteps'))],
+      [chalk.cyan(`  ${t('messages.cdProject', { projectName })}`)],
+      [chalk.cyan(`  ${t('messages.dev')}`)],
+      [],
+    ])
   })
 
   it('propagates installation failures without wrapping them', async () => {
