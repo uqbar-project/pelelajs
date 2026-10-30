@@ -482,10 +482,7 @@ function replaceImportPath(importPath: string, context: ImportUpdateContext): st
   return pathSegments.join('/')
 }
 
-function isMovedComponentFile(
-  importerPath: string,
-  movedFilePaths?: MovedFilePaths,
-): boolean {
+function isMovedComponentFile(importerPath: string, movedFilePaths?: MovedFilePaths): boolean {
   if (movedFilePaths === undefined) return false
   const resolvedImporterPath = resolve(importerPath)
   return (

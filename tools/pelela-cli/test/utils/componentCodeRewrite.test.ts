@@ -50,6 +50,66 @@ describe('rewriteComponentCode', () => {
     )
   })
 
+  it('keeps property accesses like other.Home untouched', () => {
+    const content = [
+      "import { Home } from './home'",
+      'const page = new Home()',
+      "const other = { Home: 'section' }",
+      'const label = other.Home',
+    ].join('\n')
+
+    expect(rewrite(content)).toBe(
+      [
+        "import { Dashboard } from './dashboard'",
+        'const page = new Dashboard()',
+        "const other = { Home: 'section' }",
+        'const label = other.Home',
+      ].join('\n'),
+    )
+  })
+
+  it('does not rewrite references shadowed by a parameter of the same name', () => {
+    const content = [
+      "import { Home } from './home'",
+      'function render(Home: string) {',
+      '  return new Home()',
+      '}',
+      'const page = new Home()',
+    ].join('\n')
+
+    expect(rewrite(content)).toBe(
+      [
+        "import { Dashboard } from './dashboard'",
+        'function render(Home: string) {',
+        '  return new Home()',
+        '}',
+        'const page = new Dashboard()',
+      ].join('\n'),
+    )
+  })
+
+  it('does not rewrite references shadowed by a local block declaration', () => {
+    const content = [
+      "import { Home } from './home'",
+      'export function render() {',
+      '  const Home = { label: "local" }',
+      '  return Home.label',
+      '}',
+      'const page = new Home()',
+    ].join('\n')
+
+    expect(rewrite(content)).toBe(
+      [
+        "import { Dashboard } from './dashboard'",
+        'export function render() {',
+        '  const Home = { label: "local" }',
+        '  return Home.label',
+        '}',
+        'const page = new Dashboard()',
+      ].join('\n'),
+    )
+  })
+
   it('rewrites shorthand properties while keeping member declarations intact', () => {
     const content = [
       "import { Home } from './home'",

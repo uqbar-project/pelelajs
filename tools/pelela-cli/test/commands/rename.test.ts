@@ -288,10 +288,7 @@ describe('renameCommand (Integration)', () => {
 
   it('updates internal class references inside the renamed file', async () => {
     mkdirSync('src')
-    writeFileSync(
-      OLD_TS,
-      'export class Old {\n  static create() {\n    return new Old()\n  }\n}',
-    )
+    writeFileSync(OLD_TS, 'export class Old {\n  static create() {\n    return new Old()\n  }\n}')
     writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
 
     await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })

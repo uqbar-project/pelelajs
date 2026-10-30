@@ -121,7 +121,8 @@ function importsComponent(sourceFile: ts.SourceFile, oldClass: string): boolean 
 function isPropertyNamePosition(node: ts.Identifier): boolean {
   const { parent } = node
   return (
-    (ts.isPropertyAssignment(parent) ||
+    (ts.isPropertyAccessExpression(parent) ||
+      ts.isPropertyAssignment(parent) ||
       ts.isPropertyDeclaration(parent) ||
       ts.isMethodDeclaration(parent) ||
       ts.isPropertySignature(parent) ||
@@ -133,9 +134,117 @@ function isPropertyNamePosition(node: ts.Identifier): boolean {
   )
 }
 
+function bindingNameMatches(name: ts.BindingName, oldClass: string): boolean {
+  if (ts.isIdentifier(name)) {
+    return name.text === oldClass
+  }
+  return name.elements.some(
+    (element) => ts.isBindingElement(element) && bindingNameMatches(element.name, oldClass),
+  )
+}
+
+function isLexicalScopeBoundary(node: ts.Node): boolean {
+  return (
+    ts.isBlock(node) ||
+    ts.isSourceFile(node) ||
+    ts.isModuleBlock(node) ||
+    ts.isCaseBlock(node) ||
+    ts.isCatchClause(node) ||
+    ts.isForStatement(node) ||
+    ts.isForInStatement(node) ||
+    ts.isForOfStatement(node)
+  )
+}
+
+function findEnclosingScope(
+  declaration: ts.Node,
+  isScopeBoundary: (node: ts.Node) => boolean,
+): ts.Node | undefined {
+  let current = declaration.parent
+  while (current !== undefined) {
+    if (isScopeBoundary(current)) return current
+    current = current.parent
+  }
+  return undefined
+}
+
+function getLocalBindingShadowingScope(node: ts.Node, oldClass: string): ts.Node | undefined {
+  if (ts.isParameter(node)) {
+    return bindingNameMatches(node.name, oldClass)
+      ? findEnclosingScope(node, ts.isFunctionLike)
+      : undefined
+  }
+  if (ts.isVariableDeclaration(node)) {
+    return bindingNameMatches(node.name, oldClass)
+      ? findEnclosingScope(node, isLexicalScopeBoundary)
+      : undefined
+  }
+  return undefined
+}
+
+function getNamedDeclarationShadowingScope(
+  node: ts.Node,
+  oldClass: string,
+  isMovedComponentFile: boolean,
+): ts.Node | undefined {
+  if (ts.isClassDeclaration(node)) {
+    const isComponentDeclaration = isMovedComponentFile && node.name?.text === oldClass
+    return node.name?.text === oldClass && !isComponentDeclaration
+      ? findEnclosingScope(node, isLexicalScopeBoundary)
+      : undefined
+  }
+  const isNamedFunctionOrEnum =
+    (ts.isFunctionDeclaration(node) || ts.isEnumDeclaration(node)) && node.name?.text === oldClass
+  if (isNamedFunctionOrEnum) {
+    return findEnclosingScope(node, isLexicalScopeBoundary)
+  }
+  return undefined
+}
+
+function getShadowingScope(
+  node: ts.Node,
+  oldClass: string,
+  isMovedComponentFile: boolean,
+): ts.Node | undefined {
+  return (
+    getLocalBindingShadowingScope(node, oldClass) ??
+    getNamedDeclarationShadowingScope(node, oldClass, isMovedComponentFile)
+  )
+}
+
+function collectShadowedPositions(
+  sourceFile: ts.SourceFile,
+  oldClass: string,
+  isMovedComponentFile: boolean,
+): Set<number> {
+  const positions = new Set<number>()
+
+  const markScopeIdentifiers = (scope: ts.Node): void => {
+    const visitScope = (node: ts.Node): void => {
+      if (ts.isIdentifier(node) && node.text === oldClass) {
+        positions.add(node.getStart(sourceFile))
+      }
+      ts.forEachChild(node, visitScope)
+    }
+    visitScope(scope)
+  }
+
+  const visit = (node: ts.Node): void => {
+    const shadowingScope = getShadowingScope(node, oldClass, isMovedComponentFile)
+    if (shadowingScope !== undefined) {
+      markScopeIdentifiers(shadowingScope)
+    }
+    ts.forEachChild(node, visit)
+  }
+
+  visit(sourceFile)
+  return positions
+}
+
 function collectEdits(sourceFile: ts.SourceFile, options: ComponentRewriteOptions): SourceEdit[] {
   const { oldClass, newClass, rewritePath, isMovedComponentFile = false } = options
   const shouldRewriteIdentifiers = isMovedComponentFile || importsComponent(sourceFile, oldClass)
+  const shadowedPositions = collectShadowedPositions(sourceFile, oldClass, isMovedComponentFile)
   const edits: SourceEdit[] = []
 
   const visit = (node: ts.Node): void => {
@@ -143,7 +252,8 @@ function collectEdits(sourceFile: ts.SourceFile, options: ComponentRewriteOption
       shouldRewriteIdentifiers &&
       ts.isIdentifier(node) &&
       node.text === oldClass &&
-      !isPropertyNamePosition(node)
+      !isPropertyNamePosition(node) &&
+      !shadowedPositions.has(node.getStart(sourceFile))
 
     if (isComponentReference && newClass !== oldClass) {
       edits.push({ start: node.getStart(sourceFile), end: node.getEnd(), text: newClass })
