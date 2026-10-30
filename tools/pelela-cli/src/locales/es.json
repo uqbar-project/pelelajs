@@ -101,6 +101,6 @@
     "prefix": "❌ Error:",
     "nodeVersion": "PelelaJS requiere Node.js {{requiredVersion}}",
     "currentVersion": "Versión actual: {{currentVersion}}",
-    "installDependencies": "No se pudieron instalar las dependencias en {{path}}. Los archivos ya fueron creados; ejecutá `cd {{path}} && pnpm install` para reintentar"
+    "installDependencies": "No se pudieron instalar las dependencias en {{path}}. Los archivos ya fueron creados; abrí esa carpeta y ejecutá `pnpm install` para reintentar"
   }
 }

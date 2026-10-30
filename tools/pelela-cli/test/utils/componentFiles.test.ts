@@ -349,16 +349,15 @@ describe('updateImports', () => {
 
   it('keeps unrelated relative imports with a matching basename when moving', () => {
     mkdirSync('src')
-    writeFileSync('src/app.ts', "import { util } from './utils/home'\nexport const app = util")
+    const originalContent = "import { util } from './utils/home'\nexport const app = util"
+    writeFileSync('src/app.ts', originalContent)
 
     updateImports('Home', 'Dashboard', {
       oldFilePath: 'src/components/home/home.ts',
       newFilePath: 'src/dashboard/dashboard.ts',
     })
 
-    const content = readFileSync('src/app.ts', 'utf-8')
-    expect(content).toContain("import { util } from './utils/home'")
-    expect(content).not.toContain('dashboard')
+    expect(readFileSync('src/app.ts', 'utf-8')).toBe(originalContent)
   })
 
   it('leaves the file untouched when the class is only mentioned in a comment', () => {

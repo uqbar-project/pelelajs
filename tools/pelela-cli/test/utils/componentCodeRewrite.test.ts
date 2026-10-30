@@ -68,6 +68,22 @@ describe('rewriteComponentCode', () => {
     )
   })
 
+  it('keeps destructuring keys like { Home: alias } untouched', () => {
+    const content = [
+      "import { Home } from './home'",
+      'const { Home: legacyHome } = context',
+      'const page = new legacyHome()',
+    ].join('\n')
+
+    expect(rewrite(content)).toBe(
+      [
+        "import { Dashboard } from './dashboard'",
+        'const { Home: legacyHome } = context',
+        'const page = new legacyHome()',
+      ].join('\n'),
+    )
+  })
+
   it('does not rewrite references shadowed by a parameter of the same name', () => {
     const content = [
       "import { Home } from './home'",

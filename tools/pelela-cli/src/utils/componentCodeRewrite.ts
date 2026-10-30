@@ -134,6 +134,11 @@ function isPropertyNamePosition(node: ts.Identifier): boolean {
   )
 }
 
+function isBindingPropertyNamePosition(node: ts.Identifier): boolean {
+  const { parent } = node
+  return ts.isBindingElement(parent) && parent.propertyName === node
+}
+
 function bindingNameMatches(name: ts.BindingName, oldClass: string): boolean {
   if (ts.isIdentifier(name)) {
     return name.text === oldClass
@@ -160,12 +165,7 @@ function findEnclosingScope(
   declaration: ts.Node,
   isScopeBoundary: (node: ts.Node) => boolean,
 ): ts.Node | undefined {
-  let current = declaration.parent
-  while (current !== undefined) {
-    if (isScopeBoundary(current)) return current
-    current = current.parent
-  }
-  return undefined
+  return ts.findAncestor(declaration.parent, isScopeBoundary)
 }
 
 function getLocalBindingShadowingScope(node: ts.Node, oldClass: string): ts.Node | undefined {
@@ -253,6 +253,7 @@ function collectEdits(sourceFile: ts.SourceFile, options: ComponentRewriteOption
       ts.isIdentifier(node) &&
       node.text === oldClass &&
       !isPropertyNamePosition(node) &&
+      !isBindingPropertyNamePosition(node) &&
       !shadowedPositions.has(node.getStart(sourceFile))
 
     if (isComponentReference && newClass !== oldClass) {
