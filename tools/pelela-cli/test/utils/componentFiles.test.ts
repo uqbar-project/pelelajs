@@ -347,6 +347,20 @@ describe('updateImports', () => {
     expect(content).not.toContain('components/home/home')
   })
 
+  it('keeps unrelated relative imports with a matching basename when moving', () => {
+    mkdirSync('src')
+    writeFileSync('src/app.ts', "import { util } from './utils/home'\nexport const app = util")
+
+    updateImports('Home', 'Dashboard', {
+      oldFilePath: 'src/components/home/home.ts',
+      newFilePath: 'src/dashboard/dashboard.ts',
+    })
+
+    const content = readFileSync('src/app.ts', 'utf-8')
+    expect(content).toContain("import { util } from './utils/home'")
+    expect(content).not.toContain('dashboard')
+  })
+
   it('leaves the file untouched when the class is only mentioned in a comment', () => {
     mkdirSync('src')
     const originalContent = "// legacy import 'Home' from the barrel file\nexport const app = true"

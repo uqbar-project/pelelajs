@@ -422,15 +422,19 @@ function getFiles(directoryPath: string): string[] {
     .filter((filePath) => SUPPORTED_EXTENSIONS.some((extension) => filePath.endsWith(extension)))
 }
 
+function isRelativeSpecifier(specifier: string): boolean {
+  return specifier.replace(/\\/g, '/').startsWith('.')
+}
+
 function getMovedImportPath(
   importPath: string,
   importerPath: string,
   oldFilePath: string,
   newFilePath: string,
 ): string | null {
-  const normalizedImportPath = importPath.replace(/\\/g, '/')
-  if (!normalizedImportPath.startsWith('.')) return null
+  if (!isRelativeSpecifier(importPath)) return null
 
+  const normalizedImportPath = importPath.replace(/\\/g, '/')
   const resolvedImportPath = resolve(dirname(importerPath), normalizedImportPath)
   const oldBasePath = getComponentBasePath(oldFilePath)
   const isOldComponentImport = [
@@ -457,6 +461,7 @@ function replaceImportPath(importPath: string, context: ImportUpdateContext): st
       movedFilePaths.newFilePath,
     )
     if (movedImportPath) return movedImportPath
+    if (isRelativeSpecifier(importPath)) return importPath
   }
 
   const pathSegments = importPath.split('/')
