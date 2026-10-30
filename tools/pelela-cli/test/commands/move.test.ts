@@ -300,4 +300,21 @@ export const route = Reports`,
     expect(routesContent).toContain('export const route = Dashboard')
     expect(routesContent).not.toContain('components/home/home')
   })
+
+  it('updates internal class references inside the moved file', async () => {
+    writeFileSync(
+      HOME_TS,
+      'export class Home {\n  static create() {\n    return new Home()\n  }\n}',
+    )
+
+    await moveCommand({
+      source: 'components/home/Home',
+      destination: 'dashboard/Dashboard',
+    })
+
+    const movedContent = readFileSync('src/dashboard/dashboard.ts', 'utf-8')
+    expect(movedContent).toBe(
+      'export class Dashboard {\n  static create() {\n    return new Dashboard()\n  }\n}',
+    )
+  })
 })

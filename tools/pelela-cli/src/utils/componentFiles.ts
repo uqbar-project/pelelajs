@@ -400,11 +400,16 @@ export function moveComponentFiles(
 const IGNORED_DIRS = ['node_modules', 'dist']
 const SUPPORTED_EXTENSIONS = ['.ts', '.js']
 
+interface MovedFilePaths {
+  oldFilePath: string
+  newFilePath: string
+}
+
 interface ImportUpdateContext {
   oldClass: string
   newClass: string
   importerPath: string
-  movedFilePaths?: { oldFilePath: string; newFilePath: string }
+  movedFilePaths?: MovedFilePaths
 }
 
 function getFiles(directoryPath: string): string[] {
@@ -477,18 +482,31 @@ function replaceImportPath(importPath: string, context: ImportUpdateContext): st
   return pathSegments.join('/')
 }
 
+function isMovedComponentFile(
+  importerPath: string,
+  movedFilePaths?: MovedFilePaths,
+): boolean {
+  if (movedFilePaths === undefined) return false
+  const resolvedImporterPath = resolve(importerPath)
+  return (
+    resolve(movedFilePaths.oldFilePath) === resolvedImporterPath ||
+    resolve(movedFilePaths.newFilePath) === resolvedImporterPath
+  )
+}
+
 function replaceComponentUsage(content: string, context: ImportUpdateContext): string {
   return rewriteComponentCode(content, context.importerPath, {
     oldClass: context.oldClass,
     newClass: context.newClass,
     rewritePath: (importPath) => replaceImportPath(importPath, context),
+    isMovedComponentFile: isMovedComponentFile(context.importerPath, context.movedFilePaths),
   })
 }
 
 export function updateImports(
   oldName: string,
   newName: string,
-  movedFilePaths?: { oldFilePath: string; newFilePath: string },
+  movedFilePaths?: MovedFilePaths,
 ): void {
   const oldClass = basename(oldName)
   const newClass = basename(newName)

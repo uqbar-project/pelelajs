@@ -4,6 +4,7 @@ export interface ComponentRewriteOptions {
   oldClass: string
   newClass: string
   rewritePath: (importPath: string) => string
+  isMovedComponentFile?: boolean
 }
 
 interface SourceEdit {
@@ -133,8 +134,8 @@ function isPropertyNamePosition(node: ts.Identifier): boolean {
 }
 
 function collectEdits(sourceFile: ts.SourceFile, options: ComponentRewriteOptions): SourceEdit[] {
-  const { oldClass, newClass, rewritePath } = options
-  const shouldRewriteIdentifiers = importsComponent(sourceFile, oldClass)
+  const { oldClass, newClass, rewritePath, isMovedComponentFile = false } = options
+  const shouldRewriteIdentifiers = isMovedComponentFile || importsComponent(sourceFile, oldClass)
   const edits: SourceEdit[] = []
 
   const visit = (node: ts.Node): void => {

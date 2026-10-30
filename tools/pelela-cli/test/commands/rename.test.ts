@@ -285,4 +285,20 @@ describe('renameCommand (Integration)', () => {
     const stylesContent = readFileSync('styles.ts', 'utf-8')
     expect(stylesContent).toContain("import './src/legacy/old.css'")
   })
+
+  it('updates internal class references inside the renamed file', async () => {
+    mkdirSync('src')
+    writeFileSync(
+      OLD_TS,
+      'export class Old {\n  static create() {\n    return new Old()\n  }\n}',
+    )
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
+
+    const renamedContent = readFileSync(NEW_TS, 'utf-8')
+    expect(renamedContent).toBe(
+      'export class New {\n  static create() {\n    return new New()\n  }\n}',
+    )
+  })
 })

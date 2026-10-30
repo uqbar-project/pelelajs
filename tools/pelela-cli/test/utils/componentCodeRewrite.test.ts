@@ -116,6 +116,33 @@ describe('rewriteComponentCode', () => {
     expect(rewrite(content)).toBe(content)
   })
 
+  it('rewrites internal references of the moved component file without a self-import', () => {
+    const content = [
+      'export class Home {',
+      '  static create() {',
+      '    return new Home()',
+      '  }',
+      '}',
+    ].join('\n')
+
+    const rewritten = rewriteComponentCode(content, 'src/dashboard/dashboard.ts', {
+      oldClass: 'Home',
+      newClass: 'Dashboard',
+      rewritePath: rewriteHomePath,
+      isMovedComponentFile: true,
+    })
+
+    expect(rewritten).toBe(
+      [
+        'export class Dashboard {',
+        '  static create() {',
+        '    return new Dashboard()',
+        '  }',
+        '}',
+      ].join('\n'),
+    )
+  })
+
   it('rewrites dynamic import paths', () => {
     const content = "const loader = () => import('./home')"
 
