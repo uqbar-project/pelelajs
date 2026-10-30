@@ -5,8 +5,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   findComponentFile,
   getComponentBasePath,
+  getComponentTargetDir,
   prepareFile,
   prepareRenamePaths,
+  renameCssFile,
   resolveExistingComponentPath,
   toKebabCase,
   toPascalCase,
@@ -45,6 +47,13 @@ describe('findComponentFile', () => {
     writeFileSync('src/a-components/home/home.ts', 'export class HomeWrong {}')
 
     expect(findComponentFile('components/home/Home', '.ts')).toBeNull()
+  })
+
+  it('uses the project root when no src directory exists', () => {
+    rmSync('src', { recursive: true, force: true })
+
+    expect(getComponentTargetDir()).toBe('.')
+    expect(findComponentFile('Home', '.ts')).toBeNull()
   })
 })
 
@@ -262,6 +271,30 @@ describe('prepareRenamePaths', () => {
     expect(result.newPath).toBe('src/sub/new.ts')
     expect(result.oldClassName).toBe('Old')
     expect(result.newClassName).toBe('New')
+  })
+})
+
+describe('renameCssFile', () => {
+  let tempDir: string
+  let originalCwd: string
+
+  beforeEach(() => {
+    originalCwd = process.cwd()
+    tempDir = mkdtempSync(join(tmpdir(), 'rename-css-file-test-'))
+    process.chdir(tempDir)
+    mkdirSync('src')
+  })
+
+  afterEach(() => {
+    process.chdir(originalCwd)
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  it('keeps the destination absent when the component has no stylesheet', () => {
+    renameCssFile('Old', 'New', 'src')
+
+    expect(existsSync('src/old.css')).toBe(false)
+    expect(existsSync('src/new.css')).toBe(false)
   })
 })
 

@@ -154,6 +154,28 @@ export const route = Reports`,
     expect(existsSync('src/components/dashboard/dashboard.pelela')).toBe(false)
   })
 
+  it.each(['pelela', 'css'] as const)(
+    'rejects an occupied destination %s file',
+    async (extension) => {
+      mkdirSync('src/components/dashboard', { recursive: true })
+      writeFileSync(`src/components/dashboard/dashboard.${extension}`, '')
+
+      await expect(
+        moveCommand({
+          source: 'components/home/Home',
+          destination: 'components/dashboard/Dashboard',
+        }),
+      ).rejects.toThrow(
+        t('commands.move.error.destinationExists', {
+          destination: 'components/dashboard/Dashboard',
+        }),
+      )
+
+      expect(existsSync(HOME_TS)).toBe(true)
+      expect(existsSync(HOME_PELELA)).toBe(true)
+    },
+  )
+
   it('rejects moving a component to its current path without changing it', async () => {
     await expect(
       moveCommand({
@@ -181,6 +203,28 @@ export const route = Reports`,
 
     expect(existsSync('src/pages')).toBe(false)
     expect(existsSync(HOME_TS)).toBe(true)
+  })
+
+  it('wraps file system errors while moving without removing the source', async () => {
+    writeFileSync('src/pages', '')
+    const destinationDirectory = 'src/pages/reports'
+    let fileSystemError = ''
+
+    try {
+      mkdirSync(destinationDirectory, { recursive: true })
+    } catch (error) {
+      fileSystemError = error instanceof Error ? error.message : String(error)
+    }
+
+    await expect(
+      moveCommand({
+        source: 'components/home/Home',
+        destination: 'pages/reports/Report',
+      }),
+    ).rejects.toThrow(t('commands.move.error.moveFailed', { error: fileSystemError }))
+
+    expect(existsSync(HOME_TS)).toBe(true)
+    expect(existsSync(HOME_PELELA)).toBe(true)
   })
 
   it('rejects a source without a matching template before changing files', async () => {

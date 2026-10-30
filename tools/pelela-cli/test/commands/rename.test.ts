@@ -1,4 +1,13 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -65,6 +74,18 @@ describe('renameCommand (Integration)', () => {
     ).rejects.toThrow(t('commands.rename.error.oldNotFound', { name: 'Old' }))
   })
 
+  it('rejects a component that has no template file without renaming its TypeScript file', async () => {
+    mkdirSync('src')
+    writeFileSync(OLD_TS, OLD_CONTENT_TS)
+
+    await expect(
+      renameCommand({ oldComponentName: 'Old', newComponentName: 'New' }),
+    ).rejects.toThrow(t('commands.rename.error.oldNotFound', { name: 'Old' }))
+
+    expect(existsSync(OLD_TS)).toBe(true)
+    expect(existsSync(NEW_TS)).toBe(false)
+  })
+
   it('throws if new files already exist', async () => {
     mkdirSync('src')
     writeFileSync(OLD_TS, OLD_CONTENT_TS)
@@ -100,6 +121,29 @@ describe('renameCommand (Integration)', () => {
     expect(updatedPelela).toContain('<pelela view-model="New"></pelela>')
     expect(updatedRoutes).toContain("import { New } from './src/new'")
     expect(updatedRoutes).toContain('component: New')
+  })
+
+  it('wraps file system errors encountered while updating imports', async () => {
+    mkdirSync('src')
+    writeFileSync(OLD_TS, OLD_CONTENT_TS)
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+    symlinkSync('missing-directory/dangling.ts', 'dangling.ts')
+    let fileSystemError = ''
+
+    try {
+      statSync('dangling.ts')
+    } catch (error) {
+      fileSystemError = error instanceof Error ? error.message : String(error)
+    }
+
+    expect(fileSystemError).not.toBe('')
+
+    await expect(
+      renameCommand({ oldComponentName: 'Old', newComponentName: 'New' }),
+    ).rejects.toThrow(t('commands.rename.error.renameFailed', { error: fileSystemError }))
+
+    expect(existsSync(NEW_TS)).toBe(true)
+    expect(existsSync(NEW_PELELA)).toBe(true)
   })
 
   it('renames lowercase template files when user provides PascalCase name', async () => {

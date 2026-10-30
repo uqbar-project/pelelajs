@@ -126,6 +126,48 @@ describe('rewriteComponentCode', () => {
     )
   })
 
+  it('does not rewrite references shadowed by local class, function, or enum declarations', () => {
+    const content = [
+      "import { Home } from './home'",
+      'function render() {',
+      '  {',
+      '    class Home {}',
+      '    const first = new Home()',
+      '  }',
+      '  {',
+      '    function Home() {}',
+      '    const second = new Home()',
+      '  }',
+      '  {',
+      '    enum Home { Local }',
+      '    const third = Home.Local',
+      '  }',
+      '}',
+      'const page = new Home()',
+    ].join('\n')
+
+    expect(rewrite(content)).toBe(
+      [
+        "import { Dashboard } from './dashboard'",
+        'function render() {',
+        '  {',
+        '    class Home {}',
+        '    const first = new Home()',
+        '  }',
+        '  {',
+        '    function Home() {}',
+        '    const second = new Home()',
+        '  }',
+        '  {',
+        '    enum Home { Local }',
+        '    const third = Home.Local',
+        '  }',
+        '}',
+        'const page = new Dashboard()',
+      ].join('\n'),
+    )
+  })
+
   it('rewrites shorthand properties while keeping member declarations intact', () => {
     const content = [
       "import { Home } from './home'",
@@ -152,6 +194,14 @@ describe('rewriteComponentCode', () => {
     )
   })
 
+  it('rewrites namespace imports that use the component name as their local binding', () => {
+    const content = ["import * as Home from './home'", 'const page = Home.create()'].join('\n')
+
+    expect(rewrite(content)).toBe(
+      ["import * as Dashboard from './dashboard'", 'const page = Dashboard.create()'].join('\n'),
+    )
+  })
+
   it('updates the imported symbol name while keeping the local alias', () => {
     const content = [
       "import { Home as LegacyHome } from './home'",
@@ -170,6 +220,28 @@ describe('rewriteComponentCode', () => {
     const content = "export { Home as LegacyHome } from './home'"
 
     expect(rewrite(content)).toBe("export { Dashboard as LegacyHome } from './dashboard'")
+  })
+
+  it('rewrites re-export module paths without named exports', () => {
+    const content = "export * from './home'"
+
+    expect(rewrite(content)).toBe("export * from './dashboard'")
+  })
+
+  it('keeps local exports unchanged while rewriting imported component references', () => {
+    const content = [
+      "import { Home } from './home'",
+      'export { Home }',
+      'const page = new Home()',
+    ].join('\n')
+
+    expect(rewrite(content)).toBe(
+      [
+        "import { Dashboard } from './dashboard'",
+        'export { Dashboard }',
+        'const page = new Dashboard()',
+      ].join('\n'),
+    )
   })
 
   it('only rewrites module paths when the file does not import the component', () => {
@@ -223,6 +295,31 @@ describe('rewriteComponentCode', () => {
     const content = "const loader = () => import('./home')"
 
     expect(rewrite(content)).toBe("const loader = () => import('./dashboard')")
+  })
+
+  it('keeps the class name when only the module path changes', () => {
+    const content = "import { Home } from './home'\nconst page = new Home()"
+    const rewritten = rewriteComponentCode(content, 'app.ts', {
+      oldClass: 'Home',
+      newClass: 'Home',
+      rewritePath: rewriteHomePath,
+    })
+
+    expect(rewritten).toBe("import { Home } from './dashboard'\nconst page = new Home()")
+  })
+
+  it('keeps dynamic imports with non-literal paths unchanged', () => {
+    const content = 'const loader = (path: string) => import(path)'
+
+    expect(rewrite(content)).toBe(content)
+  })
+
+  it('rewrites JavaScript files using the JavaScript parser mode', () => {
+    const content = "import { Home } from './home'\nconst page = new Home()"
+
+    expect(rewrite(content, 'app.js')).toBe(
+      "import { Dashboard } from './dashboard'\nconst page = new Dashboard()",
+    )
   })
 
   it('rewrites side-effect import paths', () => {
