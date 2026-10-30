@@ -7,4 +7,5 @@ export default defineConfig({
   clean: true,
   banner: { js: '#!/usr/bin/env node' },
   publicDir: 'templates',
+  external: ['typescript'],
 })

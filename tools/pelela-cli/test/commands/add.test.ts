@@ -19,25 +19,36 @@ describe('addCommand', () => {
   beforeEach(() => {
     mockedShell.resolvePath.mockClear()
     mockedTestingPreset.applyTestingPreset.mockClear()
+    mockedShell.installDependencies.mockClear()
     mockedShell.resolvePath.mockReturnValue('/mock/project')
     mockedTestingPreset.applyTestingPreset.mockImplementation(() => undefined)
+    mockedShell.installDependencies.mockImplementation(() => undefined)
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('applies the testing preset to the current project and prints the install step', () => {
+  it('applies the testing preset and installs the new dependencies', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
 
     addCommand({ preset: 'testing' })
 
     expect(mockedTestingPreset.applyTestingPreset).toHaveBeenCalledWith('/mock/project')
-    expect(logSpy).toHaveBeenNthCalledWith(
-      1,
-      chalk.green(t('commands.add.messages.testingApplied')),
-    )
-    expect(logSpy).toHaveBeenNthCalledWith(2, chalk.dim(t('messages.install')))
+    expect(mockedShell.installDependencies).toHaveBeenCalledWith('/mock/project')
+    expect(logSpy).toHaveBeenCalledTimes(1)
+    expect(logSpy).toHaveBeenCalledWith(chalk.green(t('commands.add.messages.testingApplied')))
+  })
+
+  it('propagates installation failures before reporting success', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+    const installationError = new Error('installation failed')
+    mockedShell.installDependencies.mockImplementation(() => {
+      throw installationError
+    })
+
+    expect(() => addCommand({ preset: 'testing' })).toThrow(installationError)
+    expect(logSpy).not.toHaveBeenCalled()
   })
 
   it('rejects unsupported presets before applying any configuration', () => {
@@ -45,5 +56,6 @@ describe('addCommand', () => {
       t('commands.add.error.unknownPreset', { preset: 'linting' }),
     )
     expect(mockedTestingPreset.applyTestingPreset).not.toHaveBeenCalled()
+    expect(mockedShell.installDependencies).not.toHaveBeenCalled()
   })
 })

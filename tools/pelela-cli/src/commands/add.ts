@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { t } from '../utils/i18n'
-import { resolvePath } from '../utils/shell'
+import { installDependencies, resolvePath } from '../utils/shell'
 import { applyTestingPreset } from '../utils/testingPreset'
 
 export interface AddCommandOptions {
@@ -12,8 +12,10 @@ export function addCommand(options: AddCommandOptions): void {
     throw new Error(t('commands.add.error.unknownPreset', { preset: options.preset }))
   }
 
-  applyTestingPreset(resolvePath())
+  const projectPath = resolvePath()
+
+  applyTestingPreset(projectPath)
+  installDependencies(projectPath)
 
   console.log(chalk.green(t('commands.add.messages.testingApplied')))
-  console.log(chalk.dim(t('messages.install')))
 }

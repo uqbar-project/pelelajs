@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { t } from './i18n'
 
 export function createDirectory(dirPath: string): void {
   if (!existsSync(dirPath)) {
@@ -22,6 +23,14 @@ export function executeCommand(command: string, cwd?: string): string {
 
 export function resolvePath(...segments: string[]): string {
   return resolve(process.cwd(), ...segments)
+}
+
+export function installDependencies(projectPath: string): void {
+  try {
+    execSync('pnpm install', { cwd: projectPath, stdio: 'inherit' })
+  } catch (error) {
+    throw new Error(t('errors.installDependencies', { path: projectPath }), { cause: error })
+  }
 }
 
 export function pathExists(dirPath: string): boolean {

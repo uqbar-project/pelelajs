@@ -3,12 +3,15 @@ import { initCommand, normalizeProjectName, validateProjectName } from '../../sr
 import { initializeI18n, t } from '../../src/utils/i18n'
 import * as shell from '../../src/utils/shell'
 import * as templates from '../../src/utils/templates'
+import * as testingPreset from '../../src/utils/testingPreset'
 
 vi.mock('../../src/utils/templates')
 vi.mock('../../src/utils/shell')
+vi.mock('../../src/utils/testingPreset')
 
 const mockedTemplates = vi.mocked(templates)
 const mockedShell = vi.mocked(shell)
+const mockedTestingPreset = vi.mocked(testingPreset)
 
 beforeAll(async () => {
   await initializeI18n('en')
@@ -66,6 +69,10 @@ describe('initCommand', () => {
     mockedTemplates.validateTemplatePath.mockReturnValue(true)
     mockedTemplates.copyTemplate.mockImplementation(() => undefined)
     mockedTemplates.updateProjectPackageJson.mockImplementation(() => undefined)
+    mockedTestingPreset.applyTestingPreset.mockClear()
+    mockedTestingPreset.applyTestingPreset.mockImplementation(() => undefined)
+    mockedShell.installDependencies.mockClear()
+    mockedShell.installDependencies.mockImplementation(() => undefined)
     mockedShell.pathExists.mockReturnValue(false)
     mockedShell.resolvePath.mockImplementation((name) => `/mock/path/${name}`)
   })
@@ -134,6 +141,41 @@ describe('initCommand', () => {
     expect(mockedTemplates.updateProjectPackageJson).toHaveBeenCalledWith(
       '/mock/path/my-project',
       'my-project',
+    )
+  })
+
+  it('installs dependencies in the new project directory', async () => {
+    await initCommand({ projectName: 'my-project' })
+
+    expect(mockedShell.installDependencies).toHaveBeenCalledWith('/mock/path/my-project')
+  })
+
+  it('applies the testing preset before installing dependencies', async () => {
+    await initCommand({ projectName: 'my-project', testing: true })
+
+    expect(mockedTestingPreset.applyTestingPreset).toHaveBeenCalledWith('/mock/path/my-project')
+    const presetOrder = mockedTestingPreset.applyTestingPreset.mock.invocationCallOrder[0]
+    const installOrder = mockedShell.installDependencies.mock.invocationCallOrder[0]
+    expect(presetOrder).toBeLessThan(installOrder)
+  })
+
+  it('does not suggest a manual install in the next steps', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+
+    await initCommand({ projectName: 'my-project' })
+
+    const output = logSpy.mock.calls.flat().join('\n')
+    expect(output).toContain(t('messages.dev'))
+    expect(output).not.toContain('pnpm install')
+  })
+
+  it('propagates installation failures without wrapping them', async () => {
+    mockedShell.installDependencies.mockImplementation(() => {
+      throw new Error('installation failed')
+    })
+
+    await expect(initCommand({ projectName: 'my-project' })).rejects.toThrow(
+      new Error('installation failed'),
     )
   })
 })

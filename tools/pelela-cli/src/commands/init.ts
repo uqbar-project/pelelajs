@@ -1,11 +1,10 @@
 import chalk from 'chalk'
 import boxen from 'cli-box'
 import { t } from '../utils/i18n'
-import { pathExists, resolvePath } from '../utils/shell'
+import { installDependencies, pathExists, resolvePath } from '../utils/shell'
 import { copyTemplate, updateProjectPackageJson, validateTemplatePath } from '../utils/templates'
 import { applyTestingPreset } from '../utils/testingPreset'
 
-const { log } = console
 const DEFAULT_PROJECT_NAME = 'Example'
 
 export interface InitCommandOptions {
@@ -52,12 +51,14 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
     if (options.testing) {
       applyTestingPreset(projectPath)
     }
-
-    displaySuccessMessage(projectName)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     throw new Error(t('commands.init.error.initializationFailed', { error: errorMessage }))
   }
+
+  installDependencies(projectPath)
+
+  displaySuccessMessage(projectName)
 }
 
 function displaySuccessMessage(projectName: string): void {
@@ -66,11 +67,10 @@ function displaySuccessMessage(projectName: string): void {
   const visibleLength = successMessage.length
   const box = boxen({ w: visibleLength + 4, h: 3 }, message)
 
-  log(`\n${box}\n`)
+  console.log(`\n${box}\n`)
 
-  log(chalk.dim(t('messages.nextSteps')))
-  log(chalk.cyan(`  ${t('messages.cdProject', { projectName })}`))
-  log(chalk.cyan(`  ${t('messages.install')}`))
-  log(chalk.cyan(`  ${t('messages.dev')}`))
-  log()
+  console.log(chalk.dim(t('messages.nextSteps')))
+  console.log(chalk.cyan(`  ${t('messages.cdProject', { projectName })}`))
+  console.log(chalk.cyan(`  ${t('messages.dev')}`))
+  console.log()
 }

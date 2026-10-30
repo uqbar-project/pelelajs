@@ -28,7 +28,7 @@
         "unknownPreset": "Configuración desconocida \"{{preset}}\""
       },
       "messages": {
-        "testingApplied": "✅ Configuración de testing agregada exitosamente"
+        "testingApplied": "✅ Configuración de testing aplicada y dependencias instaladas exitosamente"
       }
     },
     "testing": {
@@ -92,7 +92,6 @@
     "success": "🎉 ¡Proyecto \"{{projectName}}\" creado exitosamente!",
     "nextSteps": "Próximos pasos:",
     "cdProject": "cd {{projectName}}",
-    "install": "pnpm install",
     "dev": "pnpm dev",
     "newVersionAvailable": "🆕 Una nueva versión está disponible: {{version}}",
     "updateCommand": "Ejecuta `pnpm add -g pelelajs` para actualizar",
@@ -101,6 +100,7 @@
   "errors": {
     "prefix": "❌ Error:",
     "nodeVersion": "PelelaJS requiere Node.js {{requiredVersion}}",
-    "currentVersion": "Versión actual: {{currentVersion}}"
+    "currentVersion": "Versión actual: {{currentVersion}}",
+    "installDependencies": "No se pudieron instalar las dependencias en {{path}}. Los archivos ya fueron creados; ejecutá `pnpm install` para reintentar"
   }
 }

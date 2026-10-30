@@ -28,7 +28,7 @@
         "unknownPreset": "Unknown preset \"{{preset}}\""
       },
       "messages": {
-        "testingApplied": "✅ Testing configuration added successfully"
+        "testingApplied": "✅ Testing configuration applied and dependencies installed successfully"
       }
     },
     "testing": {
@@ -92,7 +92,6 @@
     "success": "🎉 Project \"{{projectName}}\" created successfully!",
     "nextSteps": "Next steps:",
     "cdProject": "cd {{projectName}}",
-    "install": "pnpm install",
     "dev": "pnpm dev",
     "newVersionAvailable": "🆕 A new version is available: {{version}}",
     "updateCommand": "Run `pnpm add -g pelelajs` to update",
@@ -101,6 +100,7 @@
   "errors": {
     "prefix": "❌ Error:",
     "nodeVersion": "PelelaJS requires Node.js {{requiredVersion}}",
-    "currentVersion": "Current version: {{currentVersion}}"
+    "currentVersion": "Current version: {{currentVersion}}",
+    "installDependencies": "Could not install dependencies in {{path}}. The files were already created; run `pnpm install` to retry"
   }
 }

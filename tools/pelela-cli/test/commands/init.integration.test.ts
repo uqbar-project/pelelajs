@@ -1,9 +1,17 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initCommand } from '../../src/commands/init'
 import { initializeI18n } from '../../src/utils/i18n'
+import * as shell from '../../src/utils/shell'
+
+vi.mock('../../src/utils/shell', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/utils/shell')>()
+  return { ...actual, installDependencies: vi.fn() }
+})
+
+const mockedShell = vi.mocked(shell)
 
 const BASE_COMPONENT_OPENING_TAG = '<pelela view-model="Base">'
 const BASE_COMPONENT_CLOSING_TAG = '</pelela>'
@@ -20,6 +28,7 @@ describe('initCommand (Integration)', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     if (existsSync(testDir)) {
       rmSync(testDir, { recursive: true, force: true })
     }
@@ -27,6 +36,8 @@ describe('initCommand (Integration)', () => {
 
   it('initializes a project from the base template', async () => {
     await initCommand({ projectName: testDir })
+
+    expect(mockedShell.installDependencies).toHaveBeenCalledWith(join(process.cwd(), testDir))
 
     const gitignorePath = join(testDir, '.gitignore')
     expect(existsSync(gitignorePath)).toBe(true)

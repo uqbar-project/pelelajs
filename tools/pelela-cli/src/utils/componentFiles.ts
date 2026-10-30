@@ -9,6 +9,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
+import { rewriteComponentCode } from './componentCodeRewrite'
 import { t } from './i18n'
 
 const SRC_DIR = 'src'
@@ -477,31 +478,11 @@ function replaceImportPath(importPath: string, context: ImportUpdateContext): st
 }
 
 function replaceComponentUsage(content: string, context: ImportUpdateContext): string {
-  const { oldClass, newClass } = context
-  const declarationRegex = new RegExp(
-    `(?:import|export)\\s+[^';]*?\\b${escapeRegExp(oldClass)}\\b[^';]*?\\s+from`,
-  )
-
-  const updatedContent = declarationRegex.test(content)
-    ? content.replace(new RegExp(`\\b${escapeRegExp(oldClass)}\\b`, 'g'), newClass)
-    : content
-
-  const importSpecifierRegex = /(\bimport\b[^'";]*?)(['"])([^'"]+)\2/g
-  const reExportSpecifierRegex = /(\bexport\b[^'";]*?\bfrom\s*)(['"])([^'"]+)\2/g
-
-  const rewriteSpecifierPath = (
-    _match: string,
-    prefix: string,
-    quote: string,
-    specifierPath: string,
-  ): string => {
-    const updatedPath = replaceImportPath(specifierPath, context)
-    return `${prefix}${quote}${updatedPath}${quote}`
-  }
-
-  return updatedContent
-    .replace(importSpecifierRegex, rewriteSpecifierPath)
-    .replace(reExportSpecifierRegex, rewriteSpecifierPath)
+  return rewriteComponentCode(content, context.importerPath, {
+    oldClass: context.oldClass,
+    newClass: context.newClass,
+    rewritePath: (importPath) => replaceImportPath(importPath, context),
+  })
 }
 
 export function updateImports(

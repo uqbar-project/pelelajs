@@ -119,11 +119,10 @@ El comando mueve el conjunto `.ts` y `.pelela`, mueve el `.css` si existe, actua
 
 ## Inicio rápido después de la inicialización
 
-Después de ejecutar `pelela init MiProyecto` (que crea el directorio `miproyecto`):
+Después de ejecutar `pelela init MiProyecto` (que crea el directorio `miproyecto` e instala las dependencias):
 
 ```bash
 cd miproyecto
-pnpm install
 pnpm dev
 ```
 
