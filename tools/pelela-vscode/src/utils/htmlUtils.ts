@@ -208,6 +208,10 @@ const TAG_RESTRICTED_PELELA_ATTRIBUTES: Record<string, string[]> = {
   'view-model': ['pelela', 'component'],
 }
 
+const TAG_FORBIDDEN_PELELA_ATTRIBUTES: Record<string, string[]> = {
+  textarea: ['bind-content'],
+}
+
 const TAG_ONLY_ATTRIBUTES: Record<string, string[]> = {
   outlet: ['prop-', 'link-', 'const-'],
 }
@@ -224,8 +228,10 @@ export function getPelelaAttributesForTag(tagName: string | null): string[] {
 
   return allAttributes.filter((attr) => {
     const allowedTags = TAG_RESTRICTED_PELELA_ATTRIBUTES[attr]
-    if (!allowedTags) return true
-    return allowedTags.includes(tagName)
+    const forbiddenTags = TAG_FORBIDDEN_PELELA_ATTRIBUTES[tagName]
+    return (
+      (allowedTags === undefined || allowedTags.includes(tagName)) && !forbiddenTags?.includes(attr)
+    )
   })
 }
 

@@ -52,11 +52,6 @@
       "valueSet": "v"
     },
     {
-      "name": "bind-content",
-      "description": "Pelela: Binds the innerHTML content to a ViewModel property (for display elements)",
-      "valueSet": "v"
-    },
-    {
       "name": "bind-src",
       "description": "Pelela: Binds the src attribute to a ViewModel property (for img elements)",
       "valueSet": "v"

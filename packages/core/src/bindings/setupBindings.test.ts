@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { InvalidBindingAttributeError } from '../errors'
 import { testHelpers } from '../test/helpers'
 import { setupBindings } from './setupBindings'
 
@@ -37,6 +38,35 @@ describe('setupBindings', () => {
     const render = setupBindings(container, viewModel)
 
     expect(typeof render).toBe('function')
+  })
+
+  it('should reject bind-content on a textarea and identify the invalid element', () => {
+    container.innerHTML = '<textarea bind-content="message"></textarea>'
+
+    expect(() => setupBindings(container, { message: 'Hello' })).toThrowError(
+      new InvalidBindingAttributeError(
+        'bind-content',
+        '<textarea bind-content="message"></textarea>',
+      ),
+    )
+  })
+
+  it('should synchronize textarea.value through bind-value', () => {
+    container.innerHTML = '<textarea bind-value="message"></textarea>'
+    const viewModel = { message: 'initial' }
+
+    const render = setupBindings(container, viewModel)
+    const textarea = container.querySelector('textarea')!
+
+    expect(textarea.value).toBe('initial')
+
+    textarea.value = 'typed'
+    textarea.dispatchEvent(new Event('input'))
+    expect(viewModel.message).toBe('typed')
+
+    viewModel.message = 'updated'
+    render()
+    expect(textarea.value).toBe('updated')
   })
 
   it('should perform initial render automatically', () => {
