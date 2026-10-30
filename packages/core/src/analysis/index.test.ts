@@ -341,7 +341,10 @@ describe('extractViewModelPropertyTypes', () => {
     scriptVersion = 0
     languageService = ts.createLanguageService(
       {
-        getCompilationSettings: () => resolveCompilerOptions(testDir),
+        getCompilationSettings: () => ({
+          ...resolveCompilerOptions(testDir),
+          skipLibCheck: true,
+        }),
         getScriptFileNames: () => [viewModelPath],
         getScriptVersion: () => String(scriptVersion),
         getScriptSnapshot: (fileName) => {
