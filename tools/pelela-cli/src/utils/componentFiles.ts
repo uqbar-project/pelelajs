@@ -8,13 +8,19 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
+import { rewriteComponentCode } from './componentCodeRewrite'
 import { t } from './i18n'
 
 const SRC_DIR = 'src'
 
 export function getComponentTargetDir(): string {
   return existsSync(SRC_DIR) ? SRC_DIR : '.'
+}
+
+export function getComponentBasePath(componentPath: string): string {
+  const extension = extname(componentPath)
+  return extension ? componentPath.slice(0, -extension.length) : componentPath
 }
 
 export function validateBasename(name: string, errorKey: string): void {
@@ -40,7 +46,12 @@ export function findComponentFile(componentName: string, extension: string): str
 
   const matchesPath = (fullPath: string): boolean => {
     const normalizedFullPath = relative(resolve(targetDir), resolve(fullPath)).replace(/\\/g, '/')
-    return normalizedFullPath.endsWith(`${kebabInput}${extension}`)
+    const suffix = `${kebabInput}${extension}`
+    if (!normalizedFullPath.endsWith(suffix)) {
+      return false
+    }
+    const prefix = normalizedFullPath.slice(0, -suffix.length)
+    return prefix === '' || prefix.endsWith('/')
   }
 
   function searchDirectory(dir: string): string | null {
@@ -149,6 +160,8 @@ interface PrepareRenameParams {
 export function prepareRenamePaths(params: PrepareRenameParams): {
   oldPath: string
   newPath: string
+  oldBasePath: string
+  newBasePath: string
   oldClassName: string
   newClassName: string
 } {
@@ -158,18 +171,15 @@ export function prepareRenamePaths(params: PrepareRenameParams): {
 
   const kebabOldName = toKebabCase(normalizedOldName)
   const kebabNewName = toKebabCase(normalizedNewName)
+  const oldBasePath = join(targetDir, kebabOldName)
+  const newBasePath = join(targetDir, kebabNewName)
   const oldPath = resolveExistingComponentPath(kebabOldName, targetDir, `.${extension}`)
   const newPath = join(targetDir, `${kebabNewName}.${extension}`)
-
-  const newDir = dirname(newPath)
-  if (!existsSync(newDir)) {
-    mkdirSync(newDir, { recursive: true })
-  }
 
   const oldClassName = basename(normalizedOldName)
   const newClassName = basename(normalizedNewName)
 
-  return { oldPath, newPath, oldClassName, newClassName }
+  return { oldPath, newPath, oldBasePath, newBasePath, oldClassName, newClassName }
 }
 
 export function createTsFile(name: string, targetDir: string): void {
@@ -222,21 +232,39 @@ function modifyAndRenameFile(params: ModifyContentParams): void {
   rmSync(oldPath)
 }
 
+function renameClassName(content: string, oldClassName: string, newClassName: string): string {
+  return content.replace(
+    new RegExp(`class\\s+${escapeRegExp(oldClassName)}\\b`, 'g'),
+    () => `class ${newClassName}`,
+  )
+}
+
+function renameViewModelName(content: string, oldClassName: string, newClassName: string): string {
+  return content.replace(
+    new RegExp(`view-model="${escapeRegExp(oldClassName)}"`, 'g'),
+    () => `view-model="${newClassName}"`,
+  )
+}
+
 export function renameTsFile(oldName: string, newName: string, targetDir: string): void {
-  const { oldPath, newPath, oldClassName, newClassName } = prepareRenamePaths({
-    oldName,
-    newName,
-    extension: 'ts',
-    targetDir,
-  })
+  const { oldPath, newPath, oldBasePath, newBasePath, oldClassName, newClassName } =
+    prepareRenamePaths({
+      oldName,
+      newName,
+      extension: 'ts',
+      targetDir,
+    })
+  const movedFiles = buildMovedFilesMap(oldBasePath, newBasePath)
 
   modifyAndRenameFile({
     oldPath,
     newPath,
     contentModifier: (content) =>
-      content.replace(
-        new RegExp(`class\\s+${escapeRegExp(oldClassName)}\\b`, 'g'),
-        () => `class ${newClassName}`,
+      rebaseRelativeImports(
+        renameClassName(content, oldClassName, newClassName),
+        oldPath,
+        newPath,
+        movedFiles,
       ),
   })
 }
@@ -257,11 +285,7 @@ export function renamePelelaFile(oldName: string, newName: string, targetDir: st
   modifyAndRenameFile({
     oldPath,
     newPath,
-    contentModifier: (content) =>
-      content.replace(
-        new RegExp(`view-model="${escapeRegExp(oldComponentName)}"`, 'g'),
-        () => `view-model="${newComponentName}"`,
-      ),
+    contentModifier: (content) => renameViewModelName(content, oldComponentName, newComponentName),
   })
 }
 
@@ -277,8 +301,116 @@ export function renameCssFile(oldName: string, newName: string, targetDir: strin
   renameSync(oldPath, newPath)
 }
 
+const RELATIVE_SPECIFIER_PATTERN = /((?:\bfrom\b|\bimport\b)\s*\(?\s*)(['"])(\.[^'"]+)\2/g
+
+const COMPONENT_FILE_EXTENSIONS = ['', '.ts', '.pelela', '.css']
+
+/**
+ * Map every file of a component from its old base path to its new base path
+ * so relative imports can be rebased after a move or a rename.
+ */
+function buildMovedFilesMap(oldBasePath: string, newBasePath: string): ReadonlyMap<string, string> {
+  const movedFiles = new Map<string, string>()
+  COMPONENT_FILE_EXTENSIONS.forEach((extension) => {
+    movedFiles.set(resolve(`${oldBasePath}${extension}`), resolve(`${newBasePath}${extension}`))
+  })
+  return movedFiles
+}
+
+function toDotRelativeSpecifier(baseDirectory: string, targetPath: string): string {
+  const relativePath = relative(baseDirectory, targetPath).replace(/\\/g, '/')
+  const isAlreadyRelative =
+    relativePath === '..' || relativePath.startsWith('./') || relativePath.startsWith('../')
+  return isAlreadyRelative ? relativePath : `./${relativePath}`
+}
+
+function getRebaseTarget(
+  specifier: string,
+  sourceDirectory: string,
+  movedFiles: ReadonlyMap<string, string>,
+): string {
+  const resolvedSpecifier = resolve(sourceDirectory, specifier)
+  return movedFiles.get(resolvedSpecifier) ?? resolvedSpecifier
+}
+
+/**
+ * Rebase relative import specifiers from the source file directory to the
+ * destination directory, keeping specifiers of relocated sibling files
+ * pointing at their moved path.
+ */
+function rebaseRelativeImports(
+  content: string,
+  sourceFilePath: string,
+  destinationFilePath: string,
+  movedFiles: ReadonlyMap<string, string>,
+): string {
+  const sourceDirectory = dirname(sourceFilePath)
+  const destinationDirectory = dirname(destinationFilePath)
+
+  return content.replace(
+    RELATIVE_SPECIFIER_PATTERN,
+    (_match: string, prefix: string, quote: string, specifier: string) => {
+      const targetPath = getRebaseTarget(specifier, sourceDirectory, movedFiles)
+      const rebasedSpecifier = toDotRelativeSpecifier(destinationDirectory, targetPath)
+      return `${prefix}${quote}${rebasedSpecifier}${quote}`
+    },
+  )
+}
+
+export function moveComponentFiles(
+  sourceTsPath: string,
+  destinationBasePath: string,
+  oldClassName: string,
+  newClassName: string,
+): void {
+  const sourceBasePath = getComponentBasePath(sourceTsPath)
+  const sourcePelelaPath = `${sourceBasePath}.pelela`
+  const sourceCssPath = `${sourceBasePath}.css`
+  const destinationTsPath = `${destinationBasePath}.ts`
+  const destinationPelelaPath = `${destinationBasePath}.pelela`
+  const destinationCssPath = `${destinationBasePath}.css`
+  const cssContent = existsSync(sourceCssPath) ? readFileSync(sourceCssPath, 'utf-8') : null
+  const movedFiles = buildMovedFilesMap(sourceBasePath, destinationBasePath)
+  const updatedTs = rebaseRelativeImports(
+    renameClassName(readFileSync(sourceTsPath, 'utf-8'), oldClassName, newClassName),
+    sourceTsPath,
+    destinationTsPath,
+    movedFiles,
+  )
+  const updatedPelela = renameViewModelName(
+    readFileSync(sourcePelelaPath, 'utf-8'),
+    oldClassName,
+    newClassName,
+  )
+
+  mkdirSync(dirname(destinationTsPath), { recursive: true })
+  writeFileSync(destinationTsPath, updatedTs)
+  writeFileSync(destinationPelelaPath, updatedPelela)
+  if (cssContent !== null) {
+    writeFileSync(destinationCssPath, cssContent)
+  }
+
+  rmSync(sourceTsPath)
+  rmSync(sourcePelelaPath)
+  if (cssContent !== null) {
+    rmSync(sourceCssPath)
+  }
+}
+
 const IGNORED_DIRS = ['node_modules', 'dist']
 const SUPPORTED_EXTENSIONS = ['.ts', '.js']
+
+interface MovedFilePaths {
+  oldFilePath: string
+  newFilePath: string
+}
+
+interface ImportUpdateContext {
+  oldClass: string
+  newClass: string
+  importerPath: string
+  movedFilePaths?: MovedFilePaths
+}
 
 function getFiles(directoryPath: string): string[] {
   return readdirSync(directoryPath)
@@ -290,11 +422,57 @@ function getFiles(directoryPath: string): string[] {
     .filter((filePath) => SUPPORTED_EXTENSIONS.some((extension) => filePath.endsWith(extension)))
 }
 
-function replaceImportPath(importPath: string, oldClass: string, newClass: string): string {
+function isRelativeSpecifier(specifier: string): boolean {
+  return specifier.replace(/\\/g, '/').startsWith('.')
+}
+
+function getMovedImportPath(
+  importPath: string,
+  importerPath: string,
+  oldFilePath: string,
+  newFilePath: string,
+): string | null {
+  if (!isRelativeSpecifier(importPath)) return null
+
+  const normalizedImportPath = importPath.replace(/\\/g, '/')
+  const resolvedImportPath = resolve(dirname(importerPath), normalizedImportPath)
+  const oldBasePath = getComponentBasePath(oldFilePath)
+  const isOldComponentImport = [
+    oldBasePath,
+    `${oldBasePath}.ts`,
+    `${oldBasePath}.js`,
+    `${oldBasePath}.css`,
+  ].some((path) => resolve(path) === resolvedImportPath)
+  if (!isOldComponentImport) return null
+
+  const newBasePath = getComponentBasePath(newFilePath)
+  const pathWithDotPrefix = toDotRelativeSpecifier(dirname(importerPath), newBasePath)
+  const importExtension = extname(normalizedImportPath)
+  return importExtension ? `${pathWithDotPrefix}${importExtension}` : pathWithDotPrefix
+}
+
+function replaceImportPath(importPath: string, context: ImportUpdateContext): string {
+  const { oldClass, newClass, importerPath, movedFilePaths } = context
+  if (movedFilePaths) {
+    const movedImportPath = getMovedImportPath(
+      importPath,
+      importerPath,
+      movedFilePaths.oldFilePath,
+      movedFilePaths.newFilePath,
+    )
+    if (movedImportPath) return movedImportPath
+    if (isRelativeSpecifier(importPath)) return importPath
+  }
+
   const pathSegments = importPath.split('/')
   const fileNameFromPath = pathSegments.pop() || ''
 
-  const extensions = ['.ts', '.js', '']
+  const isUnrelatedCssImport = movedFilePaths !== undefined && fileNameFromPath.endsWith('.css')
+  if (isUnrelatedCssImport) {
+    return importPath
+  }
+
+  const extensions = ['.ts', '.js', '.css', '']
   const matchedExtension = extensions.find(
     (extension) => fileNameFromPath === `${toKebabCase(oldClass)}${extension}`,
   )
@@ -309,34 +487,40 @@ function replaceImportPath(importPath: string, oldClass: string, newClass: strin
   return pathSegments.join('/')
 }
 
-function replaceComponentUsage(content: string, oldClass: string, newClass: string): string {
-  const importRegex = new RegExp(`import\\s+.*?\\b${escapeRegExp(oldClass)}\\b.*?\\s+from`, 'g')
-
-  if (!importRegex.test(content)) return content
-
-  const updatedContent = content.replace(
-    new RegExp(`\\b${escapeRegExp(oldClass)}\\b`, 'g'),
-    newClass,
+function isMovedComponentFile(importerPath: string, movedFilePaths?: MovedFilePaths): boolean {
+  if (movedFilePaths === undefined) return false
+  const resolvedImporterPath = resolve(importerPath)
+  return (
+    resolve(movedFilePaths.oldFilePath) === resolvedImporterPath ||
+    resolve(movedFilePaths.newFilePath) === resolvedImporterPath
   )
+}
 
-  const pathRegex = new RegExp(
-    `(import\\s+.*?\\b${escapeRegExp(newClass)}\\b.*?\\s+from\\s+['"])([^'"]+)(['"])`,
-    'g',
-  )
-
-  return updatedContent.replace(pathRegex, (_regexMatch, prefix, importPath, suffix) => {
-    const updatedPath = replaceImportPath(importPath, oldClass, newClass)
-    return `${prefix}${updatedPath}${suffix}`
+function replaceComponentUsage(content: string, context: ImportUpdateContext): string {
+  return rewriteComponentCode(content, context.importerPath, {
+    oldClass: context.oldClass,
+    newClass: context.newClass,
+    rewritePath: (importPath) => replaceImportPath(importPath, context),
+    isMovedComponentFile: isMovedComponentFile(context.importerPath, context.movedFilePaths),
   })
 }
 
-export function updateImports(oldName: string, newName: string): void {
+export function updateImports(
+  oldName: string,
+  newName: string,
+  movedFilePaths?: MovedFilePaths,
+): void {
   const oldClass = basename(oldName)
   const newClass = basename(newName)
 
   getFiles('.').forEach((file) => {
     const content = readFileSync(file, 'utf-8')
-    const newContent = replaceComponentUsage(content, oldClass, newClass)
+    const newContent = replaceComponentUsage(content, {
+      oldClass,
+      newClass,
+      importerPath: file,
+      movedFilePaths,
+    })
 
     if (content !== newContent) {
       writeFileSync(file, newContent)

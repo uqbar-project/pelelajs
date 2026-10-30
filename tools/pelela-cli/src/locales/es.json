@@ -7,15 +7,40 @@
   "commands": {
     "init": {
       "description": "📦 Inicializar un nuevo proyecto PelelaJS",
+      "options": {
+        "testing": "Configurar Vitest para el proyecto"
+      },
       "error": {
         "nameEmpty": "El nombre del proyecto no puede estar vacío",
         "nameTooLong": "El nombre del proyecto es demasiado largo (máximo 100 caracteres)",
         "templateNotFound": "Origen de la plantilla no encontrado en: {{source}}",
         "directoryExists": "El directorio \"{{projectName}}\" ya existe",
         "copyFailed": "Error al copiar la plantilla desde {{source}} hacia {{dest}}: {{error}}",
+        "copyFileFailed": "No se pudo copiar el archivo {{fileName}}: {{error}}",
         "verificationFailed": "La plantilla no se copió correctamente. package.json no se encuentra en {{path}}. Archivos encontrados: {{files}}",
         "packageJsonUpdateFailed": "Error al leer/escribir package.json en {{path}}: {{error}}",
         "initializationFailed": "Error al inicializar el proyecto: {{error}}"
+      }
+    },
+    "add": {
+      "description": "Agregar una configuración compatible al proyecto actual",
+      "error": {
+        "unknownPreset": "Configuración desconocida \"{{preset}}\""
+      },
+      "messages": {
+        "testingApplied": "✅ Configuración de testing aplicada y dependencias instaladas exitosamente"
+      }
+    },
+    "testing": {
+      "error": {
+        "presetNotFound": "No se encontró el preset de testing en {{presetDirectory}}",
+        "presetFilesMissing": "Faltan los archivos del preset de testing en {{presetFilesPath}}",
+        "invalidPreset": "El manifiesto del preset de testing en {{manifestPath}} no es válido",
+        "fileReadFailed": "No se pudo leer {{filePath}}: {{error}}",
+        "invalidJson": "La configuración JSON en {{filePath}} no es válida",
+        "invalidConfig": "La configuración {{section}} en {{filePath}} no es válida",
+        "conflict": "No se puede aplicar el preset de testing porque {{entry}} entra en conflicto en {{filePath}}",
+        "applyFailed": "No se pudo aplicar el preset de testing: {{error}}"
       }
     },
     "new": {
@@ -35,11 +60,12 @@
       }
     },
     "rename": {
-      "description": "🔄 Renombrar un componente (usar path/nombre para desambiguar si es necesario)",
+      "description": "🔄 Renombrar un componente sin cambiarlo de carpeta",
       "error": {
         "oldNameEmpty": "El nombre actual del componente no puede estar vacío",
         "newNameEmpty": "El nuevo nombre del componente no puede estar vacío",
         "nameInvalid": "El nuevo nombre del componente debe ser PascalCase (ej: MiComponente)",
+        "newNamePathNotAllowed": "El nuevo nombre del componente no puede incluir una ruta. Usá \"pelela move\" para cambiarlo de carpeta",
         "oldNotFound": "No se encontraron los archivos para el componente \"{{name}}\"",
         "newNameExists": "Ya existen archivos con el nombre \"{{name}}\"",
         "renameFailed": "Error al renombrar el componente: {{error}}"
@@ -47,13 +73,25 @@
       "messages": {
         "success": "✅ Componente \"{{oldName}}\" renombrado a \"{{newName}}\" exitosamente"
       }
+    },
+    "move": {
+      "description": "Mover un componente a una ruta de destino",
+      "error": {
+        "pathInvalid": "Las rutas deben ser relativas, normalizadas y terminar con un nombre PascalCase",
+        "sourceNotFound": "No se encontró un componente en \"{{source}}\"",
+        "templateNotFound": "No se encontró una plantilla para el componente en \"{{source}}\"",
+        "destinationExists": "Ya existe un archivo de componente en \"{{destination}}\"",
+        "moveFailed": "No se pudo mover el componente: {{error}}"
+      },
+      "messages": {
+        "success": "✅ Componente movido de \"{{source}}\" a \"{{destination}}\" exitosamente"
+      }
     }
   },
   "messages": {
     "success": "🎉 ¡Proyecto \"{{projectName}}\" creado exitosamente!",
     "nextSteps": "Próximos pasos:",
     "cdProject": "cd {{projectName}}",
-    "install": "pnpm install",
     "dev": "pnpm dev",
     "newVersionAvailable": "🆕 Una nueva versión está disponible: {{version}}",
     "updateCommand": "Ejecuta `pnpm add -g pelelajs` para actualizar",
@@ -62,6 +100,7 @@
   "errors": {
     "prefix": "❌ Error:",
     "nodeVersion": "PelelaJS requiere Node.js {{requiredVersion}}",
-    "currentVersion": "Versión actual: {{currentVersion}}"
+    "currentVersion": "Versión actual: {{currentVersion}}",
+    "installDependencies": "No se pudieron instalar las dependencias en {{path}}. Los archivos ya fueron creados; abrí esa carpeta y ejecutá `pnpm install` para reintentar"
   }
 }

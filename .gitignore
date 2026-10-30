@@ -1,6 +1,9 @@
 node_modules
 dist
-.vscode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
 .DS_Store
 .env
 .idea

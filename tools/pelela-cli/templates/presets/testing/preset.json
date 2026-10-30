@@ -1,0 +1,14 @@
+{
+  "devDependencies": {
+    "@vitest/coverage-v8": "4.0.14",
+    "vitest": "4.0.14"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
+  },
+  "compilerOptions": {
+    "types": ["vitest/globals"]
+  },
+  "vscodeExtensions": ["vitest.explorer"]
+}
