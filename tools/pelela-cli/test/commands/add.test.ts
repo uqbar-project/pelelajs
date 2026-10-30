@@ -10,6 +10,7 @@ vi.mock('../../src/utils/testingPreset')
 
 const mockedShell = vi.mocked(shell)
 const mockedTestingPreset = vi.mocked(testingPreset)
+const PROJECT_PATH = '/mock/project'
 
 describe('addCommand', () => {
   beforeAll(async () => {
@@ -20,7 +21,7 @@ describe('addCommand', () => {
     mockedShell.resolvePath.mockClear()
     mockedTestingPreset.applyTestingPreset.mockClear()
     mockedShell.installDependencies.mockClear()
-    mockedShell.resolvePath.mockReturnValue('/mock/project')
+    mockedShell.resolvePath.mockReturnValue(PROJECT_PATH)
     mockedTestingPreset.applyTestingPreset.mockImplementation(() => undefined)
     mockedShell.installDependencies.mockImplementation(() => undefined)
   })
@@ -34,8 +35,8 @@ describe('addCommand', () => {
 
     addCommand({ preset: 'testing' })
 
-    expect(mockedTestingPreset.applyTestingPreset).toHaveBeenCalledWith('/mock/project')
-    expect(mockedShell.installDependencies).toHaveBeenCalledWith('/mock/project')
+    expect(mockedTestingPreset.applyTestingPreset).toHaveBeenCalledWith(PROJECT_PATH)
+    expect(mockedShell.installDependencies).toHaveBeenCalledWith(PROJECT_PATH)
     expect(logSpy).toHaveBeenCalledTimes(1)
     expect(logSpy).toHaveBeenCalledWith(chalk.green(t('commands.add.messages.testingApplied')))
   })
