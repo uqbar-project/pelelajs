@@ -32,9 +32,11 @@ Updates flow exclusively from the model to the view. Used by directives like `bi
 
 ### 2. Two-Way Binding (Model <-> View)
 
-Typically used in input elements (`bind-value="user.name"`).
+Used in form controls such as inputs, textareas and selects (`bind-value="user.name"`).
 
 - **Mechanism:** It sets up a One-Way binding (Model -> View) for the visual representation, and simultaneously attaches a native DOM event listener (like `input` or `change`) to the element. When the event fires, the framework updates the model, completing the cycle.
+
+For a `<textarea>`, `bind-value` synchronizes the ViewModel with the control's current `value`. `bind-content` is not supported there: it updates `textContent`, which represents the textarea's initial content rather than its current editable value.
 
 ### 3. Event Binding (View -> Model)
 

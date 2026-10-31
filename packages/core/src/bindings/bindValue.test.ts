@@ -70,6 +70,19 @@ describe('bindValue', () => {
       expect(viewModel.name).toBe('updated')
     })
 
+    it('should update the ViewModel from the textarea value', () => {
+      container.innerHTML = '<textarea bind-value="message"></textarea>'
+      const viewModel = { message: 'initial' }
+
+      setupValueBindings(container, viewModel)
+
+      const textarea = container.querySelector('textarea')!
+      textarea.value = 'updated'
+      textarea.dispatchEvent(new Event('input'))
+
+      expect(viewModel.message).toBe('updated')
+    })
+
     it('should convert numeric values in inputs', () => {
       container.innerHTML = '<input bind-value="count" />'
       const viewModel = { count: 0 }
@@ -235,6 +248,17 @@ describe('bindValue', () => {
 
       const input = container.querySelector('input')!
       expect(input.value).toBe('Jane')
+    })
+
+    it('should render the ViewModel value into a textarea', () => {
+      container.innerHTML = '<textarea bind-value="message"></textarea>'
+      const viewModel = { message: 'initial' }
+      const bindings = setupValueBindings(container, viewModel)
+
+      viewModel.message = 'updated'
+      renderValueBindings(bindings, viewModel)
+
+      expect(container.querySelector('textarea')!.value).toBe('updated')
     })
 
     it('should handle null and undefined values', () => {
