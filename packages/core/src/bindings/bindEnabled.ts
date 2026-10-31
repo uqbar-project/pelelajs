@@ -1,5 +1,5 @@
 import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
-import { t } from '../commons/i18n'
+import { WrongElementForBindingError } from '../errors'
 import { InvalidPropertyTypeError } from '../errors/InvalidPropertyTypeError'
 import { resolveBindingValue } from './forEachMethodBinding'
 import { setupSingleBinding } from './setupSingleBinding'
@@ -20,8 +20,11 @@ function setupSingleEnabledBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): EnabledBinding | null {
   if (!VALID_TAGS.includes(element.tagName)) {
-    throw new Error(
-      t('errors.bindings.enabledOnlyForFormControls', { tag: element.tagName.toLowerCase() }),
+    throw new WrongElementForBindingError(
+      'bind-enabled',
+      element.tagName.toLowerCase(),
+      extractElementSnippet(element),
+      'errors.bindings.enabledOnlyForFormControls',
     )
   }
 

@@ -1,5 +1,5 @@
-import { filterOwnElements, findAllElements } from '../commons/helpers'
-import { t } from '../commons/i18n'
+import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
+import { WrongElementForBindingError } from '../errors'
 import { executeEventHandler } from './executeEventHandler'
 import type { ViewModel } from './types'
 
@@ -11,7 +11,12 @@ function setupSingleEnterBinding<T extends object>(
   if (!handlerName?.trim()) return
 
   if (element.tagName !== 'INPUT') {
-    throw new Error(t('errors.compiler.enterOnlyForInput', { tag: element.tagName.toLowerCase() }))
+    throw new WrongElementForBindingError(
+      'enter',
+      element.tagName.toLowerCase(),
+      extractElementSnippet(element),
+      'errors.compiler.enterOnlyForInput',
+    )
   }
 
   element.addEventListener('keydown', (event: KeyboardEvent) => {

@@ -3,10 +3,7 @@ import { InvalidBindingAttributeError } from '../errors'
 import { isBindingAttribute } from './bindingAttributeUtils'
 
 export function assertValidBindingAttribute(attributeName: string, element: Element): void {
-  const isInvalidBinding =
-    attributeName.startsWith('bind-') &&
-    (!isBindingAttribute(attributeName) ||
-      (attributeName === 'bind-content' && element.tagName === 'TEXTAREA'))
+  const isInvalidBinding = attributeName.startsWith('bind-') && !isBindingAttribute(attributeName)
 
   if (isInvalidBinding) {
     const elementSnippet = extractElementSnippet(element)

@@ -1,5 +1,5 @@
-import { filterOwnElements, findAllElements } from '../commons/helpers'
-import { t } from '../commons/i18n'
+import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
+import { WrongElementForBindingError } from '../errors'
 import { resolveBindingValue } from './forEachMethodBinding'
 import { setupSingleBinding } from './setupSingleBinding'
 import type { AltBinding, ViewModel } from './types'
@@ -9,7 +9,12 @@ function setupSingleAltBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): AltBinding | null {
   if (!(element instanceof HTMLImageElement)) {
-    throw new Error(t('errors.bindings.altOnlyForImg', { tag: element.tagName.toLowerCase() }))
+    throw new WrongElementForBindingError(
+      'bind-alt',
+      element.tagName.toLowerCase(),
+      extractElementSnippet(element),
+      'errors.bindings.altOnlyForImg',
+    )
   }
 
   return setupSingleBinding(element, viewModel, 'bind-alt', (base) => ({

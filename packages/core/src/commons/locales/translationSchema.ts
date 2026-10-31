@@ -7,6 +7,9 @@ type ErrorTranslations = {
     value: {
       invalidElement: string
     }
+    content: {
+      invalidElement: string
+    }
     invalidBindingAttribute: string
   }
   dom: {

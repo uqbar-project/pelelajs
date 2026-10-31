@@ -1424,7 +1424,13 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors).toContain(t('errors.compiler.enterOnlyForInput', { tag: 'div' }))
+      expect(errors).toContain(
+        t('errors.compiler.enterOnlyForInput', {
+          attributeName: 'enter',
+          tagName: 'div',
+          snippet: '<div enter="...">',
+        }),
+      )
     })
 
     it('reports error when enter has extra whitespace around equals sign', () => {
@@ -1442,7 +1448,13 @@ describe('pelelajsPlugin', () => {
 
       handler.call({ error: errorFn } as never, pelelaPath, {} as never)
 
-      expect(errors).toContain(t('errors.compiler.enterOnlyForInput', { tag: 'div' }))
+      expect(errors).toContain(
+        t('errors.compiler.enterOnlyForInput', {
+          attributeName: 'enter',
+          tagName: 'div',
+          snippet: '<div enter="...">',
+        }),
+      )
     })
 
     it('reports error when enter is used on multiple non-input elements', () => {
@@ -1462,8 +1474,18 @@ describe('pelelajsPlugin', () => {
 
       const enterErrors = errors.filter(
         (errorMessage) =>
-          errorMessage === t('errors.compiler.enterOnlyForInput', { tag: 'span' }) ||
-          errorMessage === t('errors.compiler.enterOnlyForInput', { tag: 'section' }),
+          errorMessage ===
+            t('errors.compiler.enterOnlyForInput', {
+              attributeName: 'enter',
+              tagName: 'span',
+              snippet: '<span enter="...">',
+            }) ||
+          errorMessage ===
+            t('errors.compiler.enterOnlyForInput', {
+              attributeName: 'enter',
+              tagName: 'section',
+              snippet: '<section enter="...">',
+            }),
       )
       expect(enterErrors).toHaveLength(2)
     })

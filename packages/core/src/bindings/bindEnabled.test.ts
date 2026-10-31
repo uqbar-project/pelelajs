@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { InvalidPropertyTypeError, PropertyValidationError } from '../errors/index'
+import { t } from '../commons/i18n'
+import {
+  InvalidPropertyTypeError,
+  PropertyValidationError,
+  WrongElementForBindingError,
+} from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { renderEnabledBindings, setupEnabledBindings, VALID_TAGS } from './bindEnabled'
 import type { ViewModel } from './types'
@@ -34,9 +39,20 @@ describe('bindEnabled', () => {
       container.innerHTML = `<${UnsupportedTag} bind-enabled="isActive"></${UnsupportedTag}>`
       const viewModel = { isActive: true }
 
-      expect(() => {
-        setupEnabledBindings(container, viewModel)
-      }).toThrow(/bind-enabled can only be used on form controls/)
+      const error = testHelpers.catchError<WrongElementForBindingError>(() =>
+        setupEnabledBindings(container, viewModel),
+      )
+
+      expect(error).toBeInstanceOf(WrongElementForBindingError)
+      expect(error.attributeName).toBe('bind-enabled')
+      expect(error.tagName).toBe('div')
+      expect(error.message).toBe(
+        t('errors.bindings.enabledOnlyForFormControls', {
+          attributeName: 'bind-enabled',
+          tagName: 'div',
+          snippet: '<div bind-enabled="isActive"></div>',
+        }),
+      )
     })
 
     it('should throw error if property does not exist in viewModel', () => {

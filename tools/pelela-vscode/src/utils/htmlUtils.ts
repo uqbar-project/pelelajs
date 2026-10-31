@@ -208,7 +208,7 @@ const TAG_RESTRICTED_PELELA_ATTRIBUTES: Record<string, string[]> = {
   'view-model': ['pelela', 'component'],
 }
 
-const TAG_FORBIDDEN_PELELA_ATTRIBUTES: Record<string, string[]> = {
+const FORBIDDEN_PELELA_ATTRIBUTES_BY_TAG: Record<string, string[]> = {
   textarea: ['bind-content'],
 }
 
@@ -227,12 +227,13 @@ export function getPelelaAttributesForTag(tagName: string | null): string[] {
     return allAttributes.filter((attr) => tagOnlyPrefixes.some((prefix) => attr.startsWith(prefix)))
   }
 
+  const forbiddenAttributes = FORBIDDEN_PELELA_ATTRIBUTES_BY_TAG[normalizedTagName]
+
   return allAttributes.filter((attr) => {
     const allowedTags = TAG_RESTRICTED_PELELA_ATTRIBUTES[attr]
-    const forbiddenTags = TAG_FORBIDDEN_PELELA_ATTRIBUTES[normalizedTagName]
     return (
       (allowedTags === undefined || allowedTags.includes(normalizedTagName)) &&
-      !forbiddenTags?.includes(attr)
+      !forbiddenAttributes?.includes(attr)
     )
   })
 }

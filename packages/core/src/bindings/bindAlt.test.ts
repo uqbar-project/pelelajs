@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { PropertyValidationError } from '../errors/index'
+import { t } from '../commons/i18n'
+import { PropertyValidationError, WrongElementForBindingError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { renderAltBindings, setupAltBindings } from './bindAlt'
 import type { ViewModel } from './types'
@@ -31,9 +32,20 @@ describe('bindAlt', () => {
       container.innerHTML = '<div bind-alt="altText"></div>'
       const viewModel = { altText: 'A description' }
 
-      expect(() => {
-        setupAltBindings(container, viewModel)
-      }).toThrow(/bind-alt can only be used on <img> elements/)
+      const error = testHelpers.catchError<WrongElementForBindingError>(() =>
+        setupAltBindings(container, viewModel),
+      )
+
+      expect(error).toBeInstanceOf(WrongElementForBindingError)
+      expect(error.attributeName).toBe('bind-alt')
+      expect(error.tagName).toBe('div')
+      expect(error.message).toBe(
+        t('errors.bindings.altOnlyForImg', {
+          attributeName: 'bind-alt',
+          tagName: 'div',
+          snippet: '<div bind-alt="altText"></div>',
+        }),
+      )
     })
 
     it('should throw error if property does not exist in viewModel', () => {

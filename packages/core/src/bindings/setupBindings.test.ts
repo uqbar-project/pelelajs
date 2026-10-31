@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { InvalidBindingAttributeError } from '../errors'
+import { t } from '../commons/i18n'
+import { WrongElementForBindingError } from '../errors'
 import { testHelpers } from '../test/helpers'
 import { setupBindings } from './setupBindings'
 
@@ -43,11 +44,19 @@ describe('setupBindings', () => {
   it('should reject bind-content on a textarea and identify the invalid element', () => {
     container.innerHTML = '<textarea bind-content="message"></textarea>'
 
-    expect(() => setupBindings(container, { message: 'Hello' })).toThrowError(
-      new InvalidBindingAttributeError(
-        'bind-content',
-        '<textarea bind-content="message"></textarea>',
-      ),
+    const error = testHelpers.catchError<WrongElementForBindingError>(() => {
+      setupBindings(container, { message: 'Hello' })
+    })
+
+    expect(error).toBeInstanceOf(WrongElementForBindingError)
+    expect(error.attributeName).toBe('bind-content')
+    expect(error.tagName).toBe('textarea')
+    expect(error.message).toBe(
+      t('errors.bindings.content.invalidElement', {
+        attributeName: 'bind-content',
+        tagName: 'textarea',
+        snippet: '<textarea bind-content="message"></textarea>',
+      }),
     )
   })
 
