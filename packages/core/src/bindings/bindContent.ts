@@ -1,4 +1,4 @@
-import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
+import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { WrongElementForBindingError } from '../errors'
 import { resolveBindingValue } from './forEachMethodBinding'
 import { setupSingleBinding } from './setupSingleBinding'
@@ -11,8 +11,7 @@ function setupSingleContentBinding<T extends object>(
   if (element instanceof HTMLTextAreaElement) {
     throw new WrongElementForBindingError(
       'bind-content',
-      element.tagName.toLowerCase(),
-      extractElementSnippet(element),
+      element,
       'errors.bindings.content.invalidElement',
     )
   }

@@ -1,4 +1,4 @@
-import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
+import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { WrongElementForBindingError } from '../errors'
 import { resolveBindingValue } from './forEachMethodBinding'
 import { setupSingleBinding } from './setupSingleBinding'
@@ -9,12 +9,7 @@ function setupSingleSrcBinding<T extends object>(
   viewModel: ViewModel<T>,
 ): SrcBinding | null {
   if (!(element instanceof HTMLImageElement)) {
-    throw new WrongElementForBindingError(
-      'bind-src',
-      element.tagName.toLowerCase(),
-      extractElementSnippet(element),
-      'errors.bindings.srcOnlyForImg',
-    )
+    throw new WrongElementForBindingError('bind-src', element, 'errors.bindings.srcOnlyForImg')
   }
 
   return setupSingleBinding(element, viewModel, 'bind-src', (base) => ({

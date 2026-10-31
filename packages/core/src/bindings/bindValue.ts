@@ -1,5 +1,5 @@
 import { parse, stringify } from 'devalue'
-import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
+import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { getDecimalSeparator, getThousandsSeparator } from '../commons/i18n'
 import { WrongElementForBindingError } from '../errors'
 import { unwrapReactive } from '../reactivity/proxyIdentity'
@@ -77,8 +77,7 @@ function setupSingleValueBinding<T extends object>(
   if (!isInput) {
     throw new WrongElementForBindingError(
       'bind-value',
-      element.tagName.toLowerCase(),
-      extractElementSnippet(element),
+      element,
       'errors.bindings.value.invalidElement',
     )
   }

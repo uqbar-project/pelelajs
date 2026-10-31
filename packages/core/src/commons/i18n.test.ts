@@ -166,13 +166,14 @@ describe('i18n', () => {
       initializeI18n('en')
       const result = t('errors.bindings.value.invalidElement', {
         attributeName: 'bind-value',
-        tagName: 'div',
-        snippet: '<div>',
+        tagName: 'main',
+        snippet: '<aside class="note">',
       })
       expect(result).not.toContain('{{')
       expect(result).not.toContain('}}')
       expect(result).toContain('bind-value')
-      expect(result).toContain('<div>')
+      expect(result).toContain('main')
+      expect(result).toContain('<aside class="note">')
     })
   })
 

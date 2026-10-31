@@ -22,8 +22,7 @@ function setupSingleEnabledBinding<T extends object>(
   if (!VALID_TAGS.includes(element.tagName)) {
     throw new WrongElementForBindingError(
       'bind-enabled',
-      element.tagName.toLowerCase(),
-      extractElementSnippet(element),
+      element,
       'errors.bindings.enabledOnlyForFormControls',
     )
   }
