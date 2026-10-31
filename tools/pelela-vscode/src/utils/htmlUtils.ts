@@ -221,16 +221,18 @@ export function getPelelaAttributesForTag(tagName: string | null): string[] {
 
   if (!tagName) return allAttributes
 
-  const tagOnlyPrefixes = TAG_ONLY_ATTRIBUTES[tagName]
+  const normalizedTagName = tagName.toLowerCase()
+  const tagOnlyPrefixes = TAG_ONLY_ATTRIBUTES[normalizedTagName]
   if (tagOnlyPrefixes) {
     return allAttributes.filter((attr) => tagOnlyPrefixes.some((prefix) => attr.startsWith(prefix)))
   }
 
   return allAttributes.filter((attr) => {
     const allowedTags = TAG_RESTRICTED_PELELA_ATTRIBUTES[attr]
-    const forbiddenTags = TAG_FORBIDDEN_PELELA_ATTRIBUTES[tagName]
+    const forbiddenTags = TAG_FORBIDDEN_PELELA_ATTRIBUTES[normalizedTagName]
     return (
-      (allowedTags === undefined || allowedTags.includes(tagName)) && !forbiddenTags?.includes(attr)
+      (allowedTags === undefined || allowedTags.includes(normalizedTagName)) &&
+      !forbiddenTags?.includes(attr)
     )
   })
 }
