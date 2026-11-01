@@ -30,6 +30,22 @@ function getHandler<T>(hook: T): T extends { handler: infer H } ? H : T {
   return (hook as { handler: never }).handler ?? hook
 }
 
+function readTypeMap(
+  generatedModule: string,
+  viewModelName: string,
+): Record<string, ConstKind> | undefined {
+  const registration = generatedModule.match(
+    new RegExp(`defineComponent\\("${viewModelName}"[^\\n]*`),
+  )?.[0]
+  if (registration === undefined) {
+    throw new Error(`Generated registration for ${viewModelName} was not found`)
+  }
+  const typeMapMatch = registration.match(/typeMap: (\{[^}]*\})/)
+  return typeMapMatch === null
+    ? undefined
+    : (JSON.parse(typeMapMatch[1]) as Record<string, ConstKind>)
+}
+
 describe('plugin typeMap const binding integration', () => {
   let tempDir: string
   let originalCwd: () => string
@@ -70,21 +86,6 @@ describe('plugin typeMap const binding integration', () => {
     const load = getHandler(plugin.load!)
     const readGeneratedModule = (): string =>
       load.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
-    const readTypeMap = (
-      generatedModule: string,
-      viewModelName: string,
-    ): Record<string, ConstKind> | undefined => {
-      const registration = generatedModule.match(
-        new RegExp(`defineComponent\\("${viewModelName}"[^\\n]*`),
-      )?.[0]
-      if (registration === undefined) {
-        throw new Error(`Generated registration for ${viewModelName} was not found`)
-      }
-      const typeMapMatch = registration.match(/typeMap: (\{[^}]*\})/)
-      return typeMapMatch === null
-        ? undefined
-        : (JSON.parse(typeMapMatch[1]) as Record<string, ConstKind>)
-    }
 
     class CounterViewModel {
       quantity: number | Date = new Date()
@@ -250,8 +251,12 @@ describe('plugin typeMap const binding integration', () => {
 
       expect(firstGeneratedModule).toContain('LabelViewModel')
       expect(firstGeneratedModule).not.toContain('OtherViewModel')
+      expect(readTypeMap(firstGeneratedModule, 'LabelViewModel')).toEqual({ label: 'string' })
       expect(firstGeneratedModuleAfterSecondProject).toContain('LabelViewModel')
       expect(firstGeneratedModuleAfterSecondProject).not.toContain('OtherViewModel')
+      expect(readTypeMap(firstGeneratedModuleAfterSecondProject, 'LabelViewModel')).toEqual({
+        label: 'string',
+      })
       expect(secondGeneratedModule).toContain(
         'defineComponent("OtherViewModel", OtherViewModel, otherTemplate, { typeMap: {"total":"number"} })',
       )
