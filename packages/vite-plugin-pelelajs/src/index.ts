@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
 import type { ViewModelExportErrorParams } from 'pelelajs'
-import { initializeI18n } from 'pelelajs'
+import { initializeI18n, toKebabCase } from 'pelelajs'
 import {
   analyzeViewModelModule,
   type ConstKind,
@@ -18,11 +18,7 @@ import {
 import * as ts from 'typescript'
 
 import type { Plugin } from 'vite'
-import {
-  componentTagToKebabCase,
-  getPelelaFilePath,
-  validatePelelaSource,
-} from './templateValidation'
+import { getPelelaFilePath, validatePelelaSource } from './templateValidation'
 import { type ResolvedRouteImport, validateRouteImports } from './validateRouteImports'
 
 export { extractLinkAttributeMatches } from './templateValidation'
@@ -349,7 +345,7 @@ ${registrations}
 function getKnownComponentTags(): string[] {
   const srcDir = path.join(process.cwd(), 'src')
   return findComponentFiles(srcDir, { includeTypeMap: false }).map((component) =>
-    componentTagToKebabCase(component.viewModelName),
+    toKebabCase(component.viewModelName),
   )
 }
 

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import chalk from 'chalk'
+import { toKebabCase } from 'pelelajs'
 import {
   findComponentFile,
   normalizeComponentName,
@@ -8,7 +9,6 @@ import {
   renamePelelaFile,
   renameTsFile,
   resolveExistingComponentPath,
-  toKebabCase,
   updateImports,
   validateBasename,
 } from '../utils/componentFiles'

@@ -5,6 +5,7 @@ import {
   isValidComponentAttribute,
   LINK_PREFIX,
   t,
+  toKebabCase,
 } from 'pelelajs'
 
 interface ValidatePelelaSourceParams {
@@ -79,13 +80,6 @@ function validateComponentAttributes(sourceCode: string, errorFn: (message: stri
   })
 }
 
-export function componentTagToKebabCase(tagName: string): string {
-  return tagName
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .toLowerCase()
-}
-
 function validateComponentTagCase(sourceCode: string, errorFn: (message: string) => void): void {
   Array.from(sourceCode.matchAll(TAG_PATTERN))
     .map((tagMatch) => tagMatch[1])
@@ -101,7 +95,7 @@ function validateComponentTagCase(sourceCode: string, errorFn: (message: string)
       errorFn(
         t('errors.compiler.invalidComponentTagCase', {
           tag: tagName,
-          suggestedTag: componentTagToKebabCase(tagName),
+          suggestedTag: toKebabCase(tagName),
         }),
       )
     })

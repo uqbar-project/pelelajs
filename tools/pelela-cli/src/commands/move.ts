@@ -1,13 +1,13 @@
 import { existsSync } from 'node:fs'
 import { basename, isAbsolute, join, relative, resolve, win32 } from 'node:path'
 import chalk from 'chalk'
+import { toKebabCase } from 'pelelajs'
 import {
   findComponentFile,
   getComponentBasePath,
   getComponentTargetDir,
   moveComponentFiles,
   normalizeComponentName,
-  toKebabCase,
   updateImports,
   validateBasename,
 } from '../utils/componentFiles'

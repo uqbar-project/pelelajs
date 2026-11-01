@@ -16,6 +16,11 @@
       "types": "./dist/analysis.d.cts",
       "import": "./dist/analysis.cjs",
       "require": "./dist/analysis.cjs"
+    },
+    "./dom": {
+      "types": "./dist/dom.d.ts",
+      "import": "./dist/dom.js",
+      "require": "./dist/dom.cjs"
     }
   },
   "bin": {

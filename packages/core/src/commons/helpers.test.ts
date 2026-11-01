@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { clearComponentRegistry, defineComponent } from '../registry/componentRegistry'
 import {
+  escapeRegex,
   extractElementSnippet,
   filterOwnElements,
   findAllElements,
@@ -301,6 +302,34 @@ describe('helpers', () => {
 
     it('should handle multiple words', () => {
       expect(toKebabCase('myLongComponentName')).toBe('my-long-component-name')
+    })
+
+    it('should separate acronyms like the core helper does (MyHTMLComponent -> my-html-component)', () => {
+      expect(toKebabCase('MyHTMLComponent')).toBe('my-html-component')
+      expect(toKebabCase('XMLHttpRequest')).toBe('xml-http-request')
+    })
+  })
+
+  describe('escapeRegex', () => {
+    it('should escape regex metacharacters so they match literally', () => {
+      expect(escapeRegex('a.b')).toBe('a\\.b')
+      expect(escapeRegex('a+b')).toBe('a\\+b')
+      expect(escapeRegex('a*b')).toBe('a\\*b')
+      expect(escapeRegex('a[b]')).toBe('a\\[b\\]')
+      expect(escapeRegex('a$b')).toBe('a\\$b')
+      expect(escapeRegex('a{b}')).toBe('a\\{b\\}')
+      expect(escapeRegex('a(b)c')).toBe('a\\(b\\)c')
+      expect(escapeRegex('a|b')).toBe('a\\|b')
+    })
+
+    it('should escape dots and brackets in route segments', () => {
+      expect(escapeRegex('static.html')).toBe('static\\.html')
+      expect(escapeRegex('v1[0-9]')).toBe('v1\\[0-9\\]')
+    })
+
+    it('should leave ordinary characters untouched', () => {
+      expect(escapeRegex('product-id')).toBe('product-id')
+      expect(escapeRegex('users_42')).toBe('users_42')
     })
   })
 

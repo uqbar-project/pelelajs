@@ -40,6 +40,16 @@ export default defineConfig([
   },
   {
     entry: {
+      dom: 'src/commons/dom.ts',
+    },
+    format: ['esm', 'cjs'],
+    dts: true,
+    clean: true,
+    target: 'esnext',
+    outDir: 'dist',
+  },
+  {
+    entry: {
       cli: cliEntry,
     },
     format: ['cjs'],

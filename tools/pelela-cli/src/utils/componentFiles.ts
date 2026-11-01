@@ -9,6 +9,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
+import { escapeRegex, toKebabCase } from 'pelelajs'
 import { rewriteComponentCode } from './componentCodeRewrite'
 import { t } from './i18n'
 
@@ -116,14 +117,6 @@ export function normalizeComponentName(name: string, targetDir: string): string 
   const base = basename(normalized)
   const pascalBase = toPascalCase(base)
   return folder === '.' ? pascalBase : `${folder}/${pascalBase}`
-}
-
-function escapeRegExp(string: string): string {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-export function toKebabCase(string: string): string {
-  return string.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
 }
 
 export function toPascalCase(str: string): string {
@@ -234,14 +227,14 @@ function modifyAndRenameFile(params: ModifyContentParams): void {
 
 function renameClassName(content: string, oldClassName: string, newClassName: string): string {
   return content.replace(
-    new RegExp(`class\\s+${escapeRegExp(oldClassName)}\\b`, 'g'),
+    new RegExp(`class\\s+${escapeRegex(oldClassName)}\\b`, 'g'),
     () => `class ${newClassName}`,
   )
 }
 
 function renameViewModelName(content: string, oldClassName: string, newClassName: string): string {
   return content.replace(
-    new RegExp(`view-model="${escapeRegExp(oldClassName)}"`, 'g'),
+    new RegExp(`view-model="${escapeRegex(oldClassName)}"`, 'g'),
     () => `view-model="${newClassName}"`,
   )
 }

@@ -1,10 +1,7 @@
+import { escapeRegex } from 'pelelajs'
 import * as vscode from 'vscode'
 import { readFileLines } from '../utils/fileUtils'
 import { calculateBraceDepth } from '../utils/parsingUtils'
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
 
 export function findClassDefinition(
   typescriptFilePath: string,

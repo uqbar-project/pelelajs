@@ -35,6 +35,7 @@
     "cli-box": "6.0.11",
     "commander": "12.1.0",
     "i18next": "23.7.6",
+    "pelelajs": "workspace:*",
     "semver": "7.7.0",
     "typescript": "5.9.3"
   },

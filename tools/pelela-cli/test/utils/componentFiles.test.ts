@@ -10,7 +10,6 @@ import {
   prepareRenamePaths,
   renameCssFile,
   resolveExistingComponentPath,
-  toKebabCase,
   toPascalCase,
   updateImports,
 } from '../../src/utils/componentFiles'
@@ -123,26 +122,6 @@ describe('resolveExistingComponentPath', () => {
     const resolved = resolveExistingComponentPath('sub/Base', 'src', '.ts')
 
     expect(existsSync(resolved)).toBe(true)
-  })
-})
-
-describe('toKebabCase', () => {
-  it('converts camelCase to kebab-case', () => {
-    expect(toKebabCase('myComponent')).toBe('my-component')
-    expect(toKebabCase('fooBar')).toBe('foo-bar')
-    expect(toKebabCase('testCase')).toBe('test-case')
-  })
-
-  it('handles single word', () => {
-    expect(toKebabCase('hello')).toBe('hello')
-  })
-
-  it('handles multiple words', () => {
-    expect(toKebabCase('myLongComponentName')).toBe('my-long-component-name')
-  })
-
-  it('handles already kebab-case', () => {
-    expect(toKebabCase('my-component')).toBe('my-component')
   })
 })
 
