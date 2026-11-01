@@ -207,16 +207,18 @@ describe('plugin typeMap const binding integration', () => {
   it('shares the document registry without mixing project roots', () => {
     const firstPlugin = pelelajsPlugin()
     const firstLoad = getHandler(firstPlugin.load!)
-    const firstGeneratedModule = firstLoad.call(
-      null as never,
-      RESOLVED_VIRTUAL_ID,
-      {} as never,
-    ) as string
+    let firstGeneratedModule: string
+    let firstGeneratedModuleAfterSecondProject: string
     const secondProjectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-plugin-isolated-'))
     const originalWorkingDirectory = process.cwd
     let secondPlugin: ReturnType<typeof pelelajsPlugin> | undefined
 
     try {
+      firstGeneratedModule = firstLoad.call(
+        null as never,
+        RESOLVED_VIRTUAL_ID,
+        {} as never,
+      ) as string
       const secondSrcDir = path.join(secondProjectDir, 'src')
       fs.mkdirSync(secondSrcDir)
       fs.writeFileSync(
@@ -236,12 +238,20 @@ describe('plugin typeMap const binding integration', () => {
         RESOLVED_VIRTUAL_ID,
         {} as never,
       ) as string
+      process.cwd = originalWorkingDirectory
+      firstGeneratedModuleAfterSecondProject = firstLoad.call(
+        null as never,
+        RESOLVED_VIRTUAL_ID,
+        {} as never,
+      ) as string
       const documentRegistries = vi
         .mocked(createLanguageService)
         .mock.calls.map(([, documentRegistry]) => documentRegistry)
 
       expect(firstGeneratedModule).toContain('LabelViewModel')
       expect(firstGeneratedModule).not.toContain('OtherViewModel')
+      expect(firstGeneratedModuleAfterSecondProject).toContain('LabelViewModel')
+      expect(firstGeneratedModuleAfterSecondProject).not.toContain('OtherViewModel')
       expect(secondGeneratedModule).toContain(
         'defineComponent("OtherViewModel", OtherViewModel, otherTemplate, { typeMap: {"total":"number"} })',
       )
