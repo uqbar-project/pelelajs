@@ -203,4 +203,58 @@ describe('plugin typeMap const binding integration', () => {
 
     expect(readGeneratedModule()).toContain('LabelViewModel')
   })
+
+  it('shares the document registry without mixing project roots', () => {
+    const firstPlugin = pelelajsPlugin()
+    const firstLoad = getHandler(firstPlugin.load!)
+    const firstGeneratedModule = firstLoad.call(
+      null as never,
+      RESOLVED_VIRTUAL_ID,
+      {} as never,
+    ) as string
+    const secondProjectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pelela-plugin-isolated-'))
+    const originalWorkingDirectory = process.cwd
+    let secondPlugin: ReturnType<typeof pelelajsPlugin> | undefined
+
+    try {
+      const secondSrcDir = path.join(secondProjectDir, 'src')
+      fs.mkdirSync(secondSrcDir)
+      fs.writeFileSync(
+        path.join(secondSrcDir, 'other.ts'),
+        'export class OtherViewModel { total = 0 }',
+      )
+      fs.writeFileSync(
+        path.join(secondSrcDir, 'other.pelela'),
+        '<pelela view-model="OtherViewModel"></pelela>',
+      )
+
+      process.cwd = () => secondProjectDir
+      secondPlugin = pelelajsPlugin()
+      const secondLoad = getHandler(secondPlugin.load!)
+      const secondGeneratedModule = secondLoad.call(
+        null as never,
+        RESOLVED_VIRTUAL_ID,
+        {} as never,
+      ) as string
+      const documentRegistries = vi
+        .mocked(createLanguageService)
+        .mock.calls.map(([, documentRegistry]) => documentRegistry)
+
+      expect(firstGeneratedModule).toContain('LabelViewModel')
+      expect(firstGeneratedModule).not.toContain('OtherViewModel')
+      expect(secondGeneratedModule).toContain(
+        'defineComponent("OtherViewModel", OtherViewModel, otherTemplate, { typeMap: {"total":"number"} })',
+      )
+      expect(secondGeneratedModule).not.toContain('LabelViewModel')
+      expect(documentRegistries).toHaveLength(2)
+      expect(documentRegistries[0]).toBe(documentRegistries[1])
+    } finally {
+      process.cwd = originalWorkingDirectory
+      getHandler(firstPlugin.closeBundle!).call(null as never)
+      if (secondPlugin !== undefined) {
+        getHandler(secondPlugin.closeBundle!).call(null as never)
+      }
+      fs.rmSync(secondProjectDir, { recursive: true, force: true })
+    }
+  })
 })

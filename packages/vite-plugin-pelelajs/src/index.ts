@@ -27,6 +27,7 @@ const PLUGIN_NAME = 'vite-plugin-pelelajs'
 const VIRTUAL_MODULE_ID = 'virtual:pelela-auto-register'
 const RESOLVED_VIRTUAL_ID = '\0virtual:pelela-auto-register'
 const COMPONENT_SOURCE_EXTENSIONS = new Set(['.ts', '.pelela', '.css'])
+const TYPE_MAP_DOCUMENT_REGISTRY = ts.createDocumentRegistry()
 
 interface ComponentFileMetadata {
   name: string
@@ -138,7 +139,7 @@ function createTypeMapProgramCache(currentDirectory: string): TypeMapProgramCach
       directoryExists: ts.sys.directoryExists,
       getDirectories: ts.sys.getDirectories,
     },
-    ts.createDocumentRegistry(),
+    TYPE_MAP_DOCUMENT_REGISTRY,
   )
 
   return {
