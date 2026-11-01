@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { PropertyValidationError } from '../errors/index'
+import { t } from '../commons/i18n'
+import { PropertyValidationError, WrongElementForBindingError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { renderSrcBindings, setupSrcBindings } from './bindSrc'
 import type { ViewModel } from './types'
@@ -31,9 +32,20 @@ describe('bindSrc', () => {
       container.innerHTML = '<div bind-src="imageUrl"></div>'
       const viewModel = { imageUrl: 'test.png' }
 
-      expect(() => {
-        setupSrcBindings(container, viewModel)
-      }).toThrow(/bind-src can only be used on <img> elements/)
+      const error = testHelpers.catchError<WrongElementForBindingError>(() =>
+        setupSrcBindings(container, viewModel),
+      )
+
+      expect(error).toBeInstanceOf(WrongElementForBindingError)
+      expect(error.attributeName).toBe('bind-src')
+      expect(error.tagName).toBe('div')
+      expect(error.message).toBe(
+        t('errors.bindings.srcOnlyForImg', {
+          attributeName: 'bind-src',
+          tagName: 'div',
+          snippet: '<div bind-src="imageUrl"></div>',
+        }),
+      )
     })
 
     it('should throw error if property does not exist in viewModel', () => {

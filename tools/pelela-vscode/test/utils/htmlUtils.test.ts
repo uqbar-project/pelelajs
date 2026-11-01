@@ -171,6 +171,20 @@ describe('htmlUtils', () => {
       assert.ok(attributes.includes('bind-enabled'))
     })
 
+    it('should exclude bind-content from textarea attributes', () => {
+      const attributes = getPelelaAttributesForTag('textarea')
+
+      assert.ok(!attributes.includes('bind-content'))
+      assert.ok(attributes.includes('bind-value'))
+    })
+
+    it('should apply textarea restrictions regardless of tag name casing', () => {
+      const attributes = getPelelaAttributesForTag('TEXTAREA')
+
+      assert.ok(!attributes.includes('bind-content'))
+      assert.ok(attributes.includes('bind-value'))
+    })
+
     it('should exclude bind-enabled for non-form tags', () => {
       const attributes = getPelelaAttributesForTag('div')
 

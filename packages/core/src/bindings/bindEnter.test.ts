@@ -4,6 +4,7 @@ import {
   ArrowFunctionAsHandlerError,
   GetterAsHandlerError,
   PropertyAsHandlerError,
+  WrongElementForBindingError,
 } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { setupEnterBindings } from './bindEnter'
@@ -221,9 +222,20 @@ describe('bindEnter', () => {
       container.innerHTML = '<div enter="handleEnter"></div>'
       const viewModel = { handleEnter: vi.fn() }
 
-      expect(() => {
+      const error = testHelpers.catchError<WrongElementForBindingError>(() => {
         setupEnterBindings(container, viewModel)
-      }).toThrow(t('errors.compiler.enterOnlyForInput', { tag: 'div' }))
+      })
+
+      expect(error).toBeInstanceOf(WrongElementForBindingError)
+      expect(error.attributeName).toBe('enter')
+      expect(error.tagName).toBe('div')
+      expect(error.message).toBe(
+        t('errors.compiler.enterOnlyForInput', {
+          attributeName: 'enter',
+          tagName: 'div',
+          snippet: '<div enter="handleEnter"></div>',
+        }),
+      )
     })
 
     it('should throw error when enter is on textarea, button, or select', () => {
@@ -234,9 +246,20 @@ describe('bindEnter', () => {
       `
       const viewModel = { handleEnter: vi.fn() }
 
-      expect(() => {
+      const error = testHelpers.catchError<WrongElementForBindingError>(() => {
         setupEnterBindings(container, viewModel)
-      }).toThrow(t('errors.compiler.enterOnlyForInput', { tag: 'textarea' }))
+      })
+
+      expect(error).toBeInstanceOf(WrongElementForBindingError)
+      expect(error.attributeName).toBe('enter')
+      expect(error.tagName).toBe('textarea')
+      expect(error.message).toBe(
+        t('errors.compiler.enterOnlyForInput', {
+          attributeName: 'enter',
+          tagName: 'textarea',
+          snippet: '<textarea enter="handleEnter"></textarea>',
+        }),
+      )
     })
   })
 })

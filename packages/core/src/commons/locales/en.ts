@@ -4,13 +4,19 @@ const errors = {
   bindings: {
     invalidSyntax:
       '[pelela] Invalid {{kind}} expression: "{{expression}}". Expected format: {{format}}',
-    srcOnlyForImg: 'bind-src can only be used on <img> elements. Found on <{{tag}}>.',
-    altOnlyForImg: 'bind-alt can only be used on <img> elements. Found on <{{tag}}>.',
+    srcOnlyForImg:
+      '{{attributeName}} can only be used on <img> elements. Found on <{{tagName}}>. Element: {{snippet}}',
+    altOnlyForImg:
+      '{{attributeName}} can only be used on <img> elements. Found on <{{tagName}}>. Element: {{snippet}}',
     enabledOnlyForFormControls:
-      'bind-enabled can only be used on form controls (input, select, button, textarea, optgroup, option, fieldset). Found on <{{tag}}>.',
+      '{{attributeName}} can only be used on form controls (input, select, button, textarea, optgroup, option, fieldset). Found on <{{tagName}}>. Element: {{snippet}}',
     value: {
       invalidElement:
-        'bind-value can only be used on input, textarea, or select elements. Found on <{{tagName}}>. Use bind-content for display elements.\nElement: {{snippet}}',
+        '{{attributeName}} can only be used on input, textarea, or select elements. Found on <{{tagName}}>. Use bind-content for display elements.\nElement: {{snippet}}',
+    },
+    content: {
+      invalidElement:
+        '{{attributeName}} cannot be used on <{{tagName}}> elements. Use bind-value for form controls.\nElement: {{snippet}}',
     },
     invalidBindingAttribute:
       '[pelela] Invalid binding attribute: "{{attributeName}}". Element: {{elementSnippet}}',
@@ -112,7 +118,8 @@ const errors = {
     invalidComponentAttribute:
       'Component <{{tag}}>: attribute "{{attr}}" must use "prop-" (one-way), "link-" (two-way) or "const-" prefix',
     onlyForImg: '{{binding}} can only be used on <img> elements, not on <{{tag}}>.',
-    enterOnlyForInput: 'enter can only be used on <input> elements. Found on <{{tag}}>.',
+    enterOnlyForInput:
+      '{{attributeName}} can only be used on <input> elements. Found on <{{tagName}}>. Element: {{snippet}}',
     missingParentProperty:
       'Component <{{tag}}>: parent property "{{parentKey}}" does not exist in parent view model',
     missingViewModel: 'Pelela template "{{filePath}}" must contain view-model="..." attribute',

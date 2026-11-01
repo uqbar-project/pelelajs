@@ -215,6 +215,23 @@ describe('attributeValidator', () => {
       const diagnostics = validateTagRestrictions(tags)
       assert.strictEqual(diagnostics.length, 1)
     })
+
+    it('rejects bind-content on textarea', () => {
+      const tags = prepareTags(['<textarea bind-content="message">'])
+      const diagnostics = validateTagRestrictions(tags)
+      assert.strictEqual(diagnostics.length, 1)
+      assertDiagnostic(
+        diagnostics[0],
+        t('diagnostics.attributeNotAllowed', { name: 'bind-content', tag: 'textarea' }),
+        vscode.DiagnosticSeverity.Error
+      )
+    })
+
+    it('allows bind-content on display elements', () => {
+      const tags = prepareTags(['<span bind-content="message">'])
+
+      assert.strictEqual(validateTagRestrictions(tags).length, 0)
+    })
   })
 
   describe('validateComponentAttributes', () => {

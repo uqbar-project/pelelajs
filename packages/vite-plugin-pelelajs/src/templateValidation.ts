@@ -224,7 +224,13 @@ function validateInputOnlyEvents(sourceCode: string, errorFn: (message: string) 
     for (const match of matches) {
       const tagName = match[1].toLowerCase()
       if (tagName !== 'input') {
-        errorFn(t('errors.compiler.enterOnlyForInput', { tag: tagName }))
+        errorFn(
+          t('errors.compiler.enterOnlyForInput', {
+            attributeName: eventName,
+            tagName,
+            snippet: `<${tagName} ${eventName}="...">`,
+          }),
+        )
       }
     }
   }

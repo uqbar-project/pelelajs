@@ -1,7 +1,7 @@
 import { parse, stringify } from 'devalue'
-import { extractElementSnippet, filterOwnElements, findAllElements } from '../commons/helpers'
+import { filterOwnElements, findAllElements } from '../commons/helpers'
 import { getDecimalSeparator, getThousandsSeparator } from '../commons/i18n'
-import { UnsupportedElementError } from '../errors'
+import { WrongElementForBindingError } from '../errors'
 import { unwrapReactive } from '../reactivity/proxyIdentity'
 import { assertViewModelProperty } from '../validation/assertViewModelProperty'
 import { getNestedProperty, setNestedProperty } from './nestedProperties'
@@ -75,7 +75,11 @@ function setupSingleValueBinding<T extends object>(
   const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName)
 
   if (!isInput) {
-    throw new UnsupportedElementError(element.tagName.toLowerCase(), extractElementSnippet(element))
+    throw new WrongElementForBindingError(
+      'bind-value',
+      element,
+      'errors.bindings.value.invalidElement',
+    )
   }
 
   const isCheckbox = element instanceof HTMLInputElement && element.type === 'checkbox'

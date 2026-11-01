@@ -4,13 +4,19 @@ const errors = {
   bindings: {
     invalidSyntax:
       '[pelela] Expresión {{kind}} inválida: "{{expression}}". Formato esperado: {{format}}',
-    srcOnlyForImg: 'bind-src solo puede usarse en elementos <img>. Se encontró en <{{tag}}>.',
-    altOnlyForImg: 'bind-alt solo puede usarse en elementos <img>. Se encontró en <{{tag}}>.',
+    srcOnlyForImg:
+      '{{attributeName}} solo puede usarse en elementos <img>. Se encontró en <{{tagName}}>. Elemento: {{snippet}}',
+    altOnlyForImg:
+      '{{attributeName}} solo puede usarse en elementos <img>. Se encontró en <{{tagName}}>. Elemento: {{snippet}}',
     enabledOnlyForFormControls:
-      'bind-enabled solo puede usarse en controles de formulario (input, select, button, textarea, optgroup, option, fieldset). Se encontró en <{{tag}}>.',
+      '{{attributeName}} solo puede usarse en controles de formulario (input, select, button, textarea, optgroup, option, fieldset). Se encontró en <{{tagName}}>. Elemento: {{snippet}}',
     value: {
       invalidElement:
-        'bind-value solo puede usarse en elementos input, textarea o select. Se encontró en <{{tagName}}>. Usá bind-content para elementos de visualización.\nElemento: {{snippet}}',
+        '{{attributeName}} solo puede usarse en elementos input, textarea o select. Se encontró en <{{tagName}}>. Usá bind-content para elementos de visualización.\nElemento: {{snippet}}',
+    },
+    content: {
+      invalidElement:
+        '{{attributeName}} no puede usarse en elementos <{{tagName}}>. Usá bind-value para controles de formulario.\nElemento: {{snippet}}',
     },
     invalidBindingAttribute:
       '[pelela] Atributo de binding inválido: "{{attributeName}}". Elemento: {{elementSnippet}}',
@@ -116,7 +122,8 @@ const errors = {
     invalidComponentAttribute:
       'Componente <{{tag}}>: el atributo "{{attr}}" debe usar el prefijo "prop-" (one-way), "link-" (two-way) o "const-"',
     onlyForImg: '{{binding}} solo puede usarse en elementos <img>, no en <{{tag}}>.',
-    enterOnlyForInput: 'enter solo puede usarse en elementos <input>. Se encontró en <{{tag}}>.',
+    enterOnlyForInput:
+      '{{attributeName}} solo puede usarse en elementos <input>. Se encontró en <{{tagName}}>. Elemento: {{snippet}}',
     missingParentProperty:
       'Componente <{{tag}}>: la propiedad padre "{{parentKey}}" no existe en el view model padre',
     missingViewModel: 'Pelela template "{{filePath}}" debe contener atributo view-model="..."',

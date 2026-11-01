@@ -1,4 +1,5 @@
 import { filterOwnElements, findAllElements } from '../commons/helpers'
+import { WrongElementForBindingError } from '../errors'
 import { resolveBindingValue } from './forEachMethodBinding'
 import { setupSingleBinding } from './setupSingleBinding'
 import type { ContentBinding, ViewModel } from './types'
@@ -7,6 +8,14 @@ function setupSingleContentBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
 ): ContentBinding | null {
+  if (element instanceof HTMLTextAreaElement) {
+    throw new WrongElementForBindingError(
+      'bind-content',
+      element,
+      'errors.bindings.content.invalidElement',
+    )
+  }
+
   return setupSingleBinding(element, viewModel, 'bind-content', (base) => base)
 }
 

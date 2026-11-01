@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { PropertyValidationError } from '../errors/index'
+import { t } from '../commons/i18n'
+import { PropertyValidationError, WrongElementForBindingError } from '../errors/index'
 import { testHelpers } from '../test/helpers'
 import { renderContentBindings, setupContentBindings } from './bindContent'
 import type { ViewModel } from './types'
@@ -44,6 +45,26 @@ describe('bindContent', () => {
       expect(() => {
         setupContentBindings(container, viewModel)
       }).toThrow(PropertyValidationError)
+    })
+
+    it('should reject bind-content on a textarea with a specific error', () => {
+      container.innerHTML = '<textarea bind-content="message"></textarea>'
+      const viewModel = { message: 'Hello' }
+
+      const error = testHelpers.catchError<WrongElementForBindingError>(() => {
+        setupContentBindings(container, viewModel)
+      })
+
+      expect(error).toBeInstanceOf(WrongElementForBindingError)
+      expect(error.attributeName).toBe('bind-content')
+      expect(error.tagName).toBe('textarea')
+      expect(error.message).toBe(
+        t('errors.bindings.content.invalidElement', {
+          attributeName: 'bind-content',
+          tagName: 'textarea',
+          snippet: '<textarea bind-content="message"></textarea>',
+        }),
+      )
     })
 
     it('should ignore elements with empty bind-content', () => {

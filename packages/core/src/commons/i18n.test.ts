@@ -165,12 +165,15 @@ describe('i18n', () => {
     it('should support interpolation with double curly braces', () => {
       initializeI18n('en')
       const result = t('errors.bindings.value.invalidElement', {
-        tagName: 'div',
-        snippet: '<div>',
+        attributeName: 'bind-value',
+        tagName: 'main',
+        snippet: '<aside class="note">',
       })
-      expect(result).toContain('bind-value can only be used on input, textarea, or select')
-      expect(result).toContain('Found on <div>.')
-      expect(result).toContain('Element: <div>')
+      expect(result).not.toContain('{{')
+      expect(result).not.toContain('}}')
+      expect(result).toContain('bind-value')
+      expect(result).toContain('main')
+      expect(result).toContain('<aside class="note">')
     })
   })
 

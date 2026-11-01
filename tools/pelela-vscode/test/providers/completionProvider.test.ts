@@ -102,6 +102,16 @@ describe('completionProvider', () => {
       )
       assert.strictEqual(constItem.sortText, '!0_const-')
     })
+
+    it('does not suggest bind-content for textarea but keeps it for display elements', () => {
+      const textareaItems: vscode.CompletionItem[] = []
+      const displayItems: vscode.CompletionItem[] = []
+      addPelelaAttributeCompletions(textareaItems, 'textarea')
+      addPelelaAttributeCompletions(displayItems, 'span')
+
+      assert.ok(!textareaItems.some((item) => item.label === 'bind-content'))
+      assert.ok(displayItems.some((item) => item.label === 'bind-content'))
+    })
   })
 
   describe('provideBasicViewModelCompletions', () => {

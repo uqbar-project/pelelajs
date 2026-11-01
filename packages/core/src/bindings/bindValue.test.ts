@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { initializeI18n } from '../commons/i18n'
-import { PropertyValidationError, UnsupportedElementError } from '../errors/index'
+import { initializeI18n, t } from '../commons/i18n'
+import { PropertyValidationError, WrongElementForBindingError } from '../errors/index'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { testHelpers } from '../test/helpers'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
@@ -34,8 +34,19 @@ describe('bindValue', () => {
       container.innerHTML = '<span bind-value="text"></span>'
       const viewModel = { text: '' }
 
-      expect(() => setupValueBindings(container, viewModel)).toThrow(
-        new UnsupportedElementError('span', '<span bind-value="text"></span>'),
+      const error = testHelpers.catchError<WrongElementForBindingError>(() =>
+        setupValueBindings(container, viewModel),
+      )
+
+      expect(error).toBeInstanceOf(WrongElementForBindingError)
+      expect(error.attributeName).toBe('bind-value')
+      expect(error.tagName).toBe('span')
+      expect(error.message).toBe(
+        t('errors.bindings.value.invalidElement', {
+          attributeName: 'bind-value',
+          tagName: 'span',
+          snippet: '<span bind-value="text"></span>',
+        }),
       )
     })
 
@@ -43,8 +54,19 @@ describe('bindValue', () => {
       container.innerHTML = '<div bind-value="text"></div>'
       const viewModel = { text: '' }
 
-      expect(() => setupValueBindings(container, viewModel)).toThrow(
-        new UnsupportedElementError('div', '<div bind-value="text"></div>'),
+      const error = testHelpers.catchError<WrongElementForBindingError>(() =>
+        setupValueBindings(container, viewModel),
+      )
+
+      expect(error).toBeInstanceOf(WrongElementForBindingError)
+      expect(error.attributeName).toBe('bind-value')
+      expect(error.tagName).toBe('div')
+      expect(error.message).toBe(
+        t('errors.bindings.value.invalidElement', {
+          attributeName: 'bind-value',
+          tagName: 'div',
+          snippet: '<div bind-value="text"></div>',
+        }),
       )
     })
 
@@ -52,8 +74,19 @@ describe('bindValue', () => {
       container.innerHTML = '<p bind-value="text"></p>'
       const viewModel = { text: '' }
 
-      expect(() => setupValueBindings(container, viewModel)).toThrow(
-        new UnsupportedElementError('p', '<p bind-value="text"></p>'),
+      const error = testHelpers.catchError<WrongElementForBindingError>(() =>
+        setupValueBindings(container, viewModel),
+      )
+
+      expect(error).toBeInstanceOf(WrongElementForBindingError)
+      expect(error.attributeName).toBe('bind-value')
+      expect(error.tagName).toBe('p')
+      expect(error.message).toBe(
+        t('errors.bindings.value.invalidElement', {
+          attributeName: 'bind-value',
+          tagName: 'p',
+          snippet: '<p bind-value="text"></p>',
+        }),
       )
     })
 
@@ -68,6 +101,19 @@ describe('bindValue', () => {
       input.dispatchEvent(new Event('input'))
 
       expect(viewModel.name).toBe('updated')
+    })
+
+    it('should update the ViewModel from the textarea value', () => {
+      container.innerHTML = '<textarea bind-value="message"></textarea>'
+      const viewModel = { message: 'initial' }
+
+      setupValueBindings(container, viewModel)
+
+      const textarea = container.querySelector('textarea')!
+      textarea.value = 'updated'
+      textarea.dispatchEvent(new Event('input'))
+
+      expect(viewModel.message).toBe('updated')
     })
 
     it('should convert numeric values in inputs', () => {
@@ -235,6 +281,17 @@ describe('bindValue', () => {
 
       const input = container.querySelector('input')!
       expect(input.value).toBe('Jane')
+    })
+
+    it('should render the ViewModel value into a textarea', () => {
+      container.innerHTML = '<textarea bind-value="message"></textarea>'
+      const viewModel = { message: 'initial' }
+      const bindings = setupValueBindings(container, viewModel)
+
+      viewModel.message = 'updated'
+      renderValueBindings(bindings, viewModel)
+
+      expect(container.querySelector('textarea')!.value).toBe('updated')
     })
 
     it('should handle null and undefined values', () => {
