@@ -304,7 +304,7 @@ describe('helpers', () => {
       expect(toKebabCase('myLongComponentName')).toBe('my-long-component-name')
     })
 
-    it('should separate acronyms like the core helper does (MyHTMLComponent -> my-html-component)', () => {
+    it('should separate acronyms (MyHTMLComponent -> my-html-component)', () => {
       expect(toKebabCase('MyHTMLComponent')).toBe('my-html-component')
       expect(toKebabCase('XMLHttpRequest')).toBe('xml-http-request')
     })
