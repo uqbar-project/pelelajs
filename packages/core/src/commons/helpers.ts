@@ -73,8 +73,6 @@ export function toKebabCase(str: string): string {
 /**
  * Escapes regular expression metacharacters so a literal string can be safely
  * interpolated into a `RegExp` (e.g. route segments or property names).
- * Byte-identical to the private copies that used to live in `routeMatcher.ts`,
- * the CLI's `componentFiles.ts` and the VSCode parsers.
  */
 export function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
