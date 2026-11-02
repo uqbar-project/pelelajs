@@ -1,4 +1,5 @@
-import { findAllElements } from '../commons/helpers'
+import { debugLog } from '../commons/debugState'
+import { describeElement, findAllElements } from '../commons/helpers'
 import { assertValidBindingAttribute } from '../validation/assertValidBindingAttribute'
 import { renderAltBindings, setupAltBindings } from './bindAlt'
 import { renderClassBindings, setupClassBindings } from './bindClass'
@@ -171,10 +172,69 @@ function executeRenderPipeline<T extends object>(
     })
 }
 
+type BindingEntry = { element: HTMLElement | null; kind: string; property: string }
+
+function getValueByPath(obj: unknown, path: string): unknown {
+  return path.split('.').reduce((current, part) => {
+    if (current && typeof current === 'object') {
+      return (current as Record<string, unknown>)[part]
+    }
+    return undefined
+  }, obj)
+}
+
+function formatValue(value: unknown): string {
+  if (typeof value === 'string') return `"${value}"`
+  return String(value)
+}
+
+function collectBindingEntries(bindings: BindingsCollection): BindingEntry[] {
+  const entries: BindingEntry[] = []
+  bindings.valueBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'value', property: binding.propertyName })
+  })
+  bindings.contentBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'content', property: binding.propertyName })
+  })
+  bindings.srcBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'src', property: binding.propertyName })
+  })
+  bindings.altBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'alt', property: binding.propertyName })
+  })
+  bindings.enabledBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'enabled', property: binding.propertyName })
+  })
+  bindings.ifBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'if', property: binding.propertyName })
+  })
+  bindings.classBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'class', property: binding.propertyName })
+  })
+  bindings.styleBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'style', property: binding.propertyName })
+  })
+  bindings.forEachBindings.forEach((binding) => {
+    entries.push({ element: binding.template, kind: 'forEach', property: binding.collectionName })
+  })
+  bindings.componentBindings.forEach((binding) => {
+    entries.push({
+      element: null,
+      kind: 'component',
+      property: binding.mappings.map((mapping) => mapping.parentKey).join(', '),
+    })
+  })
+  return entries
+}
+
 export function setupBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
-  { skipRootIf = false, notifyParent }: { skipRootIf?: boolean; notifyParent?: NotifyParent } = {},
+  {
+    skipRootIf = false,
+    notifyParent,
+    debug = false,
+  }: { skipRootIf?: boolean; notifyParent?: NotifyParent; debug?: boolean } = {},
 ): (changedPath?: string) => void {
   const allElements = findAllElements(root, '*', true)
   for (const element of allElements) {
@@ -199,16 +259,39 @@ export function setupBindings<T extends object>(
     styleBindings: setupStyleBindings(root, viewModel),
   }
 
-  setupClickBindings(root, viewModel)
-  setupEnterBindings(root, viewModel)
+  setupClickBindings(root, viewModel, { debug })
+  setupEnterBindings(root, viewModel, { debug })
 
   const tracker = new DependencyTracker()
   registerAllBindingDependencies(bindings, tracker, viewModel)
+
+  debugLog(debug, 'debug.bindingsRegistered')
+  collectBindingEntries(bindings).forEach((entry) => {
+    debugLog(debug, 'debug.bindingLine', {
+      element: entry.element,
+      kind: entry.kind,
+      property: entry.property,
+    })
+  })
 
   const render = (changedPath?: string) => {
     const targetBindings = changedPath
       ? tracker.getDependentBindingsWithGetterSupport(changedPath, bindings)
       : bindings
+
+    if (changedPath) {
+      const affectedEntries = collectBindingEntries(targetBindings)
+      if (affectedEntries.length > 0) {
+        const elements = [
+          ...new Set(affectedEntries.map((entry) => describeElement(entry.element))),
+        ]
+        debugLog(debug, 'debug.changed', {
+          path: changedPath,
+          value: formatValue(getValueByPath(viewModel, changedPath)),
+          elements: elements.join(', '),
+        })
+      }
+    }
 
     executeRenderPipeline(targetBindings, viewModel, changedPath)
   }

@@ -208,7 +208,7 @@ describe('bootstrap', () => {
     expect(span.textContent).toBe('2')
   })
 
-  it('should log initialization information', () => {
+  it('should log binding information when debug is enabled', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     document.body.innerHTML = `
       <pelela view-model="TestVM">
@@ -217,12 +217,9 @@ describe('bootstrap', () => {
     `
 
     registerViewModel('TestVM', TestViewModel)
-    bootstrap()
+    bootstrap({ debug: true })
 
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[pelela] View model "TestVM" instantiated and bound'),
-      expect.any(Object),
-    )
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('[pelela] Bindings registered'))
 
     logSpy.mockRestore()
   })

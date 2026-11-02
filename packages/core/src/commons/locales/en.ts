@@ -157,6 +157,16 @@ const errors = {
   },
 } as const satisfies TranslationSchema['errors']
 
+const debug = {
+  bindingsRegistered: '[pelela] Bindings registered',
+  bindingLine: '{{element}} <= {{kind}} => {{property}}',
+  changed: '[pelela] Changed {{path}} to {{value}} => notified to {{elements}}',
+  uiEventRegistered: '{{element}} <= {{kind}} => {{handler}}',
+  uiEventDispatched: 'Event {{kind}} on {{element}} => {{handler}}',
+  noPelelaElements: '[pelela] No <pelela view-model="..."> elements found',
+} as const satisfies TranslationSchema['debug']
+
 export const en = {
   errors,
+  debug,
 } as const satisfies TranslationSchema

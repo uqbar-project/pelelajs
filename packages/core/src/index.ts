@@ -1,6 +1,7 @@
 export { bootstrap } from './bootstrap/bootstrap'
 export { renderErrorPage } from './bootstrap/errorPage'
 export { mountTemplate } from './bootstrap/mountTemplate'
+export { isDebugEnabled, setDebug } from './commons/debugState'
 export {
   CONST_PREFIX,
   isForeignElement,

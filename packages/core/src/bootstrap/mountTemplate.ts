@@ -1,3 +1,4 @@
+import { isDebugEnabled } from '../commons/debugState'
 import { isNativeTag, isPelelaRootTag } from '../commons/dom'
 import { initializeI18n, t } from '../commons/i18n'
 import { sanitizeHTML } from '../commons/sanitization'
@@ -131,7 +132,7 @@ export function mountTemplate(container: HTMLElement, templateHtml: string): voi
     validateNoComponentsOutsideRoot(templateHtml)
     const sanitizedHtml = sanitizeHTML(templateHtml)
     container.innerHTML = sanitizedHtml
-    bootstrap({ root: container })
+    bootstrap({ root: container, debug: isDebugEnabled() })
   } catch (error) {
     renderErrorPage(error, container)
   }

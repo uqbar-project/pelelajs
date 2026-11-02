@@ -106,4 +106,12 @@ type ErrorTranslations = {
 
 export type TranslationSchema = {
   errors: ErrorTranslations
+  debug: {
+    bindingsRegistered: string
+    bindingLine: string
+    changed: string
+    uiEventRegistered: string
+    uiEventDispatched: string
+    noPelelaElements: string
+  }
 }
