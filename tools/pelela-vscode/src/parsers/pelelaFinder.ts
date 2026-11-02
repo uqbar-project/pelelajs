@@ -1,9 +1,6 @@
+import { escapeRegex } from 'pelelajs'
 import * as vscode from 'vscode'
 import { readFileLines } from '../utils/fileUtils'
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
 
 export function findViewModelTag(
   pelelaFilePath: string,

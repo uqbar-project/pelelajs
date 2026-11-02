@@ -1,3 +1,4 @@
+import { escapeRegex } from '../commons/helpers'
 import { RoutingError } from '../errors/RoutingError'
 import type { ViewModelConstructor } from '../types'
 import type { FlattenedRoute, MatchedRoute, RouteDefinition } from './types'
@@ -28,10 +29,6 @@ export function flattenRoutes(
 
     return [{ path: fullPath, component: route.component, layout }]
   })
-}
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 function mapSegmentToRegex(segment: string, paramNames: string[]): string {

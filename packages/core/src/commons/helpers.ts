@@ -70,6 +70,14 @@ export function toKebabCase(str: string): string {
     .toLowerCase()
 }
 
+/**
+ * Escapes regular expression metacharacters so a literal string can be safely
+ * interpolated into a `RegExp` (e.g. route segments or property names).
+ */
+export function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export function findUniqueCollapsedTag(
   tagName: string,
   candidateTags: string[],

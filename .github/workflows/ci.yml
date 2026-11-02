@@ -42,7 +42,7 @@ jobs:
         run: pnpm run build
 
       - name: Run tests with coverage
-        run: pnpm test:coverage
+        run: pnpm exec vitest run --coverage --silent=passed-only
 
       - name: Run VS Code extension tests
         run: pnpm test:vscode

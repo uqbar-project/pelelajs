@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
 import type { ViewModelExportErrorParams } from 'pelelajs'
-import { initializeI18n } from 'pelelajs'
+import { initializeI18n, toKebabCase } from 'pelelajs'
 import {
   analyzeViewModelModule,
   type ConstKind,
@@ -18,11 +18,7 @@ import {
 import * as ts from 'typescript'
 
 import type { Plugin } from 'vite'
-import {
-  componentTagToKebabCase,
-  getPelelaFilePath,
-  validatePelelaSource,
-} from './templateValidation'
+import { getPelelaFilePath, validatePelelaSource } from './templateValidation'
 import { type ResolvedRouteImport, validateRouteImports } from './validateRouteImports'
 
 export { extractLinkAttributeMatches } from './templateValidation'
@@ -31,6 +27,7 @@ const PLUGIN_NAME = 'vite-plugin-pelelajs'
 const VIRTUAL_MODULE_ID = 'virtual:pelela-auto-register'
 const RESOLVED_VIRTUAL_ID = '\0virtual:pelela-auto-register'
 const COMPONENT_SOURCE_EXTENSIONS = new Set(['.ts', '.pelela', '.css'])
+const TYPE_MAP_DOCUMENT_REGISTRY = ts.createDocumentRegistry()
 
 interface ComponentFileMetadata {
   name: string
@@ -142,7 +139,7 @@ function createTypeMapProgramCache(currentDirectory: string): TypeMapProgramCach
       directoryExists: ts.sys.directoryExists,
       getDirectories: ts.sys.getDirectories,
     },
-    ts.createDocumentRegistry(),
+    TYPE_MAP_DOCUMENT_REGISTRY,
   )
 
   return {
@@ -349,7 +346,7 @@ ${registrations}
 function getKnownComponentTags(): string[] {
   const srcDir = path.join(process.cwd(), 'src')
   return findComponentFiles(srcDir, { includeTypeMap: false }).map((component) =>
-    componentTagToKebabCase(component.viewModelName),
+    toKebabCase(component.viewModelName),
   )
 }
 

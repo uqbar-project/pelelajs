@@ -13,6 +13,8 @@ if (!fs.existsSync(templatesDir)) {
   throw new Error(`CLI templates directory not found at: ${templatesDir}`)
 }
 
+fs.rmSync(path.resolve(__dirname, 'dist'), { recursive: true, force: true })
+
 export default defineConfig([
   {
     entry: {
@@ -20,7 +22,6 @@ export default defineConfig([
     },
     format: ['esm', 'cjs'],
     dts: true,
-    clean: true,
     target: 'esnext',
     outDir: 'dist',
     external: ['i18next'],
@@ -33,10 +34,18 @@ export default defineConfig([
     // the exact runtime dependency declared by pelelajs.
     format: ['cjs'],
     dts: true,
-    clean: true,
     target: 'esnext',
     outDir: 'dist',
     external: ['typescript'],
+  },
+  {
+    entry: {
+      dom: 'src/commons/dom.ts',
+    },
+    format: ['esm', 'cjs'],
+    dts: true,
+    target: 'esnext',
+    outDir: 'dist',
   },
   {
     entry: {

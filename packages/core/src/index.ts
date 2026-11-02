@@ -11,7 +11,7 @@ export {
   LINK_PREFIX,
   PROP_PREFIX,
 } from './commons/dom'
-export { findUniqueCollapsedTag, toCamelCase, toKebabCase } from './commons/helpers'
+export { escapeRegex, findUniqueCollapsedTag, toCamelCase, toKebabCase } from './commons/helpers'
 export { initializeI18n, t } from './commons/i18n'
 export { isNumberLiteral, parseBooleanLiteral, parseScalarLiteral } from './commons/typeCasting'
 export type {

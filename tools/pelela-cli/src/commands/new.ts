@@ -1,13 +1,13 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import chalk from 'chalk'
+import { toKebabCase } from 'pelelajs'
 import {
   createCssFile,
   createPelelaFile,
   createTsFile,
   getComponentTargetDir,
   normalizeComponentName,
-  toKebabCase,
   validateBasename,
 } from '../utils/componentFiles'
 import { t } from '../utils/i18n'

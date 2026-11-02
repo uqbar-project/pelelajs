@@ -1,20 +1,19 @@
 import chalk from 'chalk'
 import { Command } from 'commander'
-import semver from 'semver'
 import { addCommand } from './commands/add'
 import { initCommand } from './commands/init'
 import { moveCommand } from './commands/move'
 import { newCommand } from './commands/new'
 import { renameCommand } from './commands/rename'
 import { initializeI18n, t } from './utils/i18n'
-import { getRequiredNodeVersion } from './utils/nodeVersion'
+import { getRequiredNodeVersion, isSupportedNodeVersion } from './utils/nodeVersion'
 import { checkNewVersion, getCliVersion } from './utils/version'
 
 const { log, warn } = console
 
 function validateNodeVersion(): void {
   const requiredNodeVersion = getRequiredNodeVersion()
-  if (!semver.satisfies(process.version, requiredNodeVersion)) {
+  if (!isSupportedNodeVersion(process.version)) {
     warn(chalk.red.bold(`\n${t('errors.nodeVersion', { requiredVersion: requiredNodeVersion })}\n`))
     warn(chalk.red(`${t('errors.currentVersion', { currentVersion: process.version })}\n`))
     process.exit(1)

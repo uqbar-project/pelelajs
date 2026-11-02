@@ -343,6 +343,7 @@ describe('extractViewModelPropertyTypes', () => {
       {
         getCompilationSettings: () => ({
           ...resolveCompilerOptions(testDir),
+          lib: ['lib.es5.d.ts'],
           skipLibCheck: true,
         }),
         getScriptFileNames: () => [viewModelPath],
