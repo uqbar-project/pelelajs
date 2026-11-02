@@ -285,10 +285,14 @@ export function setupBindings<T extends object>(
         const elements = [
           ...new Set(affectedEntries.map((entry) => describeElement(entry.element))),
         ]
+        const properties = [
+          ...new Set(affectedEntries.map((entry) => `${entry.kind}:${entry.property}`)),
+        ]
         debugLog(debug, 'debug.changed', {
           path: changedPath,
           value: formatValue(getValueByPath(viewModel, changedPath)),
           elements: elements.join(', '),
+          properties: properties.join(', '),
         })
       }
     }

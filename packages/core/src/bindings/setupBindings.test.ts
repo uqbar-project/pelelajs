@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { t } from '../commons/i18n'
 import { WrongElementForBindingError } from '../errors'
+import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { testHelpers } from '../test/helpers'
 import { setupBindings } from './setupBindings'
 
@@ -262,5 +263,46 @@ describe('setupBindings', () => {
     expect(() => {
       setupBindings(container, viewModel)
     }).not.toThrow()
+  })
+
+  it('should log binding information when debug is enabled', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    container.innerHTML = `<span bind-content="message"></span>`
+
+    const viewModel = { message: 'Hello' }
+    setupBindings(container, viewModel, { debug: true })
+
+    expect(logSpy).toHaveBeenCalledWith(t('debug.bindingsRegistered'))
+    expect(logSpy).toHaveBeenCalledWith(
+      t('debug.bindingLine', { element: 'span', kind: 'content', property: 'message' }),
+    )
+
+    logSpy.mockRestore()
+  })
+
+  it('should log changed bindings when debug is enabled', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    container.innerHTML = `<span bind-content="message"></span>`
+
+    const viewModel = { message: 'Hello' }
+    let render: (changedPath?: string) => void = () => {}
+    const reactiveViewModel = createReactiveViewModel(viewModel, (changedPath) => {
+      render(changedPath)
+    })
+    render = setupBindings(container, reactiveViewModel, { debug: true })
+
+    logSpy.mockClear()
+    reactiveViewModel.message = 'Updated'
+
+    expect(logSpy).toHaveBeenCalledWith(
+      t('debug.changed', {
+        path: 'message',
+        value: '"Updated"',
+        elements: 'span',
+        properties: 'content:message',
+      }),
+    )
+
+    logSpy.mockRestore()
   })
 })
