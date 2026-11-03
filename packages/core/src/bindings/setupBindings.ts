@@ -297,7 +297,7 @@ export function setupBindings<T extends object>(
 
   if (isDebug) {
     try {
-      console.log('%c[pelela]%c  Estado inicial:', style.brand, style.reset, viewModel)
+      console.log(`%c[pelela]%c  ${t('debug.initialState')}`, style.brand, style.reset, viewModel)
     } catch {
       // viewModel may contain non-loggable values in jsdom; ignore
     }

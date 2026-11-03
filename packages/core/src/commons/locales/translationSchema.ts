@@ -107,6 +107,7 @@ type ErrorTranslations = {
 export type TranslationSchema = {
   errors: ErrorTranslations
   debug: {
+    initialState: string
     bindingsRegistered: string
     bindingLine: string
     changed: string

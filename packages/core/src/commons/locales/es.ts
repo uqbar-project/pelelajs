@@ -162,6 +162,7 @@ const errors = {
 } as const satisfies TranslationSchema['errors']
 
 const debug = {
+  initialState: 'Estado inicial:',
   bindingsRegistered: '⚙  Bindings registrados ({{count}})',
   bindingLine: '  ↳ {{element}}  ·  {{kind}} → {{property}}',
   changed: 'Cambia {{path}}',
