@@ -55,7 +55,8 @@ function registerAllBindingDependencies(
   bindings: BindingsCollection,
   tracker: DependencyTracker,
   viewModel: ViewModel<object>,
-): void {
+): Set<string> {
+  const registeredPaths = new Set<string>()
   const bindingConfigurations: Array<{
     list: AnyBinding[]
     getPath: (binding: AnyBinding) => string | string[]
@@ -113,6 +114,7 @@ function registerAllBindingDependencies(
       const pathArray = Array.isArray(paths) ? paths : [paths]
       pathArray.forEach((path) => {
         tracker.registerDependency(binding, path, viewModel)
+        registeredPaths.add(path)
       })
     })
   })
@@ -120,6 +122,8 @@ function registerAllBindingDependencies(
   bindings.forEachBindings.forEach((binding) => {
     if (binding.hasMethodBindings) tracker.markAsGetterBinding(binding)
   })
+
+  return registeredPaths
 }
 
 function executeRenderPipeline<T extends object>(
@@ -267,7 +271,7 @@ export function setupBindings<T extends object>(
   setupEnterBindings(root, viewModel, { debug })
 
   const tracker = new DependencyTracker()
-  registerAllBindingDependencies(bindings, tracker, viewModel)
+  const registeredPaths = registerAllBindingDependencies(bindings, tracker, viewModel)
 
   const isDebug = isDebugEnabled(debug)
   const bindingEntries = collectBindingEntries(bindings)
@@ -304,9 +308,15 @@ export function setupBindings<T extends object>(
   }
 
   const previousValues = new Map<string, unknown>()
-  Object.keys(viewModel as Record<string, unknown>).forEach((key) => {
-    previousValues.set(key, (viewModel as Record<string, unknown>)[key])
-  })
+  if (isDebugEnabled(debug)) {
+    registeredPaths.forEach((path) => {
+      try {
+        previousValues.set(path, getValueByPath(viewModel, path))
+      } catch {
+        // A throwing getter has no diagnostic snapshot.
+      }
+    })
+  }
 
   const debugLogStateChange = (options: {
     changedPath: string

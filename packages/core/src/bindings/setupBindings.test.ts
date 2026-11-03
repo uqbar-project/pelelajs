@@ -332,4 +332,33 @@ describe('setupBindings', () => {
     render('unboundValue')
     expect(valueReads).toBe(1)
   })
+
+  it('should not read unbound getters while capturing initial diagnostic values', () => {
+    const viewModel = {
+      message: 'Hello',
+      get unboundValue() {
+        throw new Error('Unbound getter should not be read')
+      },
+    }
+    container.innerHTML = '<span bind-content="message"></span>'
+
+    expect(() => setupBindings(container, viewModel, { debug: true })).not.toThrow()
+    expect(container.querySelector('span')?.textContent).toBe('Hello')
+  })
+
+  it('should skip throwing diagnostic getter reads without interrupting initial render', () => {
+    let messageReads = 0
+    const viewModel = {
+      get message() {
+        messageReads++
+        if (messageReads === 3) throw new Error('Diagnostic getter read failed')
+        return 'Hello'
+      },
+    }
+    container.innerHTML = '<span bind-content="message"></span>'
+
+    expect(() => setupBindings(container, viewModel, { debug: true })).not.toThrow()
+    expect(container.querySelector('span')?.textContent).toBe('Hello')
+    expect(messageReads).toBe(4)
+  })
 })
