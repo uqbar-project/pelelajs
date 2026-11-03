@@ -313,7 +313,7 @@ describe('setupBindings', () => {
     logSpy.mockRestore()
   })
 
-  it('should only read changed values for diagnostics when debug is enabled', () => {
+  it('should not read changed values when no bindings are affected', () => {
     let valueReads = 0
     const viewModel = {
       get unboundValue() {
@@ -330,7 +330,7 @@ describe('setupBindings', () => {
 
     setDebug(true)
     render('unboundValue')
-    expect(valueReads).toBe(1)
+    expect(valueReads).toBe(0)
   })
 
   it('should not read unbound getters while capturing initial diagnostic values', () => {
@@ -360,5 +360,22 @@ describe('setupBindings', () => {
     expect(() => setupBindings(container, viewModel, { debug: true })).not.toThrow()
     expect(container.querySelector('span')?.textContent).toBe('Hello')
     expect(messageReads).toBe(4)
+  })
+
+  it('should keep rendering when a changed-path diagnostic getter throws', () => {
+    let messageReads = 0
+    const viewModel = {
+      get message() {
+        messageReads++
+        if (messageReads === 1) throw new Error('Diagnostic getter read failed')
+        return 'Updated'
+      },
+    }
+    container.innerHTML = '<span bind-content="message"></span>'
+    const render = setupBindings(container, viewModel, { debug: true })
+    messageReads = 0
+
+    expect(() => render('message')).not.toThrow()
+    expect(container.querySelector('span')?.textContent).toBe('Updated')
   })
 })

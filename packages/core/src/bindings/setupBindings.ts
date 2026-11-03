@@ -367,9 +367,11 @@ export function setupBindings<T extends object>(
   const handleChangedPath = (changedPath: string, targetBindings: BindingsCollection) => {
     if (!isDebugEnabled(debug)) return
 
-    const changedValue = getValueByPath(viewModel, changedPath)
     const affectedEntries = collectBindingEntries(targetBindings)
-    if (affectedEntries.length > 0) {
+    if (affectedEntries.length === 0) return
+
+    try {
+      const changedValue = getValueByPath(viewModel, changedPath)
       const elements = [...new Set(affectedEntries.map((entry) => describeElement(entry.element)))]
       const properties = [
         ...new Set(affectedEntries.map((entry) => `${entry.kind}:${entry.property}`)),
@@ -383,8 +385,10 @@ export function setupBindings<T extends object>(
         elements,
         properties,
       })
+      previousValues.set(changedPath, changedValue)
+    } catch {
+      // Diagnostic reads must not interrupt binding updates.
     }
-    previousValues.set(changedPath, changedValue)
   }
 
   const render = (changedPath?: string) => {
