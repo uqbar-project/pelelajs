@@ -63,6 +63,21 @@ describe('bindEnter', () => {
       expect(handleEnter).toHaveBeenCalledTimes(2)
     })
 
+    it('should disable registration and event logs when debug is explicitly false', () => {
+      container.innerHTML = '<input enter="handleEnter" />'
+      const handleEnter = vi.fn()
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+
+      setDebug(true)
+      setupEnterBindings(container, { handleEnter }, { debug: false })
+      container.querySelector('input')!.dispatchEvent(createKeydownEvent('Enter'))
+
+      expect(logSpy).not.toHaveBeenCalled()
+      expect(groupSpy).not.toHaveBeenCalled()
+      expect(handleEnter).toHaveBeenCalledOnce()
+    })
+
     it('should NOT call handler for non-Enter keys', () => {
       container.innerHTML = '<input enter="handleEnter" />'
       const handleEnter = vi.fn()

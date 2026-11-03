@@ -7,8 +7,8 @@ export function setDebug(enabled: boolean): void {
   debugEnabled = enabled
 }
 
-export function isDebugEnabled(): boolean {
-  return debugEnabled
+export function isDebugEnabled(debug?: boolean): boolean {
+  return debug ?? debugEnabled
 }
 
 let eventCounter = 0
@@ -22,7 +22,7 @@ export function debugLog(
   key: Parameters<typeof t>[0],
   params?: Record<string, unknown>,
 ): void {
-  if (!(debug || isDebugEnabled())) return
+  if (!isDebugEnabled(debug)) return
   const formattedParams = params ? { ...params } : undefined
   if (formattedParams && formattedParams.element instanceof HTMLElement) {
     formattedParams.element = describeElement(formattedParams.element)

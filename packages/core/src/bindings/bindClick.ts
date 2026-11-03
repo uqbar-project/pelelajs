@@ -26,7 +26,7 @@ function setupSingleClickBinding<T extends object>(
   })
 
   element.addEventListener('click', (event) => {
-    if (debug || isDebugEnabled()) {
+    if (isDebugEnabled(debug)) {
       const id = nextEventId()
       console.groupCollapsed(
         '%c[pelela]%c  #%d  %cCLICK%c  %s',

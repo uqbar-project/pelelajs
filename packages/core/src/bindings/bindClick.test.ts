@@ -57,6 +57,21 @@ describe('bindClick', () => {
       expect(handleClick).toHaveBeenCalledTimes(2)
     })
 
+    it('should disable registration and event logs when debug is explicitly false', () => {
+      container.innerHTML = '<button click="handleClick">Click me</button>'
+      const handleClick = vi.fn()
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+
+      setDebug(true)
+      setupClickBindings(container, { handleClick }, { debug: false })
+      container.querySelector('button')!.click()
+
+      expect(logSpy).not.toHaveBeenCalled()
+      expect(groupSpy).not.toHaveBeenCalled()
+      expect(handleClick).toHaveBeenCalledOnce()
+    })
+
     it('should pass event to handler', () => {
       container.innerHTML = '<button click="handleClick">Click me</button>'
       const handleClick = vi.fn()

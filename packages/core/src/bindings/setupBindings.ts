@@ -269,7 +269,7 @@ export function setupBindings<T extends object>(
   const tracker = new DependencyTracker()
   registerAllBindingDependencies(bindings, tracker, viewModel)
 
-  const isDebug = debug || isDebugEnabled()
+  const isDebug = isDebugEnabled(debug)
   const bindingEntries = collectBindingEntries(bindings)
 
   if (isDebug) {
@@ -318,7 +318,7 @@ export function setupBindings<T extends object>(
   }) => {
     const { changedPath, changedValue, previousValue, affectedEntries, elements, properties } =
       options
-    if (!(isDebug || isDebugEnabled())) return
+    if (!isDebugEnabled(debug)) return
     const hasChanged = !Object.is(previousValue, changedValue)
     try {
       if (hasChanged) {
@@ -355,7 +355,7 @@ export function setupBindings<T extends object>(
   }
 
   const handleChangedPath = (changedPath: string, targetBindings: BindingsCollection) => {
-    if (!(debug || isDebugEnabled())) return
+    if (!isDebugEnabled(debug)) return
 
     const changedValue = getValueByPath(viewModel, changedPath)
     const affectedEntries = collectBindingEntries(targetBindings)

@@ -15,6 +15,7 @@ describe('setupBindings', () => {
 
   afterEach(() => {
     setDebug(false)
+    vi.restoreAllMocks()
     testHelpers.cleanupTestContainer(container)
   })
 
@@ -277,6 +278,20 @@ describe('setupBindings', () => {
     expect(logSpy).toHaveBeenCalled()
 
     logSpy.mockRestore()
+  })
+
+  it('should disable binding and changed-path logs when debug is explicitly false', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+    container.innerHTML = '<span bind-content="message"></span>'
+    const viewModel = { message: 'Hello' }
+
+    setDebug(true)
+    const render = setupBindings(container, viewModel, { debug: false })
+    render('message')
+
+    expect(logSpy).not.toHaveBeenCalled()
+    expect(groupSpy).not.toHaveBeenCalled()
   })
 
   it('should log changed bindings when debug is enabled', () => {

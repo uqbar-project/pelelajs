@@ -33,7 +33,7 @@ function setupSingleEnterBinding<T extends object>(
   element.addEventListener('keydown', (event: KeyboardEvent) => {
     if (event.key !== 'Enter') return
 
-    if (debug || isDebugEnabled()) {
+    if (isDebugEnabled(debug)) {
       const id = nextEventId()
       console.groupCollapsed(
         '%c[pelela]%c  #%d  %cENTER%c  %s',
