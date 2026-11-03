@@ -308,6 +308,7 @@ describe('setupBindings', () => {
     }
 
     const render = setupBindings(container, viewModel)
+    valueReads = 0
 
     render('unboundValue')
     expect(valueReads).toBe(0)
