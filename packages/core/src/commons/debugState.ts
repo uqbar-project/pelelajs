@@ -18,7 +18,7 @@ export function nextEventId(): number {
 }
 
 export function debugLog(
-  debug: boolean,
+  debug: boolean | undefined,
   key: Parameters<typeof t>[0],
   params?: Record<string, unknown>,
 ): void {

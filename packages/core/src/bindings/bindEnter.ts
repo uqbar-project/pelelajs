@@ -15,7 +15,7 @@ import type { ViewModel } from './types'
 function setupSingleEnterBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
-  debug: boolean,
+  debug: boolean | undefined,
 ): void {
   const handlerName = element.getAttribute('enter')
   if (!handlerName?.trim()) return
@@ -59,13 +59,12 @@ function setupSingleEnterBinding<T extends object>(
 export function setupEnterBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
-  { debug = false }: { debug?: boolean } = {},
+  { debug }: { debug?: boolean } = {},
 ): void {
   const elements = findAllElements(root, '[enter]')
   const ownElements = filterOwnElements(elements, root)
 
-  const isDebug = debug || isDebugEnabled()
   ownElements.forEach((element) => {
-    setupSingleEnterBinding(element, viewModel, isDebug)
+    setupSingleEnterBinding(element, viewModel, debug)
   })
 }

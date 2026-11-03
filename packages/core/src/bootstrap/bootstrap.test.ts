@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setDebug } from '../commons/debugState'
 import { t } from '../commons/i18n'
 import { ViewModelRegistrationError } from '../errors/index'
 import { defineComponent } from '../registry/componentRegistry'
@@ -20,6 +21,11 @@ describe('bootstrap', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
     clearRegistry()
+  })
+
+  afterEach(() => {
+    setDebug(false)
+    vi.restoreAllMocks()
   })
 
   it('should initialize pelela elements with view-model', () => {
@@ -207,6 +213,32 @@ describe('bootstrap', () => {
     button.click()
 
     expect(span.textContent).toBe('2')
+  })
+
+  it('should inherit global debug changes for click events after bootstrap', () => {
+    const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+    let handledClicks = 0
+    class ClickViewModel {
+      handleClick() {
+        handledClicks++
+      }
+    }
+    document.body.innerHTML = `
+      <pelela view-model="ClickVM">
+        <button click="handleClick">+</button>
+      </pelela>
+    `
+
+    registerViewModel('ClickVM', ClickViewModel)
+    setDebug(true)
+    bootstrap()
+    const groupCountAfterBootstrap = groupSpy.mock.calls.length
+
+    setDebug(false)
+    document.querySelector('button')!.click()
+
+    expect(groupSpy).toHaveBeenCalledTimes(groupCountAfterBootstrap)
+    expect(handledClicks).toBe(1)
   })
 
   it('should log binding information when debug is enabled', () => {

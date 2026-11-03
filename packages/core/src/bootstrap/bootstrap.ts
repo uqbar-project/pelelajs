@@ -1,6 +1,5 @@
 import { setupBindings } from '../bindings/setupBindings'
 import { createStylesheetLink, findExistingStylesheetLink } from '../commons/cssLoader'
-import { isDebugEnabled } from '../commons/debugState'
 import { unwrapTemplate } from '../commons/helpers'
 import { initializeI18n, t } from '../commons/i18n'
 import { sanitizeHTML } from '../commons/sanitization'
@@ -57,7 +56,6 @@ function bindRoot(root: HTMLElement, options: PelelaOptions): void {
     }
   }
   const instance = new creator()
-  const debug = options.debug ?? isDebugEnabled()
   let render: (changedPath?: string, previousValue?: unknown) => void = () => {}
   const reactiveInstance = createReactiveViewModel(
     instance as Record<string, unknown>,
@@ -66,7 +64,7 @@ function bindRoot(root: HTMLElement, options: PelelaOptions): void {
     },
   )
   ;(root as HTMLElement & { __pelelaViewModel: unknown }).__pelelaViewModel = reactiveInstance
-  render = setupBindings(root, reactiveInstance, { debug })
+  render = setupBindings(root, reactiveInstance, { debug: options.debug })
 
   if (typeof reactiveInstance.initialize === 'function') {
     reactiveInstance.initialize()

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setDebug } from '../commons/debugState'
 import {
   ArrowFunctionAsHandlerError,
   GetterAsHandlerError,
@@ -18,6 +19,8 @@ describe('bindClick', () => {
   })
 
   afterEach(() => {
+    setDebug(false)
+    vi.restoreAllMocks()
     testHelpers.cleanupAllContainers()
   })
 
@@ -33,6 +36,25 @@ describe('bindClick', () => {
       button.click()
 
       expect(handleClick).toHaveBeenCalledTimes(1)
+    })
+
+    it('should use the current global debug state when dispatching events', () => {
+      container.innerHTML = '<button click="handleClick">Click me</button>'
+      const handleClick = vi.fn()
+      const viewModel = { handleClick }
+      const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+
+      setupClickBindings(container, viewModel)
+
+      const button = container.querySelector('button')!
+      setDebug(true)
+      button.click()
+      expect(groupSpy).toHaveBeenCalledTimes(1)
+
+      setDebug(false)
+      button.click()
+      expect(groupSpy).toHaveBeenCalledTimes(1)
+      expect(handleClick).toHaveBeenCalledTimes(2)
     })
 
     it('should pass event to handler', () => {

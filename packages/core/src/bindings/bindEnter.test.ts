@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setDebug } from '../commons/debugState'
 import { t } from '../commons/i18n'
 import {
   ArrowFunctionAsHandlerError,
@@ -24,6 +25,8 @@ describe('bindEnter', () => {
   })
 
   afterEach(() => {
+    setDebug(false)
+    vi.restoreAllMocks()
     testHelpers.cleanupAllContainers()
   })
 
@@ -39,6 +42,25 @@ describe('bindEnter', () => {
       input.dispatchEvent(createKeydownEvent('Enter'))
 
       expect(handleEnter).toHaveBeenCalledTimes(1)
+    })
+
+    it('should use the current global debug state when dispatching events', () => {
+      container.innerHTML = '<input enter="handleEnter" />'
+      const handleEnter = vi.fn()
+      const viewModel = { handleEnter }
+      const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+
+      setupEnterBindings(container, viewModel)
+
+      const input = container.querySelector('input')!
+      setDebug(true)
+      input.dispatchEvent(createKeydownEvent('Enter'))
+      expect(groupSpy).toHaveBeenCalledTimes(1)
+
+      setDebug(false)
+      input.dispatchEvent(createKeydownEvent('Enter'))
+      expect(groupSpy).toHaveBeenCalledTimes(1)
+      expect(handleEnter).toHaveBeenCalledTimes(2)
     })
 
     it('should NOT call handler for non-Enter keys', () => {

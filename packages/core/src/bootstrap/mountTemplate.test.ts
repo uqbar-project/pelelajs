@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setDebug } from '../commons/debugState'
 import { ViewModelExportError } from '../errors'
 import { clearComponentRegistry } from '../registry/componentRegistry'
 import { clearRegistry, registerViewModel } from '../registry/viewModelRegistry'
@@ -20,6 +21,11 @@ describe('mountTemplate', () => {
     document.body.appendChild(container)
     clearRegistry()
     clearComponentRegistry()
+  })
+
+  afterEach(() => {
+    setDebug(false)
+    vi.restoreAllMocks()
   })
 
   it('should insert template HTML into container', () => {
@@ -48,6 +54,28 @@ describe('mountTemplate', () => {
 
     const span = container.querySelector('span')!
     expect(span.innerHTML).toBe('Hello from template')
+  })
+
+  it('should inherit global debug changes for click events after mounting', () => {
+    const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+    let handledClicks = 0
+    class ClickViewModel {
+      handleClick() {
+        handledClicks++
+      }
+    }
+    registerViewModel('ClickVM', ClickViewModel)
+    setDebug(true)
+    mountTemplate(
+      container,
+      '<pelela view-model="ClickVM"><button click="handleClick">+</button></pelela>',
+    )
+    const groupCountAfterMount = groupSpy.mock.calls.length
+
+    setDebug(false)
+    container.querySelector('button')!.click()
+    expect(groupSpy).toHaveBeenCalledTimes(groupCountAfterMount)
+    expect(handledClicks).toBe(1)
   })
 
   it('should create reactive view models', () => {

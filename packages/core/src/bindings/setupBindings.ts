@@ -237,7 +237,7 @@ export function setupBindings<T extends object>(
   {
     skipRootIf = false,
     notifyParent,
-    debug = false,
+    debug,
   }: { skipRootIf?: boolean; notifyParent?: NotifyParent; debug?: boolean } = {},
 ): (changedPath?: string) => void {
   const allElements = findAllElements(root, '*', true)

@@ -14,7 +14,7 @@ import type { ViewModel } from './types'
 function setupSingleClickBinding<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
-  debug: boolean,
+  debug: boolean | undefined,
 ): void {
   const handlerName = element.getAttribute('click')
   if (!handlerName?.trim()) return
@@ -52,13 +52,12 @@ function setupSingleClickBinding<T extends object>(
 export function setupClickBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
-  { debug = false }: { debug?: boolean } = {},
+  { debug }: { debug?: boolean } = {},
 ): void {
   const elements = findAllElements(root, '[click]')
   const ownElements = filterOwnElements(elements, root)
 
-  const isDebug = debug || isDebugEnabled()
   ownElements.forEach((element) => {
-    setupSingleClickBinding(element, viewModel, isDebug)
+    setupSingleClickBinding(element, viewModel, debug)
   })
 }
