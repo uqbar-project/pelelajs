@@ -363,17 +363,16 @@ describe('setupBindings', () => {
   })
 
   it('should keep rendering when a changed-path diagnostic getter throws', () => {
-    let messageReads = 0
+    const shouldThrowOnNextRead = vi.fn().mockReturnValue(false)
     const viewModel = {
       get message() {
-        messageReads++
-        if (messageReads === 1) throw new Error('Diagnostic getter read failed')
+        if (shouldThrowOnNextRead()) throw new Error('Diagnostic getter read failed')
         return 'Updated'
       },
     }
     container.innerHTML = '<span bind-content="message"></span>'
     const render = setupBindings(container, viewModel, { debug: true })
-    messageReads = 0
+    shouldThrowOnNextRead.mockReturnValueOnce(true)
 
     expect(() => render('message')).not.toThrow()
     expect(container.querySelector('span')?.textContent).toBe('Updated')
