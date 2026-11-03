@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setDebug } from '../commons/debugState'
+import { t } from '../commons/i18n'
 import { ViewModelRegistrationError } from '../errors/index'
 import { defineComponent } from '../registry/componentRegistry'
 import { clearRegistry, registerViewModel } from '../registry/viewModelRegistry'
@@ -19,6 +21,11 @@ describe('bootstrap', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
     clearRegistry()
+  })
+
+  afterEach(() => {
+    setDebug(false)
+    vi.restoreAllMocks()
   })
 
   it('should initialize pelela elements with view-model', () => {
@@ -131,7 +138,7 @@ describe('bootstrap', () => {
 
     bootstrap()
 
-    expect(warnSpy).toHaveBeenCalledWith('[pelela] No <pelela view-model="..."> elements found')
+    expect(warnSpy).toHaveBeenCalledWith(t('debug.noPelelaElements'))
 
     warnSpy.mockRestore()
   })
@@ -208,7 +215,33 @@ describe('bootstrap', () => {
     expect(span.textContent).toBe('2')
   })
 
-  it('should log initialization information', () => {
+  it('should inherit global debug changes for click events after bootstrap', () => {
+    const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+    let handledClicks = 0
+    class ClickViewModel {
+      handleClick() {
+        handledClicks++
+      }
+    }
+    document.body.innerHTML = `
+      <pelela view-model="ClickVM">
+        <button click="handleClick">+</button>
+      </pelela>
+    `
+
+    registerViewModel('ClickVM', ClickViewModel)
+    setDebug(true)
+    bootstrap()
+    const groupCountAfterBootstrap = groupSpy.mock.calls.length
+
+    setDebug(false)
+    document.querySelector('button')!.click()
+
+    expect(groupSpy).toHaveBeenCalledTimes(groupCountAfterBootstrap)
+    expect(handledClicks).toBe(1)
+  })
+
+  it('should log binding information when debug is enabled', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     document.body.innerHTML = `
       <pelela view-model="TestVM">
@@ -217,12 +250,9 @@ describe('bootstrap', () => {
     `
 
     registerViewModel('TestVM', TestViewModel)
-    bootstrap()
+    bootstrap({ debug: true })
 
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[pelela] View model "TestVM" instantiated and bound'),
-      expect.any(Object),
-    )
+    expect(logSpy).toHaveBeenCalled()
 
     logSpy.mockRestore()
   })

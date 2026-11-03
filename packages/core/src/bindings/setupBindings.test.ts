@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setDebug } from '../commons/debugState'
 import { t } from '../commons/i18n'
 import { WrongElementForBindingError } from '../errors'
+import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { testHelpers } from '../test/helpers'
 import { setupBindings } from './setupBindings'
 
@@ -12,6 +14,8 @@ describe('setupBindings', () => {
   })
 
   afterEach(() => {
+    setDebug(false)
+    vi.restoreAllMocks()
     testHelpers.cleanupTestContainer(container)
   })
 
@@ -262,5 +266,177 @@ describe('setupBindings', () => {
     expect(() => {
       setupBindings(container, viewModel)
     }).not.toThrow()
+  })
+
+  it('should log binding information when debug is enabled', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    container.innerHTML = `<span bind-content="message"></span>`
+
+    const viewModel = { message: 'Hello' }
+    setupBindings(container, viewModel, { debug: true })
+
+    expect(logSpy).toHaveBeenCalled()
+
+    logSpy.mockRestore()
+  })
+
+  it('should continue setup when logging the initial state throws', () => {
+    const initialStateLog = `%c[pelela]%c  ${t('debug.initialState')}`
+    const logSpy = vi.spyOn(console, 'log').mockImplementation((message) => {
+      if (message === initialStateLog) {
+        throw new Error('Console logging failed')
+      }
+    })
+
+    expect(() => setupBindings(container, {}, { debug: true })).not.toThrow()
+    expect(logSpy).toHaveBeenCalledWith(initialStateLog, expect.any(String), expect.any(String), {})
+  })
+
+  it('should disable binding and changed-path logs when debug is explicitly false', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+    container.innerHTML = '<span bind-content="message"></span>'
+    const viewModel = { message: 'Hello' }
+
+    setDebug(true)
+    const render = setupBindings(container, viewModel, { debug: false })
+    render('message')
+
+    expect(logSpy).not.toHaveBeenCalled()
+    expect(groupSpy).not.toHaveBeenCalled()
+  })
+
+  it('should log changed bindings when debug is enabled', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    container.innerHTML = `<span bind-content="message"></span>`
+
+    const viewModel = { message: 'Hello' }
+    let render: (changedPath?: string) => void = () => {}
+    const reactiveViewModel = createReactiveViewModel(viewModel, (changedPath) => {
+      render(changedPath)
+    })
+    render = setupBindings(container, reactiveViewModel, { debug: true })
+
+    logSpy.mockClear()
+    reactiveViewModel.message = 'Updated'
+
+    expect(logSpy).toHaveBeenCalled()
+
+    logSpy.mockRestore()
+  })
+
+  it('should log an initial value when a parent path changes', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    container.innerHTML = '<span bind-content="user.name"></span>'
+    const viewModel = { user: { name: 'Ada' } }
+    const render = setupBindings(container, viewModel, { debug: true })
+    logSpy.mockClear()
+
+    render('user')
+
+    expect(logSpy).toHaveBeenCalledWith(
+      '%c    ↳ initialized to',
+      expect.any(String),
+      viewModel.user,
+    )
+  })
+
+  it('should log reconciliation without reporting a change when the value is unchanged', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+    container.innerHTML = '<span bind-content="message"></span>'
+    const render = setupBindings(container, { message: 'Hello' }, { debug: true })
+    logSpy.mockClear()
+    groupSpy.mockClear()
+
+    render('message')
+
+    expect(groupSpy).not.toHaveBeenCalled()
+    expect(logSpy).toHaveBeenCalledWith(
+      '%c  ◆ STATE%c %s %c(unchanged, reconciled · %d bindings)',
+      expect.any(String),
+      expect.any(String),
+      'message',
+      expect.any(String),
+      1,
+    )
+  })
+
+  it('should continue rendering when opening the changed-state log group throws', () => {
+    container.innerHTML = '<span bind-content="message"></span>'
+    const viewModel = { message: 'Initial' }
+    const render = setupBindings(container, viewModel, { debug: true })
+    vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {
+      throw new Error('Console group failed')
+    })
+    viewModel.message = 'Updated'
+
+    expect(() => render('message')).not.toThrow()
+    expect(container.querySelector('span')?.textContent).toBe('Updated')
+  })
+
+  it('should not read changed values when no bindings are affected', () => {
+    let valueReads = 0
+    const viewModel = {
+      get unboundValue() {
+        valueReads++
+        return 'value'
+      },
+    }
+
+    const render = setupBindings(container, viewModel)
+    valueReads = 0
+
+    render('unboundValue')
+    expect(valueReads).toBe(0)
+
+    setDebug(true)
+    render('unboundValue')
+    expect(valueReads).toBe(0)
+  })
+
+  it('should not read unbound getters while capturing initial diagnostic values', () => {
+    const viewModel = {
+      message: 'Hello',
+      get unboundValue() {
+        throw new Error('Unbound getter should not be read')
+      },
+    }
+    container.innerHTML = '<span bind-content="message"></span>'
+
+    expect(() => setupBindings(container, viewModel, { debug: true })).not.toThrow()
+    expect(container.querySelector('span')?.textContent).toBe('Hello')
+  })
+
+  it('should skip throwing diagnostic getter reads without interrupting initial render', () => {
+    let messageReads = 0
+    const viewModel = {
+      get message() {
+        messageReads++
+        if (messageReads === 3) throw new Error('Diagnostic getter read failed')
+        return 'Hello'
+      },
+    }
+    container.innerHTML = '<span bind-content="message"></span>'
+
+    expect(() => setupBindings(container, viewModel, { debug: true })).not.toThrow()
+    expect(container.querySelector('span')?.textContent).toBe('Hello')
+    expect(messageReads).toBe(4)
+  })
+
+  it('should keep rendering when a changed-path diagnostic getter throws', () => {
+    const shouldThrowOnNextRead = vi.fn().mockReturnValue(false)
+    const viewModel = {
+      get message() {
+        if (shouldThrowOnNextRead()) throw new Error('Diagnostic getter read failed')
+        return 'Updated'
+      },
+    }
+    container.innerHTML = '<span bind-content="message"></span>'
+    const render = setupBindings(container, viewModel, { debug: true })
+    shouldThrowOnNextRead.mockReturnValueOnce(true)
+
+    expect(() => render('message')).not.toThrow()
+    expect(container.querySelector('span')?.textContent).toBe('Updated')
   })
 })

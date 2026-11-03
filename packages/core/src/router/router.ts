@@ -6,6 +6,7 @@ import {
   findExistingStylesheetLink,
   removeStylesheetLinks,
 } from '../commons/cssLoader'
+import { setDebug } from '../commons/debugState'
 import { toKebabCase } from '../commons/helpers'
 import { initializeI18n, t } from '../commons/i18n'
 import { assertViewModelIsClass } from '../commons/viewModelAssertion'
@@ -208,8 +209,13 @@ export const router = {
    * Initializes i18n first, so errors thrown before the first mount have a message.
    * Invalid route definitions render the error page and are rethrown after resetting the router.
    */
-  start(rootContainer: HTMLElement, routeDefs: RouteDefinition[]): void {
+  start(
+    rootContainer: HTMLElement,
+    routeDefs: RouteDefinition[],
+    options?: { debug?: boolean },
+  ): void {
     initializeI18n()
+    if (options?.debug !== undefined) setDebug(options.debug)
 
     if (popstateHandler) {
       window.removeEventListener('popstate', popstateHandler)

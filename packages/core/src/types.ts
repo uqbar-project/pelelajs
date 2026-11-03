@@ -15,6 +15,7 @@ export type ViewModelConstructor<T = unknown> = {
 export type PelelaOptions = {
   document?: Document
   root?: ParentNode
+  debug?: boolean
 }
 
 export interface PelelaElement<T = object> extends HTMLElement {

@@ -47,6 +47,20 @@ export function unwrapTemplate(template: string): string {
  * - Any architectural changes to component registration must maintain this invariant or
  *   update both this helper and `getRegisteredTags()` accordingly.
  */
+export function describeElement(element: HTMLElement | null): string {
+  if (!element) return 'binding'
+  const tag = element.tagName.toLowerCase()
+  if (element.id) return `${tag}#${element.id}`
+  const testId = element.getAttribute('data-testid')
+  if (testId) return `${tag}[data-testid="${testId}"]`
+  const firstClass = element.classList?.item(0)
+  if (firstClass) return `${tag}.${firstClass}`
+  const matches = Array.from(document.querySelectorAll(tag))
+  const index = matches.indexOf(element)
+  if (index > 0) return `${tag}[${index}]`
+  return tag
+}
+
 export function filterOwnElements(
   elements: NodeListOf<HTMLElement> | HTMLElement[],
   root: HTMLElement,

@@ -1,4 +1,14 @@
-import { findAllElements } from '../commons/helpers'
+import { isDebugEnabled } from '../commons/debugState'
+import { t } from '../commons/i18n'
+
+const style = {
+  brand: 'color: #a78bfa; font-weight: 700',
+  state: 'color: #27aa76; font-weight: 700',
+  muted: 'color: #8893a4',
+  reset: 'color: inherit; font-weight: normal',
+}
+
+import { describeElement, findAllElements } from '../commons/helpers'
 import { assertValidBindingAttribute } from '../validation/assertValidBindingAttribute'
 import { renderAltBindings, setupAltBindings } from './bindAlt'
 import { renderClassBindings, setupClassBindings } from './bindClass'
@@ -45,7 +55,8 @@ function registerAllBindingDependencies(
   bindings: BindingsCollection,
   tracker: DependencyTracker,
   viewModel: ViewModel<object>,
-): void {
+): Set<string> {
+  const registeredPaths = new Set<string>()
   const bindingConfigurations: Array<{
     list: AnyBinding[]
     getPath: (binding: AnyBinding) => string | string[]
@@ -103,6 +114,7 @@ function registerAllBindingDependencies(
       const pathArray = Array.isArray(paths) ? paths : [paths]
       pathArray.forEach((path) => {
         tracker.registerDependency(binding, path, viewModel)
+        registeredPaths.add(path)
       })
     })
   })
@@ -110,6 +122,8 @@ function registerAllBindingDependencies(
   bindings.forEachBindings.forEach((binding) => {
     if (binding.hasMethodBindings) tracker.markAsGetterBinding(binding)
   })
+
+  return registeredPaths
 }
 
 function executeRenderPipeline<T extends object>(
@@ -171,10 +185,64 @@ function executeRenderPipeline<T extends object>(
     })
 }
 
+type BindingEntry = { element: HTMLElement | null; kind: string; property: string }
+
+function getValueByPath(obj: unknown, path: string): unknown {
+  return path.split('.').reduce((current, part) => {
+    if (current && typeof current === 'object') {
+      return (current as Record<string, unknown>)[part]
+    }
+    return undefined
+  }, obj)
+}
+
+function collectBindingEntries(bindings: BindingsCollection): BindingEntry[] {
+  const entries: BindingEntry[] = []
+  bindings.valueBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'value', property: binding.propertyName })
+  })
+  bindings.contentBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'content', property: binding.propertyName })
+  })
+  bindings.srcBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'src', property: binding.propertyName })
+  })
+  bindings.altBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'alt', property: binding.propertyName })
+  })
+  bindings.enabledBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'enabled', property: binding.propertyName })
+  })
+  bindings.ifBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'if', property: binding.propertyName })
+  })
+  bindings.classBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'class', property: binding.propertyName })
+  })
+  bindings.styleBindings.forEach((binding) => {
+    entries.push({ element: binding.element, kind: 'style', property: binding.propertyName })
+  })
+  bindings.forEachBindings.forEach((binding) => {
+    entries.push({ element: binding.template, kind: 'forEach', property: binding.collectionName })
+  })
+  bindings.componentBindings.forEach((binding) => {
+    entries.push({
+      element: null,
+      kind: 'component',
+      property: binding.mappings.map((mapping) => mapping.parentKey).join(', '),
+    })
+  })
+  return entries
+}
+
 export function setupBindings<T extends object>(
   root: HTMLElement,
   viewModel: ViewModel<T>,
-  { skipRootIf = false, notifyParent }: { skipRootIf?: boolean; notifyParent?: NotifyParent } = {},
+  {
+    skipRootIf = false,
+    notifyParent,
+    debug,
+  }: { skipRootIf?: boolean; notifyParent?: NotifyParent; debug?: boolean } = {},
 ): (changedPath?: string) => void {
   const allElements = findAllElements(root, '*', true)
   for (const element of allElements) {
@@ -199,16 +267,138 @@ export function setupBindings<T extends object>(
     styleBindings: setupStyleBindings(root, viewModel),
   }
 
-  setupClickBindings(root, viewModel)
-  setupEnterBindings(root, viewModel)
+  setupClickBindings(root, viewModel, { debug })
+  setupEnterBindings(root, viewModel, { debug })
 
   const tracker = new DependencyTracker()
-  registerAllBindingDependencies(bindings, tracker, viewModel)
+  const registeredPaths = registerAllBindingDependencies(bindings, tracker, viewModel)
+
+  const isDebug = isDebugEnabled(debug)
+  const bindingEntries = collectBindingEntries(bindings)
+
+  if (isDebug) {
+    console.groupCollapsed(
+      `%c[pelela]%c  ⚙  ${t('debug.bindingsRegistered', { count: bindingEntries.length })}`,
+      style.brand,
+      style.reset,
+    )
+  }
+  if (isDebug) {
+    bindingEntries.forEach((entry) => {
+      console.log(
+        '%c  ↳%c %s  ·  %s → %s',
+        style.muted,
+        style.reset,
+        describeElement(entry.element),
+        entry.kind,
+        entry.property,
+      )
+    })
+  }
+  if (isDebug) {
+    console.groupEnd()
+  }
+
+  if (isDebug) {
+    try {
+      console.log(`%c[pelela]%c  ${t('debug.initialState')}`, style.brand, style.reset, viewModel)
+    } catch {
+      // viewModel may contain non-loggable values in jsdom; ignore
+    }
+  }
+
+  const previousValues = new Map<string, unknown>()
+  if (isDebugEnabled(debug)) {
+    registeredPaths.forEach((path) => {
+      try {
+        previousValues.set(path, getValueByPath(viewModel, path))
+      } catch {
+        // A throwing getter has no diagnostic snapshot.
+      }
+    })
+  }
+
+  const debugLogStateChange = (options: {
+    changedPath: string
+    changedValue: unknown
+    previousValue: unknown
+    affectedEntries: BindingEntry[]
+    elements: string[]
+    properties: string[]
+  }) => {
+    const { changedPath, changedValue, previousValue, affectedEntries, elements, properties } =
+      options
+    if (!isDebugEnabled(debug)) return
+    const hasChanged = !Object.is(previousValue, changedValue)
+    try {
+      if (hasChanged) {
+        console.groupCollapsed(
+          '%c  ◆ STATE%c %s %c(%d bindings)',
+          style.state,
+          style.reset,
+          changedPath,
+          style.muted,
+          affectedEntries.length,
+        )
+        if (previousValue === undefined) {
+          console.log('%c    ↳ initialized to', style.muted, changedValue)
+        } else {
+          console.log('%c    ↳ previous', style.muted, previousValue)
+          console.log('%c    ↳ changed ', style.muted, changedValue)
+        }
+        console.log('%c    ↳%c notified to %s', style.muted, style.reset, elements.join(', '))
+        console.log('%c    ↳%c bindings: %s', style.muted, style.reset, properties.join(', '))
+        console.groupEnd()
+      } else {
+        console.log(
+          '%c  ◆ STATE%c %s %c(unchanged, reconciled · %d bindings)',
+          style.state,
+          style.reset,
+          changedPath,
+          style.muted,
+          affectedEntries.length,
+        )
+      }
+    } catch {
+      // Debug logging must not interrupt binding updates.
+    }
+  }
+
+  const handleChangedPath = (changedPath: string, targetBindings: BindingsCollection) => {
+    if (!isDebugEnabled(debug)) return
+
+    const affectedEntries = collectBindingEntries(targetBindings)
+    if (affectedEntries.length === 0) return
+
+    try {
+      const changedValue = getValueByPath(viewModel, changedPath)
+      const elements = [...new Set(affectedEntries.map((entry) => describeElement(entry.element)))]
+      const properties = [
+        ...new Set(affectedEntries.map((entry) => `${entry.kind}:${entry.property}`)),
+      ]
+      const previousValue = previousValues.get(changedPath)
+      debugLogStateChange({
+        changedPath,
+        changedValue,
+        previousValue,
+        affectedEntries,
+        elements,
+        properties,
+      })
+      previousValues.set(changedPath, changedValue)
+    } catch {
+      // Diagnostic reads must not interrupt binding updates.
+    }
+  }
 
   const render = (changedPath?: string) => {
     const targetBindings = changedPath
       ? tracker.getDependentBindingsWithGetterSupport(changedPath, bindings)
       : bindings
+
+    if (changedPath) {
+      handleChangedPath(changedPath, targetBindings)
+    }
 
     executeRenderPipeline(targetBindings, viewModel, changedPath)
   }

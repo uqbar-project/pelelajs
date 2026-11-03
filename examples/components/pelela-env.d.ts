@@ -5,3 +5,5 @@ declare module '*.pelela' {
 }
 
 declare module '*.css'
+
+declare module 'virtual:pelela-auto-register' {}
