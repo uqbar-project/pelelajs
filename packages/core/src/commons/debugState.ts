@@ -11,6 +11,12 @@ export function isDebugEnabled(): boolean {
   return debugEnabled
 }
 
+let eventCounter = 0
+
+export function nextEventId(): number {
+  return ++eventCounter
+}
+
 export function debugLog(
   debug: boolean,
   key: Parameters<typeof t>[0],

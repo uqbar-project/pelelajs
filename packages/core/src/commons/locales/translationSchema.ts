@@ -110,6 +110,7 @@ export type TranslationSchema = {
     bindingsRegistered: string
     bindingLine: string
     changed: string
+    changedDetails: string
     uiEventRegistered: string
     uiEventDispatched: string
     noPelelaElements: string

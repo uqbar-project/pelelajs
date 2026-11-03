@@ -58,7 +58,7 @@ function bindRoot(root: HTMLElement, options: PelelaOptions): void {
   }
   const instance = new creator()
   const debug = options.debug ?? isDebugEnabled()
-  let render: (changedPath?: string) => void = () => {}
+  let render: (changedPath?: string, previousValue?: unknown) => void = () => {}
   const reactiveInstance = createReactiveViewModel(
     instance as Record<string, unknown>,
     (changedPath: string) => {

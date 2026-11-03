@@ -1,5 +1,13 @@
-import { debugLog, isDebugEnabled } from '../commons/debugState'
-import { filterOwnElements, findAllElements } from '../commons/helpers'
+import { debugLog, isDebugEnabled, nextEventId } from '../commons/debugState'
+import { describeElement, filterOwnElements, findAllElements } from '../commons/helpers'
+
+const style = {
+  brand: 'color: #a78bfa; font-weight: 700',
+  event: 'color: #60a5fa; font-weight: 700',
+  muted: 'color: #8893a4',
+  reset: 'color: inherit; font-weight: normal',
+}
+
 import { executeEventHandler } from './executeEventHandler'
 import type { ViewModel } from './types'
 
@@ -18,11 +26,25 @@ function setupSingleClickBinding<T extends object>(
   })
 
   element.addEventListener('click', (event) => {
-    debugLog(debug, 'debug.uiEventDispatched', {
-      kind: 'click',
-      element,
-      handler: handlerName,
-    })
+    if (debug || isDebugEnabled()) {
+      const id = nextEventId()
+      console.groupCollapsed(
+        '%c[pelela]%c  #%d  %cCLICK%c  %s',
+        style.brand,
+        style.reset,
+        id,
+        style.event,
+        style.reset,
+        describeElement(element),
+      )
+      try {
+        console.log('%c  ↳ handler%c %s()', style.muted, style.reset, handlerName)
+        executeEventHandler({ handlerName, viewModel, event, eventType: 'click' })
+      } finally {
+        console.groupEnd()
+      }
+      return
+    }
     executeEventHandler({ handlerName, viewModel, event, eventType: 'click' })
   })
 }

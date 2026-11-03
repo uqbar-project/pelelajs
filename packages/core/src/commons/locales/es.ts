@@ -162,13 +162,13 @@ const errors = {
 } as const satisfies TranslationSchema['errors']
 
 const debug = {
-  bindingsRegistered: '[pelela] Bindings registrados',
-  bindingLine: '{{element}} <= {{kind}} => {{property}}',
-  changed:
-    '[pelela] Cambió {{path}} a {{value}} => notificado a {{elements}} (bindings: {{properties}})',
+  bindingsRegistered: '⚙  Bindings registrados ({{count}})',
+  bindingLine: '  ↳ {{element}}  ·  {{kind}} → {{property}}',
+  changed: 'Cambia {{path}}',
+  changedDetails: 'notificado a {{elements}} (bindings: {{properties}})',
   uiEventRegistered: '{{element}} <= {{kind}} => {{handler}}',
   uiEventDispatched: 'Evento {{kind}} en {{element}} => {{handler}}',
-  noPelelaElements: '[pelela] No se encontraron elementos <pelela view-model="...">',
+  noPelelaElements: 'No se encontraron elementos <pelela view-model="...">',
 } as const satisfies TranslationSchema['debug']
 
 export const es = {

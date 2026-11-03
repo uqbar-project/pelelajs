@@ -1,4 +1,13 @@
-import { debugLog } from '../commons/debugState'
+import { isDebugEnabled } from '../commons/debugState'
+import { t } from '../commons/i18n'
+
+const style = {
+  brand: 'color: #a78bfa; font-weight: 700',
+  state: 'color: #27aa76; font-weight: 700',
+  muted: 'color: #8893a4',
+  reset: 'color: inherit; font-weight: normal',
+}
+
 import { describeElement, findAllElements } from '../commons/helpers'
 import { assertValidBindingAttribute } from '../validation/assertValidBindingAttribute'
 import { renderAltBindings, setupAltBindings } from './bindAlt'
@@ -183,11 +192,6 @@ function getValueByPath(obj: unknown, path: string): unknown {
   }, obj)
 }
 
-function formatValue(value: unknown): string {
-  if (typeof value === 'string') return `"${value}"`
-  return String(value)
-}
-
 function collectBindingEntries(bindings: BindingsCollection): BindingEntry[] {
   const entries: BindingEntry[] = []
   bindings.valueBindings.forEach((binding) => {
@@ -265,14 +269,111 @@ export function setupBindings<T extends object>(
   const tracker = new DependencyTracker()
   registerAllBindingDependencies(bindings, tracker, viewModel)
 
-  debugLog(debug, 'debug.bindingsRegistered')
-  collectBindingEntries(bindings).forEach((entry) => {
-    debugLog(debug, 'debug.bindingLine', {
-      element: entry.element,
-      kind: entry.kind,
-      property: entry.property,
+  const isDebug = debug || isDebugEnabled()
+  const bindingEntries = collectBindingEntries(bindings)
+
+  if (isDebug) {
+    console.groupCollapsed(
+      `%c[pelela]%c  ⚙  ${t('debug.bindingsRegistered', { count: bindingEntries.length })}`,
+      style.brand,
+      style.reset,
+    )
+  }
+  if (isDebug) {
+    bindingEntries.forEach((entry) => {
+      console.log(
+        '%c  ↳%c %s  ·  %s → %s',
+        style.muted,
+        style.reset,
+        describeElement(entry.element),
+        entry.kind,
+        entry.property,
+      )
     })
+  }
+  if (isDebug) {
+    console.groupEnd()
+  }
+
+  if (isDebug) {
+    try {
+      console.log('%c[pelela]%c  Estado inicial:', style.brand, style.reset, viewModel)
+    } catch {
+      // viewModel may contain non-loggable values in jsdom; ignore
+    }
+  }
+
+  const previousValues = new Map<string, unknown>()
+  Object.keys(viewModel as Record<string, unknown>).forEach((key) => {
+    previousValues.set(key, (viewModel as Record<string, unknown>)[key])
   })
+
+  const debugLogStateChange = (options: {
+    changedPath: string
+    changedValue: unknown
+    previousValue: unknown
+    affectedEntries: BindingEntry[]
+    elements: string[]
+    properties: string[]
+  }) => {
+    const { changedPath, changedValue, previousValue, affectedEntries, elements, properties } =
+      options
+    if (!(isDebug || isDebugEnabled())) return
+    const hasChanged = !Object.is(previousValue, changedValue)
+    try {
+      if (hasChanged) {
+        console.groupCollapsed(
+          '%c  ◆ STATE%c %s %c(%d bindings)',
+          style.state,
+          style.reset,
+          changedPath,
+          style.muted,
+          affectedEntries.length,
+        )
+        if (previousValue === undefined) {
+          console.log('%c    ↳ initialized to', style.muted, changedValue)
+        } else {
+          console.log('%c    ↳ previous', style.muted, previousValue)
+          console.log('%c    ↳ changed ', style.muted, changedValue)
+        }
+        console.log('%c    ↳%c notified to %s', style.muted, style.reset, elements.join(', '))
+        console.log('%c    ↳%c bindings: %s', style.muted, style.reset, properties.join(', '))
+        console.groupEnd()
+      } else {
+        console.log(
+          '%c  ◆ STATE%c %s %c(unchanged, reconciled · %d bindings)',
+          style.state,
+          style.reset,
+          changedPath,
+          style.muted,
+          affectedEntries.length,
+        )
+      }
+    } catch {
+      // Debug logging must not interrupt binding updates.
+    }
+  }
+
+  const handleChangedPath = (changedPath: string, targetBindings: BindingsCollection) => {
+    const changedValue = getValueByPath(viewModel, changedPath)
+    const affectedEntries = collectBindingEntries(targetBindings)
+    if (affectedEntries.length > 0) {
+      const elements = [...new Set(affectedEntries.map((entry) => describeElement(entry.element)))]
+      const properties = [
+        ...new Set(affectedEntries.map((entry) => `${entry.kind}:${entry.property}`)),
+      ]
+      const previousValue = previousValues.get(changedPath)
+      debugLogStateChange({
+        changedPath,
+        changedValue,
+        previousValue,
+        affectedEntries,
+        elements,
+        properties,
+      })
+    }
+    previousValues.set(changedPath, changedValue)
+  }
 
   const render = (changedPath?: string) => {
     const targetBindings = changedPath
@@ -280,21 +381,7 @@ export function setupBindings<T extends object>(
       : bindings
 
     if (changedPath) {
-      const affectedEntries = collectBindingEntries(targetBindings)
-      if (affectedEntries.length > 0) {
-        const elements = [
-          ...new Set(affectedEntries.map((entry) => describeElement(entry.element))),
-        ]
-        const properties = [
-          ...new Set(affectedEntries.map((entry) => `${entry.kind}:${entry.property}`)),
-        ]
-        debugLog(debug, 'debug.changed', {
-          path: changedPath,
-          value: formatValue(getValueByPath(viewModel, changedPath)),
-          elements: elements.join(', '),
-          properties: properties.join(', '),
-        })
-      }
+      handleChangedPath(changedPath, targetBindings)
     }
 
     executeRenderPipeline(targetBindings, viewModel, changedPath)

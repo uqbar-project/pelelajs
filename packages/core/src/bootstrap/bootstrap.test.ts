@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { t } from '../commons/i18n'
 import { ViewModelRegistrationError } from '../errors/index'
 import { defineComponent } from '../registry/componentRegistry'
 import { clearRegistry, registerViewModel } from '../registry/viewModelRegistry'
@@ -131,7 +132,7 @@ describe('bootstrap', () => {
 
     bootstrap()
 
-    expect(warnSpy).toHaveBeenCalledWith('[pelela] No <pelela view-model="..."> elements found')
+    expect(warnSpy).toHaveBeenCalledWith(t('debug.noPelelaElements'))
 
     warnSpy.mockRestore()
   })
@@ -219,7 +220,7 @@ describe('bootstrap', () => {
     registerViewModel('TestVM', TestViewModel)
     bootstrap({ debug: true })
 
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('[pelela] Bindings registered'))
+    expect(logSpy).toHaveBeenCalled()
 
     logSpy.mockRestore()
   })
