@@ -280,6 +280,18 @@ describe('setupBindings', () => {
     logSpy.mockRestore()
   })
 
+  it('should continue setup when logging the initial state throws', () => {
+    const initialStateLog = `%c[pelela]%c  ${t('debug.initialState')}`
+    const logSpy = vi.spyOn(console, 'log').mockImplementation((message) => {
+      if (message === initialStateLog) {
+        throw new Error('Console logging failed')
+      }
+    })
+
+    expect(() => setupBindings(container, {}, { debug: true })).not.toThrow()
+    expect(logSpy).toHaveBeenCalledWith(initialStateLog, expect.any(String), expect.any(String), {})
+  })
+
   it('should disable binding and changed-path logs when debug is explicitly false', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
@@ -311,6 +323,56 @@ describe('setupBindings', () => {
     expect(logSpy).toHaveBeenCalled()
 
     logSpy.mockRestore()
+  })
+
+  it('should log an initial value when a parent path changes', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    container.innerHTML = '<span bind-content="user.name"></span>'
+    const viewModel = { user: { name: 'Ada' } }
+    const render = setupBindings(container, viewModel, { debug: true })
+    logSpy.mockClear()
+
+    render('user')
+
+    expect(logSpy).toHaveBeenCalledWith(
+      '%c    ↳ initialized to',
+      expect.any(String),
+      viewModel.user,
+    )
+  })
+
+  it('should log reconciliation without reporting a change when the value is unchanged', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const groupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {})
+    container.innerHTML = '<span bind-content="message"></span>'
+    const render = setupBindings(container, { message: 'Hello' }, { debug: true })
+    logSpy.mockClear()
+    groupSpy.mockClear()
+
+    render('message')
+
+    expect(groupSpy).not.toHaveBeenCalled()
+    expect(logSpy).toHaveBeenCalledWith(
+      '%c  ◆ STATE%c %s %c(unchanged, reconciled · %d bindings)',
+      expect.any(String),
+      expect.any(String),
+      'message',
+      expect.any(String),
+      1,
+    )
+  })
+
+  it('should continue rendering when opening the changed-state log group throws', () => {
+    container.innerHTML = '<span bind-content="message"></span>'
+    const viewModel = { message: 'Initial' }
+    const render = setupBindings(container, viewModel, { debug: true })
+    vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {
+      throw new Error('Console group failed')
+    })
+    viewModel.message = 'Updated'
+
+    expect(() => render('message')).not.toThrow()
+    expect(container.querySelector('span')?.textContent).toBe('Updated')
   })
 
   it('should not read changed values when no bindings are affected', () => {
