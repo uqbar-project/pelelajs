@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setDebug } from '../commons/debugState'
 import { t } from '../commons/i18n'
 import { WrongElementForBindingError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
@@ -13,6 +14,7 @@ describe('setupBindings', () => {
   })
 
   afterEach(() => {
+    setDebug(false)
     testHelpers.cleanupTestContainer(container)
   })
 
@@ -294,5 +296,24 @@ describe('setupBindings', () => {
     expect(logSpy).toHaveBeenCalled()
 
     logSpy.mockRestore()
+  })
+
+  it('should only read changed values for diagnostics when debug is enabled', () => {
+    let valueReads = 0
+    const viewModel = {
+      get unboundValue() {
+        valueReads++
+        return 'value'
+      },
+    }
+
+    const render = setupBindings(container, viewModel)
+
+    render('unboundValue')
+    expect(valueReads).toBe(0)
+
+    setDebug(true)
+    render('unboundValue')
+    expect(valueReads).toBe(1)
   })
 })

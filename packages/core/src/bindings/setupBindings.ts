@@ -355,6 +355,8 @@ export function setupBindings<T extends object>(
   }
 
   const handleChangedPath = (changedPath: string, targetBindings: BindingsCollection) => {
+    if (!(debug || isDebugEnabled())) return
+
     const changedValue = getValueByPath(viewModel, changedPath)
     const affectedEntries = collectBindingEntries(targetBindings)
     if (affectedEntries.length > 0) {
