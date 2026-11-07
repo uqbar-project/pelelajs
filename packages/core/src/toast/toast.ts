@@ -8,10 +8,17 @@ import {
   toastRegionKey,
 } from './dom'
 import { injectToastStyles } from './styles'
-import { ToastAlignment, type ToastOptions, type ToastPosition, ToastSeverity } from './types'
+import {
+  ToastAlignment,
+  type ToastAlignment as ToastAlignmentValue,
+  type ToastOptions,
+  type ToastPosition,
+  ToastSeverity,
+} from './types'
 
 const DEFAULT_TOAST_DURATION = 4000
 const LEAVE_ANIMATION_DURATION = 150
+const TOAST_ALIGNMENTS: readonly ToastAlignmentValue[] = Object.values(ToastAlignment)
 
 const defaultPosition: Required<ToastPosition> = {
   horizontal: ToastAlignment.end,
@@ -34,7 +41,22 @@ function assertDocument(): void {
   }
 }
 
+function assertAlignment(
+  alignment: ToastAlignmentValue | undefined,
+  axis: 'horizontal' | 'vertical',
+): void {
+  if (alignment !== undefined && !TOAST_ALIGNMENTS.includes(alignment)) {
+    throw new Error(t('errors.ui.toast.invalidPosition', { axis, value: String(alignment) }))
+  }
+}
+
+function assertPosition(position: ToastPosition): void {
+  assertAlignment(position.horizontal, 'horizontal')
+  assertAlignment(position.vertical, 'vertical')
+}
+
 function resolvePosition(options: ToastOptions): Required<ToastPosition> {
+  assertPosition(options)
   return {
     horizontal: options.horizontal ?? defaultPosition.horizontal,
     vertical: options.vertical ?? defaultPosition.vertical,
@@ -128,6 +150,7 @@ export const toast = {
   },
 
   configure(position: ToastPosition): void {
+    assertPosition(position)
     defaultPosition.horizontal = position.horizontal ?? defaultPosition.horizontal
     defaultPosition.vertical = position.vertical ?? defaultPosition.vertical
   },

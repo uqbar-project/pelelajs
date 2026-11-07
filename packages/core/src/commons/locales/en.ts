@@ -156,6 +156,8 @@ const errors = {
     },
     toast: {
       dismiss: 'Dismiss notification',
+      invalidPosition:
+        '[pelela] Invalid toast position: axis "{{axis}}" received "{{value}}". Expected one of: start, center, end.',
     },
   },
 } as const satisfies TranslationSchema['errors']

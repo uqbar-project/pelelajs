@@ -246,6 +246,20 @@ describe('toast.message', () => {
     expect(error).toBeInstanceOf(DOMEnvironmentError)
     expect((error as Error).message).toBe(t('errors.security.domEnvironmentRequired'))
   })
+
+  it('fails fast when document.body is null', () => {
+    vi.stubGlobal('document', { body: null, head: null })
+
+    let error: unknown
+    try {
+      toast.message(MESSAGE)
+    } catch (caughtError) {
+      error = caughtError
+    }
+
+    expect(error).toBeInstanceOf(DOMEnvironmentError)
+    expect((error as Error).message).toBe(t('errors.security.domEnvironmentRequired'))
+  })
 })
 
 describe('toast.configure', () => {
@@ -280,11 +294,30 @@ describe('toast.configure', () => {
   })
 
   it('keeps the other axis when configure is partial', () => {
+    toast.configure({ vertical: ToastAlignment.start })
     toast.configure({ horizontal: ToastAlignment.center })
     toast.message(MESSAGE)
 
-    expect(regionFor({ horizontal: ToastAlignment.center, vertical: ToastAlignment.end }))
-    expect(regions()[0]?.getAttribute('data-vertical')).toBe(ToastAlignment.end)
+    expect(regionFor({ horizontal: ToastAlignment.center, vertical: ToastAlignment.start }))
+    expect(regions()[0]?.getAttribute('data-horizontal')).toBe(ToastAlignment.center)
+    expect(regions()[0]?.getAttribute('data-vertical')).toBe(ToastAlignment.start)
+  })
+
+  it('rejects an invalid global alignment and does not save it', () => {
+    let error: unknown
+    try {
+      toast.configure({ horizontal: 'middle' as ToastAlignment })
+    } catch (caughtError) {
+      error = caughtError
+    }
+
+    expect(error).toBeInstanceOf(Error)
+    expect((error as Error).message).toBe(
+      t('errors.ui.toast.invalidPosition', { axis: 'horizontal', value: 'middle' }),
+    )
+
+    toast.message(MESSAGE)
+    expect(regions()[0]?.getAttribute('data-horizontal')).toBe(ToastAlignment.end)
   })
 })
 
@@ -347,6 +380,24 @@ describe('toast positioning', () => {
     expect(
       regionFor({ horizontal: ToastAlignment.end, vertical: ToastAlignment.end }).childElementCount,
     ).toBe(1)
+  })
+
+  it('rejects an invalid per-toast alignment and does not create a region', () => {
+    let error: unknown
+    try {
+      toast.message(MESSAGE, ToastSeverity.info, {
+        vertical: 'middle' as ToastAlignment,
+      })
+    } catch (caughtError) {
+      error = caughtError
+    }
+
+    expect(error).toBeInstanceOf(Error)
+    expect((error as Error).message).toBe(
+      t('errors.ui.toast.invalidPosition', { axis: 'vertical', value: 'middle' }),
+    )
+    expect(toasts()).toHaveLength(0)
+    expect(regions()).toHaveLength(0)
   })
 })
 

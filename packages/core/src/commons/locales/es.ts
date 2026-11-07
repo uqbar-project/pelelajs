@@ -160,6 +160,8 @@ const errors = {
     },
     toast: {
       dismiss: 'Cerrar notificación',
+      invalidPosition:
+        '[pelela] Posición de toast inválida: el eje "{{axis}}" recibió "{{value}}". Esperá una de: start, center, end.',
     },
   },
 } as const satisfies TranslationSchema['errors']

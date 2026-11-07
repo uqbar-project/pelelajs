@@ -103,6 +103,7 @@ type ErrorTranslations = {
     }
     toast: {
       dismiss: string
+      invalidPosition: string
     }
   }
 }
