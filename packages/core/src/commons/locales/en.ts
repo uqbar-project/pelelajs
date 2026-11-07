@@ -154,6 +154,9 @@ const errors = {
       stackTrace: 'Stack Trace:',
       noStack: 'No stack trace available',
     },
+    toast: {
+      dismiss: 'Dismiss notification',
+    },
   },
 } as const satisfies TranslationSchema['errors']
 

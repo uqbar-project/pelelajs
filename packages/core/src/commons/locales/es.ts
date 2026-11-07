@@ -158,6 +158,9 @@ const errors = {
       stackTrace: 'Traza de la pila (Stack Trace):',
       noStack: 'No hay traza de la pila disponible',
     },
+    toast: {
+      dismiss: 'Cerrar notificación',
+    },
   },
 } as const satisfies TranslationSchema['errors']
 

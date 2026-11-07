@@ -1,3 +1,5 @@
+import { ToastSeverity, toast } from 'pelelajs'
+
 export class Converter {
   miles: number = 0
   kilometers: number | undefined = undefined
@@ -5,6 +7,7 @@ export class Converter {
 
   convert() {
     this.kilometers = this.miles * 1.609344
+    toast.message('Conversión realizada', ToastSeverity.info)
   }
 
   get hasResult(): boolean {

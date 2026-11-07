@@ -101,6 +101,9 @@ type ErrorTranslations = {
       stackTrace: string
       noStack: string
     }
+    toast: {
+      dismiss: string
+    }
   }
 }
 

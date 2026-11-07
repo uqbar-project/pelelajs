@@ -37,6 +37,38 @@ Para familiarizarte con el sistema de binding (binding) de PelelaJS, te invitamo
 
 💡 **Tip:** Podés renombrar estos tres archivos en cualquier momento (por ejemplo, a `home.ts`, `home.pelela` y `home.css`) y el framework automáticamente tomará los cambios gracias a su registro dinámico.
 
+## 🔔 Mostrar mensajes con toast
+
+Pelela incluye un servicio de notificaciones breves llamado `toast`. Podés importar la constante `ToastSeverity` para elegir el tipo de mensaje:
+
+```typescript
+import { toast, ToastSeverity } from 'pelelajs'
+
+toast.message('Conversión realizada', ToastSeverity.success)
+toast.message('Revisá los datos', ToastSeverity.warning)
+toast.message(String(error), ToastSeverity.error)
+toast.message('Cargando...', ToastSeverity.info)
+```
+
+Los toasts se cierran solos a los 4 segundos. Si querés que uno quede visible hasta que lo cierres, pasá `duration: 0`:
+
+```typescript
+toast.message('No se pudo conectar', ToastSeverity.error, { duration: 0 })
+```
+
+Podés cambiar la posición por defecto con `toast.configure` y `ToastAlignment`:
+
+```typescript
+import { toast, ToastAlignment } from 'pelelajs'
+
+toast.configure({
+  horizontal: ToastAlignment.center,
+  vertical: ToastAlignment.start,
+})
+```
+
+También podés pasar `horizontal` y `vertical` a un toast puntual para ubicarlo en otro lugar. Para borrar todos los toasts de la pantalla, usá `toast.clear()`.
+
 ## 📦 Versionado (Git)
 
 Para inicializar un repositorio para este proyecto, te recordamos los pasos por consola:
