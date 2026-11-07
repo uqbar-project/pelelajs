@@ -17,6 +17,7 @@ import {
 } from './types'
 
 const DEFAULT_TOAST_DURATION = 4000
+const MAX_SET_TIMEOUT_DELAY = 2147483647
 const LEAVE_ANIMATION_DURATION = 150
 const TOAST_ALIGNMENTS: readonly ToastAlignmentValue[] = Object.values(ToastAlignment)
 
@@ -61,6 +62,14 @@ function resolvePosition(options: ToastOptions): Required<ToastPosition> {
     horizontal: options.horizontal ?? defaultPosition.horizontal,
     vertical: options.vertical ?? defaultPosition.vertical,
   }
+}
+
+function resolveDuration(options: ToastOptions): number {
+  const duration = options.duration ?? DEFAULT_TOAST_DURATION
+  if (!Number.isFinite(duration) || duration < 0 || duration > MAX_SET_TIMEOUT_DELAY) {
+    throw new Error(t('errors.ui.toast.invalidDuration', { value: String(duration) }))
+  }
+  return duration
 }
 
 function getOrCreateRegion(position: Required<ToastPosition>): HTMLElement {
@@ -121,9 +130,10 @@ export const toast = {
     options: ToastOptions = {},
   ): void {
     assertDocument()
-    injectToastStyles()
 
     const position = resolvePosition(options)
+    const duration = resolveDuration(options)
+    injectToastStyles()
     const region = getOrCreateRegion(position)
     const { element, dismissButton } = createToastElement(
       message,
@@ -143,7 +153,6 @@ export const toast = {
     activeToasts.add(activeToast)
     region.appendChild(element)
 
-    const duration = options.duration ?? DEFAULT_TOAST_DURATION
     if (duration > 0) {
       activeToast.autoDismissTimer = setTimeout(() => dismissToast(activeToast), duration)
     }

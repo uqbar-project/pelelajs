@@ -298,7 +298,11 @@ describe('toast.configure', () => {
     toast.configure({ horizontal: ToastAlignment.center })
     toast.message(MESSAGE)
 
-    expect(regionFor({ horizontal: ToastAlignment.center, vertical: ToastAlignment.start }))
+    const region = regionFor({
+      horizontal: ToastAlignment.center,
+      vertical: ToastAlignment.start,
+    })
+    expect(requireToast().parentElement).toBe(region)
     expect(regions()[0]?.getAttribute('data-horizontal')).toBe(ToastAlignment.center)
     expect(regions()[0]?.getAttribute('data-vertical')).toBe(ToastAlignment.start)
   })
@@ -432,6 +436,25 @@ describe('toast duration and dismissal', () => {
     vi.advanceTimersByTime(LEAVE_DURATION)
     expect(toasts()).toHaveLength(0)
   })
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1, Number.MAX_SAFE_INTEGER])(
+    'rejects an invalid duration (%s) and does not create a toast',
+    (duration) => {
+      let error: unknown
+      try {
+        toast.message(MESSAGE, ToastSeverity.info, { duration })
+      } catch (caughtError) {
+        error = caughtError
+      }
+
+      expect(error).toBeInstanceOf(Error)
+      expect((error as Error).message).toBe(
+        t('errors.ui.toast.invalidDuration', { value: String(duration) }),
+      )
+      expect(toasts()).toHaveLength(0)
+      expect(regions()).toHaveLength(0)
+    },
+  )
 
   it('keeps a toast visible when duration is zero until the button is clicked', () => {
     vi.useFakeTimers()

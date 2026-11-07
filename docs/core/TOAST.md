@@ -89,7 +89,7 @@ The service creates one full-screen region per position that is actually used an
 
 The toast size adapts to its content. A short message uses a minimum width of `min(18rem, 100%)` and grows up to `min(28rem, 100%)`. Multiple toasts in one region stack with `gap` and do not overlap.
 
-The default position is `End` for both axes, which shows toasts at the bottom right.
+The default position is `ToastAlignment.end` for both axes, which shows toasts at the bottom right.
 
 ## Animation
 

@@ -158,6 +158,8 @@ const errors = {
       dismiss: 'Dismiss notification',
       invalidPosition:
         '[pelela] Invalid toast position: axis "{{axis}}" received "{{value}}". Expected one of: start, center, end.',
+      invalidDuration:
+        '[pelela] Invalid toast duration: "{{value}}". Expected a finite number between 0 and 2147483647 ms.',
     },
   },
 } as const satisfies TranslationSchema['errors']
