@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import ts from 'typescript'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initCommand } from '../../src/commands/init'
@@ -106,11 +106,8 @@ describe('initCommand (Integration)', () => {
     expect(config.error).toBeUndefined()
     const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, projectPath)
     expect(parsed.errors).toEqual([])
-    expect(parsed.fileNames).toEqual(
-      expect.arrayContaining([
-        join(projectPath, 'pelela-env.d.ts'),
-        join(projectPath, 'src', 'vite-env.d.ts'),
-      ]),
+    expect(parsed.fileNames.map((file) => relative(projectPath, file))).toEqual(
+      expect.arrayContaining(['pelela-env.d.ts', join('src', 'vite-env.d.ts')]),
     )
 
     const program = ts.createProgram({
