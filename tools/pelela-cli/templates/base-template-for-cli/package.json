@@ -19,7 +19,7 @@
     "pelelajs": "latest"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.8",
+    "@biomejs/biome": "2.5.5",
     "typescript": "5.9.3",
     "vite": "7.3.5",
     "vite-plugin-pelelajs": "latest"

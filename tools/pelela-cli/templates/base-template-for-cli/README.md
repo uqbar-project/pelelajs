@@ -67,3 +67,15 @@ Si utilizás VSCode o similares (Cursor, VSCodium, Windsurf, Antigravity), te re
 
 - [ ] Agregar enlace a la documentación oficial para estudiantes de PelelaJS.
 - [ ] Detallar instrucciones para renombrar y organizar el componente base usando el CLI.
+
+---
+
+## Estilo del código
+
+Al guardar, tu editor ordena el código solo, no tenés que acordarte de nada:
+
+- Comillas simples `'` en todo el proyecto.
+- Sin `;` al final de las líneas.
+- Dos espacios de indentación.
+- Imports ordenados automáticamente.
+- Biome revisa errores comunes y los arregla si puede cuando guardás.

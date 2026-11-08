@@ -1,34 +1,66 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "suspicious": {
         "noExplicitAny": "error",
         "noConsole": "off",
-        "noEmptyBlockStatements": "off"
+        "noEmptyBlockStatements": "off",
+        "useIsArray": "error",
+        "noPrototypeBuiltins": "error",
+        "noUnusedExpressions": "error",
+        "noDuplicateDependencies": "error",
+        "noEqualsToNull": "error",
+        "noDeprecatedImports": "error",
+        "noEmptySource": "error",
+        "noForIn": "error",
+        "noShadow": "error",
+        "noUnknownAttribute": "error",
+        "noUnnecessaryConditions": "warn"
       },
       "style": {
         "noNonNullAssertion": "off",
-        "noNamespace": "off"
+        "noNamespace": "off",
+        "noNegationElse": "warn",
+        "useTemplate": "warn",
+        "useConst": "error",
+        "useNamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false
+          }
+        },
+        "noContinue": "error",
+        "useConsistentArrowReturn": "error"
       },
       "correctness": {
         "noUnusedVariables": "warn",
         "noConstantCondition": "warn",
         "noSwitchDeclarations": "off",
         "noInnerDeclarations": "off",
-        "useYield": "off"
+        "useYield": "off",
+        "noUnresolvedImports": "off"
       },
       "complexity": {
-        "noExcessiveCognitiveComplexity": "warn"
+        "noExcessiveCognitiveComplexity": "warn",
+        "useMaxParams": {
+          "level": "warn",
+          "options": {
+            "max": 3
+          }
+        },
+        "useArrayFind": "error",
+        "noUselessUndefined": "off",
+        "noUselessCatchBinding": "warn"
       },
       "performance": {
         "noAccumulatingSpread": "warn"
       },
       "nursery": {
-        "noUnusedExpressions": "off",
-        "useExplicitType": "error"
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "error"
       }
     }
   },
