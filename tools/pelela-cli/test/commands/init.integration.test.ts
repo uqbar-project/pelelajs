@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { existsSync, readFileSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname, join, relative, resolve } from 'node:path'
+import ts from 'typescript'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { initCommand } from '../../src/commands/init'
 import { initializeI18n } from '../../src/utils/i18n'
@@ -76,6 +78,50 @@ describe('initCommand (Integration)', () => {
     ])
     expect(existsSync(join(testDir, 'vitest.config.ts'))).toBe(true)
     expect(existsSync(join(testDir, '.github', 'workflows', 'testing.yml'))).toBe(true)
+  })
+
+  it('initializes a project with valid asset and virtual module declarations', async () => {
+    await initCommand({ projectName: testDir })
+
+    const projectPath = resolve(testDir)
+    const require = createRequire(import.meta.url)
+    const vitestRequire = createRequire(require.resolve('vitest/package.json'))
+    const vitePath = dirname(vitestRequire.resolve('vite/package.json'))
+    mkdirSync(join(projectPath, 'node_modules'))
+    symlinkSync(vitePath, join(projectPath, 'node_modules', 'vite'), 'junction')
+
+    const importsPath = join(projectPath, 'imports.ts')
+    writeFileSync(
+      importsPath,
+      [
+        "import './styles.css'",
+        "import 'virtual:pelela-auto-register'",
+        "import template, { viewModelName } from './src/base.pelela'",
+        'const mode: string = import.meta.env.MODE',
+        'export { template, viewModelName, mode }',
+      ].join('\n'),
+    )
+
+    const config = ts.readConfigFile(join(projectPath, 'tsconfig.json'), ts.sys.readFile)
+    expect(config.error).toBeUndefined()
+    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, projectPath)
+    expect(parsed.errors).toEqual([])
+    expect(parsed.fileNames.map((file) => relative(projectPath, file))).toEqual(
+      expect.arrayContaining(['pelela-env.d.ts', join('src', 'vite-env.d.ts')]),
+    )
+
+    const program = ts.createProgram({
+      rootNames: [...parsed.fileNames.filter((file) => file.endsWith('.d.ts')), importsPath],
+      options: { ...parsed.options, noEmit: true, noUncheckedSideEffectImports: true },
+    })
+    const diagnostics = ts.getPreEmitDiagnostics(program)
+    expect(
+      ts.formatDiagnosticsWithColorAndContext(diagnostics, {
+        getCanonicalFileName: (file) => file,
+        getCurrentDirectory: () => projectPath,
+        getNewLine: () => '\n',
+      }),
+    ).toBe('')
   })
 
   it('creates the base component with pelela as root', async () => {
