@@ -57,6 +57,8 @@ const PARENT_TEMPLATE = (componentUsage: string): string =>
   ${componentUsage}
 </pelela>`
 
+const PARENT_VIEW_MODEL_CONTENT = `export class ParentViewModel {}`
+
 function constError(params: {
   name: string
   value: string
@@ -112,6 +114,7 @@ describe('validateConstValues', () => {
     fs.writeFileSync(path.join(testDir, 'no-vm.pelela'), NO_VIEW_MODEL_PELELA_CONTENT)
     fs.writeFileSync(path.join(testDir, 'student-roster.pelela'), ROSTER_PELELA_CONTENT)
     fs.writeFileSync(path.join(testDir, 'student-roster.ts'), ROSTER_VIEW_MODEL_CONTENT)
+    fs.writeFileSync(path.join(testDir, 'parent.ts'), PARENT_VIEW_MODEL_CONTENT)
     parentDocumentPath = path.join(testDir, 'parent.pelela')
   })
 
