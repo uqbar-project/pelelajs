@@ -1,4 +1,5 @@
 type DiagnosticsMessages = {
+  viewModelFileMissing: string
   viewModelMissingExport: string
   viewModelWrongCase: string
   viewModelNotFound: string

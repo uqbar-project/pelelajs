@@ -14,6 +14,7 @@ import {
   validateBindingProperties,
   validateEventMethods,
   validateForEachCollections,
+  validateMissingViewModelFile,
   validateViewModelExistence,
 } from './viewModelValidator'
 
@@ -40,7 +41,7 @@ function validateViewModelDiagnostics(
   document: vscode.TextDocument
 ): vscode.Diagnostic[] {
   const tsPath = findViewModelFile(document.uri)
-  if (tsPath === null) return []
+  if (tsPath === null) return validateMissingViewModelFile(tags, document)
   const viewModelDiagnostics = validateViewModelExistence(tags, tsPath)
   const viewModelName = getViewModelName(tags)
   if (!viewModelName || viewModelDiagnostics.length > 0) return viewModelDiagnostics

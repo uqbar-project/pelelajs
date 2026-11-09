@@ -101,6 +101,32 @@ export function validateViewModelExistence(tags: TagInfo[], tsPath: string): vsc
   )
 }
 
+export function validateMissingViewModelFile(
+  tags: TagInfo[],
+  document: vscode.TextDocument
+): vscode.Diagnostic[] {
+  if (tags.length === 0) return []
+  const tsFileName = path.basename(document.uri.fsPath.replace(/\.pelela$/, '.ts'))
+  const viewModelAttribute = tags
+    .flatMap((tag) => tag.attributes)
+    .find((attribute) => attribute.name === 'view-model')
+  const range =
+    viewModelAttribute?.valueRange ?? viewModelAttribute?.nameRange ?? rootTagRange(tags, document)
+  return [
+    makeDiagnostic(
+      range,
+      'diagnostics.viewModelFileMissing',
+      { tsFileName },
+      vscode.DiagnosticSeverity.Error
+    ),
+  ]
+}
+
+function rootTagRange(tags: TagInfo[], document: vscode.TextDocument): vscode.Range {
+  const lineIndex = tags[0]?.lineIndex ?? 0
+  return new vscode.Range(lineIndex, 0, lineIndex, document.lineAt(lineIndex).text.length)
+}
+
 export function validateBindingProperties(
   tags: TagInfo[],
   tsPath: string,

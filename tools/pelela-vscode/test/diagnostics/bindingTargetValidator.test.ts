@@ -49,6 +49,10 @@ const PARENT_TEMPLATE = (componentUsage: string): string =>
   ${componentUsage}
 </pelela>`
 
+const PARENT_VIEW_MODEL_CONTENT = `export class ParentViewModel {
+  count = 0
+}`
+
 function childPropertyNotFound(
   name: string,
   tag = 'counter-view-model',
@@ -96,6 +100,7 @@ describe('validateBindingTargets', () => {
     fs.writeFileSync(path.join(testDir, 'counter.pelela'), COUNTER_PELELA_CONTENT)
     fs.writeFileSync(path.join(testDir, 'counter.ts'), COUNTER_VIEW_MODEL_CONTENT)
     fs.writeFileSync(path.join(testDir, 'no-vm.pelela'), NO_VIEW_MODEL_PELELA_CONTENT)
+    fs.writeFileSync(path.join(testDir, 'parent.ts'), PARENT_VIEW_MODEL_CONTENT)
     parentDocumentPath = path.join(testDir, 'parent.pelela')
   })
 

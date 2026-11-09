@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
 import path from 'node:path'
 import type { ViewModelExportErrorParams } from 'pelelajs'
-import { initializeI18n, toKebabCase } from 'pelelajs'
+import { initializeI18n, t, toKebabCase } from 'pelelajs'
 import {
   analyzeViewModelModule,
   type ConstKind,
@@ -75,6 +75,31 @@ function getCssImport(pelelaFilePath: string): string {
   return 'export const __pelelaCssUrls = [];\n'
 }
 
+function missingViewModelImport(
+  importSpecifier: string,
+  importer: string | undefined,
+): { pelelaPath: string; tsPath: string } | null {
+  if (!importSpecifier.startsWith('.') || importer === undefined) return null
+  const [cleanSpecifier] = importSpecifier.split(/[?#]/)
+  const [cleanImporter] = importer.split(/[?#]/)
+  if (cleanImporter.includes('node_modules')) return null
+  const basePath = path.resolve(path.dirname(cleanImporter), cleanSpecifier)
+  const tsPath = basePath.endsWith('.ts') ? basePath : `${basePath}.ts`
+  if (fs.existsSync(tsPath)) return null
+  const pelelaPath = tsPath.replace(/\.ts$/, '.pelela')
+  if (!fs.existsSync(pelelaPath)) return null
+  return { pelelaPath, tsPath }
+}
+
+function validateViewModelFileExists(
+  pelelaFilePath: string,
+  errorFn: (message: string) => void,
+): void {
+  const tsFilePath = pelelaFilePath.replace(/\.pelela$/, '.ts')
+  if (fs.existsSync(tsFilePath)) return
+  errorFn(t('errors.compiler.missingViewModelFile', { filePath: pelelaFilePath, tsFilePath }))
+}
+
 function generateModuleCode(
   cssImport: string,
   viewModelName: string,
@@ -87,14 +112,30 @@ export default template;
 `
 }
 
+function collectFiles(dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(dir, entry.name)
+    return entry.isDirectory() ? collectFiles(entryPath) : [entryPath]
+  })
+}
+
 function collectTsFiles(dir: string): string[] {
-  return fs
-    .readdirSync(dir, { withFileTypes: true })
-    .flatMap((entry) => {
-      const entryPath = path.join(dir, entry.name)
-      return entry.isDirectory() ? collectTsFiles(entryPath) : [entryPath]
-    })
-    .filter((filePath) => filePath.endsWith('.ts'))
+  return collectFiles(dir).filter((filePath) => filePath.endsWith('.ts'))
+}
+
+function findPelelaFilesWithoutViewModel(srcDir: string): string[] {
+  if (!fs.existsSync(srcDir)) return []
+  return collectFiles(srcDir)
+    .filter((filePath) => filePath.endsWith('.pelela'))
+    .filter((pelelaPath) => !fs.existsSync(pelelaPath.replace(/\.pelela$/, '.ts')))
+    .sort()
+}
+
+function formatOrphanPelela(pelelaPath: string): string {
+  const tsPath = pelelaPath.replace(/\.pelela$/, '.ts')
+  const relativePelelaPath = path.relative(process.cwd(), pelelaPath)
+  const relativeTsPath = path.relative(process.cwd(), tsPath)
+  return `${relativePelelaPath} (missing ${relativeTsPath})`
 }
 
 function createTypeMapProgramCache(currentDirectory: string): TypeMapProgramCache {
@@ -380,9 +421,18 @@ export function pelelajsPlugin(): Plugin {
     name: PLUGIN_NAME,
     enforce: 'pre',
 
-    resolveId(id) {
+    resolveId(id, importer) {
       if (id === VIRTUAL_MODULE_ID) {
         return RESOLVED_VIRTUAL_ID
+      }
+      const missingViewModel = missingViewModelImport(id, importer)
+      if (missingViewModel !== null) {
+        this.error(
+          t('errors.compiler.missingViewModelFile', {
+            filePath: missingViewModel.pelelaPath,
+            tsFilePath: missingViewModel.tsPath,
+          }),
+        )
       }
       return null
     },
@@ -390,6 +440,11 @@ export function pelelajsPlugin(): Plugin {
     load(filePath) {
       if (filePath === RESOLVED_VIRTUAL_ID) {
         const srcDir = path.join(process.cwd(), 'src')
+        const orphanPelelaPaths = findPelelaFilesWithoutViewModel(srcDir)
+        if (orphanPelelaPaths.length > 0) {
+          const files = orphanPelelaPaths.map(formatOrphanPelela).join('\n')
+          this.error(t('errors.compiler.missingViewModelFiles', { files }))
+        }
         const components = findComponentFiles(srcDir, { extractPropertyTypes })
 
         if (components.length === 0) {
@@ -406,6 +461,7 @@ export function pelelajsPlugin(): Plugin {
 
       const sourceCode = fs.readFileSync(pelelaFilePath, 'utf-8')
       const cssImport = getCssImport(pelelaFilePath)
+      validateViewModelFileExists(pelelaFilePath, this.error.bind(this))
 
       const viewModelName = validatePelelaSource({
         sourceCode,

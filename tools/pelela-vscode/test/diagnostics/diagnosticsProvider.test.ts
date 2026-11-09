@@ -200,6 +200,30 @@ describe('diagnosticsProvider', () => {
       fs.unlinkSync(notAClassTsPath)
     })
 
+    it('reports missing view model file when the .pelela has no matching .ts', () => {
+      const orphanPelelaPath = path.join(testFilesDir, 'Orphan.pelela')
+      const collection = vscode.languages.createDiagnosticCollection()
+      const document = createMockDocument(
+        `<pelela view-model="TestViewModel"></pelela>`,
+        'pelela',
+        orphanPelelaPath
+      )
+      validatePelelaDocument(collection, document)
+      const diagnostics = getEntries(collection).get(orphanPelelaPath) ?? []
+      assert.strictEqual(diagnostics.length, 1)
+      const diagnostic = diagnostics[0]
+      assert.strictEqual(
+        diagnostic.message,
+        t('diagnostics.viewModelFileMissing', { tsFileName: 'Orphan.ts' })
+      )
+      assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
+      assert.strictEqual(diagnostic.source, 'pelela')
+      assert.strictEqual(diagnostic.range.start.line, 0)
+      assert.strictEqual(diagnostic.range.start.character, 20)
+      assert.strictEqual(diagnostic.range.end.line, 0)
+      assert.strictEqual(diagnostic.range.end.character, 33)
+    })
+
     it('skips binding and event validation when the view model is not exported', () => {
       const noBindPelelaPath = path.join(testFilesDir, 'NoBind.pelela')
       const noBindTsPath = noBindPelelaPath.replace(/\.pelela$/, '.ts')
