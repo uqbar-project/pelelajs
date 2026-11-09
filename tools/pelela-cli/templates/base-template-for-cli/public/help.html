@@ -89,6 +89,10 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' stroke='%23667eea'/%3E%3C/svg%3E");
     }
 
+    .toast-section-title::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0' stroke='%23667eea'/%3E%3C/svg%3E");
+    }
+
     .table-container {
       overflow-x: auto;
       margin-bottom: 20px;
@@ -191,7 +195,8 @@
         <a href="#view-model" class="nav-link">ViewModel</a> |
         <a href="#bindings" class="nav-link">Bindings</a> |
         <a href="#parent-child" class="nav-link">Parent/Child</a> |
-        <a href="#naming" class="nav-link">Naming</a>
+        <a href="#naming" class="nav-link">Naming</a> |
+        <a href="#toast" class="nav-link">Toast</a>
       </div>
     </div>
 
@@ -452,6 +457,94 @@
       </div>
     </div>
 
+    <div id="toast" class="section">
+      <div class="section-title toast-section-title">Toast Notifications</div>
+
+      <p>Use the toast service to show a brief message from a view model. The default duration is 4 seconds. Pass <span class="code">duration: 0</span> to keep a toast visible until the user closes it.</p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Value</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code">ToastSeverity.info</span></td>
+              <td><span class="code">info</span></td>
+              <td>General information</td>
+            </tr>
+            <tr>
+              <td><span class="code">ToastSeverity.success</span></td>
+              <td><span class="code">success</span></td>
+              <td>Successful action</td>
+            </tr>
+            <tr>
+              <td><span class="code">ToastSeverity.warning</span></td>
+              <td><span class="code">warning</span></td>
+              <td>Warning</td>
+            </tr>
+            <tr>
+              <td><span class="code">ToastSeverity.error</span></td>
+              <td><span class="code">error</span></td>
+              <td>Error</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="example">
+        toast.message('Saved', ToastSeverity.success)
+        toast.message('Check the data', ToastSeverity.warning)
+        toast.message(String(error), ToastSeverity.error)
+        toast.message('No connection', ToastSeverity.error, { duration: 0 })
+        toast.clear()
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Alignment</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code">ToastAlignment.start</span></td>
+              <td><span class="code">start</span></td>
+            </tr>
+            <tr>
+              <td><span class="code">ToastAlignment.center</span></td>
+              <td><span class="code">center</span></td>
+            </tr>
+            <tr>
+              <td><span class="code">ToastAlignment.end</span></td>
+              <td><span class="code">end</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="example">
+        toast.configure({
+          horizontal: ToastAlignment.center,
+          vertical: ToastAlignment.start,
+        })
+
+        toast.message('Top center', ToastSeverity.info, {
+          horizontal: ToastAlignment.center,
+          vertical: ToastAlignment.start,
+        })
+      </div>
+
+      <div class="note">
+        <strong>Note:</strong> <span class="code">toast.configure</span> changes the default position for later toasts. A toast can override it with <span class="code">horizontal</span> and <span class="code">vertical</span> options.
+      </div>
+    </div>
   </div>
 </body>
 </html>
