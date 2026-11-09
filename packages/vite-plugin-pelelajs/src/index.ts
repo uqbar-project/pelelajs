@@ -84,7 +84,11 @@ function missingViewModelImport(
   const [cleanImporter] = importer.split(/[?#]/)
   if (cleanImporter.includes('node_modules')) return null
   const basePath = path.resolve(path.dirname(cleanImporter), cleanSpecifier)
-  const tsPath = basePath.endsWith('.ts') ? basePath : `${basePath}.ts`
+  const tsPath = basePath.endsWith('.pelela')
+    ? basePath.replace(/\.pelela$/, '.ts')
+    : basePath.endsWith('.ts')
+      ? basePath
+      : `${basePath}.ts`
   if (fs.existsSync(tsPath)) return null
   const pelelaPath = tsPath.replace(/\.ts$/, '.pelela')
   if (!fs.existsSync(pelelaPath)) return null
@@ -114,18 +118,14 @@ export default template;
 
 function collectFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.isDirectory() && entry.name === 'node_modules') return []
     const entryPath = path.join(dir, entry.name)
     return entry.isDirectory() ? collectFiles(entryPath) : [entryPath]
   })
 }
 
-function collectTsFiles(dir: string): string[] {
-  return collectFiles(dir).filter((filePath) => filePath.endsWith('.ts'))
-}
-
-function findPelelaFilesWithoutViewModel(srcDir: string): string[] {
-  if (!fs.existsSync(srcDir)) return []
-  return collectFiles(srcDir)
+function findPelelaFilesWithoutViewModel(filePaths: string[]): string[] {
+  return filePaths
     .filter((filePath) => filePath.endsWith('.pelela'))
     .filter((pelelaPath) => !fs.existsSync(pelelaPath.replace(/\.pelela$/, '.ts')))
     .sort()
@@ -217,13 +217,11 @@ function createTypeMapProgramCache(currentDirectory: string): TypeMapProgramCach
   }
 }
 
-function findComponentFiles(
-  srcDir: string,
+function buildComponentFiles(
+  filePaths: string[],
   { includeTypeMap = true, extractPropertyTypes }: FindComponentFilesOptions = {},
 ): ComponentFileMetadata[] {
-  if (!fs.existsSync(srcDir)) return []
-
-  const tsPaths = collectTsFiles(srcDir)
+  const tsPaths = filePaths.filter((filePath) => filePath.endsWith('.ts'))
   const componentTsPaths = tsPaths.filter((tsPath) =>
     fs.existsSync(tsPath.replace(/\.ts$/, '.pelela')),
   )
@@ -268,6 +266,14 @@ function findComponentFiles(
       }
     })
     .filter((component): component is ComponentFileMetadata => component !== null)
+}
+
+function findComponentFiles(
+  srcDir: string,
+  options: FindComponentFilesOptions = {},
+): ComponentFileMetadata[] {
+  if (!fs.existsSync(srcDir)) return []
+  return buildComponentFiles(collectFiles(srcDir), options)
 }
 
 export function kebabToCamelCase(name: string): string {
@@ -421,6 +427,25 @@ export function pelelajsPlugin(): Plugin {
     name: PLUGIN_NAME,
     enforce: 'pre',
 
+    configureServer(server) {
+      const invalidateAutoRegister = (file: string): void => {
+        if (path.extname(file) === '.ts') {
+          typeMapProgramCaches.forEach((programCache) => {
+            programCache.invalidate(file)
+          })
+        }
+        const srcDir = path.join(process.cwd(), 'src')
+        if (!file.startsWith(`${srcDir}${path.sep}`)) return
+        if (!isComponentSourceFile(file)) return
+        const autoRegisterModule = server.moduleGraph.getModuleById(RESOLVED_VIRTUAL_ID)
+        if (autoRegisterModule === undefined) return
+        server.moduleGraph.invalidateModule(autoRegisterModule)
+        server.ws.send({ type: 'full-reload' })
+      }
+      server.watcher.on('add', invalidateAutoRegister)
+      server.watcher.on('unlink', invalidateAutoRegister)
+    },
+
     resolveId(id, importer) {
       if (id === VIRTUAL_MODULE_ID) {
         return RESOLVED_VIRTUAL_ID
@@ -440,12 +465,13 @@ export function pelelajsPlugin(): Plugin {
     load(filePath) {
       if (filePath === RESOLVED_VIRTUAL_ID) {
         const srcDir = path.join(process.cwd(), 'src')
-        const orphanPelelaPaths = findPelelaFilesWithoutViewModel(srcDir)
+        const filePaths = fs.existsSync(srcDir) ? collectFiles(srcDir) : []
+        const orphanPelelaPaths = findPelelaFilesWithoutViewModel(filePaths)
         if (orphanPelelaPaths.length > 0) {
           const files = orphanPelelaPaths.map(formatOrphanPelela).join('\n')
           this.error(t('errors.compiler.missingViewModelFiles', { files }))
         }
-        const components = findComponentFiles(srcDir, { extractPropertyTypes })
+        const components = buildComponentFiles(filePaths, { extractPropertyTypes })
 
         if (components.length === 0) {
           return 'export {}'
@@ -489,7 +515,7 @@ export function pelelajsPlugin(): Plugin {
     },
 
     hotUpdate({ file, modules }) {
-      if (path.extname(file) === '.ts' || path.extname(file) === '.tsx') {
+      if (path.extname(file) === '.ts') {
         typeMapProgramCaches.forEach((programCache) => {
           programCache.invalidate(file)
         })

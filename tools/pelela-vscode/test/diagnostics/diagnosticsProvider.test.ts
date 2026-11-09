@@ -224,6 +224,46 @@ describe('diagnosticsProvider', () => {
       assert.strictEqual(diagnostic.range.end.character, 33)
     })
 
+    it('reports missing view model file for an empty template without tags', () => {
+      const orphanPelelaPath = path.join(testFilesDir, 'EmptyOrphan.pelela')
+      const collection = vscode.languages.createDiagnosticCollection()
+      const document = createMockDocument('', 'pelela', orphanPelelaPath)
+      validatePelelaDocument(collection, document)
+      const diagnostics = getEntries(collection).get(orphanPelelaPath) ?? []
+      assert.strictEqual(diagnostics.length, 1)
+      const diagnostic = diagnostics[0]
+      assert.strictEqual(
+        diagnostic.message,
+        t('diagnostics.viewModelFileMissing', { tsFileName: 'EmptyOrphan.ts' })
+      )
+      assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
+      assert.strictEqual(diagnostic.source, 'pelela')
+      assert.strictEqual(diagnostic.range.start.line, 0)
+      assert.strictEqual(diagnostic.range.start.character, 0)
+      assert.strictEqual(diagnostic.range.end.line, 0)
+      assert.strictEqual(diagnostic.range.end.character, 0)
+    })
+
+    it('reports missing view model file for a comments-only template', () => {
+      const orphanPelelaPath = path.join(testFilesDir, 'CommentOrphan.pelela')
+      const collection = vscode.languages.createDiagnosticCollection()
+      const document = createMockDocument('<!-- just a comment -->', 'pelela', orphanPelelaPath)
+      validatePelelaDocument(collection, document)
+      const diagnostics = getEntries(collection).get(orphanPelelaPath) ?? []
+      assert.strictEqual(diagnostics.length, 1)
+      const diagnostic = diagnostics[0]
+      assert.strictEqual(
+        diagnostic.message,
+        t('diagnostics.viewModelFileMissing', { tsFileName: 'CommentOrphan.ts' })
+      )
+      assert.strictEqual(diagnostic.severity, vscode.DiagnosticSeverity.Error)
+      assert.strictEqual(diagnostic.source, 'pelela')
+      assert.strictEqual(diagnostic.range.start.line, 0)
+      assert.strictEqual(diagnostic.range.start.character, 0)
+      assert.strictEqual(diagnostic.range.end.line, 0)
+      assert.strictEqual(diagnostic.range.end.character, 0)
+    })
+
     it('skips binding and event validation when the view model is not exported', () => {
       const noBindPelelaPath = path.join(testFilesDir, 'NoBind.pelela')
       const noBindTsPath = noBindPelelaPath.replace(/\.pelela$/, '.ts')

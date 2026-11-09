@@ -105,13 +105,14 @@ export function validateMissingViewModelFile(
   tags: TagInfo[],
   document: vscode.TextDocument
 ): vscode.Diagnostic[] {
-  if (tags.length === 0) return []
   const tsFileName = path.basename(document.uri.fsPath.replace(/\.pelela$/, '.ts'))
   const viewModelAttribute = tags
     .flatMap((tag) => tag.attributes)
     .find((attribute) => attribute.name === 'view-model')
   const range =
-    viewModelAttribute?.valueRange ?? viewModelAttribute?.nameRange ?? rootTagRange(tags, document)
+    viewModelAttribute?.valueRange ??
+    viewModelAttribute?.nameRange ??
+    (tags.length === 0 ? new vscode.Range(0, 0, 0, 0) : rootTagRange(tags, document))
   return [
     makeDiagnostic(
       range,

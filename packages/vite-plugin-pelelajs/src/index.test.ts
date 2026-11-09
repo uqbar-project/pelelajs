@@ -39,6 +39,111 @@ describe('pelelajsPlugin', () => {
     vi.mocked(extractViewModelPropertyTypes).mockReset().mockReturnValue({})
   })
 
+  describe('configureServer', () => {
+    let tempDir: string
+
+    beforeEach(() => {
+      tempDir = createTempDir()
+      fs.mkdirSync(path.join(tempDir, 'src'))
+    })
+
+    afterEach(() => {
+      removeTempDir(tempDir)
+    })
+
+    function createMockServer(hasAutoRegisterModule: boolean) {
+      const handlers = new Map<string, (file: string) => void>()
+      const virtualModule = hasAutoRegisterModule ? { id: RESOLVED_VIRTUAL_ID } : undefined
+      const invalidateModule = vi.fn()
+      const send = vi.fn()
+      const server = {
+        watcher: {
+          on: (event: string, handler: (file: string) => void) => {
+            handlers.set(event, handler)
+          },
+        },
+        moduleGraph: {
+          getModuleById: () => virtualModule,
+          invalidateModule,
+        },
+        ws: { send },
+      }
+      return { handlers, invalidateModule, send, server }
+    }
+
+    function setupConfigureServer(hasAutoRegisterModule: boolean) {
+      const mock = createMockServer(hasAutoRegisterModule)
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.configureServer!)
+      handler.call(null as never, mock.server as never)
+      return mock
+    }
+
+    function emitFileEvent(
+      mock: ReturnType<typeof createMockServer>,
+      event: string,
+      file: string,
+    ): void {
+      const originalCwd = process.cwd
+      process.cwd = () => tempDir
+      try {
+        mock.handlers.get(event)?.(file)
+      } finally {
+        process.cwd = originalCwd
+      }
+    }
+
+    it('invalidates the auto-register module and reloads on add under src', () => {
+      const mock = setupConfigureServer(true)
+      const addedFile = path.join(tempDir, 'src', 'new.pelela')
+
+      emitFileEvent(mock, 'add', addedFile)
+
+      expect(mock.invalidateModule).toHaveBeenCalledWith({ id: RESOLVED_VIRTUAL_ID })
+      expect(mock.send).toHaveBeenCalledWith({ type: 'full-reload' })
+    })
+
+    it('invalidates the auto-register module and reloads on unlink under src', () => {
+      const mock = setupConfigureServer(true)
+      const removedFile = path.join(tempDir, 'src', 'old.ts')
+
+      emitFileEvent(mock, 'unlink', removedFile)
+
+      expect(mock.invalidateModule).toHaveBeenCalledWith({ id: RESOLVED_VIRTUAL_ID })
+      expect(mock.send).toHaveBeenCalledWith({ type: 'full-reload' })
+    })
+
+    it('ignores files outside src', () => {
+      const mock = setupConfigureServer(true)
+      const outsideFile = path.join(tempDir, 'other.pelela')
+
+      emitFileEvent(mock, 'add', outsideFile)
+
+      expect(mock.invalidateModule).not.toHaveBeenCalled()
+      expect(mock.send).not.toHaveBeenCalled()
+    })
+
+    it('ignores non-component files under src', () => {
+      const mock = setupConfigureServer(true)
+      const textFile = path.join(tempDir, 'src', 'notes.txt')
+
+      emitFileEvent(mock, 'add', textFile)
+
+      expect(mock.invalidateModule).not.toHaveBeenCalled()
+      expect(mock.send).not.toHaveBeenCalled()
+    })
+
+    it('does nothing when the auto-register module is not loaded yet', () => {
+      const mock = setupConfigureServer(false)
+      const addedFile = path.join(tempDir, 'src', 'new.pelela')
+
+      emitFileEvent(mock, 'add', addedFile)
+
+      expect(mock.invalidateModule).not.toHaveBeenCalled()
+      expect(mock.send).not.toHaveBeenCalled()
+    })
+  })
+
   describe('resolveId', () => {
     let tempDir: string
 
@@ -84,6 +189,64 @@ describe('pelelajsPlugin', () => {
       const result = handler.call(
         { error: errorFn } as never,
         './src/home',
+        routesPath,
+        {} as never,
+      )
+
+      expect(result).toBeNull()
+      expect(errors).toEqual([
+        t('errors.compiler.missingViewModelFile', {
+          filePath: pelelaPath,
+          tsFilePath: path.join(srcDir, 'home.ts'),
+        }),
+      ])
+    })
+
+    it('reports error when an explicit ts import points to a missing ts with a matching pelela', () => {
+      const srcDir = path.join(tempDir, 'src')
+      const routesPath = path.join(tempDir, 'routes.ts')
+      const pelelaPath = path.join(srcDir, 'home.pelela')
+      fs.mkdirSync(srcDir)
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.resolveId!)
+
+      const result = handler.call(
+        { error: errorFn } as never,
+        './src/home.ts',
+        routesPath,
+        {} as never,
+      )
+
+      expect(result).toBeNull()
+      expect(errors).toEqual([
+        t('errors.compiler.missingViewModelFile', {
+          filePath: pelelaPath,
+          tsFilePath: path.join(srcDir, 'home.ts'),
+        }),
+      ])
+    })
+
+    it('reports error when a pelela import points to a missing ts file', () => {
+      const srcDir = path.join(tempDir, 'src')
+      const routesPath = path.join(tempDir, 'routes.ts')
+      const pelelaPath = path.join(srcDir, 'home.pelela')
+      fs.mkdirSync(srcDir)
+      fs.writeFileSync(pelelaPath, '<pelela view-model="Home"></pelela>')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.resolveId!)
+
+      const result = handler.call(
+        { error: errorFn } as never,
+        './src/home.pelela?import',
         routesPath,
         {} as never,
       )
@@ -160,13 +323,16 @@ describe('pelelajsPlugin', () => {
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
 
-      process.cwd = () => tempDir
+      let result: unknown
+      try {
+        process.cwd = () => tempDir
 
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never)
+        result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never)
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(result).toBe('export {}')
-
-      process.cwd = originalCwd
     })
 
     it('reports error listing every pelela template without a matching ts file', () => {
@@ -181,15 +347,17 @@ describe('pelelajsPlugin', () => {
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
 
-      process.cwd = () => tempDir
+      try {
+        process.cwd = () => tempDir
 
-      handler.call({ error: errorFn } as never, RESOLVED_VIRTUAL_ID, {} as never)
-
-      process.cwd = originalCwd
+        handler.call({ error: errorFn } as never, RESOLVED_VIRTUAL_ID, {} as never)
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(errors).toEqual([
         t('errors.compiler.missingViewModelFiles', {
-          files: 'src/a.pelela (missing src/a.ts)\nsrc/b.pelela (missing src/b.ts)',
+          files: `${path.join('src', 'a.pelela')} (missing ${path.join('src', 'a.ts')})\n${path.join('src', 'b.pelela')} (missing ${path.join('src', 'b.ts')})`,
         }),
       ])
     })
@@ -207,11 +375,42 @@ describe('pelelajsPlugin', () => {
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
 
-      process.cwd = () => tempDir
+      try {
+        process.cwd = () => tempDir
 
-      handler.call({ error: errorFn } as never, RESOLVED_VIRTUAL_ID, {} as never)
+        handler.call({ error: errorFn } as never, RESOLVED_VIRTUAL_ID, {} as never)
+      } finally {
+        process.cwd = originalCwd
+      }
 
-      process.cwd = originalCwd
+      expect(errors).toEqual([])
+    })
+
+    it('ignores pelela templates inside node_modules', () => {
+      const srcDir = path.join(tempDir, 'src')
+      const dependencyDir = path.join(srcDir, 'node_modules', 'dep')
+      fs.mkdirSync(dependencyDir, { recursive: true })
+      fs.writeFileSync(
+        path.join(dependencyDir, 'orphan.pelela'),
+        '<pelela view-model="Dep"></pelela>',
+      )
+      fs.writeFileSync(path.join(srcDir, 'home.pelela'), '<pelela view-model="Home"></pelela>')
+      fs.writeFileSync(path.join(srcDir, 'home.ts'), 'export class Home {}')
+
+      const errors: string[] = []
+      const errorFn = (msg: string | Error) => errors.push(String(msg))
+
+      const plugin = pelelajsPlugin()
+      const handler = getHandler(plugin.load!)
+      const originalCwd = process.cwd
+
+      try {
+        process.cwd = () => tempDir
+
+        handler.call({ error: errorFn } as never, RESOLVED_VIRTUAL_ID, {} as never)
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(errors).toEqual([])
     })
@@ -228,16 +427,19 @@ describe('pelelajsPlugin', () => {
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
 
-      process.cwd = () => tempDir
+      let result = ''
+      try {
+        process.cwd = () => tempDir
 
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+        result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(result).toContain('import { Home } from "./src/home.ts"')
       expect(result).toContain('import homeTemplate from "./src/home.pelela"')
       expect(result).toContain('import { defineComponent } from "pelelajs"')
       expect(result).toContain('defineComponent("Home", Home, homeTemplate)')
-
-      process.cwd = originalCwd
     })
 
     it('generates registration code for kebab-case component', () => {
@@ -252,17 +454,20 @@ describe('pelelajsPlugin', () => {
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
 
-      process.cwd = () => tempDir
+      let result = ''
+      try {
+        process.cwd = () => tempDir
 
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+        result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(result).toContain('import { DetailSpecial } from "./src/detail-special.ts"')
       expect(result).toContain('import detailSpecialTemplate from "./src/detail-special.pelela"')
       expect(result).toContain(
         'defineComponent("DetailSpecial", DetailSpecial, detailSpecialTemplate)',
       )
-
-      process.cwd = originalCwd
     })
 
     it('skips ts files without matching pelela template', () => {
@@ -278,14 +483,17 @@ describe('pelelajsPlugin', () => {
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
 
-      process.cwd = () => tempDir
+      let result = ''
+      try {
+        process.cwd = () => tempDir
 
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+        result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(result).toContain('import { Home }')
       expect(result).not.toContain('Orphan')
-
-      process.cwd = originalCwd
     })
 
     it('handles component names with .ts in the middle', () => {
@@ -300,15 +508,18 @@ describe('pelelajsPlugin', () => {
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
 
-      process.cwd = () => tempDir
+      let result = ''
+      try {
+        process.cwd = () => tempDir
 
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+        result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(result).toContain('import { FooTsfile } from "./src/foo.tsfile.ts"')
       expect(result).toContain('import fooTsfileTemplate from "./src/foo.tsfile.pelela"')
       expect(result).toContain('defineComponent("FooTsfile", FooTsfile, fooTsfileTemplate)')
-
-      process.cwd = originalCwd
     })
 
     it('generates registration code with cssUrls when component has adjacent css file', () => {
@@ -353,15 +564,18 @@ describe('pelelajsPlugin', () => {
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
 
-      process.cwd = () => tempDir
+      let result = ''
+      try {
+        process.cwd = () => tempDir
 
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+        result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(result).toContain('import { Dashboard } from "./src/dashboard/dashboard.ts"')
       expect(result).toContain('import dashboardTemplate from "./src/dashboard/dashboard.pelela"')
       expect(result).toContain('defineComponent("Dashboard", Dashboard, dashboardTemplate)')
-
-      process.cwd = originalCwd
     })
 
     it('generates registration code with cssUrls for component in subfolder with adjacent css', () => {
@@ -378,9 +592,14 @@ describe('pelelajsPlugin', () => {
       const handler = getHandler(plugin.load!)
       const originalCwd = process.cwd
 
-      process.cwd = () => tempDir
+      let result = ''
+      try {
+        process.cwd = () => tempDir
 
-      const result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+        result = handler.call(null as never, RESOLVED_VIRTUAL_ID, {} as never) as string
+      } finally {
+        process.cwd = originalCwd
+      }
 
       expect(result).toContain(
         'import dashboardTemplate, { __pelelaCssUrls as dashboardCssUrls } from "./src/dashboard/dashboard.pelela"',
@@ -388,8 +607,6 @@ describe('pelelajsPlugin', () => {
       expect(result).toContain(
         'defineComponent("Dashboard", Dashboard, dashboardTemplate, { cssUrls: dashboardCssUrls })',
       )
-
-      process.cwd = originalCwd
     })
 
     function loadAutoRegisterWithComponent(tsSource: string, pelelaTemplate: string): string {
