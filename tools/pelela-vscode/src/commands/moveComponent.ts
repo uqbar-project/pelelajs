@@ -20,7 +20,10 @@ export async function moveComponent(runCli: CliRunner, uri?: vscode.Uri): Promis
     return
   }
 
-  await vscode.workspace.saveAll(false)
+  const wasSaved = await vscode.workspace.saveAll(false)
+  if (!wasSaved) {
+    return
+  }
 
   const input = await vscode.window.showInputBox({
     prompt: t('commands.move.prompt'),

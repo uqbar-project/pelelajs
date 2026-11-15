@@ -76,6 +76,7 @@ let lastCreatedOutputChannel: StubOutputChannel | null = null
 let shownDocuments: string[] = []
 let commandInvocations: StubCommandInvocation[] = []
 let settings: Record<string, unknown> = {}
+let saveAllResult = true
 let openDocumentListeners: Array<(document: unknown) => void> = []
 let fileSystemWatchers: StubFileSystemWatcher[] = []
 let languageChanges: Array<{ uri: string; languageId: string }> = []
@@ -110,6 +111,10 @@ export function setMessageResponse(response: string | undefined): void {
 
 export function setSetting(key: string, value: unknown): void {
   settings[key] = value
+}
+
+export function setSaveAllResult(result: boolean): void {
+  saveAllResult = result
 }
 
 export function setActiveTextEditor(editor: unknown): void {
@@ -172,6 +177,7 @@ export function resetVscodeStub(): void {
   shownDocuments = []
   commandInvocations = []
   settings = {}
+  saveAllResult = true
   openDocumentListeners = []
   fileSystemWatchers = []
   languageChanges = []
@@ -396,7 +402,7 @@ export const vscodeStub = {
     get workspaceFolders() {
       return workspaceFolders
     },
-    saveAll: (_includeUntitled?: boolean) => Promise.resolve(true),
+    saveAll: (_includeUntitled?: boolean) => Promise.resolve(saveAllResult),
     getConfiguration: (section: string) => {
       const prefix = section === '' ? '' : `${section}.`
       return {

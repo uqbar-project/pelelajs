@@ -10,6 +10,7 @@ import {
   lastInputBox,
   setActiveTextEditor,
   setInputBoxResponses,
+  setSaveAllResult,
   setWorkspaceFolders,
 } from '../vscode-stub'
 import {
@@ -96,6 +97,18 @@ describe('moveComponent', () => {
     assert.deepEqual(getMessages(), [
       { kind: 'information', message: t('commands.move.success', { path: destination }) },
     ])
+  })
+
+  it('does not continue when saving workspace changes fails', async () => {
+    const project = createWorkspaceProject()
+    setSaveAllResult(false)
+    const { runCli, calls } = createRecordingRunner()
+
+    await moveComponent(runCli, vscode.Uri.file(project.pelelaPath))
+
+    assert.deepEqual(calls, [])
+    assert.equal(lastInputBox(), undefined)
+    assert.deepEqual(getCommandInvocations(), [])
   })
 
   it('normalizes Windows separators in the destination', async () => {
