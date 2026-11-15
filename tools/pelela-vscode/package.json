@@ -74,12 +74,12 @@
       "explorer/context": [
         {
           "command": "pelela.renameComponent",
-          "when": "resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|\\/)src\\//)",
+          "when": "resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|[\\/\\\\])src[\\/\\\\]/)",
           "group": "pelela@1"
         },
         {
           "command": "pelela.moveComponent",
-          "when": "resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|\\/)src\\//)",
+          "when": "resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|[\\/\\\\])src[\\/\\\\]/)",
           "group": "pelela@2"
         },
         {

@@ -12,8 +12,12 @@ const RENAME_COMMAND = 'pelela.renameComponent'
 const MOVE_COMMAND = 'pelela.moveComponent'
 const NEW_COMMAND = 'pelela.newComponent'
 const ADD_TESTING_COMMAND = 'pelela.addTesting'
-const COMPONENT_WHEN =
-  'resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|\\/)src\\//)'
+const COMPONENT_SOURCE_PATH_PATTERN = String.raw`(^|[\/\\])src[\/\\]`
+const COMPONENT_WHEN_PREFIX =
+  'resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /'
+const COMPONENT_WHEN = `${COMPONENT_WHEN_PREFIX}${COMPONENT_SOURCE_PATH_PATTERN}/)`
+const POSIX_COMPONENT_VIEW_MODEL_PATH = '/workspace/app/src/components/nav-bar.ts'
+const WINDOWS_COMPONENT_VIEW_MODEL_PATH = String.raw`C:\workspace\app\src\components\nav-bar.ts`
 
 interface Manifest {
   contributes: {
@@ -64,6 +68,13 @@ describe('extension manifest', () => {
       { command: MOVE_COMMAND, when: COMPONENT_WHEN, group: 'pelela@2' },
       { command: NEW_COMMAND, when: 'explorerResourceIsFolder', group: 'navigation@10' },
     ])
+  })
+
+  it('matches TypeScript component paths with POSIX and Windows separators', () => {
+    const componentSourcePath = new RegExp(COMPONENT_SOURCE_PATH_PATTERN)
+
+    assert.match(POSIX_COMPONENT_VIEW_MODEL_PATH, componentSourcePath)
+    assert.match(WINDOWS_COMPONENT_VIEW_MODEL_PATH, componentSourcePath)
   })
 
   it('shows the component commands in the command palette for templates', () => {
