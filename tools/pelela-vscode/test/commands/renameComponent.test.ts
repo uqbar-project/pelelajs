@@ -10,6 +10,7 @@ import {
   lastInputBox,
   setActiveTextEditor,
   setInputBoxResponses,
+  setSaveAllResult,
   setWorkspaceFolders,
 } from '../vscode-stub'
 import {
@@ -79,6 +80,17 @@ describe('renameComponent', () => {
     assert.deepEqual(getMessages(), [
       { kind: 'information', message: t('commands.rename.success', { name: NEW_NAME }) },
     ])
+  })
+
+  it('does not continue when saving workspace changes fails', async () => {
+    const project = createWorkspaceProject()
+    setSaveAllResult(false)
+    const { runCli, calls } = createRecordingRunner()
+
+    await renameComponent(runCli, vscode.Uri.file(project.pelelaPath))
+
+    assert.deepEqual(calls, [])
+    assert.equal(lastInputBox(), undefined)
   })
 
   it('trims the typed name', async () => {

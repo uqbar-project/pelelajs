@@ -21,7 +21,10 @@ export async function renameComponent(runCli: CliRunner, uri?: vscode.Uri): Prom
     return
   }
 
-  await vscode.workspace.saveAll(false)
+  const wasSaved = await vscode.workspace.saveAll(false)
+  if (!wasSaved) {
+    return
+  }
 
   const input = await vscode.window.showInputBox({
     prompt: t('commands.rename.prompt'),
