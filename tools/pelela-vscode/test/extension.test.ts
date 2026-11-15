@@ -10,8 +10,10 @@ import {
   getFileSystemWatchers,
   getLanguageChanges,
   getRegisteredCommand,
+  lastDiagnosticCollection,
   lastOutputChannel,
   setActiveTextEditor,
+  setOpenTextDocuments,
   triggerOpenTextDocument,
 } from './vscode-stub'
 
@@ -21,6 +23,9 @@ const ENABLED_CONTEXT = 'pelela.enabled'
 const WATCHER_COUNT = 1
 const PROVIDER_SUBSCRIPTION_COUNT = 7
 const COMMAND_SUBSCRIPTION_COUNT = 5
+const WATCHED_TEMPLATE = 'nav-bar.pelela'
+const WATCHED_VIEW_MODEL = 'nav-bar.ts'
+const INVALID_TEMPLATE_CONTENT = '<div onclick="handler"></div>'
 
 function createContext(): vscode.ExtensionContext {
   return { subscriptions: [] } as unknown as vscode.ExtensionContext
@@ -28,6 +33,22 @@ function createContext(): vscode.ExtensionContext {
 
 function createDocument(root: string, fileName: string) {
   return { languageId: PELELA_LANGUAGE_ID, uri: { fsPath: join(root, fileName) } }
+}
+
+function createDiagnosticDocument(root: string, fileName: string): vscode.TextDocument {
+  return {
+    languageId: PELELA_LANGUAGE_ID,
+    uri: { fsPath: join(root, fileName) },
+    lineCount: 1,
+    lineAt: () => ({ text: INVALID_TEMPLATE_CONTENT }),
+    getText: () => INVALID_TEMPLATE_CONTENT,
+  } as unknown as vscode.TextDocument
+}
+
+function diagnosticsForDocument(filePath: string): unknown[] | undefined {
+  const collection = lastDiagnosticCollection()
+  assert.ok(collection)
+  return collection._entries.get(filePath)
 }
 
 describe('activate', () => {
@@ -103,44 +124,64 @@ describe('activate', () => {
     assert.equal(getFileSystemWatchers().length, WATCHER_COUNT)
   })
 
-  it('reacts to view model changes', () => {
+  it('refreshes diagnostics after a view model changes', () => {
     const root = createTempRoot()
+    const document = createDiagnosticDocument(root, WATCHED_TEMPLATE)
+    setOpenTextDocuments([document])
     activate(createContext())
     const watcher = getFileSystemWatchers()[0]
 
+    assert.equal(diagnosticsForDocument(document.uri.fsPath), undefined)
     watcher.changeListeners.forEach((listener) => {
-      listener({ fsPath: join(root, 'nav-bar.ts') })
+      listener({ fsPath: join(root, WATCHED_VIEW_MODEL) })
     })
 
-    assert.equal(watcher.changeListeners.length, 1)
+    assert.equal(diagnosticsForDocument(document.uri.fsPath)?.length, 1)
   })
 
-  it('reacts to template changes', () => {
+  it('refreshes diagnostics after a template changes', () => {
     const root = createTempRoot()
+    const document = createDiagnosticDocument(root, WATCHED_TEMPLATE)
+    setOpenTextDocuments([document])
     activate(createContext())
     const watcher = getFileSystemWatchers()[0]
 
+    assert.equal(diagnosticsForDocument(document.uri.fsPath), undefined)
     watcher.changeListeners.forEach((listener) => {
-      listener({ fsPath: join(root, 'nav-bar.pelela') })
+      listener({ fsPath: join(root, WATCHED_TEMPLATE) })
     })
 
-    assert.equal(watcher.changeListeners.length, 1)
+    assert.equal(diagnosticsForDocument(document.uri.fsPath)?.length, 1)
   })
 
-  it('reacts to created and deleted files', () => {
+  it('refreshes diagnostics after a template is created', () => {
     const root = createTempRoot()
+    const document = createDiagnosticDocument(root, WATCHED_TEMPLATE)
+    setOpenTextDocuments([document])
     activate(createContext())
     const watcher = getFileSystemWatchers()[0]
 
+    assert.equal(diagnosticsForDocument(document.uri.fsPath), undefined)
     watcher.createListeners.forEach((listener) => {
-      listener({ fsPath: join(root, 'created.pelela') })
-    })
-    watcher.deleteListeners.forEach((listener) => {
-      listener({ fsPath: join(root, 'deleted.pelela') })
+      listener({ fsPath: join(root, WATCHED_TEMPLATE) })
     })
 
-    assert.equal(watcher.createListeners.length, 1)
-    assert.equal(watcher.deleteListeners.length, 1)
+    assert.equal(diagnosticsForDocument(document.uri.fsPath)?.length, 1)
+  })
+
+  it('refreshes diagnostics after a template is deleted', () => {
+    const root = createTempRoot()
+    const document = createDiagnosticDocument(root, WATCHED_TEMPLATE)
+    setOpenTextDocuments([document])
+    activate(createContext())
+    const watcher = getFileSystemWatchers()[0]
+
+    assert.equal(diagnosticsForDocument(document.uri.fsPath), undefined)
+    watcher.deleteListeners.forEach((listener) => {
+      listener({ fsPath: join(root, WATCHED_TEMPLATE) })
+    })
+
+    assert.equal(diagnosticsForDocument(document.uri.fsPath)?.length, 1)
   })
 })
 
