@@ -105,7 +105,11 @@ export function computeComponentFilePath(
   componentPath: string,
   extension: ComponentExtension
 ): string {
-  return join(projectRoot, SRC_DIRECTORY, `${toKebabCase(componentPath)}${extension}`)
+  const componentPathWithinSrc = componentPath.startsWith(`${SRC_DIRECTORY}/`)
+    ? componentPath.slice(SRC_DIRECTORY.length + 1)
+    : componentPath
+
+  return join(projectRoot, SRC_DIRECTORY, `${toKebabCase(componentPathWithinSrc)}${extension}`)
 }
 
 export async function resolveComponentOrReport(

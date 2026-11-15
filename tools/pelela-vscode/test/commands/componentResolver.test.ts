@@ -196,6 +196,15 @@ describe('computeComponentFilePath', () => {
       join(root, SRC_DIRECTORY, `app${TYPESCRIPT_EXTENSION}`)
     )
   })
+
+  it('does not duplicate src when the component path already includes it', () => {
+    const root = createTempRoot()
+
+    assert.equal(
+      computeComponentFilePath(root, 'src/Panel', PELELA_EXTENSION),
+      join(root, SRC_DIRECTORY, `panel${PELELA_EXTENSION}`)
+    )
+  })
 })
 
 describe('resolveComponentOrReport', () => {
