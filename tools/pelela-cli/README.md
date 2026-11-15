@@ -60,12 +60,29 @@ pelela rename [path/componentName] [newComponentName]
 # Mover un componente a otra ruta
 pelela move [path/sourceComponentName] [path/destinationComponentName]
 
+# Agregar una configuración compatible (por ahora, testing)
+pelela add testing
+
 # Mostrar versión
 pelela --version
 
 # Mostrar ayuda
 pelela --help
 ```
+
+### Agregar testing
+
+Configura Vitest en el proyecto actual (dependencias, script, `vitest.config.ts` y extensiones recomendadas de VS Code):
+
+```bash
+pelela add testing
+```
+
+Si el proyecto ya tiene Vitest configurado, el comando no vuelve a aplicar el preset y termina sin error, para que se pueda ejecutar de forma segura más de una vez.
+
+### Variables de entorno
+
+- `PELELA_SKIP_UPDATE_CHECK=1` desactiva la verificación de nuevas versiones contra el registro de NPM. La extensión de VS Code la usa para ejecutar los comandos sin llamadas de red.
 
 ### Crear componentes
 

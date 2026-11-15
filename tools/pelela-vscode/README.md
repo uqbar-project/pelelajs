@@ -8,10 +8,12 @@ VS Code extension for the Pelela language.
 pelela-vscode/
 ├── src/
 │   ├── extension.ts           # Main entry point
+│   ├── commands/              # Rename, move, new component and add testing
 │   ├── parsers/               # Parsing logic (.pelela and .ts)
 │   ├── providers/             # VSCode LSP providers
 │   └── utils/                 # Parsing and file utilities
 ├── test/
+│   ├── commands/              # CLI command tests
 │   ├── parsers/               # Parser tests
 │   ├── utils/                 # Utility tests
 │   ├── setup.ts               # Mocha test setup and module hooking
@@ -36,10 +38,27 @@ pelela-vscode/
 
 ## Technical Features
 
+- ✅ **CLI commands**: Rename, move, create components and add testing from the editor
 - ✅ **TypeScript**: Modern DX with static typing
 - ✅ **tsx**: Script execution and unit testing
 - ✅ **tsup**: Optimized CommonJS bundling (required by VSCode)
 - ✅ **CommonJS Compatibility**: Maintains compatibility with Node's assert module and VSCode runtime
+
+## Commands
+
+| Command | Where | CLI invocation |
+| --- | --- | --- |
+| `Pelela: Rename component` | `.pelela` or `src/**/*.ts` context menu, command palette | `pelela rename <component> <newName>` |
+| `Pelela: Move component` | `.pelela` or `src/**/*.ts` context menu, command palette | `pelela move <component> <destination>` |
+| `Pelela: New component` | Folder context menu, command palette | `pelela new <folder/name>` |
+| `Pelela: Add testing` | Command palette | `pelela add testing` |
+
+The commands run the CLI installed in the project (`node_modules/pelelajs`) with `node`, without a shell, so they behave the same on Windows. A `.ts` file is treated as a component only when its sibling `.pelela` template exists.
+
+Settings:
+
+- `pelela.cli.path`: entrypoint override; empty by default.
+- `pelela.cli.nodePath`: Node.js executable; defaults to `node`.
 
 ## Development
 

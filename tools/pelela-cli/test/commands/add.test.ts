@@ -20,9 +20,11 @@ describe('addCommand', () => {
   beforeEach(() => {
     mockedShell.resolvePath.mockClear()
     mockedTestingPreset.applyTestingPreset.mockClear()
+    mockedTestingPreset.isTestingConfigured.mockClear()
     mockedShell.installDependencies.mockClear()
     mockedShell.resolvePath.mockReturnValue(PROJECT_PATH)
     mockedTestingPreset.applyTestingPreset.mockImplementation(() => undefined)
+    mockedTestingPreset.isTestingConfigured.mockReturnValue(false)
     mockedShell.installDependencies.mockImplementation(() => undefined)
   })
 
@@ -58,5 +60,18 @@ describe('addCommand', () => {
     )
     expect(mockedTestingPreset.applyTestingPreset).not.toHaveBeenCalled()
     expect(mockedShell.installDependencies).not.toHaveBeenCalled()
+  })
+
+  it('is a no-op when testing is already configured', () => {
+    mockedTestingPreset.isTestingConfigured.mockReturnValue(true)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+
+    addCommand({ preset: 'testing' })
+
+    expect(mockedTestingPreset.isTestingConfigured).toHaveBeenCalledWith(PROJECT_PATH)
+    expect(mockedTestingPreset.applyTestingPreset).not.toHaveBeenCalled()
+    expect(mockedShell.installDependencies).not.toHaveBeenCalled()
+    expect(logSpy).toHaveBeenCalledTimes(1)
+    expect(logSpy).toHaveBeenCalledWith(chalk.green(t('commands.add.messages.alreadyConfigured')))
   })
 })

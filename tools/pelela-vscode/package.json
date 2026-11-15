@@ -48,6 +48,72 @@
   },
   "dependencies": {},
   "contributes": {
+    "commands": [
+      {
+        "command": "pelela.renameComponent",
+        "title": "%renameComponent%",
+        "category": "Pelela"
+      },
+      {
+        "command": "pelela.moveComponent",
+        "title": "%moveComponent%",
+        "category": "Pelela"
+      },
+      {
+        "command": "pelela.newComponent",
+        "title": "%newComponent%",
+        "category": "Pelela"
+      },
+      {
+        "command": "pelela.addTesting",
+        "title": "%addTesting%",
+        "category": "Pelela"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "pelela.renameComponent",
+          "when": "resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|\\/)src\\//)",
+          "group": "pelela@1"
+        },
+        {
+          "command": "pelela.moveComponent",
+          "when": "resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|\\/)src\\//)",
+          "group": "pelela@2"
+        },
+        {
+          "command": "pelela.newComponent",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@10"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "pelela.renameComponent",
+          "when": "editorLangId == pelela"
+        },
+        {
+          "command": "pelela.moveComponent",
+          "when": "editorLangId == pelela"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Pelela",
+      "properties": {
+        "pelela.cli.path": {
+          "type": "string",
+          "default": "",
+          "description": "%cliPathDescription%"
+        },
+        "pelela.cli.nodePath": {
+          "type": "string",
+          "default": "node",
+          "description": "%cliNodePathDescription%"
+        }
+      }
+    },
     "languages": [
       {
         "id": "pelela",

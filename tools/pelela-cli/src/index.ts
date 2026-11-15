@@ -7,9 +7,9 @@ import { newCommand } from './commands/new'
 import { renameCommand } from './commands/rename'
 import { initializeI18n, t } from './utils/i18n'
 import { getRequiredNodeVersion, isSupportedNodeVersion } from './utils/nodeVersion'
-import { checkNewVersion, getCliVersion } from './utils/version'
+import { getCliVersion, notifyNewVersion } from './utils/version'
 
-const { log, warn } = console
+const { warn } = console
 
 function validateNodeVersion(): void {
   const requiredNodeVersion = getRequiredNodeVersion()
@@ -98,20 +98,7 @@ async function main(): Promise<void> {
 
   await program.parseAsync(process.argv)
 
-  try {
-    const versionInfo = await checkNewVersion()
-    if (versionInfo.hasUpdate) {
-      log(
-        chalk.yellow.bold(
-          `\n${t('messages.newVersionAvailable', { version: versionInfo.latest })}`,
-        ),
-      )
-      log(chalk.dim(`  ${t('messages.updateCommand')}\n`))
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    warn(chalk.dim(t('messages.versionCheckFailed', { error: errorMessage })))
-  }
+  await notifyNewVersion()
 }
 
 main().catch((error) => {

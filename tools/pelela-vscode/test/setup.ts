@@ -1,5 +1,6 @@
 import Module from 'node:module'
-import { vscodeStub } from './vscode-stub'
+import { cleanupTempDirectories } from './commands/helpers'
+import { resetVscodeStub, vscodeStub } from './vscode-stub'
 
 const originalRequire = Module.prototype.require
 
@@ -8,4 +9,11 @@ Module.prototype.require = function (id: string) {
     return vscodeStub
   }
   return originalRequire.apply(this, [id])
+}
+
+export const mochaHooks = {
+  afterEach() {
+    resetVscodeStub()
+    cleanupTempDirectories()
+  },
 }

@@ -100,8 +100,45 @@ const hover = {
   constHelp: 'Pelela: constant value binding to a child component',
 } as const satisfies TranslationSchema['hover']
 
+const commands = {
+  rename: {
+    title: 'Rename component',
+    prompt: 'New component name',
+    success: 'Component renamed to "{{name}}".',
+  },
+  move: {
+    title: 'Move component',
+    prompt: 'Destination path',
+    hint: 'The last segment of the destination is the component name.',
+    success: 'Component moved to "{{path}}".',
+  },
+  new: {
+    title: 'New component',
+    prompt: 'Component name (PascalCase)',
+    success: 'Component "{{name}}" created.',
+  },
+  addTesting: {
+    title: 'Add testing',
+  },
+  quickPick: {
+    project: 'Pick the Pelela project',
+  },
+  error: {
+    noComponentSelected: 'No component is selected.',
+    notAComponent:
+      '"{{file}}" is not a Pelela component: "{{pelelaFile}}" is missing in the same folder.',
+    outsideSrc: '"{{file}}" is outside the project src folder.',
+    projectNotFound: 'No Pelela project found. Open a folder with package.json and src/.',
+    cliNotFound: 'Pelela CLI not found. Install it with "pnpm add pelelajs" in the project.',
+    cliFailed: 'Pelela CLI failed to run "{{command}}": {{error}}',
+    cliFailedWithoutOutput: 'Pelela CLI failed without output.',
+    emptyName: 'The name cannot be empty.',
+  },
+} as const satisfies TranslationSchema['commands']
+
 export const en = {
   diagnostics,
   completions,
   hover,
+  commands,
 } as const satisfies TranslationSchema

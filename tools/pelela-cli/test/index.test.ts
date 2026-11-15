@@ -2,7 +2,8 @@ import { execFile } from 'node:child_process'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { getRequiredNodeVersion, isSupportedNodeVersion } from '../src/utils/nodeVersion'
 
 const execFileAsync = promisify(execFile)
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -39,31 +40,43 @@ describe('CLI structure', () => {
     expect(Command).toBeDefined()
   })
 
-  it('runs the standalone CLI entrypoint in ESM mode and prints the version', async () => {
-    const result = await runCli(['--version'])
+  describe('CLI entrypoint', () => {
+    beforeAll(() => {
+      if (!isSupportedNodeVersion(process.version)) {
+        const nodeVersionDetails = [
+          `CLI integration tests require Node.js ${getRequiredNodeVersion()}.`,
+          `Current version: ${process.version}.`,
+        ]
+        throw new Error(nodeVersionDetails.join(' '))
+      }
+    })
 
-    expect(result.stdout).toMatch(/\d+\.\d+\.\d+/)
-    expect(result.stderr).toBe('')
-  })
+    it('runs the standalone CLI entrypoint in ESM mode and prints the version', async () => {
+      const result = await runCli(['--version'])
 
-  it('shows the testing option in the init command help', async () => {
-    const result = await runCli(['init', '--help'])
+      expect(result.stdout).toMatch(/\d+\.\d+\.\d+/)
+      expect(result.stderr).toBe('')
+    })
 
-    expect(result.stdout).toContain('-T, --testing')
-    expect(result.stderr).toBe('')
-  })
+    it('shows the testing option in the init command help', async () => {
+      const result = await runCli(['init', '--help'])
 
-  it('shows the add preset command in the CLI help', async () => {
-    const result = await runCli(['add', '--help'])
+      expect(result.stdout).toContain('-T, --testing')
+      expect(result.stderr).toBe('')
+    })
 
-    expect(result.stdout).toContain('add [options] <preset>')
-    expect(result.stderr).toBe('')
-  })
+    it('shows the add preset command in the CLI help', async () => {
+      const result = await runCli(['add', '--help'])
 
-  it('shows the move command in the CLI help', async () => {
-    const result = await runCli(['move', '--help'])
+      expect(result.stdout).toContain('add [options] <preset>')
+      expect(result.stderr).toBe('')
+    })
 
-    expect(result.stdout).toContain('move [options]')
-    expect(result.stderr).toBe('')
+    it('shows the move command in the CLI help', async () => {
+      const result = await runCli(['move', '--help'])
+
+      expect(result.stdout).toContain('move [options]')
+      expect(result.stderr).toBe('')
+    })
   })
 })

@@ -12,6 +12,27 @@ The extension is designed to bridge the gap between the declarative `.pelela` te
 
 - **Go to Definition:** Navigating from a bound property in the template directly to its declaration in the TypeScript file.
 
+## CLI Commands
+
+The extension exposes the project CLI operations in the editor, so students do not have to switch to a terminal:
+
+| Command | Available from | CLI invocation |
+| --- | --- | --- |
+| `Pelela: Rename component` | Explorer context menu, command palette | `pelela rename <component> <newName>` |
+| `Pelela: Move component` | Explorer context menu, command palette | `pelela move <component> <destination>` |
+| `Pelela: New component` | Explorer context menu on a folder | `pelela new <folder/name>` |
+| `Pelela: Add testing` | Command palette | `pelela add testing` |
+
+Rename and move require a sibling `.pelela` template: a `.ts` file without one is reported as not a component before the CLI runs. The extension only validates that the input is not empty; name validation stays in the CLI, which is the single source of truth.
+
+The commands spawn `node <entrypoint>` without a shell. The entrypoint is read from the `bin` field of the `pelelajs` package installed in the project (or the monorepo root), so the same code path works on Windows and POSIX. All arguments reach the CLI with forward slashes, and the process receives `NO_COLOR=1`, `FORCE_COLOR=0` and `PELELA_SKIP_UPDATE_CHECK=1`.
+
+### Settings
+
+- `pelela.cli.path`: entrypoint override. Empty by default (use the installed package).
+- `pelela.cli.nodePath`: Node.js executable used to run the CLI. Defaults to `node`.
+
+
 ## Architectural Overview
 
 The extension operates as a standard VSCode Language Client/Server model.

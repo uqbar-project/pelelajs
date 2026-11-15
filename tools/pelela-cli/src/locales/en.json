@@ -28,6 +28,7 @@
         "unknownPreset": "Unknown preset \"{{preset}}\""
       },
       "messages": {
+        "alreadyConfigured": "ℹ️ Testing is already configured in this project",
         "testingApplied": "✅ Testing configuration applied and dependencies installed successfully"
       }
     },

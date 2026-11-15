@@ -82,6 +82,38 @@ function readJsonObject(filePath: string): Record<string, unknown> {
   return content
 }
 
+const TESTING_CONFIG_FILES = ['vitest.config.ts', 'vitest.config.mts', 'vitest.config.js'] as const
+const TESTING_DEPENDENCY = 'vitest'
+const DEPENDENCY_SECTIONS = ['dependencies', 'devDependencies'] as const
+
+function hasTestingDependency(packageJsonPath: string): boolean {
+  try {
+    const packageJson: unknown = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+    if (!isRecord(packageJson)) {
+      return false
+    }
+
+    return DEPENDENCY_SECTIONS.some((section) => {
+      const dependencies = packageJson[section]
+      return isRecord(dependencies) && Object.hasOwn(dependencies, TESTING_DEPENDENCY)
+    })
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Tells whether the project already has a testing setup, so applying the
+ * preset again can be a no-op instead of failing its own conflict checks.
+ */
+export function isTestingConfigured(projectPath: string): boolean {
+  const hasConfigFile = TESTING_CONFIG_FILES.some((configFile) =>
+    existsSync(join(projectPath, configFile)),
+  )
+
+  return hasConfigFile || hasTestingDependency(join(projectPath, 'package.json'))
+}
+
 function readTestingPresetManifest(presetDirectory: string): TestingPresetManifest {
   const manifestPath = join(presetDirectory, 'preset.json')
   const manifest = readJsonValue(manifestPath)

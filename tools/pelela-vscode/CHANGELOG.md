@@ -1,5 +1,8 @@
 # CHANGELOG - Pelela VSCode Extension
 
+## Unreleased
+- ⌨️ Rename, move, create components and add testing from the editor
+
 ## vscode-v1.2.1 - 2026-09-11
 - 🪲 Fix view model analysis dependency
 

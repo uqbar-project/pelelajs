@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { initializeI18n, t } from '../../src/utils/i18n'
 import { getTemplatePath } from '../../src/utils/templates'
-import { applyTestingPreset } from '../../src/utils/testingPreset'
+import { applyTestingPreset, isTestingConfigured } from '../../src/utils/testingPreset'
 
 const PRESET_FILES_PATH = join(dirname(getTemplatePath()), 'presets', 'testing', 'files')
 const PACKAGE_JSON_NAME = 'package.json'
@@ -314,5 +314,82 @@ describe('applyTestingPreset', () => {
 
     const extensions = JSON.parse(readFileSync(join(projectPath, EXTENSIONS_CONFIG_PATH), 'utf-8'))
     expect(extensions.recommendations).toEqual(['vitest.explorer'])
+  })
+})
+
+describe('isTestingConfigured', () => {
+  let projectPath: string
+
+  beforeEach(() => {
+    projectPath = mkdtempSync(join(tmpdir(), 'testing-configured-test-'))
+  })
+
+  afterEach(() => {
+    rmSync(projectPath, { recursive: true, force: true })
+  })
+
+  function writePackageJson(content: unknown): void {
+    writeFileSync(join(projectPath, PACKAGE_JSON_NAME), JSON.stringify(content))
+  }
+
+  it('detects vitest in devDependencies', () => {
+    writePackageJson({ name: 'sample-project', devDependencies: { vitest: '4.0.14' } })
+
+    expect(isTestingConfigured(projectPath)).toBe(true)
+  })
+
+  it('detects vitest in dependencies', () => {
+    writePackageJson({ name: 'sample-project', dependencies: { vitest: '4.0.14' } })
+
+    expect(isTestingConfigured(projectPath)).toBe(true)
+  })
+
+  it('detects a vitest config file', () => {
+    writePackageJson({ name: 'sample-project' })
+    writeFileSync(join(projectPath, VITEST_CONFIG_NAME), '')
+
+    expect(isTestingConfigured(projectPath)).toBe(true)
+  })
+
+  it('detects a vitest config file with the mts extension', () => {
+    writePackageJson({ name: 'sample-project' })
+    writeFileSync(join(projectPath, 'vitest.config.mts'), '')
+
+    expect(isTestingConfigured(projectPath)).toBe(true)
+  })
+
+  it('detects a vitest config file with the js extension', () => {
+    writePackageJson({ name: 'sample-project' })
+    writeFileSync(join(projectPath, 'vitest.config.js'), '')
+
+    expect(isTestingConfigured(projectPath)).toBe(true)
+  })
+
+  it('reports a project without testing configuration', () => {
+    writePackageJson({ name: 'sample-project', dependencies: { pelelajs: 'latest' } })
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports a project without package.json as not configured', () => {
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports malformed package.json as not configured', () => {
+    writeFileSync(join(projectPath, PACKAGE_JSON_NAME), '{ invalid json')
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports package.json that is not an object as not configured', () => {
+    writePackageJson(['sample-project'])
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports a configured vitest config in a project without package.json', () => {
+    writeFileSync(join(projectPath, VITEST_CONFIG_NAME), '')
+
+    expect(isTestingConfigured(projectPath)).toBe(true)
   })
 })

@@ -1,9 +1,9 @@
 import * as fs from 'node:fs'
 import type * as vscode from 'vscode'
+import { toPelelaPath, toViewModelPath } from './componentPaths'
 
 export function findViewModelFile(pelelaUri: vscode.Uri): string | null {
-  const pelelaPath = pelelaUri.fsPath
-  const tsPath = pelelaPath.replace(/\.pelela$/, '.ts')
+  const tsPath = toViewModelPath(pelelaUri.fsPath)
   if (fs.existsSync(tsPath)) {
     return tsPath
   }
@@ -11,7 +11,7 @@ export function findViewModelFile(pelelaUri: vscode.Uri): string | null {
 }
 
 export function findPelelaFile(tsPath: string): string | null {
-  const pelelaPath = tsPath.replace(/\.ts$/, '.pelela')
+  const pelelaPath = toPelelaPath(tsPath)
   if (fs.existsSync(pelelaPath)) {
     return pelelaPath
   }

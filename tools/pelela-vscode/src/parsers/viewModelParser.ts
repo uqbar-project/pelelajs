@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as ts from 'typescript'
+import { TYPESCRIPT_EXTENSION } from '../utils/componentPaths'
 
 export interface ViewModelMembers {
   properties: string[]
@@ -1641,9 +1642,9 @@ function resolveModulePath(currentFilePath: string, moduleSpecifier: string): st
   if (!moduleSpecifier.startsWith('.')) return null
   const directory = path.dirname(currentFilePath)
   const resolvedBase = path.resolve(directory, moduleSpecifier)
-  const typescriptPath = `${resolvedBase}.ts`
+  const typescriptPath = `${resolvedBase}${TYPESCRIPT_EXTENSION}`
   if (fs.existsSync(typescriptPath)) return typescriptPath
-  const indexPath = path.join(resolvedBase, 'index.ts')
+  const indexPath = path.join(resolvedBase, `index${TYPESCRIPT_EXTENSION}`)
   if (fs.existsSync(indexPath)) return indexPath
   return null
 }
@@ -1652,7 +1653,12 @@ export function extractInterfaceProperties(
   fullFileContent: string,
   interfaceName: string
 ): string[] {
-  const sourceFile = ts.createSourceFile('temp.ts', fullFileContent, ts.ScriptTarget.Latest, true)
+  const sourceFile = ts.createSourceFile(
+    `temp${TYPESCRIPT_EXTENSION}`,
+    fullFileContent,
+    ts.ScriptTarget.Latest,
+    true
+  )
   const declaration = sourceFile.statements.find(
     (statement): statement is ts.InterfaceDeclaration =>
       ts.isInterfaceDeclaration(statement) && statement.name?.text === interfaceName

@@ -8,6 +8,7 @@ import {
   findNestedPropertyDefinition,
 } from '../parsers/definitionFinder'
 import { type ForEachResult, findForEachInElement } from '../parsers/documentParser'
+import { PELELA_EXTENSION } from '../utils/componentPaths'
 import { findViewModelFile } from '../utils/fileUtils'
 
 const BIND_ATTRIBUTE_PATTERN = /(?:bind-[a-zA-Z0-9_-]+|if|for-each)=["']([^"']+)["']/g
@@ -54,12 +55,12 @@ function resolveComponentDefinition(
   }
 
   const currentDir = path.dirname(document.uri.fsPath)
-  const localPelelaPath = path.join(currentDir, `${tagName}.pelela`)
+  const localPelelaPath = path.join(currentDir, `${tagName}${PELELA_EXTENSION}`)
   if (fs.existsSync(localPelelaPath)) {
     return new vscode.Location(vscode.Uri.file(localPelelaPath), new vscode.Position(0, 0))
   }
 
-  return vscode.workspace.findFiles(`**/${tagName}.pelela`).then((uris) => {
+  return vscode.workspace.findFiles(`**/${tagName}${PELELA_EXTENSION}`).then((uris) => {
     if (uris && uris.length > 0) {
       return new vscode.Location(uris[0], new vscode.Position(0, 0))
     }
