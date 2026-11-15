@@ -25,6 +25,8 @@ describe('addCommand', () => {
     mockedShell.resolvePath.mockReturnValue(PROJECT_PATH)
     mockedTestingPreset.applyTestingPreset.mockImplementation(() => undefined)
     mockedTestingPreset.isTestingConfigured.mockReturnValue(false)
+    mockedTestingPreset.markTestingConfigured.mockClear()
+    mockedTestingPreset.markTestingConfigured.mockImplementation(() => undefined)
     mockedShell.installDependencies.mockImplementation(() => undefined)
   })
 
@@ -39,6 +41,10 @@ describe('addCommand', () => {
 
     expect(mockedTestingPreset.applyTestingPreset).toHaveBeenCalledWith(PROJECT_PATH)
     expect(mockedShell.installDependencies).toHaveBeenCalledWith(PROJECT_PATH)
+    expect(mockedTestingPreset.markTestingConfigured).toHaveBeenCalledWith(PROJECT_PATH)
+    expect(mockedShell.installDependencies.mock.invocationCallOrder[0]).toBeLessThan(
+      mockedTestingPreset.markTestingConfigured.mock.invocationCallOrder[0],
+    )
     expect(logSpy).toHaveBeenCalledTimes(1)
     expect(logSpy).toHaveBeenCalledWith(chalk.green(t('commands.add.messages.testingApplied')))
   })
@@ -51,7 +57,49 @@ describe('addCommand', () => {
     })
 
     expect(() => addCommand({ preset: 'testing' })).toThrow(installationError)
+    expect(mockedTestingPreset.markTestingConfigured).not.toHaveBeenCalled()
     expect(logSpy).not.toHaveBeenCalled()
+  })
+
+  it('retries dependency installation after an interrupted install', () => {
+    const installationError = new Error('installation failed')
+    mockedShell.installDependencies
+      .mockImplementationOnce(() => {
+        throw installationError
+      })
+      .mockImplementationOnce(() => undefined)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+
+    expect(() => addCommand({ preset: 'testing' })).toThrow(installationError)
+    expect(mockedTestingPreset.markTestingConfigured).not.toHaveBeenCalled()
+
+    addCommand({ preset: 'testing' })
+
+    expect(mockedTestingPreset.applyTestingPreset).toHaveBeenCalledTimes(2)
+    expect(mockedShell.installDependencies).toHaveBeenCalledTimes(2)
+    expect(mockedTestingPreset.markTestingConfigured).toHaveBeenCalledWith(PROJECT_PATH)
+    expect(logSpy).toHaveBeenCalledWith(chalk.green(t('commands.add.messages.testingApplied')))
+  })
+
+  it('reapplies the preset after an interrupted preset application', () => {
+    const presetError = new Error('preset application failed')
+    mockedTestingPreset.applyTestingPreset
+      .mockImplementationOnce(() => {
+        throw presetError
+      })
+      .mockImplementationOnce(() => undefined)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+
+    expect(() => addCommand({ preset: 'testing' })).toThrow(presetError)
+    expect(mockedShell.installDependencies).not.toHaveBeenCalled()
+    expect(mockedTestingPreset.markTestingConfigured).not.toHaveBeenCalled()
+
+    addCommand({ preset: 'testing' })
+
+    expect(mockedTestingPreset.applyTestingPreset).toHaveBeenCalledTimes(2)
+    expect(mockedShell.installDependencies).toHaveBeenCalledWith(PROJECT_PATH)
+    expect(mockedTestingPreset.markTestingConfigured).toHaveBeenCalledWith(PROJECT_PATH)
+    expect(logSpy).toHaveBeenCalledWith(chalk.green(t('commands.add.messages.testingApplied')))
   })
 
   it('rejects unsupported presets before applying any configuration', () => {

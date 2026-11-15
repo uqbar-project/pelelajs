@@ -82,36 +82,19 @@ function readJsonObject(filePath: string): Record<string, unknown> {
   return content
 }
 
-const TESTING_CONFIG_FILES = ['vitest.config.ts', 'vitest.config.mts', 'vitest.config.js'] as const
-const TESTING_DEPENDENCY = 'vitest'
-const DEPENDENCY_SECTIONS = ['dependencies', 'devDependencies'] as const
-
-function hasTestingDependency(packageJsonPath: string): boolean {
-  try {
-    const packageJson: unknown = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
-    if (!isRecord(packageJson)) {
-      return false
-    }
-
-    return DEPENDENCY_SECTIONS.some((section) => {
-      const dependencies = packageJson[section]
-      return isRecord(dependencies) && Object.hasOwn(dependencies, TESTING_DEPENDENCY)
-    })
-  } catch {
-    return false
-  }
-}
+const TESTING_SETUP_MARKER = join('node_modules', '.cache', 'pelela', 'testing-preset')
 
 /**
- * Tells whether the project already has a testing setup, so applying the
- * preset again can be a no-op instead of failing its own conflict checks.
+ * Indicates that both preset application and dependency installation completed.
  */
 export function isTestingConfigured(projectPath: string): boolean {
-  const hasConfigFile = TESTING_CONFIG_FILES.some((configFile) =>
-    existsSync(join(projectPath, configFile)),
-  )
+  return existsSync(join(projectPath, TESTING_SETUP_MARKER))
+}
 
-  return hasConfigFile || hasTestingDependency(join(projectPath, 'package.json'))
+export function markTestingConfigured(projectPath: string): void {
+  const markerPath = join(projectPath, TESTING_SETUP_MARKER)
+  mkdirSync(dirname(markerPath), { recursive: true })
+  writeFileSync(markerPath, '')
 }
 
 function readTestingPresetManifest(presetDirectory: string): TestingPresetManifest {

@@ -4,7 +4,11 @@ import { dirname, join } from 'node:path'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { initializeI18n, t } from '../../src/utils/i18n'
 import { getTemplatePath } from '../../src/utils/templates'
-import { applyTestingPreset, isTestingConfigured } from '../../src/utils/testingPreset'
+import {
+  applyTestingPreset,
+  isTestingConfigured,
+  markTestingConfigured,
+} from '../../src/utils/testingPreset'
 
 const PRESET_FILES_PATH = join(dirname(getTemplatePath()), 'presets', 'testing', 'files')
 const PACKAGE_JSON_NAME = 'package.json'
@@ -332,35 +336,21 @@ describe('isTestingConfigured', () => {
     writeFileSync(join(projectPath, PACKAGE_JSON_NAME), JSON.stringify(content))
   }
 
-  it('detects vitest in devDependencies', () => {
+  it('does not treat a Vitest dependency as a completed setup', () => {
     writePackageJson({ name: 'sample-project', devDependencies: { vitest: '4.0.14' } })
 
-    expect(isTestingConfigured(projectPath)).toBe(true)
+    expect(isTestingConfigured(projectPath)).toBe(false)
   })
 
-  it('detects vitest in dependencies', () => {
-    writePackageJson({ name: 'sample-project', dependencies: { vitest: '4.0.14' } })
-
-    expect(isTestingConfigured(projectPath)).toBe(true)
-  })
-
-  it('detects a vitest config file', () => {
+  it('does not treat a Vitest config file as a completed setup', () => {
     writePackageJson({ name: 'sample-project' })
     writeFileSync(join(projectPath, VITEST_CONFIG_NAME), '')
 
-    expect(isTestingConfigured(projectPath)).toBe(true)
+    expect(isTestingConfigured(projectPath)).toBe(false)
   })
 
-  it('detects a vitest config file with the mts extension', () => {
-    writePackageJson({ name: 'sample-project' })
-    writeFileSync(join(projectPath, 'vitest.config.mts'), '')
-
-    expect(isTestingConfigured(projectPath)).toBe(true)
-  })
-
-  it('detects a vitest config file with the js extension', () => {
-    writePackageJson({ name: 'sample-project' })
-    writeFileSync(join(projectPath, 'vitest.config.js'), '')
+  it('recognizes the completion marker', () => {
+    markTestingConfigured(projectPath)
 
     expect(isTestingConfigured(projectPath)).toBe(true)
   })
@@ -387,9 +377,9 @@ describe('isTestingConfigured', () => {
     expect(isTestingConfigured(projectPath)).toBe(false)
   })
 
-  it('reports a configured vitest config in a project without package.json', () => {
+  it('does not treat a config file without a completion marker as configured', () => {
     writeFileSync(join(projectPath, VITEST_CONFIG_NAME), '')
 
-    expect(isTestingConfigured(projectPath)).toBe(true)
+    expect(isTestingConfigured(projectPath)).toBe(false)
   })
 })

@@ -1,7 +1,11 @@
 import chalk from 'chalk'
 import { t } from '../utils/i18n'
 import { installDependencies, resolvePath } from '../utils/shell'
-import { applyTestingPreset, isTestingConfigured } from '../utils/testingPreset'
+import {
+  applyTestingPreset,
+  isTestingConfigured,
+  markTestingConfigured,
+} from '../utils/testingPreset'
 
 export interface AddCommandOptions {
   preset: string
@@ -21,6 +25,7 @@ export function addCommand(options: AddCommandOptions): void {
 
   applyTestingPreset(projectPath)
   installDependencies(projectPath)
+  markTestingConfigured(projectPath)
 
   console.log(chalk.green(t('commands.add.messages.testingApplied')))
 }
