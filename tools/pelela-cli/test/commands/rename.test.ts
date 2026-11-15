@@ -20,6 +20,11 @@ const OLD_CSS = 'src/old.css'
 const NEW_TS = 'src/new.ts'
 const NEW_PELELA = 'src/new.pelela'
 const NEW_CSS = 'src/new.css'
+const SELECTED_COMPONENT_PATH = 'components/NavBar'
+const SELECTED_COMPONENT_BASE_PATH = 'src/components/nav-bar'
+const VIEW_MODEL_COMPONENT_BASE_PATH = 'src/components/different-view-model'
+const DIFFERENT_VIEW_MODEL = 'DifferentViewModel'
+const RENAMED_COMPONENT_BASE_PATH = 'src/components/renamed'
 
 const OLD_CONTENT_TS = 'export class Old {}'
 const OLD_CONTENT_PELELA = '<pelela view-model="Old"></pelela>'
@@ -204,6 +209,31 @@ describe('renameCommand (Integration)', () => {
     expect(readFileSync('src/components/dashboard.pelela', 'utf-8')).toContain(
       'view-model="Dashboard"',
     )
+  })
+
+  it('renames the file selected by name when its view-model class differs', async () => {
+    mkdirSync('src/components', { recursive: true })
+    writeFileSync(`${SELECTED_COMPONENT_BASE_PATH}.ts`, `export class ${DIFFERENT_VIEW_MODEL} {}`)
+    writeFileSync(
+      `${SELECTED_COMPONENT_BASE_PATH}.pelela`,
+      `<pelela view-model="${DIFFERENT_VIEW_MODEL}"></pelela>`,
+    )
+    writeFileSync(`${VIEW_MODEL_COMPONENT_BASE_PATH}.ts`, `export class ${DIFFERENT_VIEW_MODEL} {}`)
+    writeFileSync(
+      `${VIEW_MODEL_COMPONENT_BASE_PATH}.pelela`,
+      `<pelela view-model="${DIFFERENT_VIEW_MODEL}"></pelela>`,
+    )
+
+    await renameCommand({
+      oldComponentName: SELECTED_COMPONENT_PATH,
+      newComponentName: 'Renamed',
+    })
+
+    expect(existsSync(`${SELECTED_COMPONENT_BASE_PATH}.ts`)).toBe(false)
+    expect(existsSync(`${RENAMED_COMPONENT_BASE_PATH}.ts`)).toBe(true)
+    expect(existsSync(`${RENAMED_COMPONENT_BASE_PATH}.pelela`)).toBe(true)
+    expect(existsSync(`${VIEW_MODEL_COMPONENT_BASE_PATH}.ts`)).toBe(true)
+    expect(existsSync(`${VIEW_MODEL_COMPONENT_BASE_PATH}.pelela`)).toBe(true)
   })
 
   it('directs users to move when the new name includes a directory', async () => {

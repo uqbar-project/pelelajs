@@ -64,14 +64,18 @@ describe('resolveComponent', () => {
     )
   })
 
-  it('uses the view model class name as the component path', () => {
+  it('keeps the file name as the CLI component path when the view model name differs', () => {
     const project = createProjectWithWorkspace('NavigationBar')
 
     const resolution = resolveComponent(vscode.Uri.file(project.pelelaPath))
 
     assert.equal(
       resolution.kind === 'component' ? resolution.component.componentPath : undefined,
-      `components/${project.viewModelName}`
+      NAV_BAR_COMPONENT_PATH
+    )
+    assert.equal(
+      resolution.kind === 'component' ? resolution.component.displayName : undefined,
+      project.viewModelName
     )
   })
 

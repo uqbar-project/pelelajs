@@ -23,10 +23,11 @@ import {
 const RENAME_ARGUMENT = 'rename'
 const NEW_NAME = 'NewName'
 const NEW_FILE_NAME = 'new-name.pelela'
+const NAV_BAR_COMPONENT_PATH = `${COMPONENTS_DIRECTORY}/NavBar`
 const THROWN_MESSAGE = 'spawn failed'
 
-function createWorkspaceProject() {
-  const project = createPelelaProject()
+function createWorkspaceProject(viewModelName?: string) {
+  const project = createPelelaProject(viewModelName)
   setWorkspaceFolders([project.root])
   return project
 }
@@ -59,8 +60,8 @@ describe('renameComponent', () => {
     ])
   })
 
-  it('prefills the current component name and renames it', async () => {
-    const project = createWorkspaceProject()
+  it('uses the file name as CLI path while prefilling the view-model name', async () => {
+    const project = createWorkspaceProject('DifferentViewModel')
     setInputBoxResponses([NEW_NAME])
     const { runCli, calls } = createRecordingRunner()
 
@@ -70,7 +71,7 @@ describe('renameComponent', () => {
     assert.equal(lastInputBox()?.value, project.viewModelName)
     assert.deepEqual(calls, [
       {
-        args: [RENAME_ARGUMENT, `components/${project.viewModelName}`, NEW_NAME],
+        args: [RENAME_ARGUMENT, NAV_BAR_COMPONENT_PATH, NEW_NAME],
         cwd: project.root,
       },
     ])

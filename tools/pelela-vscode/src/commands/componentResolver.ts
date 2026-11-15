@@ -46,9 +46,10 @@ function readClassName(pelelaPath: string): string | undefined {
   }
 }
 
-function withClassName(componentPath: string, className: string): string {
+function toCliValidatedComponentPath(componentPath: string): string {
   const folderSegments = componentPath.split('/').slice(0, -1)
-  return [...folderSegments, className].join('/')
+  const componentFileName = toPascalCase(basename(componentPath))
+  return [...folderSegments, componentFileName].join('/')
 }
 
 /**
@@ -87,7 +88,7 @@ export function resolveComponent(uri: vscode.Uri): ComponentResolution {
     kind: 'component',
     component: {
       projectRoot,
-      componentPath: withClassName(componentPath, className),
+      componentPath: toCliValidatedComponentPath(componentPath),
       folderPath,
       pelelaPath,
       displayName: className,
