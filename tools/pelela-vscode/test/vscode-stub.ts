@@ -346,6 +346,7 @@ export const vscodeStub = {
   languages: {
     registerCompletionItemProvider: () => ({ dispose: () => {} }),
     registerDefinitionProvider: () => ({ dispose: () => {} }),
+    registerHoverProvider: () => ({ dispose: () => {} }),
     setTextDocumentLanguage: (document: { uri?: { fsPath?: string } }, languageId: string) => {
       languageChanges.push({
         uri: document.uri?.fsPath ?? '',
