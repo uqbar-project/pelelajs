@@ -25,6 +25,7 @@ export interface CliCommandOptions {
 }
 
 const PELELA_PACKAGE = 'pelelajs'
+const PELELA_CLI_PACKAGE = '@pelelajs/cli'
 const PELELA_BIN = 'pelela'
 const DEFAULT_NODE_PATH = 'node'
 const CLI_CONFIGURATION = 'pelela'
@@ -78,28 +79,34 @@ function readBinEntrypoint(packageJsonPath: string): string | undefined {
     const relativeEntrypoint =
       typeof bin === 'string' ? bin : isRecord(bin) ? bin[PELELA_BIN] : undefined
 
-    return typeof relativeEntrypoint === 'string'
-      ? resolve(dirname(packageJsonPath), relativeEntrypoint)
-      : undefined
+    if (typeof relativeEntrypoint !== 'string') {
+      return undefined
+    }
+
+    const entrypoint = resolve(dirname(packageJsonPath), relativeEntrypoint)
+    return existsSync(entrypoint) ? entrypoint : undefined
   } catch {
     return undefined
   }
 }
 
-function findInstalledEntrypoint(startDirectory: string): string | undefined {
-  const packageJsonPath = join(startDirectory, 'node_modules', PELELA_PACKAGE, 'package.json')
-  if (existsSync(packageJsonPath)) {
-    return readBinEntrypoint(packageJsonPath)
+function findInstalledEntrypoint(startDirectory: string, packageName: string): string | undefined {
+  const packageJsonPath = join(startDirectory, 'node_modules', packageName, 'package.json')
+  const entrypoint = existsSync(packageJsonPath) ? readBinEntrypoint(packageJsonPath) : undefined
+  if (entrypoint !== undefined) {
+    return entrypoint
   }
 
   const parentDirectory = dirname(startDirectory)
-  return parentDirectory === startDirectory ? undefined : findInstalledEntrypoint(parentDirectory)
+  return parentDirectory === startDirectory
+    ? undefined
+    : findInstalledEntrypoint(parentDirectory, packageName)
 }
 
 /**
- * The published `pelelajs` package exposes the CLI as a `bin`, so there is no
- * need for `npx`, network access or the `.bin` shell shims (which break on
- * Windows). An explicit setting wins over the installed package.
+ * The published CLI packages expose the CLI as a `bin`, so there is no need
+ * for `npx`, network access or the `.bin` shell shims (which break on Windows).
+ * An explicit setting wins over the installed package.
  */
 export function resolveCliEntrypoint(options: ResolveCliEntrypointOptions): string {
   const { projectRoot, override } = options
@@ -107,7 +114,9 @@ export function resolveCliEntrypoint(options: ResolveCliEntrypointOptions): stri
     return isAbsolute(override) ? override : resolve(projectRoot, override)
   }
 
-  const entrypoint = findInstalledEntrypoint(projectRoot)
+  const entrypoint =
+    findInstalledEntrypoint(projectRoot, PELELA_PACKAGE) ??
+    findInstalledEntrypoint(projectRoot, PELELA_CLI_PACKAGE)
   if (entrypoint === undefined) {
     throw new Error(t('commands.error.cliNotFound'))
   }

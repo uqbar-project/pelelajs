@@ -21,7 +21,11 @@ const PLAIN_RED_TEXT = 'red'
 const UNSUPPORTED_ANSI_SEQUENCE = `${ESCAPE}[2Jscreen`
 const FAKE_CLI_SCRIPT = 'fake-cli.js'
 const PELELA_PACKAGE_PATH = join('node_modules', 'pelelajs', 'package.json')
+const CLI_PACKAGE_PATH = join('node_modules', '@pelelajs', 'cli', 'package.json')
+const PELELA_BIN_PATH = join('node_modules', 'pelelajs', 'dist', 'cli.cjs')
+const CLI_BIN_PATH = join('node_modules', '@pelelajs', 'cli', 'dist', 'index.js')
 const BIN_STRING = './dist/cli.cjs'
+const CLI_BIN_STRING = './dist/index.js'
 const BIN_WITHOUT_PELELA = JSON.stringify({ name: 'pelelajs', bin: { other: './other.js' } })
 const MALFORMED_PACKAGE_JSON = '{ invalid json'
 const PELELA_COMMAND = 'rename'
@@ -38,6 +42,13 @@ function writeFakeCli(root: string, source: string): string {
 
 function writePelelaPackage(projectRoot: string, content: string): string {
   writeProjectFile(projectRoot, PELELA_PACKAGE_PATH, content)
+  writeProjectFile(projectRoot, PELELA_BIN_PATH, '')
+  return projectRoot
+}
+
+function writeCliPackage(projectRoot: string, content: string): string {
+  writeProjectFile(projectRoot, CLI_PACKAGE_PATH, content)
+  writeProjectFile(projectRoot, CLI_BIN_PATH, '')
   return projectRoot
 }
 
@@ -113,6 +124,32 @@ describe('resolveCliEntrypoint', () => {
       resolveCliEntrypoint({ projectRoot }),
       join(monorepoRoot, 'node_modules', 'pelelajs', 'dist', 'cli.cjs')
     )
+  })
+
+  it('resolves the bin of the standalone CLI package', () => {
+    const projectRoot = createTempRoot()
+    writeCliPackage(
+      projectRoot,
+      JSON.stringify({ name: '@pelelajs/cli', bin: { pelela: CLI_BIN_STRING } })
+    )
+
+    assert.equal(
+      resolveCliEntrypoint({ projectRoot }),
+      join(projectRoot, 'node_modules', '@pelelajs', 'cli', 'dist', 'index.js')
+    )
+  })
+
+  it('does not resolve a bin entrypoint that is missing from its package', () => {
+    const projectRoot = createTempRoot()
+    writeProjectFile(
+      projectRoot,
+      PELELA_PACKAGE_PATH,
+      JSON.stringify({ name: 'pelelajs', bin: BIN_STRING })
+    )
+
+    assert.throws(() => resolveCliEntrypoint({ projectRoot }), {
+      message: t('commands.error.cliNotFound'),
+    })
   })
 
   it('fails when the installed package has no pelela bin', () => {
