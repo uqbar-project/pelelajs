@@ -17,6 +17,7 @@ import {
   createPelelaProject,
   createTempRoot,
   NAV_BAR_PELELA_PATH,
+  PELELA_PACKAGE_JSON,
   pelelaTemplate,
   SRC_DIRECTORY,
   writeProjectFile,
@@ -283,6 +284,19 @@ describe('selectProjectRoot', () => {
     assert.deepEqual(await selectProjectRoot(), {
       kind: 'selected',
       projectRoot: project.root,
+    })
+  })
+
+  it('selects a nested Pelela project when the single workspace root has no src', async () => {
+    const workspaceRoot = createTempRoot()
+    const projectRoot = join(workspaceRoot, 'app')
+    writeProjectFile(projectRoot, 'package.json', PELELA_PACKAGE_JSON)
+    mkdirSync(join(projectRoot, SRC_DIRECTORY), { recursive: true })
+    setWorkspaceFolders([workspaceRoot])
+
+    assert.deepEqual(await selectProjectRoot(), {
+      kind: 'selected',
+      projectRoot,
     })
   })
 

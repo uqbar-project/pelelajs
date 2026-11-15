@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import * as vscode from 'vscode'
 
@@ -6,6 +6,7 @@ const PELELA_DEPENDENCIES = ['pelelajs', '@pelelajs/cli'] as const
 const DEPENDENCY_SECTIONS = ['dependencies', 'devDependencies'] as const
 const SRC_DIRECTORY = 'src'
 const PACKAGE_JSON = 'package.json'
+const IGNORED_DIRECTORIES = new Set(['.git', 'dist', 'node_modules'])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -36,6 +37,21 @@ function hasSrcDirectory(directory: string): boolean {
 
 function isProjectRoot(directory: string): boolean {
   return declaresPelelaDependency(join(directory, PACKAGE_JSON)) && hasSrcDirectory(directory)
+}
+
+function findNestedProjectRoots(directory: string): string[] {
+  if (!existsSync(directory) || !statSync(directory).isDirectory()) {
+    return []
+  }
+
+  const nestedDirectories = readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !IGNORED_DIRECTORIES.has(entry.name))
+    .map((entry) => join(directory, entry.name))
+
+  return [
+    ...(isProjectRoot(directory) ? [directory] : []),
+    ...nestedDirectories.flatMap(findNestedProjectRoots),
+  ]
 }
 
 function collectAncestors(startDirectory: string, boundary: string): string[] {
@@ -83,7 +99,14 @@ export function findProjectRoot(uri: vscode.Uri): string | undefined {
 
 export function listWorkspaceProjectRoots(): string[] {
   const workspaceFolders = vscode.workspace.workspaceFolders ?? []
-  return workspaceFolders
-    .map((workspaceFolder) => workspaceFolder.uri.fsPath)
-    .filter(hasSrcDirectory)
+  const projectRoots = workspaceFolders.flatMap((workspaceFolder) => {
+    const workspaceRoot = workspaceFolder.uri.fsPath
+    const nestedProjectRoots = findNestedProjectRoots(workspaceRoot)
+
+    return hasSrcDirectory(workspaceRoot)
+      ? [workspaceRoot, ...nestedProjectRoots]
+      : nestedProjectRoots
+  })
+
+  return [...new Set(projectRoots)]
 }
