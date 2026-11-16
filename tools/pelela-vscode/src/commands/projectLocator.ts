@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { type Dirent, existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import * as vscode from 'vscode'
 
@@ -39,19 +39,45 @@ function isProjectRoot(directory: string): boolean {
   return declaresPelelaDependency(join(directory, PACKAGE_JSON)) && hasSrcDirectory(directory)
 }
 
+function reportDirectoryAccessError(
+  operation: 'stat' | 'read',
+  directory: string,
+  error: unknown
+): void {
+  console.warn(`Unable to ${operation} project directory "${directory}":`, error)
+}
+
 function findNestedProjectRoots(directory: string): string[] {
-  if (!existsSync(directory) || !statSync(directory).isDirectory()) {
+  if (!existsSync(directory)) {
     return []
   }
 
-  const nestedDirectories = readdirSync(directory, { withFileTypes: true })
+  let isDirectory: boolean
+  try {
+    isDirectory = statSync(directory).isDirectory()
+  } catch (error) {
+    reportDirectoryAccessError('stat', directory, error)
+    return []
+  }
+
+  if (!isDirectory) {
+    return []
+  }
+
+  const projectRoots = isProjectRoot(directory) ? [directory] : []
+  let entries: Dirent[]
+  try {
+    entries = readdirSync(directory, { withFileTypes: true })
+  } catch (error) {
+    reportDirectoryAccessError('read', directory, error)
+    return projectRoots
+  }
+
+  const nestedDirectories = entries
     .filter((entry) => entry.isDirectory() && !IGNORED_DIRECTORIES.has(entry.name))
     .map((entry) => join(directory, entry.name))
 
-  return [
-    ...(isProjectRoot(directory) ? [directory] : []),
-    ...nestedDirectories.flatMap(findNestedProjectRoots),
-  ]
+  return [...projectRoots, ...nestedDirectories.flatMap(findNestedProjectRoots)]
 }
 
 function collectAncestors(startDirectory: string, boundary: string): string[] {

@@ -57,8 +57,7 @@ function hasRequiredStringEntries(
 
 function hasRequiredStringValues(value: unknown, requiredValues: string[]): boolean {
   return (
-    isStringArray(value) &&
-    requiredValues.every((requiredValue) => value.includes(requiredValue))
+    isStringArray(value) && requiredValues.every((requiredValue) => value.includes(requiredValue))
   )
 }
 

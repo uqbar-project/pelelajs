@@ -1,7 +1,8 @@
 import * as assert from 'node:assert/strict'
 import { mkdirSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { join } from 'node:path'
-import { describe, it } from 'mocha'
+import { afterEach, describe, it } from 'mocha'
 import * as vscode from 'vscode'
 import {
   findProjectRoot,
@@ -16,12 +17,48 @@ const SRC_DIRECTORY = 'src'
 const COMPONENTS_DIRECTORY = 'components'
 const COMPONENT_FILE = 'nav-bar.pelela'
 const PACKAGE_JSON = 'package.json'
+const UNREADABLE_PROJECT_DIRECTORY = 'unreadable'
+const ACCESSIBLE_PROJECT_DIRECTORY = 'accessible'
+const STAT_FAILURE_PROJECT_DIRECTORY = 'stat-failure'
+const fileSystem = createRequire(__filename)('node:fs') as typeof import('node:fs')
+const originalReaddirSync = fileSystem.readdirSync
+const originalStatSync = fileSystem.statSync
 
-function createNestedProject(root: string, packageJson: string = PELELA_PACKAGE_JSON): string {
-  const projectPath = join(root, APP_DIRECTORY)
+function createNestedProject(
+  root: string,
+  packageJson: string = PELELA_PACKAGE_JSON,
+  projectDirectory: string = APP_DIRECTORY
+): string {
+  const projectPath = join(root, projectDirectory)
   writeProjectFile(projectPath, PACKAGE_JSON, packageJson)
   mkdirSync(join(projectPath, SRC_DIRECTORY, COMPONENTS_DIRECTORY), { recursive: true })
   return projectPath
+}
+
+function failReadFor(directory: string): void {
+  Object.defineProperty(fileSystem, 'readdirSync', {
+    configurable: true,
+    value: (path: string, options: { withFileTypes: true }) => {
+      if (path === directory) {
+        throw new Error('Directory cannot be read')
+      }
+
+      return originalReaddirSync(path, options)
+    },
+  })
+}
+
+function failStatFor(directory: string): void {
+  Object.defineProperty(fileSystem, 'statSync', {
+    configurable: true,
+    value: (path: string) => {
+      if (path === directory) {
+        throw new Error('Directory no longer exists')
+      }
+
+      return originalStatSync(path)
+    },
+  })
 }
 
 function componentUri(projectPath: string): vscode.Uri {
@@ -122,6 +159,19 @@ describe('findProjectRoot', () => {
 })
 
 describe('listWorkspaceProjectRoots', () => {
+  afterEach(() => {
+    Object.defineProperty(fileSystem, 'readdirSync', {
+      configurable: true,
+      writable: true,
+      value: originalReaddirSync,
+    })
+    Object.defineProperty(fileSystem, 'statSync', {
+      configurable: true,
+      writable: true,
+      value: originalStatSync,
+    })
+  })
+
   it('returns only the workspace folders that contain src', () => {
     const root = createTempRoot()
     const withSrc = join(root, 'with-src')
@@ -135,6 +185,45 @@ describe('listWorkspaceProjectRoots', () => {
 
   it('returns an empty list without workspace folders', () => {
     assert.deepEqual(listWorkspaceProjectRoots(), [])
+  })
+
+  it('continues past an unreadable project directory', () => {
+    const root = createTempRoot()
+    const unreadableProject = createNestedProject(
+      root,
+      PELELA_PACKAGE_JSON,
+      UNREADABLE_PROJECT_DIRECTORY
+    )
+    const accessibleProject = createNestedProject(
+      root,
+      PELELA_PACKAGE_JSON,
+      ACCESSIBLE_PROJECT_DIRECTORY
+    )
+    setWorkspaceFolders([root])
+    failReadFor(unreadableProject)
+
+    assert.deepEqual(
+      listWorkspaceProjectRoots().sort(),
+      [accessibleProject, unreadableProject].sort()
+    )
+  })
+
+  it('continues past a project directory whose stat fails', () => {
+    const root = createTempRoot()
+    const failingProject = createNestedProject(
+      root,
+      PELELA_PACKAGE_JSON,
+      STAT_FAILURE_PROJECT_DIRECTORY
+    )
+    const accessibleProject = createNestedProject(
+      root,
+      PELELA_PACKAGE_JSON,
+      ACCESSIBLE_PROJECT_DIRECTORY
+    )
+    setWorkspaceFolders([root])
+    failStatFor(failingProject)
+
+    assert.deepEqual(listWorkspaceProjectRoots(), [accessibleProject])
   })
 })
 
