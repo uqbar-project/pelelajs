@@ -29,6 +29,8 @@ export function registerPelelaCommands(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(PELELA_COMMANDS.newComponent, (uri?: vscode.Uri) =>
       createComponent(runCli, uri)
     ),
-    vscode.commands.registerCommand(PELELA_COMMANDS.addTesting, () => addTesting(runCli))
+    vscode.commands.registerCommand(PELELA_COMMANDS.addTesting, (uri?: vscode.Uri) =>
+      addTesting(runCli, uri)
+    )
   )
 }

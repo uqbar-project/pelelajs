@@ -108,6 +108,7 @@ type CommandMessages = {
     cliFailed: string
     cliFailedWithoutOutput: string
     emptyName: string
+    componentNamePascalCase: string
   }
 }
 

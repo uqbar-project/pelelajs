@@ -1,8 +1,8 @@
 {
-  "renameComponent": "Rename component",
-  "moveComponent": "Move component",
+  "renameComponent": "✏️ Pelela: Rename component",
+  "moveComponent": "📦 Pelela: Move component",
   "newComponent": "New component",
-  "addTesting": "Add testing",
+  "addTesting": "🧪 Pelela: Add testing",
   "cliPathDescription": "Path to the Pelela CLI entrypoint. Leave it empty to use the CLI installed in the project.",
   "cliNodePathDescription": "Node.js executable used to run the Pelela CLI."
 }

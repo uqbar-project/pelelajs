@@ -38,8 +38,20 @@ describe('validateComponentName', () => {
     assert.equal(validateComponentName('   '), t('commands.error.emptyName'))
   })
 
+  it('explains that component names must use PascalCase', () => {
+    assert.equal(validateComponentName('app'), t('commands.error.componentNamePascalCase'))
+  })
+
   it('accepts a name with content', () => {
     assert.equal(validateComponentName('App'), undefined)
+  })
+
+  it('checks the last path segment while allowing nested component paths', () => {
+    assert.equal(validateComponentName('components/App'), undefined)
+    assert.equal(
+      validateComponentName('components/app'),
+      t('commands.error.componentNamePascalCase')
+    )
   })
 })
 

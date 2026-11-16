@@ -3,8 +3,8 @@ import { t } from '../i18n'
 import { type CliRunner, runCliWithFeedback } from './cliRunner'
 import { selectProjectRoot } from './componentResolver'
 
-export async function addTesting(runCli: CliRunner): Promise<void> {
-  const selection = await selectProjectRoot()
+export async function addTesting(runCli: CliRunner, uri?: vscode.Uri): Promise<void> {
+  const selection = await selectProjectRoot(uri)
 
   if (selection.kind === 'cancelled') {
     return

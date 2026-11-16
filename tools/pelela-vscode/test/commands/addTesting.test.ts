@@ -1,6 +1,7 @@
 import * as assert from 'node:assert/strict'
 import { basename } from 'node:path'
 import { describe, it } from 'mocha'
+import * as vscode from 'vscode'
 import { addTesting } from '../../src/commands/addTesting'
 import { t } from '../../src/i18n'
 import { getMessages, setQuickPickLabel, setWorkspaceFolders } from '../vscode-stub'
@@ -37,6 +38,17 @@ describe('addTesting', () => {
 
     assert.deepEqual(calls, [{ args: [ADD_ARGUMENT, TESTING_PRESET], cwd: project.root }])
     assert.deepEqual(getMessages(), [{ kind: 'information', message: SUCCESS_RESULT.stdout }])
+  })
+
+  it('uses the project root selected in the Explorer context menu', async () => {
+    const project = createPelelaProject()
+    const otherProject = createPelelaProject()
+    setWorkspaceFolders([project.root, otherProject.root])
+    const { runCli, calls } = createRecordingRunner()
+
+    await addTesting(runCli, vscode.Uri.file(project.root))
+
+    assert.deepEqual(calls, [{ args: [ADD_ARGUMENT, TESTING_PRESET], cwd: project.root }])
   })
 
   it('shows the CLI output without surrounding whitespace', async () => {

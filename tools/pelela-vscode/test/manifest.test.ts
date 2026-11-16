@@ -12,16 +12,23 @@ const RENAME_COMMAND = 'pelela.renameComponent'
 const MOVE_COMMAND = 'pelela.moveComponent'
 const NEW_COMMAND = 'pelela.newComponent'
 const ADD_TESTING_COMMAND = 'pelela.addTesting'
+const RENAMING_COMPONENT_TITLE_EN = '✏️ Pelela: Rename component'
+const MOVING_COMPONENT_TITLE_EN = '📦 Pelela: Move component'
+const ADDING_TESTING_TITLE_EN = '🧪 Pelela: Add testing'
+const RENAMING_COMPONENT_TITLE_ES = '✏️ Pelela: Renombrar componente'
+const MOVING_COMPONENT_TITLE_ES = '📦 Pelela: Mover componente'
+const ADDING_TESTING_TITLE_ES = '🧪 Pelela: Agregar testing'
 const COMPONENT_SOURCE_PATH_PATTERN = String.raw`(^|[\/\\])src[\/\\]`
 const COMPONENT_WHEN_PREFIX =
   'resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /'
 const COMPONENT_WHEN = `${COMPONENT_WHEN_PREFIX}${COMPONENT_SOURCE_PATH_PATTERN}/)`
+const TESTING_ROOT_WHEN = 'explorerResourceIsFolder && explorerResourceIsRoot'
 const POSIX_COMPONENT_VIEW_MODEL_PATH = '/workspace/app/src/components/nav-bar.ts'
 const WINDOWS_COMPONENT_VIEW_MODEL_PATH = String.raw`C:\workspace\app\src\components\nav-bar.ts`
 
 interface Manifest {
   contributes: {
-    commands: Array<{ command: string; title: string; category: string }>
+    commands: Array<{ command: string; title: string; category?: string }>
     menus: Record<string, Array<{ command: string; when: string; group?: string }>>
     configuration: {
       title: string
@@ -55,17 +62,32 @@ describe('extension manifest', () => {
 
   it('contributes the four CLI-backed commands', () => {
     assert.deepEqual(manifest.contributes.commands, [
-      { command: RENAME_COMMAND, title: '%renameComponent%', category: 'Pelela' },
-      { command: MOVE_COMMAND, title: '%moveComponent%', category: 'Pelela' },
+      { command: RENAME_COMMAND, title: '%renameComponent%' },
+      { command: MOVE_COMMAND, title: '%moveComponent%' },
       { command: NEW_COMMAND, title: '%newComponent%', category: 'Pelela' },
-      { command: ADD_TESTING_COMMAND, title: '%addTesting%', category: 'Pelela' },
+      { command: ADD_TESTING_COMMAND, title: '%addTesting%' },
     ])
   })
 
-  it('shows the component commands in the explorer context menu', () => {
+  it('brands rename, move, and testing commands in both locales', () => {
+    const en = readJson<Record<string, string>>(NLS_EN_PATH)
+    const es = readJson<Record<string, string>>(NLS_ES_PATH)
+
+    assert.deepEqual(
+      [en.renameComponent, en.moveComponent, en.addTesting],
+      [RENAMING_COMPONENT_TITLE_EN, MOVING_COMPONENT_TITLE_EN, ADDING_TESTING_TITLE_EN]
+    )
+    assert.deepEqual(
+      [es.renameComponent, es.moveComponent, es.addTesting],
+      [RENAMING_COMPONENT_TITLE_ES, MOVING_COMPONENT_TITLE_ES, ADDING_TESTING_TITLE_ES]
+    )
+  })
+
+  it('shows component and project-root testing commands in the explorer context menu', () => {
     assert.deepEqual(manifest.contributes.menus['explorer/context'], [
       { command: RENAME_COMMAND, when: COMPONENT_WHEN, group: 'pelela@1' },
       { command: MOVE_COMMAND, when: COMPONENT_WHEN, group: 'pelela@2' },
+      { command: ADD_TESTING_COMMAND, when: TESTING_ROOT_WHEN, group: 'pelela@3' },
       { command: NEW_COMMAND, when: 'explorerResourceIsFolder', group: 'navigation@10' },
     ])
   })

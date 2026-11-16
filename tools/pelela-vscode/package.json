@@ -51,13 +51,11 @@
     "commands": [
       {
         "command": "pelela.renameComponent",
-        "title": "%renameComponent%",
-        "category": "Pelela"
+        "title": "%renameComponent%"
       },
       {
         "command": "pelela.moveComponent",
-        "title": "%moveComponent%",
-        "category": "Pelela"
+        "title": "%moveComponent%"
       },
       {
         "command": "pelela.newComponent",
@@ -66,8 +64,7 @@
       },
       {
         "command": "pelela.addTesting",
-        "title": "%addTesting%",
-        "category": "Pelela"
+        "title": "%addTesting%"
       }
     ],
     "menus": {
@@ -81,6 +78,11 @@
           "command": "pelela.moveComponent",
           "when": "resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|[\\/\\\\])src[\\/\\\\]/)",
           "group": "pelela@2"
+        },
+        {
+          "command": "pelela.addTesting",
+          "when": "explorerResourceIsFolder && explorerResourceIsRoot",
+          "group": "pelela@3"
         },
         {
           "command": "pelela.newComponent",

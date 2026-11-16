@@ -1,8 +1,8 @@
 {
-  "renameComponent": "Renombrar componente",
-  "moveComponent": "Mover componente",
+  "renameComponent": "✏️ Pelela: Renombrar componente",
+  "moveComponent": "📦 Pelela: Mover componente",
   "newComponent": "Nuevo componente",
-  "addTesting": "Agregar testing",
+  "addTesting": "🧪 Pelela: Agregar testing",
   "cliPathDescription": "Ruta al entrypoint del CLI de Pelela. Dejala vacía para usar el CLI instalado en el proyecto.",
   "cliNodePathDescription": "Ejecutable de Node.js usado para correr el CLI de Pelela."
 }

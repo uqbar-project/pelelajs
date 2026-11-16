@@ -139,10 +139,15 @@ export async function resolveComponentOrReport(
 }
 
 /**
- * Commands invoked from the palette have no resource to inspect, so the project
- * root comes from the workspace folders (a single one, or a QuickPick).
+ * Uses the Explorer resource when invoked from its context menu; commands from
+ * the palette select from the workspace folders.
  */
-export async function selectProjectRoot(): Promise<ProjectSelection> {
+export async function selectProjectRoot(uri?: vscode.Uri): Promise<ProjectSelection> {
+  if (uri !== undefined) {
+    const projectRoot = findProjectRoot(uri)
+    return projectRoot === undefined ? { kind: 'notFound' } : { kind: 'selected', projectRoot }
+  }
+
   const projectRoots = listWorkspaceProjectRoots()
   if (projectRoots.length === 0) {
     return { kind: 'notFound' }

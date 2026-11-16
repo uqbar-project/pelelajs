@@ -103,13 +103,13 @@ const hover = {
 const commands = {
   rename: {
     title: 'Rename component',
-    prompt: 'New component name',
+    prompt: 'New component name (PascalCase, e.g., MyComponent)',
     success: 'Component renamed to "{{name}}".',
   },
   move: {
     title: 'Move component',
-    prompt: 'Destination path',
-    hint: 'The last segment of the destination is the component name.',
+    prompt: 'Destination path, including the component name',
+    hint: 'The last segment is the component name and must be PascalCase (e.g., components/MyComponent).',
     success: 'Component moved to "{{path}}".',
   },
   new: {
@@ -118,7 +118,7 @@ const commands = {
     success: 'Component "{{name}}" created.',
   },
   addTesting: {
-    title: 'Add testing',
+    title: '🧪 Pelela: Add testing',
   },
   quickPick: {
     project: 'Pick the Pelela project',
@@ -133,6 +133,7 @@ const commands = {
     cliFailed: 'Pelela CLI failed to run "{{command}}": {{error}}',
     cliFailedWithoutOutput: 'Pelela CLI failed without output.',
     emptyName: 'The name cannot be empty.',
+    componentNamePascalCase: 'Component name must be PascalCase (e.g., MyComponent).',
   },
 } as const satisfies TranslationSchema['commands']
 

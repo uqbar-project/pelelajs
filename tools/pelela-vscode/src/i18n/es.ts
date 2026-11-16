@@ -105,13 +105,13 @@ const hover = {
 const commands = {
   rename: {
     title: 'Renombrar componente',
-    prompt: 'Nombre nuevo del componente',
+    prompt: 'Nombre nuevo del componente (PascalCase, ej.: MiComponente)',
     success: 'Componente renombrado a "{{name}}".',
   },
   move: {
     title: 'Mover componente',
-    prompt: 'Ruta destino del componente',
-    hint: 'El último segmento del destino es el nombre del componente.',
+    prompt: 'Ruta destino, incluido el nombre del componente',
+    hint: 'El último segmento es el nombre del componente y debe estar en PascalCase (ej.: components/MiComponente).',
     success: 'Componente movido a "{{path}}".',
   },
   new: {
@@ -120,7 +120,7 @@ const commands = {
     success: 'Componente "{{name}}" creado.',
   },
   addTesting: {
-    title: 'Agregar testing',
+    title: '🧪 Pelela: Agregar testing',
   },
   quickPick: {
     project: 'Elegí el proyecto Pelela',
@@ -136,6 +136,7 @@ const commands = {
     cliFailed: 'El CLI de Pelela falló al ejecutar "{{command}}": {{error}}',
     cliFailedWithoutOutput: 'El CLI de Pelela falló sin mostrar detalles.',
     emptyName: 'El nombre no puede estar vacío.',
+    componentNamePascalCase: 'El nombre del componente debe ser PascalCase (ej.: MiComponente).',
   },
 } as const satisfies TranslationSchema['commands']
 
