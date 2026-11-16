@@ -50,7 +50,7 @@ pelela-vscode/
 | --- | --- | --- |
 | `Pelela: Rename component` | `.pelela` or `src/**/*.ts` context menu, command palette | `pelela rename <component> <newName>` |
 | `Pelela: Move component` | `.pelela` or `src/**/*.ts` context menu, command palette | `pelela move <component> <destination>` |
-| `Pelela: New component` | Folder context menu, command palette | `pelela new <folder/name>` |
+| `➕ Pelela: Add new component` | Folder context menu, command palette | `pelela new <folder/name>` |
 | `Pelela: Add testing` | Project root context menu, command palette | `pelela add testing` |
 
 The commands run the CLI installed in the project (`node_modules/pelelajs`) with `node`, without a shell, so they behave the same on Windows. A `.ts` file is treated as a component only when its sibling `.pelela` template exists.

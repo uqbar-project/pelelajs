@@ -12,9 +12,11 @@ const RENAME_COMMAND = 'pelela.renameComponent'
 const MOVE_COMMAND = 'pelela.moveComponent'
 const NEW_COMMAND = 'pelela.newComponent'
 const ADD_TESTING_COMMAND = 'pelela.addTesting'
+const ADDING_COMPONENT_TITLE_EN = '➕ Pelela: Add new component'
 const RENAMING_COMPONENT_TITLE_EN = '✏️ Pelela: Rename component'
 const MOVING_COMPONENT_TITLE_EN = '📦 Pelela: Move component'
 const ADDING_TESTING_TITLE_EN = '🧪 Pelela: Add testing'
+const ADDING_COMPONENT_TITLE_ES = '➕ Pelela: Agregar nuevo componente'
 const RENAMING_COMPONENT_TITLE_ES = '✏️ Pelela: Renombrar componente'
 const MOVING_COMPONENT_TITLE_ES = '📦 Pelela: Mover componente'
 const ADDING_TESTING_TITLE_ES = '🧪 Pelela: Agregar testing'
@@ -64,22 +66,32 @@ describe('extension manifest', () => {
     assert.deepEqual(manifest.contributes.commands, [
       { command: RENAME_COMMAND, title: '%renameComponent%' },
       { command: MOVE_COMMAND, title: '%moveComponent%' },
-      { command: NEW_COMMAND, title: '%newComponent%', category: 'Pelela' },
+      { command: NEW_COMMAND, title: '%newComponent%' },
       { command: ADD_TESTING_COMMAND, title: '%addTesting%' },
     ])
   })
 
-  it('brands rename, move, and testing commands in both locales', () => {
+  it('brands component and testing commands in both locales', () => {
     const en = readJson<Record<string, string>>(NLS_EN_PATH)
     const es = readJson<Record<string, string>>(NLS_ES_PATH)
 
     assert.deepEqual(
-      [en.renameComponent, en.moveComponent, en.addTesting],
-      [RENAMING_COMPONENT_TITLE_EN, MOVING_COMPONENT_TITLE_EN, ADDING_TESTING_TITLE_EN]
+      [en.newComponent, en.renameComponent, en.moveComponent, en.addTesting],
+      [
+        ADDING_COMPONENT_TITLE_EN,
+        RENAMING_COMPONENT_TITLE_EN,
+        MOVING_COMPONENT_TITLE_EN,
+        ADDING_TESTING_TITLE_EN,
+      ]
     )
     assert.deepEqual(
-      [es.renameComponent, es.moveComponent, es.addTesting],
-      [RENAMING_COMPONENT_TITLE_ES, MOVING_COMPONENT_TITLE_ES, ADDING_TESTING_TITLE_ES]
+      [es.newComponent, es.renameComponent, es.moveComponent, es.addTesting],
+      [
+        ADDING_COMPONENT_TITLE_ES,
+        RENAMING_COMPONENT_TITLE_ES,
+        MOVING_COMPONENT_TITLE_ES,
+        ADDING_TESTING_TITLE_ES,
+      ]
     )
   })
 

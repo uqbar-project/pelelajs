@@ -59,8 +59,7 @@
       },
       {
         "command": "pelela.newComponent",
-        "title": "%newComponent%",
-        "category": "Pelela"
+        "title": "%newComponent%"
       },
       {
         "command": "pelela.addTesting",
