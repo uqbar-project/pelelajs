@@ -43,6 +43,25 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((entry: unknown) => typeof entry === 'string')
 }
 
+function hasRequiredStringEntries(
+  value: unknown,
+  requiredEntries: Record<string, string>,
+): boolean {
+  return (
+    isStringRecord(value) &&
+    Object.entries(requiredEntries).every(
+      ([key, entry]) => Object.hasOwn(value, key) && value[key] === entry,
+    )
+  )
+}
+
+function hasRequiredStringValues(value: unknown, requiredValues: string[]): boolean {
+  return (
+    isStringArray(value) &&
+    requiredValues.every((requiredValue) => value.includes(requiredValue))
+  )
+}
+
 function isTestingPresetManifest(value: unknown): value is TestingPresetManifest {
   return (
     isRecord(value) &&
@@ -84,11 +103,52 @@ function readJsonObject(filePath: string): Record<string, unknown> {
 
 const TESTING_SETUP_MARKER = join('node_modules', '.cache', 'pelela', 'testing-preset')
 
+function getTestingPresetDirectory(): string {
+  const presetDirectory = join(dirname(getTemplatePath()), 'presets', 'testing')
+  if (!existsSync(presetDirectory)) {
+    throw new Error(t('commands.testing.error.presetNotFound', { presetDirectory }))
+  }
+
+  return presetDirectory
+}
+
 /**
- * Indicates that both preset application and dependency installation completed.
+ * Indicates the marker, generated files, and required configuration for the current preset exist.
  */
 export function isTestingConfigured(projectPath: string): boolean {
-  return existsSync(join(projectPath, TESTING_SETUP_MARKER))
+  if (!existsSync(join(projectPath, TESTING_SETUP_MARKER))) {
+    return false
+  }
+
+  const presetDirectory = getTestingPresetDirectory()
+  const manifest = readTestingPresetManifest(presetDirectory)
+  const packageJsonPath = join(projectPath, 'package.json')
+  const tsConfigPath = join(projectPath, 'tsconfig.json')
+  const extensionsPath = join(projectPath, '.vscode', 'extensions.json')
+  const presetFiles = preparePresetFiles(presetDirectory, projectPath)
+  const requiredFiles = [
+    packageJsonPath,
+    tsConfigPath,
+    extensionsPath,
+    ...presetFiles.map(({ destinationPath }) => destinationPath),
+  ]
+
+  if (requiredFiles.some((filePath) => !existsSync(filePath))) {
+    return false
+  }
+
+  const packageJson = readJsonObject(packageJsonPath)
+  const tsConfig = readJsonObject(tsConfigPath)
+  const extensions = readJsonObject(extensionsPath)
+  const compilerOptions = tsConfig.compilerOptions
+
+  return (
+    hasRequiredStringEntries(packageJson.devDependencies, manifest.devDependencies) &&
+    hasRequiredStringEntries(packageJson.scripts, manifest.scripts) &&
+    isRecord(compilerOptions) &&
+    hasRequiredStringValues(compilerOptions.types, manifest.compilerOptions.types) &&
+    hasRequiredStringValues(extensions.recommendations, manifest.vscodeExtensions)
+  )
 }
 
 export function markTestingConfigured(projectPath: string): void {
@@ -229,11 +289,7 @@ function writeJsonFile(filePath: string, content: Record<string, unknown>): void
 }
 
 export function applyTestingPreset(projectPath: string): void {
-  const presetDirectory = join(dirname(getTemplatePath()), 'presets', 'testing')
-  if (!existsSync(presetDirectory)) {
-    throw new Error(t('commands.testing.error.presetNotFound', { presetDirectory }))
-  }
-
+  const presetDirectory = getTestingPresetDirectory()
   const manifest = readTestingPresetManifest(presetDirectory)
   const packageJsonPath = join(projectPath, 'package.json')
   const tsConfigPath = join(projectPath, 'tsconfig.json')

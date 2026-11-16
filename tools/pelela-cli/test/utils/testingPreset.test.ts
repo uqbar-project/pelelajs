@@ -336,6 +336,14 @@ describe('isTestingConfigured', () => {
     writeFileSync(join(projectPath, PACKAGE_JSON_NAME), JSON.stringify(content))
   }
 
+  function applyAndMarkTestingConfigured(): void {
+    writePackageJson({ name: 'sample-project' })
+    writeFileSync(join(projectPath, TSCONFIG_NAME), JSON.stringify({ compilerOptions: {} }))
+
+    applyTestingPreset(projectPath)
+    markTestingConfigured(projectPath)
+  }
+
   it('does not treat a Vitest dependency as a completed setup', () => {
     writePackageJson({ name: 'sample-project', devDependencies: { vitest: '4.0.14' } })
 
@@ -349,10 +357,47 @@ describe('isTestingConfigured', () => {
     expect(isTestingConfigured(projectPath)).toBe(false)
   })
 
-  it('recognizes the completion marker', () => {
+  it('does not recognize the completion marker without the preset configuration', () => {
     markTestingConfigured(projectPath)
 
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('recognizes a complete current preset configuration', () => {
+    applyAndMarkTestingConfigured()
+
     expect(isTestingConfigured(projectPath)).toBe(true)
+  })
+
+  it('reports a missing current preset file as incomplete', () => {
+    applyAndMarkTestingConfigured()
+    rmSync(join(projectPath, '.github', 'workflows', 'testing.yml'))
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports missing package entries as incomplete', () => {
+    applyAndMarkTestingConfigured()
+    writePackageJson({ name: 'sample-project' })
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports missing compiler types as incomplete', () => {
+    applyAndMarkTestingConfigured()
+    writeFileSync(join(projectPath, TSCONFIG_NAME), JSON.stringify({ compilerOptions: {} }))
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports missing editor recommendations as incomplete', () => {
+    applyAndMarkTestingConfigured()
+    writeFileSync(
+      join(projectPath, EXTENSIONS_CONFIG_PATH),
+      JSON.stringify({ recommendations: [] }),
+    )
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
   })
 
   it('reports a project without testing configuration', () => {
