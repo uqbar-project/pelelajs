@@ -56,6 +56,17 @@ This command creates a new directory with a minimal PelelaJS project structure b
 
 For detailed CLI documentation, see [tools/pelela-cli](./tools/pelela-cli/README.md).
 
+## Community
+
+- **Discord:** [https://discord.gg/kym9qqGyx](https://discord.gg/kym9qqGyx) is
+  the place to ask questions, propose ideas, and meet other contributors.
+
+- **Contributing:** read [CONTRIBUTING.md](./CONTRIBUTING.md) for the pull
+  request workflow and commit style.
+
+- **Code of Conduct:** all participation is covered by our
+  [Code of Conduct](./CODE_OF_CONDUCT.md).
+
 ## Linting and Formatting
 
 This project uses [Biome](https://biomejs.dev/) for linting, formatting, and import organization.
