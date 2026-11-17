@@ -5,12 +5,15 @@ import { toKebabCase } from 'pelelajs'
 import {
   createCssFile,
   createPelelaFile,
+  createSpecFile,
   createTsFile,
   getComponentTargetDir,
   normalizeComponentName,
   validateBasename,
 } from '../utils/componentFiles'
 import { t } from '../utils/i18n'
+import { resolvePath } from '../utils/shell'
+import { isTestingConfigured } from '../utils/testingPreset'
 
 export interface NewCommandOptions {
   componentName: string
@@ -33,8 +36,14 @@ export async function newCommand(options: NewCommandOptions): Promise<void> {
   const tsFile = join(targetDir, `${kebabName}.ts`)
   const pelelaFile = join(targetDir, `${kebabName}.pelela`)
   const cssFile = join(targetDir, `${kebabName}.css`)
+  const specFile = join(targetDir, `${kebabName}.spec.ts`)
 
-  if (existsSync(tsFile) || existsSync(pelelaFile) || (css && existsSync(cssFile))) {
+  if (
+    existsSync(tsFile) ||
+    existsSync(pelelaFile) ||
+    (css && existsSync(cssFile)) ||
+    existsSync(specFile)
+  ) {
     throw new Error(t('commands.new.error.filesExist', { name: componentName }))
   }
 
@@ -43,6 +52,9 @@ export async function newCommand(options: NewCommandOptions): Promise<void> {
     createPelelaFile(componentName, targetDir, component ? 'component' : 'pelela')
     if (css) {
       createCssFile(componentName, targetDir)
+    }
+    if (isTestingConfigured(resolvePath())) {
+      createSpecFile(componentName, targetDir)
     }
 
     console.log(chalk.green(t('commands.new.messages.success', { name: componentName })))

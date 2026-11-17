@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  createSpecFile,
   findComponentFile,
   getComponentBasePath,
   getComponentTargetDir,
@@ -13,6 +14,15 @@ import {
   toPascalCase,
   updateImports,
 } from '../../src/utils/componentFiles'
+
+const EXPECTED_SPEC_CONTENT = `import { describe, expect, it } from 'vitest'
+
+describe('Dashboard', () => {
+  it('works as expected', () => {
+    expect(1).toBe(1) // TODO: Cambiar
+  })
+})
+`
 
 describe('findComponentFile', () => {
   let tempDir: string
@@ -184,6 +194,29 @@ describe('prepareFile', () => {
 
     expect(result.path).toBe('src/sub/my-component.ts')
     expect(result.normalizedName).toBe('sub/MyComponent')
+  })
+})
+
+describe('createSpecFile', () => {
+  let tempDir: string
+  let originalCwd: string
+
+  beforeEach(() => {
+    originalCwd = process.cwd()
+    tempDir = mkdtempSync(join(tmpdir(), 'create-spec-file-test-'))
+    process.chdir(tempDir)
+    mkdirSync('src')
+  })
+
+  afterEach(() => {
+    process.chdir(originalCwd)
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  it('creates a spec with the component name in the describe', () => {
+    createSpecFile('Dashboard', 'src')
+
+    expect(readFileSync('src/dashboard.spec.ts', 'utf-8')).toBe(EXPECTED_SPEC_CONTENT)
   })
 })
 
