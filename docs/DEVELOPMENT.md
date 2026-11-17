@@ -4,10 +4,10 @@ This guide provides the necessary steps to set up the PelelaJS monorepo for loca
 
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](../LICENSE.txt)
 [![Node.js 24.22](https://img.shields.io/badge/node-24.22-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![pnpm 12.4.1](https://img.shields.io/badge/pnpm-12.4.1-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
-[![TypeScript 5.9.3](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Biome 2.5.5](https://img.shields.io/badge/Biome-2.5.5-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev)
-[![Vitest 4.0.14](https://img.shields.io/badge/Vitest-4.0.14-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev)
+[![pnpm](https://img.shields.io/badge/-pnpm-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
+[![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Biome](https://img.shields.io/badge/-Biome-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev)
+[![Vitest](https://img.shields.io/badge/-Vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev)
 [![CI](https://github.com/uqbar-project/pelelajs/actions/workflows/ci.yml/badge.svg)](https://github.com/uqbar-project/pelelajs/actions/workflows/ci.yml)
 
 ## Prerequisites
@@ -374,6 +374,8 @@ Never write to `target[key]` before checking it with `hasProperty`, which reject
   pnpm run biome:check
   pnpm run typecheck
   pnpm run test --run
+  pnpm run build
+  pnpm exec vitest run --coverage --silent=passed-only
   ```
 
 - **AI assistants:** if you use one, point it to [AGENTS.md](../AGENTS.md) and to the [Graphify setup](../README.md#using-ai-assistants) described in the main README.
