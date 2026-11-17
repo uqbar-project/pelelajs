@@ -14,6 +14,8 @@ If you are looking to understand *how* PelelaJS works under the hood rather than
 
 - [Components & Routing](./core/COMPONENTS_AND_ROUTING.md): Component definition, parent-child communication, and the auto-register routing mechanism.
 
+- [Toast Notifications](./core/TOAST.md): The toast view service, severities, duration, and positioning.
+
 ### 2. Tools Ecosystem
 
 - [CLI Architecture](./tools/CLI.md): How the PelelaJS CLI is structured for generating new projects and components.

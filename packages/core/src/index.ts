@@ -33,4 +33,7 @@ export {
 export { registerViewModel as defineViewModel } from './registry/viewModelRegistry'
 export type { RouteDefinition } from './router/index'
 export { defineComponent, router } from './router/index'
+export { toast } from './toast/toast'
+export type { ToastOptions, ToastPosition } from './toast/types'
+export { ToastAlignment, ToastSeverity } from './toast/types'
 export type { PelelaOptions, ViewModelConstructor } from './types'
