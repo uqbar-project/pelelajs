@@ -127,6 +127,10 @@ const errors = {
     missingParentProperty:
       'Componente <{{tag}}>: la propiedad padre "{{parentKey}}" no existe en el view model padre',
     missingViewModel: 'Pelela template "{{filePath}}" debe contener atributo view-model="..."',
+    missingViewModelFile:
+      'Pelela template "{{filePath}}" requiere su archivo de view model "{{tsFilePath}}". Todo archivo .pelela debe tener un archivo .ts con el mismo nombre en la misma carpeta.',
+    missingViewModelFiles:
+      'Templates Pelela sin archivo de view model correspondiente: {{files}}. Todo archivo .pelela debe tener un archivo .ts con el mismo nombre en la misma carpeta.',
     forbiddenRootAttribute:
       'Pelela template "{{filePath}}": El atributo "{{attr}}" no está permitido en la etiqueta raíz <{{tagName}}>. Los atributos de lógica y binding solo pueden usarse en elementos internos o invocaciones de componentes. Encontrado en: {{snippet}}',
     forbiddenHtmlAttribute:

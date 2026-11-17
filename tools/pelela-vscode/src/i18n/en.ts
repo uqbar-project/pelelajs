@@ -1,6 +1,8 @@
 import type { TranslationSchema } from './translationSchema'
 
 const diagnostics = {
+  viewModelFileMissing:
+    'Missing view model file "{{tsFileName}}". Every .pelela file must have a matching .ts file with the same name in the same folder.',
   viewModelMissingExport:
     'The class "{{name}}" must be exported in {{tsFileName}}. Add the export keyword to the class.',
   viewModelWrongCase:

@@ -78,6 +78,8 @@ type ErrorTranslations = {
     enterOnlyForInput: string
     missingParentProperty: string
     missingViewModel: string
+    missingViewModelFile: string
+    missingViewModelFiles: string
     forbiddenRootAttribute: string
     forbiddenHtmlAttribute: string
     directiveOutsideRoot: string
