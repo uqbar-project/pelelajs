@@ -19,7 +19,7 @@ const EXPECTED_SPEC_CONTENT = `import { describe, expect, it } from 'vitest'
 
 describe('Dashboard', () => {
   it('works as expected', () => {
-    expect(1).toBe(1) // TODO: Cambiar
+    expect(1).toBe(1) // TODO: Add real assertion here
   })
 })
 `

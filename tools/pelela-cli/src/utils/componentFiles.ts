@@ -219,7 +219,7 @@ export function createSpecFile(name: string, targetDir: string): void {
 
 describe('${className}', () => {
   it('works as expected', () => {
-    expect(1).toBe(1) // TODO: Cambiar
+    expect(1).toBe(1) // TODO: Add real assertion here
   })
 })
 `
