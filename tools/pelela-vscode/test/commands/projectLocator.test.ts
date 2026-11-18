@@ -1,12 +1,12 @@
 import * as assert from 'node:assert/strict'
-import { mkdirSync } from 'node:fs'
-import { createRequire } from 'node:module'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { afterEach, describe, it } from 'mocha'
+import { describe, it } from 'mocha'
 import * as vscode from 'vscode'
 import {
   findProjectRoot,
   listWorkspaceProjectRoots,
+  type ProjectLocatorFileSystem,
   resourceDirectory,
 } from '../../src/commands/projectLocator'
 import { setWorkspaceFolders } from '../vscode-stub'
@@ -20,9 +20,6 @@ const PACKAGE_JSON = 'package.json'
 const UNREADABLE_PROJECT_DIRECTORY = 'unreadable'
 const ACCESSIBLE_PROJECT_DIRECTORY = 'accessible'
 const STAT_FAILURE_PROJECT_DIRECTORY = 'stat-failure'
-const fileSystem = createRequire(__filename)('node:fs') as typeof import('node:fs')
-const originalReaddirSync = fileSystem.readdirSync
-const originalStatSync = fileSystem.statSync
 
 function createNestedProject(
   root: string,
@@ -35,30 +32,26 @@ function createNestedProject(
   return projectPath
 }
 
-function failReadFor(directory: string): void {
-  Object.defineProperty(fileSystem, 'readdirSync', {
-    configurable: true,
-    value: (path: string, options: { withFileTypes: true }) => {
-      if (path === directory) {
-        throw new Error('Directory cannot be read')
-      }
-
-      return originalReaddirSync(path, options)
-    },
-  })
-}
-
-function failStatFor(directory: string): void {
-  Object.defineProperty(fileSystem, 'statSync', {
-    configurable: true,
-    value: (path: string) => {
-      if (path === directory) {
+function createFailingFileSystem(failures: {
+  unreadableDirectory?: string
+  statFailureDirectory?: string
+}): ProjectLocatorFileSystem {
+  return {
+    existsSync: (path) => existsSync(path),
+    statSync: (path) => {
+      if (path === failures.statFailureDirectory) {
         throw new Error('Directory no longer exists')
       }
-
-      return originalStatSync(path)
+      return statSync(path)
     },
-  })
+    readdirSync: (path, options) => {
+      if (path === failures.unreadableDirectory) {
+        throw new Error('Directory cannot be read')
+      }
+      return readdirSync(path, options)
+    },
+    readFileSync: (path, encoding) => readFileSync(path, encoding),
+  }
 }
 
 function componentUri(projectPath: string): vscode.Uri {
@@ -159,19 +152,6 @@ describe('findProjectRoot', () => {
 })
 
 describe('listWorkspaceProjectRoots', () => {
-  afterEach(() => {
-    Object.defineProperty(fileSystem, 'readdirSync', {
-      configurable: true,
-      writable: true,
-      value: originalReaddirSync,
-    })
-    Object.defineProperty(fileSystem, 'statSync', {
-      configurable: true,
-      writable: true,
-      value: originalStatSync,
-    })
-  })
-
   it('returns only the workspace folders that contain src', () => {
     const root = createTempRoot()
     const withSrc = join(root, 'with-src')
@@ -200,10 +180,10 @@ describe('listWorkspaceProjectRoots', () => {
       ACCESSIBLE_PROJECT_DIRECTORY
     )
     setWorkspaceFolders([root])
-    failReadFor(unreadableProject)
+    const fileSystem = createFailingFileSystem({ unreadableDirectory: unreadableProject })
 
     assert.deepEqual(
-      listWorkspaceProjectRoots().sort(),
+      listWorkspaceProjectRoots(fileSystem).sort(),
       [accessibleProject, unreadableProject].sort()
     )
   })
@@ -221,9 +201,9 @@ describe('listWorkspaceProjectRoots', () => {
       ACCESSIBLE_PROJECT_DIRECTORY
     )
     setWorkspaceFolders([root])
-    failStatFor(failingProject)
+    const fileSystem = createFailingFileSystem({ statFailureDirectory: failingProject })
 
-    assert.deepEqual(listWorkspaceProjectRoots(), [accessibleProject])
+    assert.deepEqual(listWorkspaceProjectRoots(fileSystem), [accessibleProject])
   })
 })
 

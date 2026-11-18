@@ -52,10 +52,13 @@ function diagnosticsForDocument(filePath: string): vscode.Diagnostic[] | undefin
   return collection._entries.get(filePath) as vscode.Diagnostic[] | undefined
 }
 
+/**
+ * Other validators may add diagnostics for the missing view model, so the
+ * attribute message is checked independently of the total diagnostic count.
+ */
 function assertUnknownAttributeDiagnostic(filePath: string): void {
   const expectedMessage = t('diagnostics.unknownAttribute', { name: 'onclick' })
   const messages = (diagnosticsForDocument(filePath) ?? []).map((diagnostic) => diagnostic.message)
-  console.log('Pelela diagnostics:', messages)
   assert.equal(messages.filter((message) => message === expectedMessage).length, 1)
 }
 
