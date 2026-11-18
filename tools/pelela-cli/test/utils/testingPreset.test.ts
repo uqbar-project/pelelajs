@@ -4,7 +4,11 @@ import { dirname, join } from 'node:path'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { initializeI18n, t } from '../../src/utils/i18n'
 import { getTemplatePath } from '../../src/utils/templates'
-import { applyTestingPreset } from '../../src/utils/testingPreset'
+import {
+  applyTestingPreset,
+  isTestingConfigured,
+  markTestingConfigured,
+} from '../../src/utils/testingPreset'
 
 const PRESET_FILES_PATH = join(dirname(getTemplatePath()), 'presets', 'testing', 'files')
 const PACKAGE_JSON_NAME = 'package.json'
@@ -314,5 +318,113 @@ describe('applyTestingPreset', () => {
 
     const extensions = JSON.parse(readFileSync(join(projectPath, EXTENSIONS_CONFIG_PATH), 'utf-8'))
     expect(extensions.recommendations).toEqual(['vitest.explorer'])
+  })
+})
+
+describe('isTestingConfigured', () => {
+  let projectPath: string
+
+  beforeEach(() => {
+    projectPath = mkdtempSync(join(tmpdir(), 'testing-configured-test-'))
+  })
+
+  afterEach(() => {
+    rmSync(projectPath, { recursive: true, force: true })
+  })
+
+  function writePackageJson(content: unknown): void {
+    writeFileSync(join(projectPath, PACKAGE_JSON_NAME), JSON.stringify(content))
+  }
+
+  function applyAndMarkTestingConfigured(): void {
+    writePackageJson({ name: 'sample-project' })
+    writeFileSync(join(projectPath, TSCONFIG_NAME), JSON.stringify({ compilerOptions: {} }))
+
+    applyTestingPreset(projectPath)
+    markTestingConfigured(projectPath)
+  }
+
+  it('does not treat a Vitest dependency as a completed setup', () => {
+    writePackageJson({ name: 'sample-project', devDependencies: { vitest: '4.0.14' } })
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('does not treat a Vitest config file as a completed setup', () => {
+    writePackageJson({ name: 'sample-project' })
+    writeFileSync(join(projectPath, VITEST_CONFIG_NAME), '')
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('does not recognize the completion marker without the preset configuration', () => {
+    markTestingConfigured(projectPath)
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('recognizes a complete current preset configuration', () => {
+    applyAndMarkTestingConfigured()
+
+    expect(isTestingConfigured(projectPath)).toBe(true)
+  })
+
+  it('reports a missing current preset file as incomplete', () => {
+    applyAndMarkTestingConfigured()
+    rmSync(join(projectPath, '.github', 'workflows', 'testing.yml'))
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports missing package entries as incomplete', () => {
+    applyAndMarkTestingConfigured()
+    writePackageJson({ name: 'sample-project' })
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports missing compiler types as incomplete', () => {
+    applyAndMarkTestingConfigured()
+    writeFileSync(join(projectPath, TSCONFIG_NAME), JSON.stringify({ compilerOptions: {} }))
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports missing editor recommendations as incomplete', () => {
+    applyAndMarkTestingConfigured()
+    writeFileSync(
+      join(projectPath, EXTENSIONS_CONFIG_PATH),
+      JSON.stringify({ recommendations: [] }),
+    )
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports a project without testing configuration', () => {
+    writePackageJson({ name: 'sample-project', dependencies: { pelelajs: 'latest' } })
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports a project without package.json as not configured', () => {
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports malformed package.json as not configured', () => {
+    writeFileSync(join(projectPath, PACKAGE_JSON_NAME), '{ invalid json')
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('reports package.json that is not an object as not configured', () => {
+    writePackageJson(['sample-project'])
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
+  })
+
+  it('does not treat a config file without a completion marker as configured', () => {
+    writeFileSync(join(projectPath, VITEST_CONFIG_NAME), '')
+
+    expect(isTestingConfigured(projectPath)).toBe(false)
   })
 })

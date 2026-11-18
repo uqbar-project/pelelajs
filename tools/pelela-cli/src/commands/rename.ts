@@ -7,6 +7,7 @@ import {
   normalizeComponentName,
   renameCssFile,
   renamePelelaFile,
+  renameSpecFile,
   renameTsFile,
   resolveExistingComponentPath,
   updateImports,
@@ -50,10 +51,16 @@ export async function renameCommand(options: RenameCommandOptions): Promise<void
   const newTsFile = join(targetDir, `${kebabNewName}.ts`)
   const newPelelaFile = join(targetDir, `${kebabNewName}.pelela`)
   const newCssFile = join(targetDir, `${kebabNewName}.css`)
+  const newSpecFile = join(targetDir, `${kebabNewName}.spec.ts`)
   const oldKebabName = toKebabCase(normalizedOldName)
   const oldPelelaFile = resolveExistingComponentPath(oldKebabName, targetDir, '.pelela')
 
-  if (existsSync(newTsFile) || existsSync(newPelelaFile) || existsSync(newCssFile)) {
+  if (
+    existsSync(newTsFile) ||
+    existsSync(newPelelaFile) ||
+    existsSync(newCssFile) ||
+    existsSync(newSpecFile)
+  ) {
     throw new Error(t('commands.rename.error.newNameExists', { name: newComponentName }))
   }
   if (!existsSync(oldPelelaFile)) {
@@ -64,6 +71,7 @@ export async function renameCommand(options: RenameCommandOptions): Promise<void
     renameTsFile(oldFileName, newComponentName, targetDir)
     renamePelelaFile(oldFileName, newComponentName, targetDir)
     renameCssFile(oldFileName, newComponentName, targetDir)
+    renameSpecFile(oldFileName, newComponentName, targetDir)
     updateImports(normalizedOldName, normalizedNewName, {
       oldFilePath: oldTsFile,
       newFilePath: newTsFile,

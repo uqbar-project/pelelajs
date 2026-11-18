@@ -3,7 +3,7 @@ import boxen from 'cli-box'
 import { t } from '../utils/i18n'
 import { installDependencies, pathExists, resolvePath } from '../utils/shell'
 import { copyTemplate, updateProjectPackageJson, validateTemplatePath } from '../utils/templates'
-import { applyTestingPreset } from '../utils/testingPreset'
+import { applyTestingPreset, markTestingConfigured } from '../utils/testingPreset'
 
 const DEFAULT_PROJECT_NAME = 'Example'
 
@@ -57,6 +57,9 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
   }
 
   installDependencies(projectPath)
+  if (options.testing) {
+    markTestingConfigured(projectPath)
+  }
 
   displaySuccessMessage(projectName)
 }

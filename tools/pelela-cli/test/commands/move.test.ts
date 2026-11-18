@@ -8,11 +8,29 @@ import { initializeI18n, t } from '../../src/utils/i18n'
 const HOME_TS = 'src/components/home/home.ts'
 const HOME_PELELA = 'src/components/home/home.pelela'
 const HOME_CSS = 'src/components/home/home.css'
+const HOME_SPEC = 'src/components/home/home.spec.ts'
+const DASHBOARD_SPEC = 'src/components/dashboard/dashboard.spec.ts'
 const ROUTES_PATH = 'src/routes.ts'
 const ROUTES_CONTENT = `import {
   Home,
 } from './components/home/home'
 export const route = Home`
+const HOME_SPEC_CONTENT = `import { describe, expect, it } from 'vitest'
+
+describe('Home', () => {
+  it('works as expected', () => {
+    expect(1).toBe(1) // TODO: Add real assertion here
+  })
+})
+`
+const DASHBOARD_SPEC_CONTENT = `import { describe, expect, it } from 'vitest'
+
+describe('Dashboard', () => {
+  it('works as expected', () => {
+    expect(1).toBe(1) // TODO: Add real assertion here
+  })
+})
+`
 
 beforeAll(async () => {
   await initializeI18n('en')
@@ -154,7 +172,7 @@ export const route = Reports`,
     expect(existsSync('src/components/dashboard/dashboard.pelela')).toBe(false)
   })
 
-  it.each(['pelela', 'css'] as const)(
+  it.each(['pelela', 'css', 'spec.ts'] as const)(
     'rejects an occupied destination %s file',
     async (extension) => {
       mkdirSync('src/components/dashboard', { recursive: true })
@@ -360,5 +378,27 @@ export const route = Reports`,
     expect(movedContent).toBe(
       'export class Dashboard {\n  static create() {\n    return new Dashboard()\n  }\n}',
     )
+  })
+
+  it('moves the spec and updates the describe with the destination component name', async () => {
+    writeFileSync(HOME_SPEC, HOME_SPEC_CONTENT)
+
+    await moveCommand({
+      source: 'components/home/Home',
+      destination: 'components/dashboard/Dashboard',
+    })
+
+    expect(existsSync(HOME_SPEC)).toBe(false)
+    expect(readFileSync(DASHBOARD_SPEC, 'utf-8')).toBe(DASHBOARD_SPEC_CONTENT)
+  })
+
+  it('does not create a spec when the component has none', async () => {
+    await moveCommand({
+      source: 'components/home/Home',
+      destination: 'components/dashboard/Dashboard',
+    })
+
+    expect(existsSync(HOME_SPEC)).toBe(false)
+    expect(existsSync(DASHBOARD_SPEC)).toBe(false)
   })
 })

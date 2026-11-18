@@ -1,4 +1,4 @@
-import { mkdtempSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, isAbsolute, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -12,7 +12,7 @@ describe('Shell utilities', () => {
   })
 
   afterEach(() => {
-    rmdirSync(tempDir, { recursive: true })
+    rmSync(tempDir, { recursive: true, force: true })
   })
 
   describe('createDirectory', () => {

@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import chalk from 'chalk'
 import { gt } from 'semver'
+import { t } from './i18n'
 import { getCurrentModuleDir } from './modulePath'
 
 interface PackageInfo {
@@ -53,11 +55,13 @@ export async function getLocalVersion(): Promise<string> {
   return versionUtils.getLocalVersion()
 }
 
-export async function checkNewVersion(): Promise<{
+export interface VersionInfo {
   current: string
   latest: string | null
   hasUpdate: boolean
-}> {
+}
+
+export async function checkNewVersion(): Promise<VersionInfo> {
   const current = await versionUtils.getLocalVersion()
   const failResponse = {
     current,
@@ -97,5 +101,48 @@ export async function checkNewVersion(): Promise<{
   } catch (error) {
     console.error('Failed to check for new version:', error)
     return failResponse
+  }
+}
+
+export const SKIP_UPDATE_CHECK_ENV = 'PELELA_SKIP_UPDATE_CHECK'
+
+export function shouldCheckForUpdates(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env[SKIP_UPDATE_CHECK_ENV] !== '1'
+}
+
+export interface NotifyNewVersionOptions {
+  env?: NodeJS.ProcessEnv
+  log?: (message: string) => void
+  warn?: (message: string) => void
+  checkVersion?: () => Promise<VersionInfo>
+}
+
+/**
+ * Reports an available update without ever interrupting the CLI: the check is
+ * optional, failures are only warned about, and `PELELA_SKIP_UPDATE_CHECK=1`
+ * removes the network call entirely (used by the VS Code extension).
+ */
+export async function notifyNewVersion(options: NotifyNewVersionOptions = {}): Promise<void> {
+  if (!shouldCheckForUpdates(options.env ?? process.env)) {
+    return
+  }
+
+  const log = options.log ?? console.log
+  const warn = options.warn ?? console.warn
+  const checkVersion = options.checkVersion ?? checkNewVersion
+
+  try {
+    const versionInfo = await checkVersion()
+    if (!versionInfo.hasUpdate) {
+      return
+    }
+
+    log(
+      chalk.yellow.bold(`\n${t('messages.newVersionAvailable', { version: versionInfo.latest })}`),
+    )
+    log(chalk.dim(`  ${t('messages.updateCommand')}\n`))
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    warn(chalk.dim(t('messages.versionCheckFailed', { error: errorMessage })))
   }
 }

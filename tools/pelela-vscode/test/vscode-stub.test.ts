@@ -1,14 +1,10 @@
 import * as assert from 'node:assert/strict'
 import * as path from 'node:path'
-import { afterEach, describe, it } from 'mocha'
+import { describe, it } from 'mocha'
 import * as vscode from 'vscode'
 import { setWorkspaceFolders } from './vscode-stub'
 
 describe('vscode stub workspace', () => {
-  afterEach(() => {
-    setWorkspaceFolders(null)
-  })
-
   it('matches folders on segment boundaries, not on shared prefixes', () => {
     const app = path.join('project', 'app')
     const application = path.join('project', 'application')

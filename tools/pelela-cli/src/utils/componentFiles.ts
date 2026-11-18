@@ -127,7 +127,7 @@ export function toPascalCase(str: string): string {
 
 interface PrepareFileParams {
   name: string
-  extension: 'pelela' | 'ts' | 'css'
+  extension: 'pelela' | 'ts' | 'css' | 'spec.ts'
   targetDir: string
 }
 
@@ -146,7 +146,7 @@ export function prepareFile(params: PrepareFileParams): { path: string; normaliz
 interface PrepareRenameParams {
   oldName: string
   newName: string
-  extension: 'pelela' | 'ts' | 'css'
+  extension: 'pelela' | 'ts' | 'css' | 'spec.ts'
   targetDir: string
 }
 
@@ -211,6 +211,21 @@ export function createCssFile(name: string, targetDir: string): void {
   writeFileSync(path, content)
 }
 
+export function createSpecFile(name: string, targetDir: string): void {
+  const { path, normalizedName } = prepareFile({ name, extension: 'spec.ts', targetDir })
+
+  const className = basename(normalizedName)
+  const content = `import { describe, expect, it } from 'vitest'
+
+describe('${className}', () => {
+  it('works as expected', () => {
+    expect(1).toBe(1) // TODO: Add real assertion here
+  })
+})
+`
+  writeFileSync(path, content)
+}
+
 interface ModifyContentParams {
   oldPath: string
   newPath: string
@@ -236,6 +251,13 @@ function renameViewModelName(content: string, oldClassName: string, newClassName
   return content.replace(
     new RegExp(`view-model="${escapeRegex(oldClassName)}"`, 'g'),
     () => `view-model="${newClassName}"`,
+  )
+}
+
+function renameDescribeName(content: string, oldClassName: string, newClassName: string): string {
+  return content.replace(
+    new RegExp(`(describe\\(\\s*)(['"])${escapeRegex(oldClassName)}\\2`, 'g'),
+    (_match, prefix: string, quote: string) => `${prefix}${quote}${newClassName}${quote}`,
   )
 }
 
@@ -294,9 +316,25 @@ export function renameCssFile(oldName: string, newName: string, targetDir: strin
   renameSync(oldPath, newPath)
 }
 
+export function renameSpecFile(oldName: string, newName: string, targetDir: string): void {
+  const { oldPath, newPath, oldClassName, newClassName } = prepareRenamePaths({
+    oldName,
+    newName,
+    extension: 'spec.ts',
+    targetDir,
+  })
+  if (!existsSync(oldPath)) return
+
+  modifyAndRenameFile({
+    oldPath,
+    newPath,
+    contentModifier: (content) => renameDescribeName(content, oldClassName, newClassName),
+  })
+}
+
 const RELATIVE_SPECIFIER_PATTERN = /((?:\bfrom\b|\bimport\b)\s*\(?\s*)(['"])(\.[^'"]+)\2/g
 
-const COMPONENT_FILE_EXTENSIONS = ['', '.ts', '.pelela', '.css']
+const COMPONENT_FILE_EXTENSIONS = ['', '.ts', '.pelela', '.css', '.spec.ts']
 
 /**
  * Map every file of a component from its old base path to its new base path
@@ -359,10 +397,13 @@ export function moveComponentFiles(
   const sourceBasePath = getComponentBasePath(sourceTsPath)
   const sourcePelelaPath = `${sourceBasePath}.pelela`
   const sourceCssPath = `${sourceBasePath}.css`
+  const sourceSpecPath = `${sourceBasePath}.spec.ts`
   const destinationTsPath = `${destinationBasePath}.ts`
   const destinationPelelaPath = `${destinationBasePath}.pelela`
   const destinationCssPath = `${destinationBasePath}.css`
+  const destinationSpecPath = `${destinationBasePath}.spec.ts`
   const cssContent = existsSync(sourceCssPath) ? readFileSync(sourceCssPath, 'utf-8') : null
+  const specContent = existsSync(sourceSpecPath) ? readFileSync(sourceSpecPath, 'utf-8') : null
   const movedFiles = buildMovedFilesMap(sourceBasePath, destinationBasePath)
   const updatedTs = rebaseRelativeImports(
     renameClassName(readFileSync(sourceTsPath, 'utf-8'), oldClassName, newClassName),
@@ -375,6 +416,15 @@ export function moveComponentFiles(
     oldClassName,
     newClassName,
   )
+  const updatedSpec =
+    specContent === null
+      ? null
+      : rebaseRelativeImports(
+          renameDescribeName(specContent, oldClassName, newClassName),
+          sourceSpecPath,
+          destinationSpecPath,
+          movedFiles,
+        )
 
   mkdirSync(dirname(destinationTsPath), { recursive: true })
   writeFileSync(destinationTsPath, updatedTs)
@@ -382,11 +432,17 @@ export function moveComponentFiles(
   if (cssContent !== null) {
     writeFileSync(destinationCssPath, cssContent)
   }
+  if (updatedSpec !== null) {
+    writeFileSync(destinationSpecPath, updatedSpec)
+  }
 
   rmSync(sourceTsPath)
   rmSync(sourcePelelaPath)
   if (cssContent !== null) {
     rmSync(sourceCssPath)
+  }
+  if (updatedSpec !== null) {
+    rmSync(sourceSpecPath)
   }
 }
 

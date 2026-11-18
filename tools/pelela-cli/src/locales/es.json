@@ -28,6 +28,7 @@
         "unknownPreset": "Configuración desconocida \"{{preset}}\""
       },
       "messages": {
+        "alreadyConfigured": "ℹ️ El testing ya está configurado en este proyecto",
         "testingApplied": "✅ Configuración de testing aplicada y dependencias instaladas exitosamente"
       }
     },

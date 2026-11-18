@@ -3,8 +3,8 @@ import * as path from 'node:path'
 import { toKebabCase } from 'pelelajs'
 import * as vscode from 'vscode'
 import { getViewModelName, scanFile } from '../diagnostics/scanDocument'
+import { PELELA_EXTENSION } from './componentPaths'
 
-const TEMPLATE_EXTENSION = '.pelela'
 const SOURCE_DIRECTORY_NAME = 'src'
 const IGNORED_DIRECTORIES = new Set(['node_modules', 'dist', 'build', 'coverage', 'out'])
 
@@ -46,7 +46,7 @@ function listDirectoriesRecursively(directory: string): string[] {
 function listTemplatePaths(directory: string): string[] {
   return listDirectoriesRecursively(directory).flatMap((currentDirectory) =>
     readEntries(currentDirectory)
-      .filter((entry) => entry.isFile() && path.extname(entry.name) === TEMPLATE_EXTENSION)
+      .filter((entry) => entry.isFile() && path.extname(entry.name) === PELELA_EXTENSION)
       .map((entry) => path.join(currentDirectory, entry.name))
   )
 }
@@ -56,7 +56,7 @@ function listTemplatePaths(directory: string): string[] {
  * attribute, or the file name only when the attribute is missing.
  */
 function readViewModelName(templatePath: string): string {
-  return getViewModelName(scanFile(templatePath)) ?? path.basename(templatePath, TEMPLATE_EXTENSION)
+  return getViewModelName(scanFile(templatePath)) ?? path.basename(templatePath, PELELA_EXTENSION)
 }
 
 function indexTemplates(filePaths: string[]): Map<string, IndexedComponent[]> {

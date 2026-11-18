@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { registerPelelaCommands } from './commands'
 import { createDiagnosticsProvider } from './diagnostics/diagnosticsProvider'
 import {
   disposeViewModelLanguageService,
@@ -9,6 +10,7 @@ import { createDefinitionProvider } from './providers/definitionProvider'
 import { createHoverProvider } from './providers/hoverProvider'
 import { createTypeScriptDefinitionProvider } from './providers/tsDefinitionProvider'
 import { invalidateComponentIndex } from './utils/componentIndex'
+import { PELELA_EXTENSION, TYPESCRIPT_EXTENSION } from './utils/componentPaths'
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('[Pelela Extension] Activated')
@@ -29,6 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(tsDefinitionProvider)
   context.subscriptions.push(new vscode.Disposable(disposeViewModelLanguageService))
   context.subscriptions.push(registerViewModelWatcher(() => diagnosticsProvider.refresh()))
+  registerPelelaCommands(context)
 }
 
 /**
@@ -37,11 +40,13 @@ export function activate(context: vscode.ExtensionContext) {
  * affected templates revalidated.
  */
 function registerViewModelWatcher(refreshDiagnostics: () => void): vscode.Disposable {
-  const watcher = vscode.workspace.createFileSystemWatcher('**/*.{ts,tsx,pelela}')
+  const watcher = vscode.workspace.createFileSystemWatcher(
+    `**/*.{${TYPESCRIPT_EXTENSION.slice(1)},tsx,${PELELA_EXTENSION.slice(1)}}`
+  )
 
   const onChange = (uri: vscode.Uri) => {
     invalidateViewModelLanguageService(uri.fsPath)
-    if (uri.fsPath.endsWith('.pelela')) invalidateComponentIndex()
+    if (uri.fsPath.endsWith(PELELA_EXTENSION)) invalidateComponentIndex()
     refreshDiagnostics()
   }
 

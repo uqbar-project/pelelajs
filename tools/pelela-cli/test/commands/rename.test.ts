@@ -17,13 +17,36 @@ import { initializeI18n, t } from '../../src/utils/i18n'
 const OLD_TS = 'src/old.ts'
 const OLD_PELELA = 'src/old.pelela'
 const OLD_CSS = 'src/old.css'
+const OLD_SPEC = 'src/old.spec.ts'
 const NEW_TS = 'src/new.ts'
 const NEW_PELELA = 'src/new.pelela'
 const NEW_CSS = 'src/new.css'
+const NEW_SPEC = 'src/new.spec.ts'
+const SELECTED_COMPONENT_PATH = 'components/NavBar'
+const SELECTED_COMPONENT_BASE_PATH = 'src/components/nav-bar'
+const VIEW_MODEL_COMPONENT_BASE_PATH = 'src/components/different-view-model'
+const DIFFERENT_VIEW_MODEL = 'DifferentViewModel'
+const RENAMED_COMPONENT_BASE_PATH = 'src/components/renamed'
 
 const OLD_CONTENT_TS = 'export class Old {}'
 const OLD_CONTENT_PELELA = '<pelela view-model="Old"></pelela>'
 const ROUTES_CONTENT = "import { Old } from './src/old'\nexport const r = [{ component: Old }]"
+const OLD_SPEC_CONTENT = `import { describe, expect, it } from 'vitest'
+
+describe('Old', () => {
+  it('works as expected', () => {
+    expect(1).toBe(1) // TODO: Add real assertion here
+  })
+})
+`
+const NEW_SPEC_CONTENT = `import { describe, expect, it } from 'vitest'
+
+describe('New', () => {
+  it('works as expected', () => {
+    expect(1).toBe(1) // TODO: Add real assertion here
+  })
+})
+`
 
 beforeAll(async () => {
   await initializeI18n('en')
@@ -206,6 +229,31 @@ describe('renameCommand (Integration)', () => {
     )
   })
 
+  it('renames the file selected by name when its view-model class differs', async () => {
+    mkdirSync('src/components', { recursive: true })
+    writeFileSync(`${SELECTED_COMPONENT_BASE_PATH}.ts`, `export class ${DIFFERENT_VIEW_MODEL} {}`)
+    writeFileSync(
+      `${SELECTED_COMPONENT_BASE_PATH}.pelela`,
+      `<pelela view-model="${DIFFERENT_VIEW_MODEL}"></pelela>`,
+    )
+    writeFileSync(`${VIEW_MODEL_COMPONENT_BASE_PATH}.ts`, `export class ${DIFFERENT_VIEW_MODEL} {}`)
+    writeFileSync(
+      `${VIEW_MODEL_COMPONENT_BASE_PATH}.pelela`,
+      `<pelela view-model="${DIFFERENT_VIEW_MODEL}"></pelela>`,
+    )
+
+    await renameCommand({
+      oldComponentName: SELECTED_COMPONENT_PATH,
+      newComponentName: 'Renamed',
+    })
+
+    expect(existsSync(`${SELECTED_COMPONENT_BASE_PATH}.ts`)).toBe(false)
+    expect(existsSync(`${RENAMED_COMPONENT_BASE_PATH}.ts`)).toBe(true)
+    expect(existsSync(`${RENAMED_COMPONENT_BASE_PATH}.pelela`)).toBe(true)
+    expect(existsSync(`${VIEW_MODEL_COMPONENT_BASE_PATH}.ts`)).toBe(true)
+    expect(existsSync(`${VIEW_MODEL_COMPONENT_BASE_PATH}.pelela`)).toBe(true)
+  })
+
   it('directs users to move when the new name includes a directory', async () => {
     mkdirSync('src/components', { recursive: true })
     writeFileSync('src/components/home.ts', 'export class Home {}')
@@ -341,5 +389,42 @@ describe('renameCommand (Integration)', () => {
     expect(renamedContent).toBe(
       'export class New {\n  static create() {\n    return new New()\n  }\n}',
     )
+  })
+
+  it('renames the spec and updates the describe with the new component name', async () => {
+    mkdirSync('src')
+    writeFileSync(OLD_TS, OLD_CONTENT_TS)
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+    writeFileSync(OLD_SPEC, OLD_SPEC_CONTENT)
+
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
+
+    expect(existsSync(OLD_SPEC)).toBe(false)
+    expect(readFileSync(NEW_SPEC, 'utf-8')).toBe(NEW_SPEC_CONTENT)
+  })
+
+  it('does not create a spec when the component has none', async () => {
+    mkdirSync('src')
+    writeFileSync(OLD_TS, OLD_CONTENT_TS)
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+
+    await renameCommand({ oldComponentName: 'Old', newComponentName: 'New' })
+
+    expect(existsSync(OLD_SPEC)).toBe(false)
+    expect(existsSync(NEW_SPEC)).toBe(false)
+  })
+
+  it('throws if the new spec already exists', async () => {
+    mkdirSync('src')
+    writeFileSync(OLD_TS, OLD_CONTENT_TS)
+    writeFileSync(OLD_PELELA, OLD_CONTENT_PELELA)
+    writeFileSync(NEW_SPEC, NEW_SPEC_CONTENT)
+
+    await expect(
+      renameCommand({ oldComponentName: 'Old', newComponentName: 'New' }),
+    ).rejects.toThrow(t('commands.rename.error.newNameExists', { name: 'New' }))
+
+    expect(existsSync(OLD_TS)).toBe(true)
+    expect(existsSync(OLD_SPEC)).toBe(false)
   })
 })

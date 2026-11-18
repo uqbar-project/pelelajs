@@ -1,7 +1,14 @@
 import { join } from 'node:path'
+import chalk from 'chalk'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import { initializeI18n } from '../../src/utils/i18n'
-import { checkNewVersion, versionUtils } from '../../src/utils/version'
+import { initializeI18n, t } from '../../src/utils/i18n'
+import {
+  checkNewVersion,
+  notifyNewVersion,
+  SKIP_UPDATE_CHECK_ENV,
+  shouldCheckForUpdates,
+  versionUtils,
+} from '../../src/utils/version'
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>()
@@ -18,6 +25,7 @@ beforeAll(async () => {
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
 })
 
 describe('checkNewVersion', () => {
@@ -309,5 +317,104 @@ describe('getLocalVersion', () => {
     const asyncVersion = await getLocalVersion()
 
     expect(asyncVersion).toBe(syncVersion)
+  })
+})
+
+describe('shouldCheckForUpdates', () => {
+  it('skips the check when the environment flag is enabled', () => {
+    expect(shouldCheckForUpdates({ [SKIP_UPDATE_CHECK_ENV]: '1' })).toBe(false)
+  })
+
+  it('checks when the environment flag is missing', () => {
+    expect(shouldCheckForUpdates({})).toBe(true)
+  })
+
+  it('checks when the environment flag has another value', () => {
+    expect(shouldCheckForUpdates({ [SKIP_UPDATE_CHECK_ENV]: '0' })).toBe(true)
+  })
+})
+
+describe('notifyNewVersion', () => {
+  const upToDate = { current: '1.0.0', latest: '1.0.0', hasUpdate: false }
+  const updateAvailable = { current: '1.0.0', latest: '2.0.0', hasUpdate: true }
+
+  it('does not query the registry when the update check is disabled', async () => {
+    const checkVersion = vi.fn()
+    const log = vi.fn()
+
+    await notifyNewVersion({ env: { [SKIP_UPDATE_CHECK_ENV]: '1' }, checkVersion, log })
+
+    expect(checkVersion).not.toHaveBeenCalled()
+    expect(log).not.toHaveBeenCalled()
+  })
+
+  it('reports the new version and the update command when an update exists', async () => {
+    const log = vi.fn()
+
+    await notifyNewVersion({ env: {}, log, checkVersion: () => Promise.resolve(updateAvailable) })
+
+    expect(log).toHaveBeenNthCalledWith(
+      1,
+      chalk.yellow.bold(`\n${t('messages.newVersionAvailable', { version: '2.0.0' })}`),
+    )
+    expect(log).toHaveBeenNthCalledWith(2, chalk.dim(`  ${t('messages.updateCommand')}\n`))
+  })
+
+  it('stays silent when the local version is up to date', async () => {
+    const log = vi.fn()
+
+    await notifyNewVersion({ env: {}, log, checkVersion: () => Promise.resolve(upToDate) })
+
+    expect(log).not.toHaveBeenCalled()
+  })
+
+  it('warns without breaking the CLI when the update check fails', async () => {
+    const warn = vi.fn()
+
+    await notifyNewVersion({
+      env: {},
+      warn,
+      checkVersion: () => Promise.reject(new Error('registry down')),
+    })
+
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn).toHaveBeenCalledWith(
+      chalk.dim(t('messages.versionCheckFailed', { error: 'registry down' })),
+    )
+  })
+
+  it('warns with the raw value when the failure is not an Error', async () => {
+    const warn = vi.fn()
+
+    await notifyNewVersion({
+      env: {},
+      warn,
+      checkVersion: () => Promise.reject('offline'),
+    })
+
+    expect(warn).toHaveBeenCalledWith(
+      chalk.dim(t('messages.versionCheckFailed', { error: 'offline' })),
+    )
+  })
+
+  it('defaults to the process environment, the console and the real registry check', async () => {
+    vi.stubEnv(SKIP_UPDATE_CHECK_ENV, '0')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ 'dist-tags': { latest: '99.0.0' } }), { status: 200 }),
+        ),
+      ),
+    )
+    vi.spyOn(versionUtils, 'getLocalVersion').mockResolvedValue('1.0.0')
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+
+    await notifyNewVersion()
+
+    expect(logSpy).toHaveBeenCalledTimes(2)
+    expect(logSpy).toHaveBeenCalledWith(
+      chalk.yellow.bold(`\n${t('messages.newVersionAvailable', { version: '99.0.0' })}`),
+    )
   })
 })

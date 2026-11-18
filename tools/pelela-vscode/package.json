@@ -26,7 +26,7 @@
   "scripts": {
     "build": "tsup src/extension.ts --format cjs --external vscode --clean && node scripts/copy-typescript-lib.js",
     "typecheck": "tsc --noEmit",
-    "test": "mocha --require tsx --require test/setup.ts test/**/*.test.ts",
+    "test": "mocha --require tsx --require test/setup.ts \"test/**/*.test.ts\"",
     "package": "vsce package --no-dependencies",
     "publish:marketplace": "vsce publish --no-dependencies",
     "publish:openvsx": "ovsx publish --no-dependencies",
@@ -48,6 +48,73 @@
   },
   "dependencies": {},
   "contributes": {
+    "commands": [
+      {
+        "command": "pelela.renameComponent",
+        "title": "%renameComponent%"
+      },
+      {
+        "command": "pelela.moveComponent",
+        "title": "%moveComponent%"
+      },
+      {
+        "command": "pelela.newComponent",
+        "title": "%newComponent%"
+      },
+      {
+        "command": "pelela.addTesting",
+        "title": "%addTesting%"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "pelela.renameComponent",
+          "when": "resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|[\\/\\\\])src[\\/\\\\]/)",
+          "group": "pelela@1"
+        },
+        {
+          "command": "pelela.moveComponent",
+          "when": "resourceExtname == .pelela || (resourceExtname == .ts && resourcePath =~ /(^|[\\/\\\\])src[\\/\\\\]/)",
+          "group": "pelela@2"
+        },
+        {
+          "command": "pelela.addTesting",
+          "when": "explorerResourceIsFolder && explorerResourceIsRoot",
+          "group": "pelela@3"
+        },
+        {
+          "command": "pelela.newComponent",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@10"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "pelela.renameComponent",
+          "when": "editorLangId == pelela"
+        },
+        {
+          "command": "pelela.moveComponent",
+          "when": "editorLangId == pelela"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Pelela",
+      "properties": {
+        "pelela.cli.path": {
+          "type": "string",
+          "default": "",
+          "description": "%cliPathDescription%"
+        },
+        "pelela.cli.nodePath": {
+          "type": "string",
+          "default": "node",
+          "description": "%cliNodePathDescription%"
+        }
+      }
+    },
     "languages": [
       {
         "id": "pelela",

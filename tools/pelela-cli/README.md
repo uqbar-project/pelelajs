@@ -60,12 +60,31 @@ pelela rename [path/componentName] [newComponentName]
 # Mover un componente a otra ruta
 pelela move [path/sourceComponentName] [path/destinationComponentName]
 
+# Agregar una configuración compatible (por ahora, testing)
+pelela add testing
+
 # Mostrar versión
 pelela --version
 
 # Mostrar ayuda
 pelela --help
 ```
+
+### Agregar testing
+
+Configura Vitest en el proyecto actual (dependencias, script, `vitest.config.ts` y extensiones recomendadas de VS Code):
+
+```bash
+pelela add testing
+```
+
+Si el proyecto ya tiene Vitest configurado, el comando no vuelve a aplicar el preset y termina sin error, para que se pueda ejecutar de forma segura más de una vez.
+
+Con el preset aplicado, `pelela new` también genera un `.spec.ts` para el componente nuevo. Este comando no crea specs retroactivos para componentes que ya existían.
+
+### Variables de entorno
+
+- `PELELA_SKIP_UPDATE_CHECK=1` desactiva la verificación de nuevas versiones contra el registro de NPM. La extensión de VS Code la usa para ejecutar los comandos sin llamadas de red.
 
 ### Crear componentes
 
@@ -79,8 +98,11 @@ Esto creará los siguientes archivos:
 - `src/my-component.ts` - Archivo TypeScript con la clase del componente
 - `src/my-component.pelela` - Archivo de template Pelela
 - `src/my-component.css` - Archivo de estilos CSS
+- `src/my-component.spec.ts` - Archivo de test (sólo si el proyecto tiene testing configurado con `pelela add testing` o `pelela init -T`)
 
 El nombre del archivo se convierte automáticamente a **kebab-case** (`my-component.ts`), mientras que la clase se crea en **PascalCase** (`MyComponent`).
+
+El spec generado incluye un `describe` con el nombre del componente y un `expect(1).toBe(1)` provisorio para que lo reemplaces por una aserción real.
 
 Crear un componente en un subdirectorio:
 
@@ -99,7 +121,7 @@ pelela rename components/Home Dashboard
 ```
 
 Este comando:
-- Renombra la clase/view-model y los archivos `.ts`, `.pelela` y `.css` (si existe)
+- Renombra la clase/view-model y los archivos `.ts`, `.pelela`, `.css` y `.spec.ts` (si existen), actualizando el `describe` del spec
 - Mantiene el componente en su carpeta actual
 - Actualiza sus imports en el proyecto
 
@@ -115,7 +137,7 @@ pelela move components/dashboard/Dashboard components/dashboard/reports/Reports
 pelela move components/dashboard/Dashboard pages/reports/Reports
 ```
 
-El comando mueve el conjunto `.ts` y `.pelela`, mueve el `.css` si existe, actualiza el nombre del view-model y las referencias/imports. No sobrescribe archivos existentes ni mueve otros recursos de las carpetas.
+El comando mueve el conjunto `.ts` y `.pelela`, mueve el `.css` y el `.spec.ts` si existen, actualiza el nombre del view-model (incluido el `describe` del spec) y las referencias/imports. No sobrescribe archivos existentes ni mueve otros recursos de las carpetas.
 
 ## Inicio rápido después de la inicialización
 

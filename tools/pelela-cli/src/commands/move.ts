@@ -70,7 +70,7 @@ export async function moveCommand(options: MoveCommandOptions): Promise<void> {
   }
 
   const destinationBasePath = resolveDestinationPath(destination, targetRoot)
-  const destinationFiles = ['.ts', '.pelela', '.css'].map(
+  const destinationFiles = ['.ts', '.pelela', '.css', '.spec.ts'].map(
     (extension) => `${destinationBasePath}${extension}`,
   )
   if (destinationFiles.some((destinationFile) => existsSync(destinationFile))) {

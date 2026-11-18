@@ -77,8 +77,45 @@ type HoverMessages = {
   constHelp: string
 }
 
+type CommandMessages = {
+  rename: {
+    title: string
+    prompt: string
+    success: string
+  }
+  move: {
+    title: string
+    prompt: string
+    hint: string
+    success: string
+  }
+  new: {
+    title: string
+    prompt: string
+    success: string
+  }
+  addTesting: {
+    title: string
+  }
+  quickPick: {
+    project: string
+  }
+  error: {
+    noComponentSelected: string
+    notAComponent: string
+    outsideSrc: string
+    projectNotFound: string
+    cliNotFound: string
+    cliFailed: string
+    cliFailedWithoutOutput: string
+    emptyName: string
+    componentNamePascalCase: string
+  }
+}
+
 export type TranslationSchema = {
   diagnostics: DiagnosticsMessages
   completions: CompletionMessages
   hover: HoverMessages
+  commands: CommandMessages
 }

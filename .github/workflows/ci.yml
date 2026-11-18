@@ -66,3 +66,30 @@ jobs:
           flags: unittests
           name: pelelajs-coverage
           fail_ci_if_error: false
+
+  tests-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm (compatible with runner Node.js)
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          check-latest: true
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Run VS Code extension tests
+        run: pnpm test:vscode

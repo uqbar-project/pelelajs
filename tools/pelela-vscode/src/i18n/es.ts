@@ -104,8 +104,47 @@ const hover = {
   constHelp: 'Pelela: binding de valor constante a un componente hijo',
 } as const satisfies TranslationSchema['hover']
 
+const commands = {
+  rename: {
+    title: 'Renombrar componente',
+    prompt: 'Nombre nuevo del componente (PascalCase, ej.: MiComponente)',
+    success: 'Componente renombrado a "{{name}}".',
+  },
+  move: {
+    title: 'Mover componente',
+    prompt: 'Ruta destino, incluido el nombre del componente',
+    hint: 'El último segmento es el nombre del componente y debe estar en PascalCase (ej.: components/MiComponente).',
+    success: 'Componente movido a "{{path}}".',
+  },
+  new: {
+    title: 'Nuevo componente',
+    prompt: 'Nombre del componente (PascalCase)',
+    success: 'Componente "{{name}}" creado.',
+  },
+  addTesting: {
+    title: '🧪 Pelela: Agregar testing',
+  },
+  quickPick: {
+    project: 'Elegí el proyecto Pelela',
+  },
+  error: {
+    noComponentSelected: 'No hay ningún componente seleccionado.',
+    notAComponent:
+      '"{{file}}" no es un componente Pelela: falta el archivo "{{pelelaFile}}" en la misma carpeta.',
+    outsideSrc: '"{{file}}" está fuera de la carpeta src del proyecto.',
+    projectNotFound: 'No se encontró un proyecto Pelela. Abrí una carpeta con package.json y src/.',
+    cliNotFound:
+      'No se encontró el CLI de Pelela. Instalalo con "pnpm add pelelajs" en el proyecto.',
+    cliFailed: 'El CLI de Pelela falló al ejecutar "{{command}}": {{error}}',
+    cliFailedWithoutOutput: 'El CLI de Pelela falló sin mostrar detalles.',
+    emptyName: 'El nombre no puede estar vacío.',
+    componentNamePascalCase: 'El nombre del componente debe ser PascalCase (ej.: MiComponente).',
+  },
+} as const satisfies TranslationSchema['commands']
+
 export const es = {
   diagnostics,
   completions,
   hover,
+  commands,
 } as const satisfies TranslationSchema

@@ -72,6 +72,8 @@ describe('initCommand', () => {
     mockedTemplates.updateProjectPackageJson.mockImplementation(() => undefined)
     mockedTestingPreset.applyTestingPreset.mockClear()
     mockedTestingPreset.applyTestingPreset.mockImplementation(() => undefined)
+    mockedTestingPreset.markTestingConfigured.mockClear()
+    mockedTestingPreset.markTestingConfigured.mockImplementation(() => undefined)
     mockedShell.installDependencies.mockClear()
     mockedShell.installDependencies.mockImplementation(() => undefined)
     mockedShell.pathExists.mockReturnValue(false)
@@ -157,7 +159,10 @@ describe('initCommand', () => {
     expect(mockedTestingPreset.applyTestingPreset).toHaveBeenCalledWith('/mock/path/my-project')
     const presetOrder = mockedTestingPreset.applyTestingPreset.mock.invocationCallOrder[0]
     const installOrder = mockedShell.installDependencies.mock.invocationCallOrder[0]
+    const markerOrder = mockedTestingPreset.markTestingConfigured.mock.invocationCallOrder[0]
     expect(presetOrder).toBeLessThan(installOrder)
+    expect(installOrder).toBeLessThan(markerOrder)
+    expect(mockedTestingPreset.markTestingConfigured).toHaveBeenCalledWith('/mock/path/my-project')
   })
 
   it('does not suggest a manual install in the next steps', async () => {
