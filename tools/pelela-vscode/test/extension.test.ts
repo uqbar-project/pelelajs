@@ -4,6 +4,7 @@ import { describe, it } from 'mocha'
 import type * as vscode from 'vscode'
 import { PELELA_COMMANDS } from '../src/commands'
 import { activate, deactivate } from '../src/extension'
+import { t } from '../src/i18n/index'
 import { createTempRoot } from './commands/helpers'
 import {
   getCommandInvocations,
@@ -45,10 +46,17 @@ function createDiagnosticDocument(root: string, fileName: string): vscode.TextDo
   } as unknown as vscode.TextDocument
 }
 
-function diagnosticsForDocument(filePath: string): unknown[] | undefined {
+function diagnosticsForDocument(filePath: string): vscode.Diagnostic[] | undefined {
   const collection = lastDiagnosticCollection()
   assert.ok(collection)
-  return collection._entries.get(filePath)
+  return collection._entries.get(filePath) as vscode.Diagnostic[] | undefined
+}
+
+function assertUnknownAttributeDiagnostic(filePath: string): void {
+  const expectedMessage = t('diagnostics.unknownAttribute', { name: 'onclick' })
+  const messages = (diagnosticsForDocument(filePath) ?? []).map((diagnostic) => diagnostic.message)
+  console.log('Pelela diagnostics:', messages)
+  assert.equal(messages.filter((message) => message === expectedMessage).length, 1)
 }
 
 describe('activate', () => {
@@ -136,7 +144,7 @@ describe('activate', () => {
       listener({ fsPath: join(root, WATCHED_VIEW_MODEL) })
     })
 
-    assert.equal(diagnosticsForDocument(document.uri.fsPath)?.length, 1)
+    assertUnknownAttributeDiagnostic(document.uri.fsPath)
   })
 
   it('refreshes diagnostics after a template changes', () => {
@@ -151,7 +159,7 @@ describe('activate', () => {
       listener({ fsPath: join(root, WATCHED_TEMPLATE) })
     })
 
-    assert.equal(diagnosticsForDocument(document.uri.fsPath)?.length, 1)
+    assertUnknownAttributeDiagnostic(document.uri.fsPath)
   })
 
   it('refreshes diagnostics after a template is created', () => {
@@ -166,7 +174,7 @@ describe('activate', () => {
       listener({ fsPath: join(root, WATCHED_TEMPLATE) })
     })
 
-    assert.equal(diagnosticsForDocument(document.uri.fsPath)?.length, 1)
+    assertUnknownAttributeDiagnostic(document.uri.fsPath)
   })
 
   it('refreshes diagnostics after a template is deleted', () => {
@@ -181,7 +189,7 @@ describe('activate', () => {
       listener({ fsPath: join(root, WATCHED_TEMPLATE) })
     })
 
-    assert.equal(diagnosticsForDocument(document.uri.fsPath)?.length, 1)
+    assertUnknownAttributeDiagnostic(document.uri.fsPath)
   })
 })
 
