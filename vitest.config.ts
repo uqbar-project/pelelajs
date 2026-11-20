@@ -10,6 +10,7 @@ export default defineConfig({
           name: 'release-scripts',
           environment: 'node',
           include: ['test/**/*.test.ts'],
+          benchmark: { include: ['test/**/*.bench.ts'] },
         },
       },
     ],

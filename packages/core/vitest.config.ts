@@ -6,5 +6,6 @@ export default defineProject({
     environment: 'jsdom',
     setupFiles: ['./test-setup.ts'],
     restoreMocks: true,
+    benchmark: { include: ['src/benchmarks/*.bench.ts'] },
   },
 })
