@@ -44,6 +44,21 @@ describe('bindEnter', () => {
       expect(handleEnter).toHaveBeenCalledTimes(1)
     })
 
+    it('should stop invoking the handler after the cleanup is called', () => {
+      container.innerHTML = '<input enter="handleEnter" />'
+      const handleEnter = vi.fn()
+      const removeListeners = setupEnterBindings(container, { handleEnter })
+      const input = container.querySelector('input')!
+
+      input.dispatchEvent(createKeydownEvent('Enter'))
+      expect(handleEnter).toHaveBeenCalledTimes(1)
+
+      removeListeners()
+      input.dispatchEvent(createKeydownEvent('Enter'))
+
+      expect(handleEnter).toHaveBeenCalledTimes(1)
+    })
+
     it('should use the current global debug state when dispatching events', () => {
       container.innerHTML = '<input enter="handleEnter" />'
       const handleEnter = vi.fn()
