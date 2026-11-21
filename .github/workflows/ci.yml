@@ -41,6 +41,12 @@ jobs:
       - name: Build packages
         run: pnpm run build
 
+      - name: Upload core build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-dist
+          path: packages/core/dist
+
       - name: Run tests with coverage
         run: pnpm exec vitest run --coverage --silent=passed-only
 
@@ -82,6 +88,7 @@ jobs:
 
   tests-windows:
     runs-on: windows-latest
+    needs: ci
 
     steps:
       - uses: actions/checkout@v7
@@ -101,8 +108,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: pnpm run build
+      - name: Download core build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: core-dist
+          path: packages/core/dist
 
       - name: Run VS Code extension tests
         run: pnpm test:vscode
