@@ -81,11 +81,11 @@ export function createEventBindingSetup<E extends Event>({
         element.addEventListener(domEventName, listener)
         return () => element.removeEventListener(domEventName, listener)
       })
-      .filter((remover): remover is () => void => remover !== undefined)
+      .filter((removeListener): removeListener is () => void => removeListener !== undefined)
 
     return () => {
-      removeListeners.forEach((remover) => {
-        remover()
+      removeListeners.forEach((removeListener) => {
+        removeListener()
       })
     }
   }

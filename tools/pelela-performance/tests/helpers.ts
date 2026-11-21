@@ -4,49 +4,32 @@ export const ITERATIONS = 50
 
 export type PerformanceWindow = Window & {
   __pelelaMutate: () => void
-  __pelelaMutateDegraded: () => void
   __pelelaDestroy: () => void
+  __pelelaRunCycles: (count: number) => void
 }
 
-type LongTaskWindow = Window & { __pelelaLongTasks?: number[] }
 type CdpMetric = { name: string; value: number }
-type MutationName = '__pelelaMutate' | '__pelelaMutateDegraded'
 
-function createMutationRunner(mutationName: MutationName) {
-  return (page: Page): Promise<number> =>
-    page.evaluate(
-      ({ iterations, name }) => {
-        const harness = window as PerformanceWindow
-        const mutate = harness[name]
+export async function runMutations(page: Page, rounds: number): Promise<number[]> {
+  return page.evaluate(
+    ({ iterations, roundCount }) => {
+      const harness = window as PerformanceWindow
+      const durations: number[] = []
+      for (let round = 0; round < roundCount; round += 1) {
         const start = performance.now()
-        for (let index = 0; index < iterations; index += 1) mutate()
-        return performance.now() - start
-      },
-      { iterations: ITERATIONS, name: mutationName },
-    )
+        for (let index = 0; index < iterations; index += 1) harness.__pelelaMutate()
+        durations.push(performance.now() - start)
+      }
+      return durations
+    },
+    { iterations: ITERATIONS, roundCount: rounds },
+  )
 }
 
-export const runMutations = createMutationRunner('__pelelaMutate')
-export const runDegradedMutations = createMutationRunner('__pelelaMutateDegraded')
-
-export async function startLongTaskCapture(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const durations: number[] = []
-    ;(window as LongTaskWindow).__pelelaLongTasks = durations
-    new PerformanceObserver((entries) => {
-      entries.getEntries().forEach((entry) => {
-        durations.push(entry.duration)
-      })
-    }).observe({ type: 'longtask', buffered: true } as PerformanceObserverInit)
-  })
-}
-
-export async function readLongTasks(page: Page): Promise<number[]> {
-  return page.evaluate(() => (window as LongTaskWindow).__pelelaLongTasks ?? [])
-}
-
-export async function flushObserverCallbacks(page: Page): Promise<void> {
-  await page.evaluate(() => new Promise<void>((resolve) => setTimeout(resolve, 50)))
+export async function runCycles(page: Page, count: number): Promise<void> {
+  await page.evaluate((cycleCount) => {
+    ;(window as PerformanceWindow).__pelelaRunCycles(cycleCount)
+  }, count)
 }
 
 export async function getHeapUsedSize(page: Page): Promise<number> {
