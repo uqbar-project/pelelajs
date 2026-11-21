@@ -482,4 +482,40 @@ describe('DependencyTracker', () => {
       expect(tracker.isGetterBinding(binding)).toBe(false)
     })
   })
+
+  describe('clear', () => {
+    it('should stop returning dependent bindings after clearing', () => {
+      const tracker = new DependencyTracker()
+      const binding = {
+        element: document.createElement('div'),
+        propertyName: 'users',
+      }
+      tracker.registerDependency(binding, 'users')
+      const bindings: BindingsCollection = { ...emptyBindings(), contentBindings: [binding] }
+
+      expect(tracker.getDependentBindings('users', bindings).contentBindings).toEqual([binding])
+
+      tracker.clear()
+
+      expect(tracker.getDependentBindings('users', bindings).contentBindings).toEqual([])
+    })
+
+    it('should drop getter bindings so they no longer augment the result', () => {
+      const tracker = new DependencyTracker()
+      const binding = {
+        element: document.createElement('div'),
+        propertyName: 'value',
+      }
+      tracker.markAsGetterBinding(binding)
+      const bindings: BindingsCollection = { ...emptyBindings(), contentBindings: [binding] }
+
+      const beforeClear = tracker.getDependentBindingsWithGetterSupport('other', bindings)
+      expect(beforeClear.contentBindings).toEqual([binding])
+
+      tracker.clear()
+
+      const afterClear = tracker.getDependentBindingsWithGetterSupport('other', bindings)
+      expect(afterClear.contentBindings).toEqual([])
+    })
+  })
 })

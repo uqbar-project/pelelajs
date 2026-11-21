@@ -15,6 +15,7 @@
     "test:packages": "pnpm -r run test",
     "test:vscode": "pnpm -C tools/pelela-vscode test",
     "test:all": "pnpm run test",
+    "test:performance": "pnpm --filter @pelelajs/performance test:e2e",
     "bench": "vitest bench --run --outputJson=benchmarks/current.json",
     "bench:check": "vitest bench --run --outputJson=benchmarks/current.json && tsx scripts/check-bench-budget.ts",
     "bench:baseline": "vitest bench --run --outputJson=benchmarks/current.json && tsx scripts/check-bench-budget.ts --update",
