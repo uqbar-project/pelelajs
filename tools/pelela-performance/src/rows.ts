@@ -5,7 +5,7 @@ export const LOW_THRESHOLD = 50
 export type Row = {
   value: number
   offset: number
-  colorClass: string
+  colorClass: 'hot' | 'cold'
 }
 
 export function createRows(count = ROW_COUNT): Row[] {
