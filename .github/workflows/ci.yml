@@ -44,6 +44,19 @@ jobs:
       - name: Run tests with coverage
         run: pnpm exec vitest run --coverage --silent=passed-only
 
+      - name: Install Playwright browser
+        run: pnpm --filter @pelelajs/performance exec playwright install --with-deps chromium
+
+      - name: Run performance tests
+        run: pnpm run test:performance
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tools/pelela-performance/playwright-report
+
       - name: Run VS Code extension tests
         run: pnpm test:vscode
 
