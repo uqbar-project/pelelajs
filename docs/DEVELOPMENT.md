@@ -64,7 +64,7 @@ PelelaJS is a monorepo, so you can start with the area that best matches what yo
 | Vite plugin | Vite plugin API, module transformation | `packages/vite-plugin-pelelajs` |
 | CLI | Node.js, project templates, i18n (`t()`) | `tools/pelela-cli` |
 | VSCode extension | Language Server Protocol, `vscode` API | `tools/pelela-vscode` |
-| Testing & QA | Vitest, Mocha, coverage tooling | `packages/*/test`, `tools/pelela-vscode/test` |
+| Testing & QA | Vitest, Playwright, CDP, Mocha, coverage tooling | `packages/*/test`, `tools/pelela-performance/tests`, `tools/pelela-vscode/test` |
 
 You do not need to master every area. A good way to contribute is to pick one area, read its tests, and start with a small change.
 
@@ -141,6 +141,8 @@ Testing is a core requirement (>90% coverage). We use **Vitest**.
   ```bash
   pnpm run test
   ```
+
+Browser performance checks are part of `pnpm test`. To run only that suite, use `pnpm run test:performance`; [Performance Testing](./performance/PERFORMANCE_TESTING.md) explains the categories, limits, and artifacts.
 
 Tests are documentation: name them after the behavior they verify, and preferably write the failing test before fixing a bug.
 

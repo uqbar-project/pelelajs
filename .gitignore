@@ -27,6 +27,5 @@ local
 plans
 
 graphify-out
-benchmarks/current.json
 tools/pelela-performance/playwright-report
 tools/pelela-performance/test-results

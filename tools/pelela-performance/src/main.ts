@@ -4,12 +4,10 @@ import {
   createReactiveViewModel,
   type ReactiveViewModel,
 } from '../../../packages/core/src/reactivity/reactiveProxy'
+import { createRows, LOW_THRESHOLD, type Row } from './rows'
 
-const ROW_COUNT = 100
-const LOW_THRESHOLD = 50
 const STRESS_ROW_INDEX = 0
 
-type Row = { value: number; offset: number; colorClass: string }
 type GridState = {
   rows: Row[]
   bumpAll: () => void
@@ -26,14 +24,6 @@ declare global {
     __pelelaDestroy: () => void
     __pelelaRunCycles: (count: number) => void
   }
-}
-
-function createRows(): Row[] {
-  return Array.from({ length: ROW_COUNT }, (_, index) => ({
-    value: index,
-    offset: 0,
-    colorClass: index > LOW_THRESHOLD ? 'hot' : 'cold',
-  }))
 }
 
 function rowsMarkup(rows: Row[]): string {
@@ -89,6 +79,7 @@ const root = document.getElementById('app')
 if (!root) throw new Error('Performance fixture root is missing')
 
 const initial = mountRows(root, createRows())
+performance.mark('pelela-ready')
 
 window.__pelelaMutate = () => mutateStressRow(initial.reactiveState.rows as Row[])
 window.__pelelaDestroy = () => initial.render.destroy()
