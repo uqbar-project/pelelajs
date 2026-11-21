@@ -26,8 +26,6 @@ If you are looking to understand *how* PelelaJS works under the hood rather than
 
 - [Development Setup](./DEVELOPMENT.md): How to set up the repository locally, including TypeScript, Biome, and pnpm.
 
-- [Performance Testing](./performance/PERFORMANCE_TESTING.md): What the browser performance suite measures, how it is instrumented, and how to read a failure.
-
 - [Publishing to NPM](./publishing/npm.md): Steps to release a new version of the core framework or CLI.
 
 - [Publishing to VSCode Marketplace](./publishing/vscode.md): Steps to release the VSCode extension.

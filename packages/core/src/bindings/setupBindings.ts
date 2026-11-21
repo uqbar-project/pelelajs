@@ -33,7 +33,6 @@ import type {
   ForEachBinding,
   IfBinding,
   NotifyParent,
-  RenderFunction,
   SrcBinding,
   StyleBinding,
   ValueBinding,
@@ -244,7 +243,7 @@ export function setupBindings<T extends object>(
     notifyParent,
     debug,
   }: { skipRootIf?: boolean; notifyParent?: NotifyParent; debug?: boolean } = {},
-): RenderFunction {
+): (changedPath?: string) => void {
   const allElements = findAllElements(root, '*', true)
   for (const element of allElements) {
     for (const attr of element.attributes) {
@@ -268,8 +267,8 @@ export function setupBindings<T extends object>(
     styleBindings: setupStyleBindings(root, viewModel),
   }
 
-  const removeClickListeners = setupClickBindings(root, viewModel, { debug })
-  const removeEnterListeners = setupEnterBindings(root, viewModel, { debug })
+  setupClickBindings(root, viewModel, { debug })
+  setupEnterBindings(root, viewModel, { debug })
 
   const tracker = new DependencyTracker()
   const registeredPaths = registerAllBindingDependencies(bindings, tracker, viewModel)
@@ -392,11 +391,7 @@ export function setupBindings<T extends object>(
     }
   }
 
-  let isDestroyed = false
-
   const render = (changedPath?: string) => {
-    if (isDestroyed) return
-
     const targetBindings = changedPath
       ? tracker.getDependentBindingsWithGetterSupport(changedPath, bindings)
       : bindings
@@ -408,28 +403,8 @@ export function setupBindings<T extends object>(
     executeRenderPipeline(targetBindings, viewModel, changedPath)
   }
 
-  const destroy = () => {
-    if (isDestroyed) return
-    isDestroyed = true
+  renderRef.current = render
 
-    removeClickListeners()
-    removeEnterListeners()
-    bindings.componentBindings.forEach(({ renderChild }) => {
-      ;(renderChild as RenderFunction | undefined)?.destroy()
-    })
-    tracker.clear()
-    previousValues.clear()
-    ;(Object.keys(bindings) as (keyof BindingsCollection)[]).forEach((key) => {
-      bindings[key].length = 0
-    })
-    delete (root as HTMLElement & { __pelelaViewModel?: unknown }).__pelelaViewModel
-  }
-
-  const renderWithDestroy = render as RenderFunction
-  renderWithDestroy.destroy = destroy
-
-  renderRef.current = renderWithDestroy
-
-  renderWithDestroy()
-  return renderWithDestroy
+  render()
+  return render
 }

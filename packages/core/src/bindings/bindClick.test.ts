@@ -250,20 +250,5 @@ describe('bindClick', () => {
 
       expect(handleClick).toHaveBeenCalledTimes(1)
     })
-
-    it('should stop invoking the handler after the cleanup is called', () => {
-      container.innerHTML = '<button click="handleClick">Click me</button>'
-      const handleClick = vi.fn()
-      const removeListeners = setupClickBindings(container, { handleClick })
-      const button = container.querySelector('button')!
-
-      button.click()
-      expect(handleClick).toHaveBeenCalledTimes(1)
-
-      removeListeners()
-      button.click()
-
-      expect(handleClick).toHaveBeenCalledTimes(1)
-    })
   })
 })

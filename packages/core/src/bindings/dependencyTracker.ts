@@ -52,11 +52,6 @@ export class DependencyTracker {
     this.getterBindings.add(binding)
   }
 
-  clear(): void {
-    this.dependencies.clear()
-    this.getterBindings.clear()
-  }
-
   isGetterBinding(binding: Binding): boolean {
     return this.getterBindings.has(binding)
   }

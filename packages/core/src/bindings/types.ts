@@ -94,10 +94,6 @@ export type ComponentBinding = {
   renderChild?: (changedPath?: string) => void
 }
 
-export type RenderFunction = ((changedPath?: string) => void) & {
-  destroy: () => void
-}
-
 export type BindingsCollection = {
   valueBindings: ValueBinding[]
   contentBindings: ContentBinding[]
