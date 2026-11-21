@@ -1,11 +1,5 @@
 # Benchmark artifacts
 
-`baseline.json` and the budgets in `../performance-budgets.json` are generated on the CI runner with:
+`pnpm run bench` runs the internal Vitest benchmarks and writes `current.json`, which is ignored by git. The numbers are informational: they help spot broad trends, but they are not compared against a fixed budget because developer machines and CI runners are not comparable.
 
-```bash
-pnpm run bench:baseline
-```
-
-`current.json` is produced by every `pnpm run bench` run and is ignored by git. The budget check compares each benchmark mean against `baseline mean × 1.2` and fails when it is exceeded.
-
-Do not regenerate the baseline locally: developer machines and CI runners are not comparable. Use `pnpm run bench:baseline` in CI and commit the resulting files.
+`pnpm run test:performance` writes `tools/pelela-performance/playwright-report/results.json`, also ignored by git. It contains the Playwright + CDP measurements; the pass/fail decisions happen as assertions inside the spec.

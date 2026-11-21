@@ -17,8 +17,6 @@
     "test:all": "pnpm run test",
     "test:performance": "pnpm --filter @pelelajs/performance test:e2e",
     "bench": "vitest bench --run --outputJson=benchmarks/current.json",
-    "bench:check": "vitest bench --run --outputJson=benchmarks/current.json && tsx scripts/check-bench-budget.ts",
-    "bench:baseline": "vitest bench --run --outputJson=benchmarks/current.json && tsx scripts/check-bench-budget.ts --update",
     "biome:lint": "biome lint .",
     "biome:lint:fix": "biome lint --write .",
     "biome:format": "biome format .",
