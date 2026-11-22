@@ -86,12 +86,12 @@ These are the values from a local run on a development Mac with the bundled Chro
 
 | Measurement | Observed | Limit |
 | --- | --- | --- |
-| `first-contentful-paint` (4x throttle) | 96 ms | 2000 ms |
-| `pelela-ready` mark (4x throttle) | 70 ms | 2000 ms |
-| for-each mount, 50 rows | 22 ms | 200 ms |
-| 50 components mount | 19 ms | 200 ms |
-| Worst batch of 50 single-row mutations | 6 ms | 50 ms |
-| Heap growth after 10 mount + destroy cycles | +8.9% (1,952,468 → 2,126,540 bytes) | +20% |
+| `first-contentful-paint` (4x throttle) | 92 ms | 2000 ms |
+| `pelela-ready` mark (4x throttle) | 66 ms | 2000 ms |
+| for-each mount, 50 rows | 3 ms | 200 ms |
+| 50 components mount | 4 ms | 200 ms |
+| Worst batch of 50 single-row mutations | 5.9 ms | 50 ms |
+| Heap growth after 10 mount + destroy cycles | +9.1% (1,960,616 → 2,139,940 bytes) | +20% |
 
 The composition numbers are close enough that neither strategy has a meaningful advantage at this size: the test checks that both stay under the ceiling, not that one wins. The batch and heap limits have similarly wide headroom, so a regression has to be substantial before it fails CI.
 

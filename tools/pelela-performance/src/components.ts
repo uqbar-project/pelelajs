@@ -28,7 +28,7 @@ if (!root) throw new Error('Performance fixture root is missing')
 const componentMarkup = Array.from(
   { length: COMPARISON_ROW_COUNT },
   (_, index) =>
-    `<row-component data-testid="row-${index}" prop-row="rows.${index}"></row-component>`,
+    `<div data-testid="row-${index}"><row-component prop-row="rows.${index}"></row-component></div>`,
 ).join('')
 
 root.innerHTML = `<div class="grid">${componentMarkup}</div>`
