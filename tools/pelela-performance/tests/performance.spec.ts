@@ -40,11 +40,18 @@ test('for-each rows and Pelela components mount below the composition limit', as
   const components = page.locator('row-component')
   await expect(components).toHaveCount(COMPARISON_ROW_COUNT)
 
-  const expectedValues = Array.from({ length: COMPARISON_ROW_COUNT }, (_, index) => String(index))
-  await expect(components.locator('.value')).toHaveText(expectedValues)
-  await expect(components.locator('.offset')).toHaveText(expectedValues.map(() => '0'))
-  await expect(components.first().locator('input')).toHaveValue('0')
-  await expect(components.last().locator('input')).toHaveValue(String(COMPARISON_ROW_COUNT - 1))
+  const expectedRows = Array.from({ length: COMPARISON_ROW_COUNT }, (_, index) => ({
+    testId: `row-${index}`,
+    value: String(index),
+  }))
+  await Promise.all(
+    expectedRows.map(async ({ testId, value }) => {
+      const row = page.getByTestId(testId)
+      await expect(row.locator('input')).toHaveValue(value)
+      await expect(row.locator('.value')).toHaveText(value)
+      await expect(row.locator('.offset')).toHaveText('0')
+    }),
+  )
 
   console.log(
     `[composition] for-each=${forEachMountDuration.toFixed(0)} ` +
