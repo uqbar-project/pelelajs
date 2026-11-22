@@ -116,7 +116,7 @@ In CI, on `ubuntu-latest`, Chromium is installed with `pnpm --filter @pelelajs/p
 `pnpm run test:performance` writes `tools/pelela-performance/playwright-report/`, which is ignored by git:
 
 - `results.json`: machine-readable durations, assertions, and test status.
-- `index.html`: the HTML report, also available locally with `pnpm exec playwright show-report tools/pelela-performance/playwright-report`.
+- `index.html`: the HTML report, also available locally with `pnpm --filter @pelelajs/performance exec playwright show-report playwright-report`.
 
 CI uploads the same directory as the `playwright-report` artifact, including on failure. The pass/fail decision is always made by the assertions in the spec; the artifact exists to explain *why* a test failed, not to be compared against an external budget.
 
