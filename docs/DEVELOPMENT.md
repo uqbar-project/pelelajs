@@ -139,7 +139,7 @@ Testing is a core requirement (>90% coverage). We use **Vitest**.
 - Run tests in watch mode during development:
 
   ```bash
-  pnpm run test
+  pnpm run test:watch
   ```
 
 Browser performance checks are part of `pnpm test`. To run only that suite, use `pnpm run test:performance`; [Performance Testing](./performance/PERFORMANCE_TESTING.md) explains the categories, limits, and artifacts.
