@@ -504,6 +504,29 @@ describe('setupBindings', () => {
       expect(viewModel.items[0].text).toBe('before destroy')
     })
 
+    it('should detach click listeners from for-each rows on destroy', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <button click="handleClick" bind-content="item.name"></button>
+        </div>
+      `
+      const handleClick = vi.fn()
+      const viewModel = { items: [{ name: 'First' }, { name: 'Second' }], handleClick }
+      const render = setupBindings(container, viewModel)
+      const buttons = container.querySelectorAll('button')
+
+      buttons[0].click()
+      buttons[1].click()
+      expect(handleClick).toHaveBeenCalledTimes(2)
+
+      render.destroy()
+
+      buttons[0].click()
+      buttons[1].click()
+
+      expect(handleClick).toHaveBeenCalledTimes(2)
+    })
+
     it('should clear the view model reference stored on the root', () => {
       container.innerHTML = '<span bind-content="message"></span>'
       const viewModel = { message: 'initial' }
