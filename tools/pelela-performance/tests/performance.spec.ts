@@ -5,6 +5,7 @@ import {
   getHeapUsedSize,
   ITERATIONS,
   type PerformanceWindow,
+  readMountDuration,
   readStartupTimings,
   runCycles,
   runMutations,
@@ -31,11 +32,11 @@ test('first paint and bindings happen quickly under CPU throttling', async ({ th
 
 test('for-each rows and Pelela components mount below the composition limit', async ({ page }) => {
   await page.goto('/for-each.html')
-  const forEachTimings = await readStartupTimings(page)
+  const forEachMountDuration = await readMountDuration(page)
   await expect(page.locator('.row')).toHaveCount(COMPARISON_ROW_COUNT)
 
   await page.goto('/components.html')
-  const componentTimings = await readStartupTimings(page)
+  const componentMountDuration = await readMountDuration(page)
   const components = page.locator('row-component')
   await expect(components).toHaveCount(COMPARISON_ROW_COUNT)
 
@@ -46,12 +47,12 @@ test('for-each rows and Pelela components mount below the composition limit', as
   await expect(components.last().locator('input')).toHaveValue(String(COMPARISON_ROW_COUNT - 1))
 
   console.log(
-    `[composition] for-each=${forEachTimings.bindingsReady.toFixed(0)} ` +
-      `components=${componentTimings.bindingsReady.toFixed(0)} ms`,
+    `[composition] for-each=${forEachMountDuration.toFixed(0)} ` +
+      `components=${componentMountDuration.toFixed(0)} ms`,
   )
 
-  expect(forEachTimings.bindingsReady).toBeLessThan(MAX_COMPOSITION_MS)
-  expect(componentTimings.bindingsReady).toBeLessThan(MAX_COMPOSITION_MS)
+  expect(forEachMountDuration).toBeLessThan(MAX_COMPOSITION_MS)
+  expect(componentMountDuration).toBeLessThan(MAX_COMPOSITION_MS)
 })
 
 test('a batch of selective updates stays below the main-thread limit', async ({ fixturePage }) => {

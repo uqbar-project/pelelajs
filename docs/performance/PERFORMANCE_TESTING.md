@@ -62,9 +62,9 @@ All five tests live in `tools/pelela-performance/tests/performance.spec.ts`. The
 
 ### For-each rows and Pelela components mount below the composition limit
 
-- **What it measures:** the cost of building the same 50-row grid two ways: a single `for-each="row of rows"` template, and 50 registered Pelela components bound with `prop-row`. Both fixtures emit the same `pelela-ready` mark right after `setupBindings`, and the test also asserts that 50 rows were actually rendered in each case.
+- **What it measures:** the cost of building the same 50-row grid two ways: a single `for-each="row of rows"` template, and 50 registered Pelela components bound with `prop-row`. Both fixtures emit a `pelela-setup-start` mark before `setupBindings` and the existing `pelela-ready` mark after it; the test compares the interval between them and also asserts that 50 rows were actually rendered in each case.
 
-- **Instrumentation:** `performance.mark('pelela-ready')` read with the same helper as the startup test. Both fixtures run without CPU throttling, so the 200 ms ceiling is a direct comparison of the two composition strategies on the runner.
+- **Instrumentation:** `readMountDuration` waits for both marks and returns `end.startTime - start.startTime`, so the limit applies to the setup interval rather than to a timestamp relative to navigation start. The startup test keeps reading `pelela-ready` on its own as a timestamp. Both composition fixtures run without CPU throttling, so the 200 ms ceiling is a direct comparison of the two composition strategies on the runner.
 
 - **Limit:** `MAX_COMPOSITION_MS = 200` for each strategy. This is an absolute ceiling, not a ratio: the two paths have different JS/DOM cost profiles, so a ratio between them would move between machines.
 

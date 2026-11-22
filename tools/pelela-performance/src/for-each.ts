@@ -23,5 +23,6 @@ root.innerHTML = `
 const state: GridState = { rows: createRows(COMPARISON_ROW_COUNT) }
 let render: (changedPath?: string) => void = () => {}
 const reactiveState = createReactiveViewModel(state, (changedPath) => render(changedPath))
+performance.mark('pelela-setup-start')
 render = setupBindings(root, reactiveState)
 performance.mark('pelela-ready')
