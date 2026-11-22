@@ -391,6 +391,32 @@ describe('bindForEach', () => {
       expect(spans[1].innerHTML).toBe('Second')
     })
 
+    it('should detach bind-value listeners from rows removed when the array shrinks', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <input bind-value="item.text" />
+        </div>
+      `
+
+      const viewModel = { items: [{ text: 'First' }, { text: 'Second' }] }
+      const bindings = setupForEachBindings(container, viewModel)
+      renderForEachBindings(bindings, viewModel)
+
+      const removedItem = viewModel.items[1]
+      const removedInput = container.querySelectorAll('input')[1]
+      removedInput.value = 'Edited'
+      removedInput.dispatchEvent(new Event('input'))
+      expect(removedItem.text).toBe('Edited')
+
+      viewModel.items.pop()
+      renderForEachBindings(bindings, viewModel)
+
+      removedInput.value = 'After removal'
+      removedInput.dispatchEvent(new Event('input'))
+
+      expect(removedItem.text).toBe('Edited')
+    })
+
     it('should not throw or change the DOM when the collection stops being an array', () => {
       container.innerHTML = `
         <div for-each="item of items">

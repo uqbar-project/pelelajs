@@ -464,6 +464,46 @@ describe('setupBindings', () => {
       expect(handleClick).not.toHaveBeenCalled()
     })
 
+    it('should detach bind-value listeners so editing a control no longer updates the model', () => {
+      container.innerHTML = '<input bind-value="message" />'
+      const viewModel = { message: 'initial' }
+      const render = setupBindings(container, viewModel)
+      const input = container.querySelector('input')!
+
+      input.value = 'before destroy'
+      input.dispatchEvent(new Event('input'))
+      expect(viewModel.message).toBe('before destroy')
+
+      render.destroy()
+
+      input.value = 'after destroy'
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.message).toBe('before destroy')
+    })
+
+    it('should detach bind-value listeners from for-each rows on destroy', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <input bind-value="item.text" />
+        </div>
+      `
+      const viewModel = { items: [{ text: 'initial' }] }
+      const render = setupBindings(container, viewModel)
+      const input = container.querySelector('input')!
+
+      input.value = 'before destroy'
+      input.dispatchEvent(new Event('input'))
+      expect(viewModel.items[0].text).toBe('before destroy')
+
+      render.destroy()
+
+      input.value = 'after destroy'
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.items[0].text).toBe('before destroy')
+    })
+
     it('should clear the view model reference stored on the root', () => {
       container.innerHTML = '<span bind-content="message"></span>'
       const viewModel = { message: 'initial' }

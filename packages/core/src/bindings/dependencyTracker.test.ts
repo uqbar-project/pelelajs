@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { DependencyTracker } from './dependencyTracker'
-import type { BindingsCollection, ComponentBinding } from './types'
+import type { BindingLists, ComponentBinding } from './types'
 
-const emptyBindings = (): BindingsCollection => ({
+const emptyBindings = (): BindingLists => ({
   valueBindings: [],
   contentBindings: [],
   srcBindings: [],
@@ -26,7 +26,7 @@ describe('DependencyTracker', () => {
 
       tracker.registerDependency(binding, 'users')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [binding],
       }
@@ -45,7 +45,7 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding, 'user')
       tracker.registerDependency(binding, 'user.name')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [binding],
       }
@@ -74,7 +74,7 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding1, 'users')
       tracker.registerDependency(binding2, 'items')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [binding1, binding2],
       }
@@ -94,7 +94,7 @@ describe('DependencyTracker', () => {
 
       tracker.registerDependency(binding, 'users')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [binding],
       }
@@ -113,7 +113,7 @@ describe('DependencyTracker', () => {
 
       tracker.registerDependency(binding, 'users.0.name')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [binding],
       }
@@ -137,7 +137,7 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding1, 'users')
       tracker.registerDependency(binding2, 'items')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [binding1, binding2],
       }
@@ -168,7 +168,7 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(ifBinding, 'show')
       tracker.registerDependency(classBinding, 'classes')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [valueBinding],
         ifBindings: [ifBinding],
@@ -202,7 +202,7 @@ describe('DependencyTracker', () => {
 
       tracker.registerDependency(forEachBinding, 'users')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         forEachBindings: [forEachBinding],
       }
@@ -222,7 +222,7 @@ describe('DependencyTracker', () => {
 
       tracker.registerDependency(binding, 'user.profile.name')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [binding],
       }
@@ -245,7 +245,7 @@ describe('DependencyTracker', () => {
 
       tracker.registerDependency(binding, 'user')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [binding],
       }
@@ -272,7 +272,7 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(binding1, 'prueba.nombre')
       tracker.registerDependency(binding2, 'prueba.direccion.calle.nombre')
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [binding1, binding2],
       }
@@ -324,7 +324,7 @@ describe('DependencyTracker', () => {
       tracker.registerDependency(forEachBinding, 'people', viewModel)
       tracker.markAsGetterBinding(forEachBinding)
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         forEachBindings: [forEachBinding],
       }
@@ -352,7 +352,7 @@ describe('DependencyTracker', () => {
 
       tracker.registerDependency(componentBinding, 'selectedPersonName', viewModel)
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         componentBindings: [componentBinding],
       }
@@ -379,7 +379,7 @@ describe('DependencyTracker', () => {
 
       tracker.registerDependency(valueBinding, 'selectedPersonName', viewModel)
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [valueBinding],
       }
@@ -429,7 +429,7 @@ describe('DependencyTracker', () => {
       // manually marked as a getter binding since its extraDependencies include 'totalPeople'
       tracker.markAsGetterBinding(forEachBinding)
 
-      const bindings: BindingsCollection = {
+      const bindings: BindingLists = {
         ...emptyBindings(),
         valueBindings: [valueBinding],
         forEachBindings: [forEachBinding],
@@ -491,7 +491,7 @@ describe('DependencyTracker', () => {
         propertyName: 'users',
       }
       tracker.registerDependency(binding, 'users')
-      const bindings: BindingsCollection = { ...emptyBindings(), contentBindings: [binding] }
+      const bindings: BindingLists = { ...emptyBindings(), contentBindings: [binding] }
 
       expect(tracker.getDependentBindings('users', bindings).contentBindings).toEqual([binding])
 
@@ -507,7 +507,7 @@ describe('DependencyTracker', () => {
         propertyName: 'value',
       }
       tracker.markAsGetterBinding(binding)
-      const bindings: BindingsCollection = { ...emptyBindings(), contentBindings: [binding] }
+      const bindings: BindingLists = { ...emptyBindings(), contentBindings: [binding] }
 
       const beforeClear = tracker.getDependentBindingsWithGetterSupport('other', bindings)
       expect(beforeClear.contentBindings).toEqual([binding])
