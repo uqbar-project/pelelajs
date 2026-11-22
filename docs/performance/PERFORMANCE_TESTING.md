@@ -52,7 +52,7 @@ All five tests live in `tools/pelela-performance/tests/performance.spec.ts`. The
 
 ### First paint and bindings happen quickly under CPU throttling
 
-- **What it measures:** `first-contentful-paint` and the moment PelelaJS finished wiring the bindings. The fixture emits `performance.mark('pelela-ready')` right after `setupBindings` in `tools/pelela-performance/src/main.ts`; that mark is Pelela's equivalent of TTI.
+- **What it measures:** `first-contentful-paint` and the moment PelelaJS finished wiring the bindings. The fixture emits `performance.mark('pelela-ready')` right after `setupBindings` in `tools/pelela-performance/src/main.ts`; it records binding initialization only, not TTI and not readiness to respond to interactions.
 
 - **Instrumentation:** CDP `Emulation.setCPUThrottlingRate({ rate: 4 })` is applied **before** `page.goto('/')`, so both the paint and the binding setup happen on a throttled CPU. The helper waits for both timing entries to exist before reading them: `goto` resolves on `load`, but Chromium records the paint entry on a later frame, and that gap grows under throttling. The throttle is restored and the session detached in `finally`.
 
