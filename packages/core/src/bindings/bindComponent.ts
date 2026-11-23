@@ -515,6 +515,7 @@ export function setupComponentBindings<T extends object>(
     // Buffer change paths during setup to avoid losing reactive updates
     const bufferedPaths: string[] = []
     const isSetupComplete = { value: false }
+    let isChildDestroyed = false
     let renderChild: (changedPath?: string) => void = () => {}
 
     /**
@@ -540,6 +541,7 @@ export function setupComponentBindings<T extends object>(
     }
 
     const reactiveInstance = createReactiveViewModel(instance, (changedPath: string) => {
+      if (isChildDestroyed) return
       if (isUnsafeKey(changedPath)) return
 
       if (
@@ -571,10 +573,16 @@ export function setupComponentBindings<T extends object>(
 
     // The component tag's own 'if' belongs to the parent's view model.
     // Pass skipRootIf so the child binding setup doesn't try to validate it.
-    renderChild = setupBindings(element, reactiveInstance, {
+    const childRender = setupBindings(element, reactiveInstance, {
       skipRootIf: true,
       notifyParent: forwardLinkChange,
     })
+    const destroyChild = childRender.destroy
+    childRender.destroy = () => {
+      isChildDestroyed = true
+      destroyChild()
+    }
+    renderChild = childRender
     isSetupComplete.value = true
 
     // Flush buffered changes after setupBindings assigns renderChild

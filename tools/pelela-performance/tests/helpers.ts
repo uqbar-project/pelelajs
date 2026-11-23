@@ -75,14 +75,14 @@ export async function readMountDuration(page: Page): Promise<number> {
       const start = performance.getEntriesByName('pelela-setup-start')[0]
       const end = performance.getEntriesByName('pelela-ready')[0]
       if (!start || !end) return null
-      return end.startTime - start.startTime
+      return { duration: end.startTime - start.startTime }
     },
     undefined,
     { timeout: STARTUP_ENTRY_TIMEOUT_MS },
   )
-  const duration = await handle.jsonValue()
-  if (duration === null) throw new Error('Mount duration is unavailable')
-  return duration
+  const result = await handle.jsonValue()
+  if (result === null) throw new Error('Mount duration is unavailable')
+  return result.duration
 }
 
 export async function getHeapUsedSize(page: Page): Promise<number> {

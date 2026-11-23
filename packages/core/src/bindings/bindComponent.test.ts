@@ -304,6 +304,33 @@ describe('bindComponent', () => {
     expect(parentVM.parentVal).toBe('changed')
   })
 
+  it('should stop child-to-parent propagation once the component is destroyed', () => {
+    class DestroyedVM {
+      val = ''
+    }
+    defineComponent(
+      'destroyable-child',
+      DestroyedVM,
+      '<component view-model="DestroyedVM"><span bind-content="val"></span></component>',
+    )
+
+    container.innerHTML = '<destroyable-child link-val="parentVal"></destroyable-child>'
+
+    const parentVM = createReactiveViewModel({ parentVal: 'initial' }, () => {})
+    const render = setupBindings(container, parentVM)
+    const childEl = container.querySelector('destroyable-child') as PelelaElement<DestroyedVM>
+    const childVM = childEl.__pelelaViewModel
+
+    childVM.val = 'before destroy'
+    expect(parentVM.parentVal).toBe('before destroy')
+
+    render.destroy()
+
+    childVM.val = 'after destroy'
+
+    expect(parentVM.parentVal).toBe('before destroy')
+  })
+
   it('should process the root element if it is a component itself', () => {
     class RootChildVM {
       val = ''
