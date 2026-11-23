@@ -14,6 +14,16 @@ export type ClickHandler<T extends object = object> = EventHandler<T, MouseEvent
 export type ValueBinding = {
   element: HTMLElement
   propertyName: string
+  removeListener?: () => void
+}
+
+export type RenderedForEachElement = {
+  element: HTMLElement
+  viewModel: ViewModel
+  itemRef: { current: unknown }
+  indexRef: { current: number }
+  render: (changedPath?: string) => void
+  destroy: () => void
 }
 
 export type ContentBinding = {
@@ -76,13 +86,7 @@ export type ForEachBinding = {
   notifyParent?: NotifyParent
   template: HTMLElement
   placeholder: Comment
-  renderedElements: {
-    element: HTMLElement
-    viewModel: ViewModel
-    itemRef: { current: unknown }
-    indexRef: { current: number }
-    render: (changedPath?: string) => void
-  }[]
+  renderedElements: RenderedForEachElement[]
   previousLength: number
   extraDependencies: string[]
   hasMethodBindings: boolean
@@ -94,7 +98,11 @@ export type ComponentBinding = {
   renderChild?: (changedPath?: string) => void
 }
 
-export type BindingsCollection = {
+export type RenderFunction = ((changedPath?: string) => void) & {
+  destroy: () => void
+}
+
+export type BindingLists = {
   valueBindings: ValueBinding[]
   contentBindings: ContentBinding[]
   srcBindings: SrcBinding[]
@@ -105,4 +113,8 @@ export type BindingsCollection = {
   styleBindings: StyleBinding[]
   forEachBindings: ForEachBinding[]
   componentBindings: ComponentBinding[]
+}
+
+export type BindingsCollection = BindingLists & {
+  removeListeners: () => void
 }

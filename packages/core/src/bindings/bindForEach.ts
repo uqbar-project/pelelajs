@@ -24,13 +24,14 @@ import { renderContentBindings, setupContentBindings } from './bindContent'
 import { renderEnabledBindings, setupEnabledBindings } from './bindEnabled'
 import { setupEnterBindings } from './bindEnter'
 import { renderIfBindings, setupIfBindings } from './bindIf'
+import { createBindingsCollection } from './bindingsCollection'
 import { renderSrcBindings, setupSrcBindings } from './bindSrc'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import { registerForEachScope } from './forEachScope'
 import { getNestedProperty } from './nestedProperties'
 import { setOptionValue } from './optionValues'
-import type { ForEachBinding, NotifyParent, ViewModel } from './types'
+import type { BindingLists, ForEachBinding, NotifyParent, ViewModel } from './types'
 
 function parseForEachExpression(
   expression: string,
@@ -99,12 +100,12 @@ function setupBindingsForElement<T extends object>(
   element: HTMLElement,
   viewModel: ViewModel<T>,
   notifyParent?: NotifyParent,
-): () => void {
+): { render: (changedPath?: string) => void; destroy: () => void } {
   for (const attr of element.attributes) {
     assertValidBindingAttribute(attr.name, element)
   }
   const componentBindings = setupComponentBindings(element, viewModel, notifyParent)
-  const bindings = {
+  const lists: BindingLists = {
     valueBindings: setupValueBindings(element, viewModel),
     contentBindings: setupContentBindings(element, viewModel),
     srcBindings: setupSrcBindings(element, viewModel),
@@ -113,20 +114,26 @@ function setupBindingsForElement<T extends object>(
     ifBindings: setupIfBindings(element, viewModel),
     classBindings: setupClassBindings(element, viewModel),
     styleBindings: setupStyleBindings(element, viewModel),
+    forEachBindings: [],
+    componentBindings,
   }
-  setupClickBindings(element, viewModel)
-  setupEnterBindings(element, viewModel)
+  const removeClickListeners = setupClickBindings(element, viewModel)
+  const removeEnterListeners = setupEnterBindings(element, viewModel)
+  const bindings = createBindingsCollection(lists, [removeClickListeners, removeEnterListeners])
 
-  return (changedPath?: string) => {
-    renderValueBindings(bindings.valueBindings, viewModel)
-    renderContentBindings(bindings.contentBindings, viewModel)
-    renderSrcBindings(bindings.srcBindings, viewModel)
-    renderAltBindings(bindings.altBindings, viewModel)
-    renderEnabledBindings(bindings.enabledBindings, viewModel)
-    renderIfBindings(bindings.ifBindings, viewModel)
-    renderClassBindings(bindings.classBindings, viewModel)
-    renderStyleBindings(bindings.styleBindings, viewModel)
-    renderComponentBindings(componentBindings, viewModel, changedPath)
+  return {
+    render: (changedPath?: string) => {
+      renderValueBindings(lists.valueBindings, viewModel)
+      renderContentBindings(lists.contentBindings, viewModel)
+      renderSrcBindings(lists.srcBindings, viewModel)
+      renderAltBindings(lists.altBindings, viewModel)
+      renderEnabledBindings(lists.enabledBindings, viewModel)
+      renderIfBindings(lists.ifBindings, viewModel)
+      renderClassBindings(lists.classBindings, viewModel)
+      renderStyleBindings(lists.styleBindings, viewModel)
+      renderComponentBindings(lists.componentBindings, viewModel, changedPath)
+    },
+    destroy: () => bindings.removeListeners(),
   }
 }
 
@@ -341,7 +348,11 @@ function createNewElement<T extends object>(
             ),
           )
         }
-  const render = setupBindingsForElement(element, extendedViewModel, notifyParentWithIndex)
+  const { render, destroy } = setupBindingsForElement(
+    element,
+    extendedViewModel,
+    notifyParentWithIndex,
+  )
 
   if (element.tagName === 'OPTION') {
     setOptionElementValue(element as HTMLOptionElement, item, index)
@@ -355,6 +366,7 @@ function createNewElement<T extends object>(
     itemRef,
     indexRef,
     render,
+    destroy,
   })
   if (lastElement.parentNode) {
     lastElement.parentNode.insertBefore(element, lastElement.nextSibling)
@@ -374,7 +386,8 @@ function addNewElements<T extends object>(
 }
 
 function removeExtraElements(binding: ForEachBinding, currentLength: number): void {
-  binding.renderedElements.splice(currentLength).forEach(({ element }) => {
+  binding.renderedElements.splice(currentLength).forEach(({ element, destroy }) => {
+    destroy()
     element.remove()
   })
 }

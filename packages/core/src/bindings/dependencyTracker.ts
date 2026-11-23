@@ -1,6 +1,7 @@
 import { isObject } from '../commons/helpers'
 import { unwrapReactive } from '../reactivity/proxyIdentity'
-import type { BindingsCollection } from './types'
+import { bindingListKeys } from './bindingsCollection'
+import type { BindingLists } from './types'
 
 function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
   const hasGetter = (target: unknown, part: string): boolean => {
@@ -31,7 +32,7 @@ function isPropertyGetter(obj: unknown, propertyPath: string): boolean {
   })
 }
 
-type Binding = BindingsCollection[keyof BindingsCollection][number]
+type Binding = BindingLists[keyof BindingLists][number]
 
 export class DependencyTracker {
   private dependencies = new Map<Binding, Set<string>>()
@@ -52,26 +53,29 @@ export class DependencyTracker {
     this.getterBindings.add(binding)
   }
 
+  clear(): void {
+    this.dependencies.clear()
+    this.getterBindings.clear()
+  }
+
   isGetterBinding(binding: Binding): boolean {
     return this.getterBindings.has(binding)
   }
 
-  getDependentBindings(changedPath: string, allBindings: BindingsCollection): BindingsCollection {
-    const bindingKeys = Object.keys(allBindings) as (keyof BindingsCollection)[]
-
-    return bindingKeys.reduce((result, key) => {
+  getDependentBindings(changedPath: string, allBindings: BindingLists): BindingLists {
+    return bindingListKeys.reduce((result, key) => {
       // Use unknown as bridge to avoid any
       const bindings = allBindings[key] as unknown as Binding[]
       // @ts-expect-error - dynamic key access in a Typed object
       result[key] = bindings.filter((binding) => this.isAffectedByChange(binding, changedPath))
       return result
-    }, {} as BindingsCollection)
+    }, {} as BindingLists)
   }
 
   getDependentBindingsWithGetterSupport(
     changedPath: string,
-    allBindings: BindingsCollection,
-  ): BindingsCollection {
+    allBindings: BindingLists,
+  ): BindingLists {
     const result = this.getDependentBindings(changedPath, allBindings)
 
     const addGetterBindings = <T extends object>(

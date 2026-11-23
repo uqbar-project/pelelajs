@@ -4,6 +4,7 @@ import { t } from '../commons/i18n'
 import { WrongElementForBindingError } from '../errors'
 import { createReactiveViewModel } from '../reactivity/reactiveProxy'
 import { testHelpers } from '../test/helpers'
+import type { PelelaElement } from '../types'
 import { setupBindings } from './setupBindings'
 
 describe('setupBindings', () => {
@@ -438,5 +439,119 @@ describe('setupBindings', () => {
 
     expect(() => render('message')).not.toThrow()
     expect(container.querySelector('span')?.textContent).toBe('Updated')
+  })
+
+  describe('render.destroy', () => {
+    it('should turn render into a no-op and detach click listeners', () => {
+      container.innerHTML = `
+        <span bind-content="message"></span>
+        <button click="handleClick">Go</button>
+      `
+      const handleClick = vi.fn()
+      const viewModel = { message: 'initial', handleClick }
+      const render = setupBindings(container, viewModel)
+      const span = container.querySelector('span')!
+      const button = container.querySelector('button')!
+
+      expect(span.textContent).toBe('initial')
+
+      render.destroy()
+      viewModel.message = 'changed'
+      render('message')
+      button.click()
+
+      expect(span.textContent).toBe('initial')
+      expect(handleClick).not.toHaveBeenCalled()
+    })
+
+    it('should detach bind-value listeners so editing a control no longer updates the model', () => {
+      container.innerHTML = '<input bind-value="message" />'
+      const viewModel = { message: 'initial' }
+      const render = setupBindings(container, viewModel)
+      const input = container.querySelector('input')!
+
+      input.value = 'before destroy'
+      input.dispatchEvent(new Event('input'))
+      expect(viewModel.message).toBe('before destroy')
+
+      render.destroy()
+
+      input.value = 'after destroy'
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.message).toBe('before destroy')
+    })
+
+    it('should detach bind-value listeners from for-each rows on destroy', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <input bind-value="item.text" />
+        </div>
+      `
+      const viewModel = { items: [{ text: 'initial' }] }
+      const render = setupBindings(container, viewModel)
+      const input = container.querySelector('input')!
+
+      input.value = 'before destroy'
+      input.dispatchEvent(new Event('input'))
+      expect(viewModel.items[0].text).toBe('before destroy')
+
+      render.destroy()
+
+      input.value = 'after destroy'
+      input.dispatchEvent(new Event('input'))
+
+      expect(viewModel.items[0].text).toBe('before destroy')
+    })
+
+    it('should detach click listeners from for-each rows on destroy', () => {
+      container.innerHTML = `
+        <div for-each="item of items">
+          <button click="handleClick" bind-content="item.name"></button>
+        </div>
+      `
+      const handleClick = vi.fn()
+      const viewModel = { items: [{ name: 'First' }, { name: 'Second' }], handleClick }
+      const render = setupBindings(container, viewModel)
+      const buttons = container.querySelectorAll('button')
+
+      buttons[0].click()
+      buttons[1].click()
+      expect(handleClick).toHaveBeenCalledTimes(2)
+
+      render.destroy()
+
+      buttons[0].click()
+      buttons[1].click()
+
+      expect(handleClick).toHaveBeenCalledTimes(2)
+    })
+
+    it('should clear the view model reference stored on the root', () => {
+      container.innerHTML = '<span bind-content="message"></span>'
+      const viewModel = { message: 'initial' }
+      const root = container as PelelaElement<typeof viewModel>
+      root.__pelelaViewModel = viewModel
+
+      const render = setupBindings(container, viewModel)
+      expect(root.__pelelaViewModel).toBe(viewModel)
+
+      render.destroy()
+
+      expect(root.__pelelaViewModel).toBeUndefined()
+    })
+
+    it('should be safe to call more than once', () => {
+      container.innerHTML = '<button click="handleClick">Go</button>'
+      const handleClick = vi.fn()
+      const render = setupBindings(container, { handleClick })
+      const button = container.querySelector('button')!
+
+      render.destroy()
+      expect(() => render.destroy()).not.toThrow()
+      button.click()
+
+      expect(handleClick).not.toHaveBeenCalled()
+    })
   })
 })

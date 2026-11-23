@@ -19,13 +19,14 @@ import { renderEnabledBindings, setupEnabledBindings } from './bindEnabled'
 import { setupEnterBindings } from './bindEnter'
 import { renderForEachBindings, setupForEachBindings } from './bindForEach'
 import { renderIfBindings, setupIfBindings } from './bindIf'
+import { bindingListKeys, createBindingsCollection } from './bindingsCollection'
 import { renderSrcBindings, setupSrcBindings } from './bindSrc'
 import { renderStyleBindings, setupStyleBindings } from './bindStyle'
 import { renderValueBindings, setupValueBindings } from './bindValue'
 import { DependencyTracker } from './dependencyTracker'
 import type {
   AltBinding,
-  BindingsCollection,
+  BindingLists,
   ClassBinding,
   ComponentBinding,
   ContentBinding,
@@ -33,6 +34,7 @@ import type {
   ForEachBinding,
   IfBinding,
   NotifyParent,
+  RenderFunction,
   SrcBinding,
   StyleBinding,
   ValueBinding,
@@ -52,7 +54,7 @@ type AnyBinding =
   | ComponentBinding
 
 function registerAllBindingDependencies(
-  bindings: BindingsCollection,
+  bindings: BindingLists,
   tracker: DependencyTracker,
   viewModel: ViewModel<object>,
 ): Set<string> {
@@ -127,7 +129,7 @@ function registerAllBindingDependencies(
 }
 
 function executeRenderPipeline<T extends object>(
-  targetBindings: BindingsCollection,
+  targetBindings: BindingLists,
   viewModel: ViewModel<T>,
   changedPath?: string,
 ): void {
@@ -196,7 +198,7 @@ function getValueByPath(obj: unknown, path: string): unknown {
   }, obj)
 }
 
-function collectBindingEntries(bindings: BindingsCollection): BindingEntry[] {
+function collectBindingEntries(bindings: BindingLists): BindingEntry[] {
   const entries: BindingEntry[] = []
   bindings.valueBindings.forEach((binding) => {
     entries.push({ element: binding.element, kind: 'value', property: binding.propertyName })
@@ -243,7 +245,7 @@ export function setupBindings<T extends object>(
     notifyParent,
     debug,
   }: { skipRootIf?: boolean; notifyParent?: NotifyParent; debug?: boolean } = {},
-): (changedPath?: string) => void {
+): RenderFunction {
   const allElements = findAllElements(root, '*', true)
   for (const element of allElements) {
     for (const attr of element.attributes) {
@@ -254,7 +256,7 @@ export function setupBindings<T extends object>(
   const renderRef: { current?: (changedPath?: string) => void } = {}
   const forwardToRender = notifyParent ?? ((path: string) => renderRef.current?.(path))
 
-  const bindings: BindingsCollection = {
+  const lists: BindingLists = {
     forEachBindings: setupForEachBindings(root, viewModel, forwardToRender),
     componentBindings: setupComponentBindings(root, viewModel, forwardToRender),
     valueBindings: setupValueBindings(root, viewModel),
@@ -266,9 +268,9 @@ export function setupBindings<T extends object>(
     classBindings: setupClassBindings(root, viewModel),
     styleBindings: setupStyleBindings(root, viewModel),
   }
-
-  setupClickBindings(root, viewModel, { debug })
-  setupEnterBindings(root, viewModel, { debug })
+  const removeClickListeners = setupClickBindings(root, viewModel, { debug })
+  const removeEnterListeners = setupEnterBindings(root, viewModel, { debug })
+  const bindings = createBindingsCollection(lists, [removeClickListeners, removeEnterListeners])
 
   const tracker = new DependencyTracker()
   const registeredPaths = registerAllBindingDependencies(bindings, tracker, viewModel)
@@ -364,7 +366,7 @@ export function setupBindings<T extends object>(
     }
   }
 
-  const handleChangedPath = (changedPath: string, targetBindings: BindingsCollection) => {
+  const handleChangedPath = (changedPath: string, targetBindings: BindingLists) => {
     if (!isDebugEnabled(debug)) return
 
     const affectedEntries = collectBindingEntries(targetBindings)
@@ -391,7 +393,11 @@ export function setupBindings<T extends object>(
     }
   }
 
+  let isDestroyed = false
+
   const render = (changedPath?: string) => {
+    if (isDestroyed) return
+
     const targetBindings = changedPath
       ? tracker.getDependentBindingsWithGetterSupport(changedPath, bindings)
       : bindings
@@ -403,8 +409,24 @@ export function setupBindings<T extends object>(
     executeRenderPipeline(targetBindings, viewModel, changedPath)
   }
 
-  renderRef.current = render
+  const destroy = () => {
+    if (isDestroyed) return
+    isDestroyed = true
 
-  render()
-  return render
+    bindings.removeListeners()
+    tracker.clear()
+    previousValues.clear()
+    bindingListKeys.forEach((key) => {
+      bindings[key].length = 0
+    })
+    delete (root as HTMLElement & { __pelelaViewModel?: unknown }).__pelelaViewModel
+  }
+
+  const renderWithDestroy = render as RenderFunction
+  renderWithDestroy.destroy = destroy
+
+  renderRef.current = renderWithDestroy
+
+  renderWithDestroy()
+  return renderWithDestroy
 }

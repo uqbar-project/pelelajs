@@ -83,8 +83,9 @@ function setupSingleValueBinding<T extends object>(
   }
 
   const isCheckbox = element instanceof HTMLInputElement && element.type === 'checkbox'
+  const eventName = isCheckbox ? 'change' : 'input'
 
-  element.addEventListener(isCheckbox ? 'change' : 'input', (event) => {
+  const listener: EventListener = (event) => {
     const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     const currentValue = getNestedProperty(viewModel, propertyName)
 
@@ -110,9 +111,15 @@ function setupSingleValueBinding<T extends object>(
     } else {
       setNestedProperty(viewModel, propertyName, inputValue)
     }
-  })
+  }
 
-  return { element, propertyName }
+  element.addEventListener(eventName, listener)
+
+  return {
+    element,
+    propertyName,
+    removeListener: () => element.removeEventListener(eventName, listener),
+  }
 }
 
 export function setupValueBindings<T extends object>(
