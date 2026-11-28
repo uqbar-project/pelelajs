@@ -1,0 +1,396 @@
+{
+  "en": {
+    "title": "Aid Memo for Pelela",
+    "heading": "Aid Memo for Pelela",
+    "subtitle": "Comprehensive documentation for PelelaJS Framework",
+    "nav": {
+      "cli": "CLI",
+      "viewModel": "ViewModel",
+      "bindings": "Bindings",
+      "parentChild": "Parent/Child",
+      "naming": "Naming",
+      "toast": "Toast",
+      "routing": "Routing"
+    },
+    "labels": {
+      "note": "Note:",
+      "important": "Important:",
+      "methodsInForEach": "Methods in for-each:"
+    },
+    "common": {
+      "anyElement": "Any element"
+    },
+    "sections": {
+      "cli": {
+        "title": "Pelela CLI Commands",
+        "headers": {
+          "command": "Command",
+          "description": "Description",
+          "options": "Options",
+          "example": "Example"
+        },
+        "rows": {
+          "init": { "description": "Initialize a new Pelela project with the base template" },
+          "add": { "description": "Add a supported configuration to the current project" },
+          "new": { "description": "Create a new component in the project" },
+          "rename": { "description": "Rename an existing component" },
+          "move": { "description": "Move a component to a destination path" }
+        },
+        "note": "The CLI commands are built with TypeScript and Commander.js, providing a clean interface for project scaffolding and component management.",
+        "componentNote": {
+          "prefix": "By default, ",
+          "middle": " creates a ",
+          "and": " root; add ",
+          "suffix": " for a <component> root meant to be used as a child."
+        }
+      },
+      "viewModel": {
+        "title": "ViewModel",
+        "headers": {
+          "method": "Method",
+          "description": "Description",
+          "example": "Example"
+        },
+        "rows": {
+          "initialize": {
+            "description": "Called automatically when the component mounts. Set up initial state, start observers, or perform async setup."
+          }
+        },
+        "note": {
+          "prefix": " The ",
+          "suffix": " method is optional. It runs once after the initial binding render."
+        }
+      },
+      "naming": {
+        "title": "Naming Conventions",
+        "intro": "Pelela follows these naming conventions across the framework:",
+        "headers": {
+          "scope": "Scope",
+          "case": "Case",
+          "example": "Example"
+        },
+        "rows": {
+          "files": { "scope": "File names" },
+          "childTags": { "scope": "Child component tags" },
+          "viewModelNames": { "scope": "ViewModel class & property names" }
+        },
+        "cases": {
+          "kebab": "kebab-case",
+          "camel": "CamelCase"
+        },
+        "note": "These conventions follow standard web platform practices: custom elements require kebab-case names, while TypeScript uses CamelCase for classes and identifiers."
+      },
+      "bindings": {
+        "title": "Element Bindings",
+        "headers": {
+          "binding": "Binding",
+          "validTags": "Valid Tags",
+          "description": "Description",
+          "example": "Example"
+        },
+        "rows": {
+          "bindContent": {
+            "description": "Bind element's text content to a view model property",
+            "validTags": "Any element except textarea"
+          },
+          "bindValue": { "description": "Bind element's value to a view model property" },
+          "bindSrc": { "description": "Bind element's src attribute to a view model property" },
+          "bindAlt": { "description": "Bind element's alt attribute to a view model property" },
+          "bindClass": { "description": "Bind element's class attribute to a view model property" },
+          "bindStyle": { "description": "Bind element's style object to a view model property" },
+          "bindEnabled": { "description": "Bind element's enabled state to a view model property" },
+          "if": { "description": "Conditionally show/hide element based on view model property" },
+          "forEach": { "description": "Render a collection of items using a template" },
+          "click": { "description": "Handle click events on elements" },
+          "enter": { "description": "Handle Enter key press events" }
+        },
+        "nestedPaths": {
+          "prefix": "Binding values can use dotted paths, for example ",
+          "suffix": ". The same works for collections and prop-*/link-* attributes."
+        },
+        "classNote": {
+          "prefix": "bind-class accepts a string, an array of strings or an object of booleans such as ",
+          "and": " or ",
+          "suffix": "; static classes on the element are preserved."
+        },
+        "forEachNote": {
+          "prefix": " inside a ",
+          "middle": ", a binding can name a view model method instead of a property (except in value bindings such as ",
+          "and": " and ",
+          "suffix": ", which write back, and in click, enter, for-each and index). Pelela calls it per item with a single scope object using the loop variable names as keys. The method must declare exactly one parameter. Use ",
+          "index": " to expose the zero-based position."
+        },
+        "itemHandlers": {
+          "prefix": "Event handlers can also target a method on the iterated item, for example ",
+          "suffix": "."
+        }
+      },
+      "parentChild": {
+        "title": "Parent / Child Components",
+        "intro": "Pelela provides three attribute prefixes to communicate between parent and child components:",
+        "headers": {
+          "prefix": "Prefix",
+          "direction": "Direction",
+          "description": "Description",
+          "example": "Example"
+        },
+        "direction": {
+          "parentToChild": "Parent → Child",
+          "twoWay": "Parent ↔ Child"
+        },
+        "rows": {
+          "prop": { "description": "Pass reactive property values" },
+          "link": { "description": "Two-way binding between parent and child" },
+          "const": { "description": "Pass constant values (evaluated once, not reactive)" }
+        },
+        "note": {
+          "prefix": " All parent-child bindings must be used within a ",
+          "middle": " or ",
+          "suffix": " root element, or they'll be rejected as security violations."
+        },
+        "constTypes": {
+          "prefix": "Const values are plain literals, not expressions: text is a string, while numeric text and ",
+          "or": " / ",
+          "suffix": " are converted to the child property's type."
+        }
+      },
+      "toast": {
+        "title": "Toast Notifications",
+        "intro": "Use the toast service from a view model to show brief messages to the user. Toasts disappear after four seconds.",
+        "comments": {
+          "severities": "// Severity: info, success, warning, error",
+          "duration": "// duration: 0 keeps the toast visible until the user closes it",
+          "configure": "// Default alignment for later toasts: start, center, end",
+          "override": "// A toast can override the default with horizontal and vertical"
+        }
+      },
+      "routing": {
+        "title": "Routing",
+        "intro": {
+          "prefix": "Define routes as a ",
+          "middle": " and start them from ",
+          "suffix": " with "
+        },
+        "params": {
+          "prefix": "Use ",
+          "forParameters": " for URL parameters (",
+          "placeholder": " is a placeholder replaced by the actual value) and ",
+          "catchAll": " as a catch-all route. Read the current route with ",
+          "separator": ", ",
+          "and": " and ",
+          "navigate": ", or navigate with ",
+          "end": "."
+        },
+        "layout": {
+          "prefix": "A layout route needs children and a template with exactly one empty ",
+          "suffix": ". Pelela replaces it with the child page; prop-* and const-* attributes on it reach the page ViewModel."
+        }
+      }
+    }
+  },
+  "es": {
+    "title": "Ayudamemoria para Pelela",
+    "heading": "Ayudamemoria para Pelela",
+    "subtitle": "Documentación completa del framework PelelaJS",
+    "nav": {
+      "cli": "CLI",
+      "viewModel": "ViewModel",
+      "bindings": "Bindings",
+      "parentChild": "Padre/Hijo",
+      "naming": "Nomenclatura",
+      "toast": "Toast",
+      "routing": "Routing"
+    },
+    "labels": {
+      "note": "Nota:",
+      "important": "Importante:",
+      "methodsInForEach": "Métodos en for-each:"
+    },
+    "common": {
+      "anyElement": "Cualquier elemento"
+    },
+    "sections": {
+      "cli": {
+        "title": "Comandos del CLI de Pelela",
+        "headers": {
+          "command": "Comando",
+          "description": "Descripción",
+          "options": "Opciones",
+          "example": "Ejemplo"
+        },
+        "rows": {
+          "init": { "description": "Inicializa un nuevo proyecto de Pelela con la plantilla base" },
+          "add": { "description": "Agrega una configuración compatible al proyecto actual" },
+          "new": { "description": "Crea un nuevo componente en el proyecto" },
+          "rename": { "description": "Renombra un componente existente" },
+          "move": { "description": "Mueve un componente a una ruta de destino" }
+        },
+        "note": "Los comandos del CLI están construidos con TypeScript y Commander.js, y ofrecen una interfaz limpia para generar proyectos y gestionar componentes.",
+        "componentNote": {
+          "prefix": "Por defecto, ",
+          "middle": " crea un tag ",
+          "and": "; agregá ",
+          "suffix": " para generar un tag <component> pensado para usarse como hijo."
+        }
+      },
+      "viewModel": {
+        "title": "ViewModel",
+        "headers": {
+          "method": "Método",
+          "description": "Descripción",
+          "example": "Ejemplo"
+        },
+        "rows": {
+          "initialize": {
+            "description": "Se llama automáticamente cuando el componente se monta. Configurá el estado inicial, iniciá observadores o realizá tareas asincrónicas de configuración."
+          }
+        },
+        "note": {
+          "prefix": " El método ",
+          "suffix": " es opcional. Se ejecuta una vez después del render inicial de los bindings."
+        }
+      },
+      "naming": {
+        "title": "Convenciones de nomenclatura",
+        "intro": "Pelela sigue estas convenciones de nomenclatura en todo el framework:",
+        "headers": {
+          "scope": "Ámbito",
+          "case": "Estilo",
+          "example": "Ejemplo"
+        },
+        "rows": {
+          "files": { "scope": "Nombres de archivos" },
+          "childTags": { "scope": "Etiquetas de componentes hijos" },
+          "viewModelNames": { "scope": "Nombres de clases y propiedades del ViewModel" }
+        },
+        "cases": {
+          "kebab": "kebab-case",
+          "camel": "CamelCase"
+        },
+        "note": "Estas convenciones siguen las prácticas estándar de la web: los elementos personalizados requieren nombres en kebab-case, mientras que TypeScript usa CamelCase para clases e identificadores."
+      },
+      "bindings": {
+        "title": "Bindings de elementos",
+        "headers": {
+          "binding": "Binding",
+          "validTags": "Etiquetas válidas",
+          "description": "Descripción",
+          "example": "Ejemplo"
+        },
+        "rows": {
+          "bindContent": {
+            "description": "Vincula el contenido de texto del elemento con una propiedad del view model",
+            "validTags": "Cualquier elemento excepto textarea"
+          },
+          "bindValue": {
+            "description": "Vincula el valor del elemento con una propiedad del view model"
+          },
+          "bindSrc": {
+            "description": "Vincula el atributo src del elemento con una propiedad del view model"
+          },
+          "bindAlt": {
+            "description": "Vincula el atributo alt del elemento con una propiedad del view model"
+          },
+          "bindClass": {
+            "description": "Vincula el atributo class del elemento con una propiedad del view model"
+          },
+          "bindStyle": {
+            "description": "Vincula el objeto de estilos del elemento con una propiedad del view model"
+          },
+          "bindEnabled": {
+            "description": "Vincula el estado habilitado del elemento con una propiedad del view model"
+          },
+          "if": {
+            "description": "Muestra u oculta el elemento según una propiedad del view model"
+          },
+          "forEach": { "description": "Renderiza una colección de ítems usando una plantilla" },
+          "click": { "description": "Maneja eventos de click en los elementos" },
+          "enter": { "description": "Maneja eventos de tecla Enter" }
+        },
+        "nestedPaths": {
+          "prefix": "Los valores de los bindings pueden usar rutas con puntos, por ejemplo ",
+          "suffix": ". Lo mismo aplica a las colecciones y a los atributos prop-*/link-*."
+        },
+        "classNote": {
+          "prefix": "bind-class acepta un string, un array de strings o un objeto de booleanos como ",
+          "and": " o ",
+          "suffix": "; las clases estáticas del elemento se conservan."
+        },
+        "forEachNote": {
+          "prefix": " dentro de ",
+          "middle": ", un binding puede nombrar un método del view model en lugar de una propiedad (excepto en bindings de valor como ",
+          "and": " y ",
+          "suffix": ", que escriben de vuelta, y en click, enter, for-each e index). Pelela lo llama por cada ítem con un único objeto de alcance que usa los nombres de las variables del bucle como claves. El método debe declarar exactamente un parámetro. Usá ",
+          "index": " para exponer la posición base cero."
+        },
+        "itemHandlers": {
+          "prefix": "Podés definir eventos referenciando a un método del ítem que estás recorriendo, por ejemplo ",
+          "suffix": "."
+        }
+      },
+      "parentChild": {
+        "title": "Componentes padre / hijo",
+        "intro": "Pelela ofrece tres prefijos de atributos para comunicar componentes padre e hijo:",
+        "headers": {
+          "prefix": "Prefijo",
+          "direction": "Dirección",
+          "description": "Descripción",
+          "example": "Ejemplo"
+        },
+        "direction": {
+          "parentToChild": "Padre → Hijo",
+          "twoWay": "Padre ↔ Hijo"
+        },
+        "rows": {
+          "prop": { "description": "Pasa valores de propiedades reactivas" },
+          "link": { "description": "Vinculación bidireccional entre padre e hijo" },
+          "const": {
+            "description": "Pasa valores constantes (se evalúan una sola vez, no son reactivos)"
+          }
+        },
+        "note": {
+          "prefix": " Todos los bindings padre-hijo deben usarse dentro de un elemento raíz ",
+          "middle": " o ",
+          "suffix": ", o serán rechazados como violaciones de seguridad."
+        },
+        "constTypes": {
+          "prefix": "Los valores const son literales simples, no expresiones: el texto es un string, mientras que el texto numérico y ",
+          "or": " / ",
+          "suffix": " se convierten al tipo de la propiedad hija."
+        }
+      },
+      "toast": {
+        "title": "Notificaciones toast",
+        "intro": "Usá el servicio toast desde un view model para mostrar mensajes breves al usuario. Los toasts desaparecen a los cuatro segundos.",
+        "comments": {
+          "severities": "// Severidad: info, success, warning, error",
+          "duration": "// duration: 0 mantiene el toast visible hasta que el usuario lo cierre",
+          "configure": "// Alineación por defecto para los toasts siguientes: start, center, end",
+          "override": "// Un toast puede sobrescribirla con horizontal y vertical"
+        }
+      },
+      "routing": {
+        "title": "Routing",
+        "intro": {
+          "prefix": "Definí las rutas como un ",
+          "middle": " y arrancalas desde ",
+          "suffix": " con "
+        },
+        "params": {
+          "prefix": "Usá ",
+          "forParameters": " para parámetros de URL (",
+          "placeholder": " es un marcador que se reemplaza por el valor real) y ",
+          "catchAll": " como ruta comodín. Leé la ruta actual con ",
+          "separator": ", ",
+          "and": " y ",
+          "navigate": ", o navegá con ",
+          "end": "."
+        },
+        "layout": {
+          "prefix": "Una ruta con layout necesita hijos y una plantilla con exactamente un ",
+          "suffix": " vacío. Pelela lo reemplaza por la página hija; los atributos prop-* y const-* sobre él llegan al ViewModel de la página."
+        }
+      }
+    }
+  }
+}
