@@ -1,5 +1,5 @@
 import type { Order } from './order'
-import { orderService } from './orderService'
+import { orderService } from './order-service'
 
 export class Base {
   orders: Order[] = orderService.getAll()

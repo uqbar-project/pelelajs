@@ -1,4 +1,4 @@
-import { BetModel } from './betModel'
+import { BetModel } from './bet-model'
 
 export class Bet {
   bet = new BetModel()

@@ -1,8 +1,8 @@
 import type { RouteDefinition } from 'pelelajs'
-import { BookDetail } from './src/BookDetail'
-import { BookList } from './src/BookList'
-import { MainLayout } from './src/MainLayout'
-import { NotFoundPage } from './src/NotFoundPage'
+import { BookDetail } from './src/book-detail'
+import { BookList } from './src/book-list'
+import { MainLayout } from './src/main-layout'
+import { NotFoundPage } from './src/not-found-page'
 
 export const routes: RouteDefinition[] = [
   {

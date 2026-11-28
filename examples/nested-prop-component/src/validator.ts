@@ -1,4 +1,4 @@
-import type { ValidationError } from './validationError'
+import type { ValidationError } from './validation-error'
 
 export class Validator {
   fieldName = ''
