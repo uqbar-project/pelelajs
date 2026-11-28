@@ -9,6 +9,8 @@ dist
 .idea
 *.log
 coverage
+playwright-report
+test-results
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

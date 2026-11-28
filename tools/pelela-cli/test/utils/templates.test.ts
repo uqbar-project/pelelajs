@@ -12,6 +12,10 @@ import {
   validateTemplatePath,
 } from '../../src/utils/templates'
 
+const HELP_PAGE = 'help.html'
+const HELP_TRANSLATIONS = 'help-translations.json'
+const HELP_FONT = join('fonts', 'geist-latin-wght-normal.woff2')
+
 beforeAll(async () => {
   await initializeI18n('en')
 })
@@ -69,6 +73,9 @@ describe('templates', () => {
       expect(existsSync(join(projectPath, 'biome.json'))).toBe(true)
       expect(existsSync(join(projectPath, '_biome.json'))).toBe(false)
       expect(existsSync(join(projectPath, 'package.json'))).toBe(true)
+      expect(existsSync(join(projectPath, 'public', HELP_PAGE))).toBe(true)
+      expect(existsSync(join(projectPath, 'public', HELP_TRANSLATIONS))).toBe(true)
+      expect(existsSync(join(projectPath, 'public', HELP_FONT))).toBe(true)
     })
 
     it('throws error when template source is missing', async () => {
